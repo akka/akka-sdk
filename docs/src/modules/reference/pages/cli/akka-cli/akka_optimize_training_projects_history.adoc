@@ -1,20 +1,31 @@
-= akka optimize training workloads refs
+= akka optimize training projects history
 
-Manage workload reference pointers
+Display change history for a training project
 
 == Synopsis
 
-Manage named reference pointers for a workload.
+Display the chronological audit history of changes to a training project.
 
-A reference pointer targets a specific model entry.
-Updating a reference does not modify the underlying model entry.
-To roll back a reference, update it to target a previous model ID recorded in workload history.
+The history records evaluation setting updates and description edits.
+
+[source,shell]
+----
+akka optimize training projects history PROJECT [flags]
+----
+
+== Examples
+
+[source,shell]
+----
+  # View audit history for a training project
+  akka optimize training projects history commit-router
+----
 
 == Options
 
 [source,text]
 ----
-  -h, --help   help for refs
+  -h, --help   help for history
 ----
 
 == Options inherited from parent commands
@@ -35,17 +46,15 @@ To roll back a reference, update it to target a previous model ID recorded in wo
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
+      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----
 
 == SEE ALSO
 
-* link:akka_optimize_training_workloads.html[akka optimize training workloads]	 - Manage training workloads
-* link:akka_optimize_training_workloads_refs_get.html[akka optimize training workloads refs get]	 - Display the model targeted by a workload reference pointer
-* link:akka_optimize_training_workloads_refs_set.html[akka optimize training workloads refs set]	 - Update a workload reference pointer to target a model
+* link:akka_optimize_training_projects.html[akka optimize training projects]	 - Manage training projects
 
 [discrete]
 

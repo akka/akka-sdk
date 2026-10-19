@@ -1,35 +1,40 @@
-= akka optimize datasets list
+= akka optimize training projects scores
 
-List registered datasets
+Compare candidate model scores against baselines for a training project
 
 == Synopsis
 
-List registered datasets ordered from newest to oldest.
+Display score comparison tables for candidate models grouped by base model version.
+
+Each table lists the baseline model score alongside columns for each training configuration.
+Cells show scores for runs evaluated under the configured dataset and grader of the training project.
+
+Use --dataset and --grader to inspect scores recorded under previous evaluation configurations.
 
 [source,shell]
 ----
-akka optimize datasets list [flags]
+akka optimize training projects scores PROJECT [flags]
 ----
 
 == Examples
 
 [source,shell]
 ----
-  # List all registered datasets
-  akka-optimize datasets list
+  # Compare scores using default evaluation settings
+  akka optimize training projects scores commit-router
 
-  # Output specific fields as JSON
-  akka-optimize datasets list --json hash,names,exampleCount
-
-  # Extract the newest dataset hash using jq
-  akka-optimize datasets list --jq '.datasets[0].hash'
+  # Compare scores using specific evaluation settings
+  akka optimize training projects scores commit-router \
+    --dataset 4b1c2f9b2ae4 --grader json-label-match
 ----
 
 == Options
 
 [source,text]
 ----
-  -h, --help   help for list
+      --dataset string   Evaluation dataset to display scores for, by registry reference
+      --grader string    Grader specification to display scores for
+  -h, --help             help for scores
 ----
 
 == Options inherited from parent commands
@@ -50,15 +55,15 @@ akka optimize datasets list [flags]
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
+      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----
 
 == SEE ALSO
 
-* link:akka_optimize_datasets.html[akka optimize datasets]	 - Manage training and evaluation datasets
+* link:akka_optimize_training_projects.html[akka optimize training projects]	 - Manage training projects
 
 [discrete]
 

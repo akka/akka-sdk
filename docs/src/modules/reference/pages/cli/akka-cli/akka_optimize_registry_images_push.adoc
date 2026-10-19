@@ -8,7 +8,7 @@ Upload image files, or every image in a directory.
 
 Each image is hashed and uploaded only where the registry does not already hold those bytes, so repeating an interrupted push continues where it stopped.
 
-"datasets register" uploads the images its examples reference on its own.
+"registry datasets register" uploads the images its examples reference on its own.
 Use this to upload them before the examples that reference them exist.
 
 [source,shell]
@@ -21,10 +21,10 @@ akka optimize registry images push PATH... [flags]
 [source,shell]
 ----
   # Upload a directory of scans
-  akka-optimize registry images push scans/
+  akka optimize registry images push scans/
 
   # Upload two pages
-  akka-optimize registry images push page-1.png page-2.png
+  akka optimize registry images push page-1.png page-2.png
 ----
 
 == Options
@@ -52,8 +52,8 @@ akka optimize registry images push PATH... [flags]
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
+      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----

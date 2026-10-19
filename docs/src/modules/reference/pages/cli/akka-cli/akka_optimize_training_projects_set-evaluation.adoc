@@ -1,18 +1,40 @@
-= akka optimize eval rules list
+= akka optimize training projects set-evaluation
 
-Same as `eval rules`
+Set evaluation dataset and grader for a training project
+
+== Synopsis
+
+Configure the evaluation dataset and grader used to compare candidate models for a training project.
+
+Score comparisons require matching dataset and grader pairs.
+Updating either value resets the default baseline comparison table.
+Previous evaluation scores remain accessible by supplying --dataset and --grader to the "scores" command.
 
 [source,shell]
 ----
-akka optimize eval rules list [flags]
+akka optimize training projects set-evaluation PROJECT --dataset NS/NAME [flags]
+----
+
+== Examples
+
+[source,shell]
+----
+  # Set the evaluation dataset
+  akka optimize training projects set-evaluation commit-router --dataset eval-set
+
+  # Set both evaluation dataset and grader
+  akka optimize training projects set-evaluation commit-router \
+    --dataset 4b1c2f9b2ae4 --grader model:triage/judge:v1
 ----
 
 == Options
 
 [source,text]
 ----
-      --hazard string   restrict to rules covering the named hazard, e.g. ailuminate:privacy
-  -h, --help            help for list
+      --dataset string               Evaluation dataset, by registry reference
+      --grader string                Grader specification: json-label-match, model:NS/NAME[:VERSION], or http:URL
+      --grader-instructions string   Instructions a model: grader is asked under, in place of the ones it would otherwise get
+  -h, --help                         help for set-evaluation
 ----
 
 == Options inherited from parent commands
@@ -33,15 +55,15 @@ akka optimize eval rules list [flags]
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
+      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----
 
 == SEE ALSO
 
-* link:akka_optimize_eval_rules.html[akka optimize eval rules]	 - Rules declared across the project's eval campaigns
+* link:akka_optimize_training_projects.html[akka optimize training projects]	 - Manage training projects
 
 [discrete]
 

@@ -6,8 +6,8 @@ Show candidate registration for a snapshot
 
 Show a snapshot's candidate registration status and result.
 
-Registration retains the source weights before creating the registry entry.
-A registration that has not reached REGISTERED has no model entry to read.
+Registration retains the source weights before creating the registry version.
+A registration that has not reached REGISTERED has no model version to read.
 A failed registration reports its reason here and continues to retain its source, because a step that timed out may still have succeeded.
 Once that outcome is known, release the source with "training snapshots release".
 
@@ -21,10 +21,10 @@ akka optimize training snapshots candidate SNAPSHOT [flags]
 [source,shell]
 ----
   # Read a registration
-  akka-optimize training snapshots candidate 3f2a9c71bd04
+  akka optimize training snapshots candidate 3f2a9c71bd04
 
-  # Extract the model ID using jq
-  akka-optimize training snapshots candidate 3f2a9c71bd04 --jq .modelId
+  # Extract the registered model version using jq
+  akka optimize training snapshots candidate 3f2a9c71bd04 --jq .model
 ----
 
 == Options
@@ -52,8 +52,8 @@ akka optimize training snapshots candidate SNAPSHOT [flags]
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
+      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----

@@ -6,10 +6,11 @@ Register snapshot weights as a candidate model
 
 Register a committed snapshot's weights as a candidate model.
 
-The command outputs a model ID that "training evaluations start --model" scores like any other model.
+The registration writes a version of the run's named model in the artifact registry.
+Once it is registered, the command outputs that version, NS/NAME:vN, which "training evaluations start --model" scores like any other model.
 Registering does not alter the run that produced the snapshot and does not duplicate its weights in the catalog.
 
-The model ID is derived from the snapshot, so registering the same snapshot again returns that same ID.
+The registration ID is derived from the snapshot, so registering the same snapshot again returns that same registration.
 SNAPSHOT may be a complete snapshot ID or an unambiguous prefix.
 
 A snapshot holding only training state is refused.
@@ -30,10 +31,10 @@ akka optimize training snapshots register SNAPSHOT [flags]
 [source,shell]
 ----
   # Register a snapshot as a candidate model
-  akka-optimize training snapshots register 3f2a9c71bd04e5a2...
+  akka optimize training snapshots register 3f2a9c71bd04e5a2...
 
-  # Extract the registered model ID using jq
-  akka-optimize training snapshots register 3f2a9c71bd04e5a2... --jq .modelId
+  # Extract the registered model version using jq
+  akka optimize training snapshots register 3f2a9c71bd04e5a2... --jq .model
 ----
 
 == Options
@@ -61,8 +62,8 @@ akka optimize training snapshots register SNAPSHOT [flags]
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
+      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----

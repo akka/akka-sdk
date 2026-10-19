@@ -4,7 +4,7 @@ Report what holds the GPU pools
 
 == Synopsis
 
-Report the devices this deployment schedules, what holds them, and what each workload holds against its quota.
+Report the devices this deployment schedules, what holds them, and what each training project holds against its quota.
 
 POOLS is one row per pool.
 DECLARED is what the deployment says the pool holds, which is what work is admitted against, and OBSERVED is what its cluster last reported.
@@ -23,11 +23,11 @@ Nothing stops such a claim, and its devices may already be gone.
 CLAIMS is every run, evaluation and endpoint that holds devices or is waiting for them.
 An endpoint a run brought up as its judge names that run.
 
-WORKLOADS is one row per workload that holds a claim or has a quota of its own.
+PROJECTS is one row per training project that holds a claim or has a quota of its own.
 QUOTA is the devices it may hold at once, across every pool.
 
---workload narrows the claims and the workloads to one workload.
-The pools stay whole, because what a workload is waiting for is the state of the pool, whoever else is holding it.
+--project narrows the claims and the training projects to one training project.
+The pools stay whole, because what a training project is waiting for is the state of the pool, whoever else is holding it.
 
 [source,shell]
 ----
@@ -39,21 +39,21 @@ akka optimize training capacity [flags]
 [source,shell]
 ----
   # What holds the pools
-  akka-optimize training capacity
+  akka optimize training capacity
 
-  # One workload's claims and quota
-  akka-optimize training capacity --workload triage
+  # One training project's claims and quota
+  akka optimize training capacity --project triage
 
   # Name the runs holding devices
-  akka-optimize training capacity --jq '.claims[] | select(.state=="GRANTED") | .workId'
+  akka optimize training capacity --jq '.claims[] | select(.state=="GRANTED") | .workId'
 ----
 
 == Options
 
 [source,text]
 ----
-  -h, --help              help for capacity
-      --workload string   Narrow the claims and the workloads to one workload, by name, ID or the start of one
+  -h, --help             help for capacity
+      --project string   Narrow the claims and the training projects to one training project, by name, ID or the start of one
 ----
 
 == Options inherited from parent commands
@@ -74,15 +74,15 @@ akka optimize training capacity [flags]
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
+      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----
 
 == SEE ALSO
 
-* link:akka_optimize_training.html[akka optimize training]	 - Base models, workloads, runs, snapshots, comparisons, pipelines, evaluations, endpoints and their data
+* link:akka_optimize_training.html[akka optimize training]	 - Base models, training projects, runs, snapshots, comparisons, pipelines, evaluations, endpoints and their data
 
 [discrete]
 

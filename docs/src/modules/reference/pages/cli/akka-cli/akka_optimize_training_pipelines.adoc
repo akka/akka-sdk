@@ -6,7 +6,7 @@ Manage training pipelines
 
 A training pipeline executes a sequence of curate, train, and evaluate stages.
 
-Downstream stages can reference outputs from upstream stages using the syntax "@stageName" in place of a dataset hash or model ID.
+Downstream stages can reference outputs from upstream stages using the syntax "@stageName" in place of a dataset or model reference.
 Stages can also define a minimum required mean score to gate subsequent execution.
 
 Each stage executes as an individual training run linked to the pipeline ID.
@@ -17,13 +17,13 @@ If a pipeline stops before completion, you can restart it using "training pipeli
 [source,shell]
 ----
   # Submit a pipeline and wait for completion
-  akka-optimize training pipelines start -f pipeline.json --wait
+  akka optimize training pipelines start -f pipeline.json --wait
 
   # List active and incomplete pipelines
-  akka-optimize training pipelines list --phase open
+  akka optimize training pipelines list --phase open
 
   # Display stage-by-stage status for a pipeline
-  akka-optimize training pipelines get 3f9a21c4d08b7e56
+  akka optimize training pipelines get 3f9a21c4d08b7e56
 ----
 
 == Options
@@ -51,15 +51,15 @@ If a pipeline stops before completion, you can restart it using "training pipeli
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
+      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----
 
 == SEE ALSO
 
-* link:akka_optimize_training.html[akka optimize training]	 - Base models, workloads, runs, snapshots, comparisons, pipelines, evaluations, endpoints and their data
+* link:akka_optimize_training.html[akka optimize training]	 - Base models, training projects, runs, snapshots, comparisons, pipelines, evaluations, endpoints and their data
 * link:akka_optimize_training_pipelines_annotate.html[akka optimize training pipelines annotate]	 - Update the description for a training pipeline
 * link:akka_optimize_training_pipelines_cancel.html[akka optimize training pipelines cancel]	 - Cancel an active training pipeline
 * link:akka_optimize_training_pipelines_get.html[akka optimize training pipelines get]	 - Display stage-by-stage status for a training pipeline

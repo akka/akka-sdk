@@ -24,10 +24,10 @@ akka optimize training base-models candidates --author AUTHOR [--match GLOB] [fl
 [source,shell]
 ----
   # What the Gemma 4 family offers, and which members this deployment could train
-  akka-optimize training base-models candidates --author google --match 'gemma-4-*'
+  akka optimize training base-models candidates --author google --match 'gemma-4-*'
 
   # The catalog entries for the ones it could
-  akka-optimize training base-models candidates --author google --match 'gemma-4-E4B*' --catalog
+  akka optimize training base-models candidates --author google --match 'gemma-4-E4B*' --catalog
 ----
 
 == Options
@@ -58,8 +58,8 @@ akka optimize training base-models candidates --author AUTHOR [--match GLOB] [fl
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
+      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----

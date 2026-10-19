@@ -35,13 +35,13 @@ akka optimize training runs pause RUN --checkpoint latest|save [flags]
 [source,shell]
 ----
   # Pause against the newest confirmed checkpoint
-  akka-optimize training runs pause 7d496e82c3a15f04 --checkpoint latest
+  akka optimize training runs pause 7d496e82c3a15f04 --checkpoint latest
 
   # Save at the next optimizer boundary, then stop
-  akka-optimize training runs pause 7d496e82c3a15f04 --checkpoint save
+  akka optimize training runs pause 7d496e82c3a15f04 --checkpoint save
 
   # Resume the paused run
-  akka-optimize training runs resume 7d496e82c3a15f04
+  akka optimize training runs resume 7d496e82c3a15f04
 ----
 
 == Options
@@ -70,8 +70,8 @@ akka optimize training runs pause RUN --checkpoint latest|save [flags]
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
+      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----
