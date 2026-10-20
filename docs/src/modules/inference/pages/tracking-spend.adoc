@@ -5,9 +5,9 @@
 
 include::ROOT:partial$include.adoc[]
 
-Inference spend is the cost of the model traffic in a period, together with the tokens that traffic consumed. Akka computes it from the exchanges that the gateway router recorded, and prices each exchange once, when it records it, at the rate that the catalog then holds for the instant the exchange was served. No figure is estimated or entered by hand.
+Inference spend is the cost of the model traffic in a period, together with the tokens that traffic consumed. An exchange is one request to a model and the response that the model returns. The gateway router records each exchange, and Akka computes spend from the recorded exchanges. The portfolio service prices each exchange once, when it stores the exchange, at the rate that the pricing catalog then holds for the instant the exchange was served.
 
-Two command groups work together. `akka optimize pricing-catalog` publishes the prices, and `akka optimize spend` reads the figures computed from them. Publish a price for every served name before its traffic is served: an exchange that has no price counts in the token totals and never in the spend. See <<unpriced>>.
+Two command groups work together. `akka optimize pricing-catalog` publishes the prices, and `akka optimize spend` reads the figures computed from them. Each price belongs to a served name: the model name that the provider reports in the `model` field of its response, for example `claude-sonnet-5-5`. Publish a price for each served name before your services send traffic to that model. An exchange that has no price counts in the token totals and adds nothing to the spend. See <<unpriced>>.
 
 == Before you begin
 
@@ -20,7 +20,7 @@ Spend has figures only for traffic that the gateway router recorded. Traffic tha
 [#publish-prices]
 == Publish prices
 
-The pricing catalog holds the price of each served name as rates per million tokens. Each price applies to a served name: the `model` field in the body of a model response. A response without that field is unpriced.
+The pricing catalog holds the price of each served name as rates per million tokens. A response without a `model` field is unpriced.
 
 The catalog is versioned. A published version is never edited, so a figure computed under a price stays the same when you read it again. To change a price, publish a new version that takes effect later.
 
