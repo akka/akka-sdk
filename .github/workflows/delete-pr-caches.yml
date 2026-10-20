@@ -2,6 +2,8 @@
 name: Cleanup workflow caches by a branch
 on:
   pull_request:
+    paths-ignore:
+      - 'release-metadata/**'
     types:
       - closed
 
