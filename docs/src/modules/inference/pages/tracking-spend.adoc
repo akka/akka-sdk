@@ -89,6 +89,91 @@ An exchange is priced only when every token class that it used has a rate. A rat
 
 A version can price some served names and leave out others. The served names that it leaves out keep their earlier price.
 
+[#example-catalog]
+=== Start from the example catalog
+
+Exchanges are unpriced until you publish pricing catalog. The example in this section holds list prices for some common OpenAI and Anthropic models. Review it and adjust it before you publish it.
+
+The rates are the list prices that link:{url-ext-openai-pricing}[OpenAI API pricing, window="new"] and link:{url-ext-anthropic-pricing}[Claude API pricing, window="new"] stated on October 18, 2026. List prices change, so check each rate on the provider's page before you publish.
+
+[source,json]
+----
+{
+  "effectiveAt": "2026-10-18T00:00:00Z",
+  "source": "OpenAI and Anthropic list prices, taken 2026-10-18",
+  "models": [
+    {
+      "model": { "provider": "openai", "name": "gpt-5.2", "version": "2025-12-11" },
+      "servedName": "gpt-5.2-2025-12-11",
+      "assigned": false,
+      "currency": "USD",
+      "input": 1.75,
+      "cacheRead": 0.175,
+      "output": 14.00,
+      "reasoning": 14.00
+    },
+    {
+      "model": { "provider": "openai", "name": "gpt-5.4-mini", "version": "2026-03-17" },
+      "servedName": "gpt-5.4-mini-2026-03-17",
+      "assigned": false,
+      "currency": "USD",
+      "input": 0.75,
+      "cacheRead": 0.075,
+      "output": 4.50,
+      "reasoning": 4.50
+    },
+    {
+      "model": { "provider": "openai", "name": "gpt-5.4-nano", "version": "2026-03-17" },
+      "servedName": "gpt-5.4-nano-2026-03-17",
+      "assigned": false,
+      "currency": "USD",
+      "input": 0.20,
+      "cacheRead": 0.02,
+      "output": 1.25,
+      "reasoning": 1.25
+    },
+    {
+      "model": { "provider": "anthropic", "name": "claude-fable", "version": "5.1" },
+      "servedName": "claude-fable-5-1",
+      "assigned": false,
+      "currency": "USD",
+      "input": 10.00,
+      "cacheRead": 0.25,
+      "cacheWrite": 12.50,
+      "output": 50.00
+    },
+    {
+      "model": { "provider": "anthropic", "name": "claude-opus", "version": "5.5" },
+      "servedName": "claude-opus-5-5",
+      "assigned": false,
+      "currency": "USD",
+      "input": 4.00,
+      "cacheRead": 0.20,
+      "cacheWrite": 5.00,
+      "output": 20.00
+    },
+    {
+      "model": { "provider": "anthropic", "name": "claude-sonnet", "version": "5.5" },
+      "servedName": "claude-sonnet-5-5",
+      "assigned": false,
+      "currency": "USD",
+      "input": 2.00,
+      "cacheRead": 0.10,
+      "cacheWrite": 2.50,
+      "output": 10.00
+    }
+  ]
+}
+----
+
+Change the example before you publish it:
+
+* Keep only the models that your traffic uses. Each `servedName` must be the string that your provider's responses report in their `model` field. OpenAI responses report the dated snapshot, such as `gpt-5.4-mini-2026-03-17`, also when the request names `gpt-5.4-mini`. To see the served names that your traffic reports, divide a recent period by `model`, as in <<read-spend>>. Add an entry for each served name in that division that has no price yet.
+* Set `effectiveAt` to the instant from which the prices apply, and `source` to where they came from.
+* Where your organization has a negotiated rate, state that rate and set `assigned` to `true`.
+
+Check the document with `--dry-run` before you publish it.
+
 === Check and publish
 
 Check a document without publishing it:
