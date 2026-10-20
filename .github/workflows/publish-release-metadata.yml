@@ -1,0 +1,37 @@
+# Publication setup and catalog contract: release-metadata/README.md
+name: Publish release metadata
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - release-metadata/versions.json
+      - .github/scripts/publish-release-metadata.sh
+      - .github/scripts/update-release-metadata.mjs
+      - .github/scripts/release-metadata.mjs
+      - .github/workflows/publish-release-metadata.yml
+
+permissions:
+  contents: read
+
+# Finish each upload before the next starts. Every run checks out current main.
+concurrency:
+  group: publish-release-metadata
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.event.repository.fork == false && github.ref == 'refs/heads/main'
+    runs-on: Akka-Default
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - name: Publish versions.json
+        env:
+          SCP_SECRET: ${{ secrets.AKKA_RSYNC_GUSTAV }}
+        run: bash .github/scripts/publish-release-metadata.sh

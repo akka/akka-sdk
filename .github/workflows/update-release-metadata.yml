@@ -1,0 +1,72 @@
+# Inputs, catalog contract, and operation: release-metadata/README.md
+name: Update release metadata
+run-name: Update ${{ inputs.component }} metadata for ${{ inputs.version }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      component:
+        description: Component publishing the release
+        required: true
+        type: choice
+        options: [sdk, runtime, cli]
+      version:
+        description: Release version without a tag prefix
+        required: true
+        type: string
+      released_at:
+        description: GitHub Release published_at (YYYY-MM-DDTHH:MM:SSZ)
+        required: true
+        type: string
+      prerelease:
+        description: GitHub Release prerelease flag (ignored when true)
+        type: boolean
+        default: false
+      release_notes_url:
+        description: Intended public doc.akka.io release-notes URL (need not exist yet)
+        required: true
+        type: string
+      required_runtime:
+        description: SDK only — expected Runtime version
+        type: string
+      protocol_version:
+        description: SDK only — protocol major.minor
+        type: string
+      minimum_protocol:
+        description: Runtime only — minimum supported protocol major.minor
+        type: string
+      maximum_protocol:
+        description: Runtime only — maximum supported protocol major.minor
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    if: github.event.repository.fork == false && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - name: Check metadata updater
+        run: node --test .github/scripts/release-metadata.test.mjs
+      - name: Validate, update, and propose catalog
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COMPONENT: ${{ inputs.component }}
+          VERSION: ${{ inputs.version }}
+          RELEASED_AT: ${{ inputs.released_at }}
+          PRERELEASE: ${{ inputs.prerelease }}
+          RELEASE_NOTES_URL: ${{ inputs.release_notes_url }}
+          REQUIRED_RUNTIME: ${{ inputs.required_runtime }}
+          PROTOCOL_VERSION: ${{ inputs.protocol_version }}
+          MINIMUM_PROTOCOL: ${{ inputs.minimum_protocol }}
+          MAXIMUM_PROTOCOL: ${{ inputs.maximum_protocol }}
+        run: bash .github/scripts/commit-release-metadata.sh
