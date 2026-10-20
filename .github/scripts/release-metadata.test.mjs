@@ -1,7 +1,7 @@
 // Test invocation and catalog contract: release-metadata/README.md
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync, rmSync, chmodSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -106,6 +106,69 @@ test('command updates and validates files and preserves them on ignored or inval
     writeFileSync(path, '{invalid');
     assert.notEqual(run().status, 0);
     assert.equal(readFileSync(path, 'utf8'), '{invalid');
+  } finally {
+    rmSync(temporary, { recursive: true, force: true });
+  }
+});
+
+test('SDK release submission dispatches generated compatibility values and fails without retries', () => {
+  const temporary = mkdtempSync(join(tmpdir(), 'sdk-metadata-test-'));
+  const script = fileURLToPath(new URL('./submit-sdk-release-metadata.sh', import.meta.url));
+  const calls = join(temporary, 'calls.jsonl');
+  const pom = join(temporary, 'parent.pom');
+  const gh = join(temporary, 'gh');
+  writeFileSync(gh, `#!/usr/bin/env node
+const fs = require('node:fs');
+const args = process.argv.slice(2);
+fs.appendFileSync(process.env.GH_CALLS, JSON.stringify(args) + '\\n');
+if (args[0] === 'api') {
+  if (process.env.FAIL_API) process.exit(17);
+  console.log(process.env.RELEASE_JSON);
+} else if (process.env.FAIL_DISPATCH) process.exit(23);
+`);
+  chmodSync(gh, 0o755);
+  const release = { tag_name: 'v3.7.0', published_at: sdk.releasedAt, draft: false, prerelease: false };
+  const env = {
+    ...process.env, PATH: `${temporary}:${process.env.PATH}`, GH_CALLS: calls,
+    GITHUB_REF_TYPE: 'tag', GITHUB_REF_NAME: 'v3.7.0', GITHUB_REPOSITORY: 'akka/akka-sdk',
+    RELEASE_JSON: JSON.stringify(release), FAIL_API: '', FAIL_DISPATCH: '',
+  };
+  const run = (extra = {}) => {
+    writeFileSync(calls, '');
+    const result = spawnSync('bash', [script, pom], { env: { ...env, ...extra }, encoding: 'utf8' });
+    return { ...result, calls: readFileSync(calls, 'utf8').trim().split('\n').filter(Boolean).map(line => JSON.parse(line)) };
+  };
+  try {
+    writeFileSync(pom, '<properties>\n<akka-runtime.version>1.7.2</akka-runtime.version>\n<akka-protocol.version>1.1</akka-protocol.version>\n</properties>');
+    const result = run();
+    assert.equal(result.status, 0, result.stderr);
+    assert.deepEqual(result.calls[0], ['api', 'repos/akka/akka-sdk/releases/tags/v3.7.0']);
+    assert.deepEqual(result.calls[1], [
+      'workflow', 'run', 'update-release-metadata.yml', '--repo', 'akka/akka-sdk', '--ref', 'main',
+      '-f', 'component=sdk', '-f', 'version=3.7.0', '-f', `released_at=${sdk.releasedAt}`,
+      '-f', 'prerelease=false', '-f', `release_notes_url=${sdk.releaseNotesUrl}`,
+      '-f', 'required_runtime=1.7.2', '-f', 'protocol_version=1.1',
+    ]);
+    for (const extra of [{ GITHUB_REF_TYPE: 'branch' }, { GITHUB_REF_NAME: 'v3.8.0-RC1' }, { GITHUB_REF_NAME: 'v3.8.0-SNAPSHOT' }]) {
+      const skipped = run(extra);
+      assert.equal(skipped.status, 0);
+      assert.equal(skipped.calls.length, 0);
+    }
+    for (const flag of ['prerelease', 'draft']) {
+      const skipped = run({ RELEASE_JSON: JSON.stringify({ ...release, [flag]: true }) });
+      assert.equal(skipped.status, 0);
+      assert.equal(skipped.calls.length, 1);
+    }
+    const failedApi = run({ FAIL_API: 'true' });
+    assert.equal(failedApi.status, 17);
+    assert.equal(failedApi.calls.length, 1);
+    const failedDispatch = run({ FAIL_DISPATCH: 'true' });
+    assert.equal(failedDispatch.status, 23);
+    assert.equal(failedDispatch.calls.length, 2);
+    writeFileSync(pom, '<properties><akka-runtime.version>REPLACED_BY_BUILD</akka-runtime.version></properties>');
+    const invalid = run();
+    assert.notEqual(invalid.status, 0);
+    assert.equal(invalid.calls.length, 1);
   } finally {
     rmSync(temporary, { recursive: true, force: true });
   }

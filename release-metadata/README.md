@@ -34,6 +34,15 @@ These values and SDK/CLI documentation anchors are illustrative.
 
 ## Submitting a release
 
+The SDK **Publish** workflow submits metadata after successful artifact
+publication and `publishM2`. Its shell script reads the GitHub Release date and
+the expected Runtime/protocol values from the generated parent POM installed by
+that build. Stable tags dispatch **Update release metadata** on `main` using
+`GITHUB_TOKEN` with `actions: write`; snapshots, prereleases, and drafts are skipped.
+A missing published GitHub Release or failed dispatch fails the publishing run
+without retries. Rerun the metadata submission separately if artifacts have already
+been published; do not rerun artifact publication to recover a metadata failure.
+
 Invoke **Update release metadata** on `main` with a credential authorized to
 dispatch workflows in `akka/akka-sdk`. Each producer supplies selected public
 metadata from its own GitHub Release and tagged source; the receiver needs no
@@ -58,6 +67,8 @@ Uploads are serialized, with no retries or artifact/documentation builds.
 
 Use Node 24, as configured in both workflows. No npm packages, jq, or GNU sort
 are needed for metadata logic; Git, gh, and rsync orchestration remains in shell.
+The SDK release submission script uses jq to read the GitHub API response, so its
+mocked integration test also requires jq and Bash.
 
 ```sh
 node --test .github/scripts/release-metadata.test.mjs
