@@ -21,8 +21,6 @@ The Akka runtime enforces governance while it executes each agent interaction, s
 
 The ledger records every agent interaction with its model calls, tool calls, token usage, and outcome. The new xref:sdk:evaluators.adoc[Evaluator] component assesses the interactions of the agents that you bind it to. The runtime runs an evaluator in the background after each interaction and records the verdict in the ledger.
 
-This functionality evolves quickly, the behavior and APIs might change between releases without further notice.
-
 ****
 
 * Akka CLI 3.0.78
