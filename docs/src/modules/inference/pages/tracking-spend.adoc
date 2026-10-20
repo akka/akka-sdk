@@ -291,6 +291,10 @@ An exchange is unpriced when no price covers every token class that it used. It 
 
 The rate that applies to an exchange is the one that the catalog holds, when the exchange is recorded, for the instant it was served. The service prices the exchange once and does not price it again. Traffic recorded soon after a publish can still be priced at the previous rate, or recorded as unpriced if the served name had no earlier price, and a new price cannot take effect earlier than the latest price for the same served name.
 
+=== When a price changes during a period
+
+A period that spans a price change holds exchanges priced at each rate. To see when each price took effect, run `akka optimize pricing-catalog versions list`. To read the prices at an instant, run `akka optimize pricing-catalog get --at` with that instant.
+
 === Compare two periods
 
 [source,shell]
