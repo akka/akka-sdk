@@ -92,7 +92,7 @@ A version can price some served names and leave out others. The served names tha
 [#example-catalog]
 === Start from the example catalog
 
-Exchanges are unpriced until you publish pricing catalog. The example in this section holds list prices for some common OpenAI and Anthropic models. Review it and adjust it before you publish it.
+Exchanges are unpriced until you publish a catalog version. The example in this section holds list prices for some common OpenAI and Anthropic models. Review it and adjust it before you publish it.
 
 The rates are the list prices that link:{url-ext-openai-pricing}[OpenAI API pricing, window="new"] and link:{url-ext-anthropic-pricing}[Claude API pricing, window="new"] stated on October 18, 2026. List prices change, so check each rate on the provider's page before you publish.
 
