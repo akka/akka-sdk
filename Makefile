@@ -106,6 +106,7 @@ bundles:
 
 # CI must install browser system dependencies and fail when Node.js is unavailable.
 whitepapers-ci: WHITEPAPERS_REQUIRED := 1
+whitepapers-ci: WHITEPAPERS_STRICT := 1
 whitepapers-ci: WHITEPAPERS_INSTALL := 1
 whitepapers-ci: PLAYWRIGHT_INSTALL_FLAGS := --with-deps
 whitepapers-ci: whitepapers
@@ -123,7 +124,7 @@ whitepapers:
 	    npm --prefix docs/bin/whitepaper install || exit 1; \
 	  fi; \
 	  (cd docs/bin/whitepaper && npx playwright install $(PLAYWRIGHT_INSTALL_FLAGS) chromium --only-shell) || exit 1; \
-	  node docs/bin/whitepaper/render-pdf.mjs "${TARGET_DIR}"; \
+	  WHITEPAPERS_STRICT="$(WHITEPAPERS_STRICT)" node docs/bin/whitepaper/render-pdf.mjs "${TARGET_DIR}"; \
 	fi
 
 markdown:
