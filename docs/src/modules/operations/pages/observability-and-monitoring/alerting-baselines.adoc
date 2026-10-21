@@ -55,7 +55,7 @@ NOTE: For gRPC streaming calls, the duration metric measures the full stream lif
 | > 1 cmd/s
 
 | Content load duration p99
-| `akka.agent.content_load.duration` (p99)
+| `akka.agent.content.load.duration` (p99)
 | > 2 s (depends on content source)
 |===
 
@@ -141,6 +141,10 @@ TIP: Key Value Entity metrics use `akka.component.type="key-value-entity"` to di
 
 | Events consumption lag (max)
 | `akka.projection.consumer.lag` (max)
+| > 1 min
+
+| Stuck projection (time behind the latest event)
+| `akka.projection.backlog.lag`
 | > 1 min
 
 | Events processing time (avg)
