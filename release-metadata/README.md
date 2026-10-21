@@ -45,17 +45,24 @@ These values and SDK/CLI documentation anchors are illustrative.
 
 ## SDK notification timing
 
-Only SDK releases have `notifyAt`. The updater calculates it as `releasedAt` plus
-`notify_delay_days`, which defaults to 10. If the required Runtime version matches
-the preceding SDK release's requirement, the updater automatically uses zero delay.
-The first SDK release and releases with a changed requirement use the configured
-delay. Out-of-order submissions are compared with the preceding SDK version, not
-the newest catalog entry. Zero delay is represented by `notifyAt` equal to
-`releasedAt`, rather than the number `0`. You can also set the delay to zero for
-immediate eligibility when the requirement changes.
-Days are whole 24-hour periods in UTC; negative or fractional values
-are rejected. The delay input is ignored for Runtime and CLI submissions, whose
-entries have no notification timing fields.
+Only SDK releases have `notifyAt`. When a delay is explicitly supplied, the
+updater sets `notifyAt` to `releasedAt` plus that many days. Set the delay to zero
+for immediate eligibility (`notifyAt = releasedAt`). Days are whole 24-hour
+periods in UTC; negative or fractional values are rejected. Runtime and CLI
+entries have no notification timing fields and ignore this input.
+
+When the delay is omitted:
+
+- An existing version keeps its current `notifyAt`.
+- A new SDK version copies `notifyAt` from the preceding SDK version if their
+  Runtime requirements match. The date is copied exactly, even if it has already
+  passed. A pending date stays pending, so a patch does not announce a held-back
+  release early.
+- Otherwise, a new SDK version uses a 10-day delay.
+
+The preceding release is selected by SDK version from the catalog, including
+out-of-order submissions. Existing entries are not recalculated when history is
+later added or corrected. An explicit delay always overrides inheritance.
 
 A client selects the newest SDK release whose `notifyAt` is at or before the
 current time and whose version is newer than the version in use. Keeping earlier
@@ -63,12 +70,11 @@ releases allows a notification to become eligible even when SDK releases are mor
 frequent than the delay. The static JSON does not need scheduled updates for this
 rule to work. Compatibility and regional availability are separate considerations.
 
-Resubmit the same version with another delay to move `notifyAt`, or to correct
-release dates, compatibility data, and documentation links. A same-version
-submission replaces that entry. It does not add a duplicate. The unchanged-Runtime
-rule also applies on resubmission. Otherwise, resubmitting without an explicit delay
-restores the default 10-day delay, so preserve an urgent release's zero-day override
-when making other corrections.
+Resubmit the same version to correct notification timing, release dates,
+compatibility data, or documentation links. Omitted fields retain their existing
+values. In particular, adding a release-notes URL does not reset `notifyAt`. An
+explicit delay recalculates `notifyAt` from the release date. New versions still
+require release dates and component-specific compatibility fields.
 
 ## Submitting a release
 
@@ -77,8 +83,9 @@ publication and `publishM2`. Its shell script reads the GitHub Release date and
 the expected Runtime/protocol values from the generated parent POM installed by
 that build. Stable tags dispatch **Update release metadata** on `main` using
 `GITHUB_TOKEN` with `actions: write`; snapshots, prereleases, and drafts are skipped.
-The dispatch uses the default 10-day SDK delay and leaves `releaseNotesUrl` empty
-unless `RELEASE_NOTES_URL` is explicitly supplied. A missing published GitHub Release
+The dispatch omits the delay to use the inheritance/default rules. Without an
+explicit `RELEASE_NOTES_URL`, the updater preserves an existing link or defaults to
+`https://doc.akka.io/reference/release-notes.html`. A missing published GitHub Release
 or failed dispatch fails the publishing run without retries. Resubmit metadata
 separately if artifacts have already been published; do not rerun artifact
 publication to recover a metadata failure.
@@ -98,11 +105,11 @@ gh workflow run update-release-metadata.yml --repo akka/akka-sdk --ref main \
 
 Use GitHub Release `published_at` in UTC and the SDK's existing expected Runtime
 requirement. Runtime submissions require `minimum_protocol` and `maximum_protocol`;
-CLI submissions have no compatibility fields. The release-notes URL is optional;
-omit `release_notes_url` to store `releaseNotesUrl: ""` until a designated URL is
-available. Resubmit the same version to add it later. Blank resubmissions preserve
-an existing designated URL. Non-empty URLs must use `https://doc.akka.io/` but need
-not exist yet. An intended SDK version anchor can be supplied and corrected later.
+CLI submissions have no compatibility fields. The release-notes URL input is
+optional. For a new release, omitted or blank input defaults to
+`https://doc.akka.io/reference/release-notes.html`. For an existing release, it
+preserves the stored URL. Resubmit the same version to designate a version-specific
+link later. URLs must use `https://doc.akka.io/` but need not exist yet. An intended SDK version anchor can be supplied and corrected later.
 No HTTP availability check blocks submission. Pass `prerelease=true` for a GitHub
 prerelease; that flag, version qualifiers, and snapshots cause the submission to
 be ignored.
@@ -142,8 +149,8 @@ node .github/scripts/update-release-metadata.mjs --validate release-metadata/ver
 ```
 
 To test updates, copy the checked-in catalog and set the workflow fields as
-uppercase environment variables (`PRERELEASE` defaults to false and
-`NOTIFY_DELAY_DAYS` to 10 for SDK releases):
+uppercase environment variables (`PRERELEASE` defaults to false; an empty
+`NOTIFY_DELAY_DAYS` preserves or inherits timing as described above):
 
 ```sh
 cp release-metadata/versions.json /tmp/versions.json

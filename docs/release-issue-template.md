@@ -19,16 +19,26 @@ You can see the Akka Runtime version on prod [on grafana](https://app.groundcove
 
 
 ### Update to the latest version
+
+- [ ] Review and merge the release metadata PR created by the Publish workflow. Check the version, Runtime requirement, and SDK notification date.
  
 - [ ] Review and merge PR created by bot (should appear [here](https://github.com/akka/akka-sdk/pulls?q=is%3Apr+is%3Aopen+auto+pr+)). While reviewing confirm the release version is updated for:
     - SDK `version` in the `samples/*/pom.xml` files
 
 ### Publish latest docs
 - [ ] Add a summary of relevant changes into [`release-notes.adoc`](https://github.com/akka/akka-sdk/edit/main/docs/src/modules/reference/pages/release-notes.adoc)
+    - Add a stable `[[sdk-$VERSION$]]` anchor, replacing dots in the version with hyphens (for example, `[[sdk-3-7-0]]`).
 - [ ] Create a PR and merge (do not squash) `main` into `docs-current`.
     Note that the PR will be pretty big normally, not only involving documentation files.
     ```
     gh pr create --base docs-current --head main --title "Publish docs for $VERSION$" --body "MERGE, DON'T SQUASH"
+    ```
+- [ ] Once the release notes are published, add their designated URL to the catalog and merge the resulting metadata PR. Omitted release details and notification delay are preserved:
+    ```shell
+    version='$VERSION$'
+    gh workflow run update-release-metadata.yml --repo akka/akka-sdk --ref main \
+      -f component=sdk -f version="$version" \
+      -f release_notes_url="https://doc.akka.io/reference/release-notes.html#sdk-${version//./-}"
     ```
 
 ### Update samples

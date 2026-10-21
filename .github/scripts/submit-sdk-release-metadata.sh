@@ -25,7 +25,7 @@ protocol_version=$(sed -nE 's|.*<akka-protocol.version>([^<]+)</akka-protocol.ve
 [[ $required_runtime =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9]+([.-][A-Za-z0-9]+)*)?$ && ! $required_runtime =~ [Ss][Nn][Aa][Pp][Ss][Hh][Oo][Tt] ]] || { echo 'Invalid Runtime version in generated parent POM' >&2; exit 1; }
 [[ $protocol_version =~ ^[0-9]+\.[0-9]+$ ]] || { echo 'Invalid protocol version in generated parent POM' >&2; exit 1; }
 
-# Submit a URL only when one has been designated; notes can be added later.
+# Blank input preserves an existing URL or uses the catalog's public page default.
 gh workflow run update-release-metadata.yml --repo "$GITHUB_REPOSITORY" --ref main \
   -f component=sdk -f version="$version" -f released_at="$released_at" \
   -f prerelease=false \

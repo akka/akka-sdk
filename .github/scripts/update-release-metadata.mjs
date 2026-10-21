@@ -10,14 +10,14 @@ async function main() {
   if (validateOnly) args.shift();
   if (args.length > 1) throw new Error('Usage: update-release-metadata.mjs [--validate] [catalog]');
   const path = args[0] ?? 'release-metadata/versions.json';
-  const submission = validateOnly ? null : releaseFromEnvironment(process.env);
+  const catalog = JSON.parse(await readFile(path, 'utf8'));
+  validateCatalog(catalog);
+  const submission = validateOnly ? null : releaseFromEnvironment(process.env, catalog);
   if (!validateOnly && !submission) {
     console.log('Ignoring prerelease or snapshot');
     return;
   }
-  const catalog = JSON.parse(await readFile(path, 'utf8'));
   if (validateOnly) {
-    validateCatalog(catalog);
     console.log('Catalog valid');
     return;
   }

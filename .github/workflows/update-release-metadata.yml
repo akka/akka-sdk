@@ -15,20 +15,18 @@ on:
         required: true
         type: string
       released_at:
-        description: GitHub Release published_at (YYYY-MM-DDTHH:MM:SSZ)
-        required: true
+        description: GitHub Release published_at (required for new releases, preserved when omitted)
         type: string
       prerelease:
         description: GitHub Release prerelease flag (ignored when true)
         type: boolean
         default: false
       release_notes_url:
-        description: Optional designated doc.akka.io release-notes URL (may be added later)
+        description: Optional URL; omitted values preserve an existing URL or use the public release-notes page
         type: string
       notify_delay_days:
-        description: 'SDK only: days after release before notifying (0 for immediate eligibility)'
-        type: number
-        default: 10
+        description: 'SDK only: whole days; empty preserves existing notifyAt or defaults to 10 for new releases'
+        type: string
       required_runtime:
         description: 'SDK only: expected Runtime version'
         type: string
