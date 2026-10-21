@@ -1,6 +1,6 @@
-# Akka SDK docs
+# Akka Agentic AI Platform documentation
 
-## Building the docs
+## Building the documentation
 
 ### Prerequisites
 

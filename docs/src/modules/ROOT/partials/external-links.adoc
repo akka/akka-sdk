@@ -143,7 +143,6 @@
 :url-agentgateway-backends: https://agentgateway.dev/docs/standalone/main/configuration/backends/
 
 // -- community --
-:url-akka-discord: https://discord.com/invite/QZc652rgtf
 :url-akka-github: https://github.com/akka
 :url-akka-blog: https://akka.io/blog
 :url-akka-support: https://support.akka.io
