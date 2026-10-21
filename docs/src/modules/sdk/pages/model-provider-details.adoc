@@ -842,13 +842,14 @@ headers are the same for every instance of that agent.
 
 == Identity headers
 
-By default, the runtime adds three headers to each model request, so that a gateway or proxy in front of the
+By default, the runtime adds some headers to each model request, so that a gateway or proxy in front of the
 model API can attribute the request:
 
 [cols="1m,3"]
 |===
 | Header | Value
 
+| x-akka-system-id | The AI system the request is for. By default, the id of the project that the service belongs to
 | x-akka-agent-id | The component id of the agent that made the request
 | x-akka-flow-id | The flow the request belongs to. When the request has no flow, the session id, or the instance id for an autonomous agent
 | x-akka-interaction-id | The id of the interaction the request belongs to
@@ -868,6 +869,19 @@ instance id. Your application chooses both ids. With the default setting, the ru
 hosted model API too. A xref:sdk:sanitization.adoc[sanitizer] masks message content and not headers, so
 it does not mask these ids. Do not put personal data in a session id or an instance id, or
 xref:model-provider-details.adoc#identity-headers-per-provider[turn the headers off] for that provider.
+
+The project id groups all services of the project as one system. In dev mode, the runtime sends
+`local-dev-mode`. To name the system of a service yourself, set `x-akka-system-id` as an additional model
+request header. The runtime then sends that value in place of the project id:
+
+[source,hocon,indent=0]
+----
+akka.javasdk.agent.additional-model-request-headers = ["x-akka-system-id:billing-assistant"]
+----
+
+A provider section, a provider environment variable or a provider built in code with its own headers
+xref:model-provider-details.adoc#_additional_model_request_headers[replaces the global list], so set the
+header there too.
 
 Do not set `x-akka-agent-id`, `x-akka-flow-id` or `x-akka-interaction-id` as an
 xref:model-provider-details.adoc#_additional_model_request_headers[additional model request header] while
