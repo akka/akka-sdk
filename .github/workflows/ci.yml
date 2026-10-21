@@ -4,11 +4,13 @@ on:
   pull_request:
     paths-ignore:
       - 'docs/**'
+      - 'release-metadata/**'
   push:
     branches:
       - main
     paths-ignore:
       - 'docs/**'
+      - 'release-metadata/**'
     tags-ignore:
       - v*
 

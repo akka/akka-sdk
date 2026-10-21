@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "sdk": { "releases": [] },
+  "runtime": { "releases": [] },
+  "cli": { "releases": [] }
+}

@@ -13,6 +13,9 @@ jobs:
     name: Publish (sbt & Maven)
     runs-on: Akka-Default
     if: github.event.repository.fork == false
+    permissions:
+      contents: read
+      actions: write
     steps:
       - name: Checkout Global Scripts
         uses: actions/checkout@v6
@@ -98,3 +101,9 @@ jobs:
 
       - name: sbt publishM2
         run: sbt publishM2
+
+      - name: Submit SDK release metadata
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/scripts/submit-sdk-release-metadata.sh
