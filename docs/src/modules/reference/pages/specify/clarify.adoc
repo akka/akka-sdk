@@ -19,9 +19,7 @@ Typical clarification questions address areas such as:
 * What happens during deletion or edge cases
 * Concurrency and session handling
 
-== Resolve open policy decisions
-
-The command records your answers in the specification. If policy-decision markers remain after the question limit, it recommends running `/akka:clarify` again rather than proceeding to `/akka:plan`.
+The command records your answers in the specification. If `[NEEDS CLARIFICATION]` markers for policy decisions remain after the question limit, it recommends running `/akka:clarify` again rather than proceeding to `/akka:plan`.
 
 Run this command iteratively until no further clarifications are needed.
 

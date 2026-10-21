@@ -15,8 +15,6 @@ Takes a natural-language prompt describing the technical architecture and design
 
 The plan defines the _how_ of your application: service architecture, endpoint design, authentication strategy, UI approach, and more.
 
-== Resolve policy decisions before planning
-
 The command checks the specification for unresolved `[NEEDS CLARIFICATION]` markers for policy decisions, such as thresholds, access permissions, retention periods, sensitive-data rules, and approvals. If any remain, it reports them, recommends xref:reference:specify/clarify.adoc[], and stops. Research does not resolve policy decisions.
 
 == Select mechanisms for your Akka SDK version
