@@ -21,9 +21,7 @@ Typical clarification questions address areas such as:
 
 == Resolve open policy decisions
 
-The command reads `Open policy decisions` in the feature's `checklists/requirements.md`. It saves your answers in the specification and links resolved checklist entries to them.
-
-Unanswered decisions survive question limits and later runs. They prevent a readiness claim; explicitly requested exploratory planning retains them and their risks.
+The command records your answers in the specification. If policy-decision markers remain after the question limit, it recommends running `/akka:clarify` again rather than proceeding to `/akka:plan`.
 
 Run this command iteratively until no further clarifications are needed.
 

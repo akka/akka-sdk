@@ -26,7 +26,7 @@ Users can edit their profile and upload a small avatar image.
 
 == Specify agent behavior and protection
 
-For agent features, define:
+For agent features, use the description, existing requirements, policies, and configuration to define the following where they affect scope or acceptance:
 
 * Where checks run, whether they block, transform, or report, and how failures are handled.
 * Whether replies stream or require approval before delivery. Checks after delivery cannot prevent disclosure.
@@ -34,9 +34,11 @@ For agent features, define:
 * Evaluation criteria, sampling, failed-interaction coverage, and follow-up actions.
 * Decision thresholds, uncertainty handling, access permissions, and required evidence.
 
+Do not add controls or a governance workflow merely because a feature uses an agent.
+
 For probabilistic behavior, use an agreed dataset, repeated trials, measurable error limits, and a defined aggregation rule.
 
-Akka Specify uses existing policies and asks you to resolve missing policy decisions rather than guessing. It tracks unanswered decisions in the feature's `checklists/requirements.md`, separately from quality checks and exit conditions. Resolve them with xref:reference:specify/clarify.adoc[] before planning.
+Akka Specify reuses established requirements rather than guessing policy decisions such as thresholds, access permissions, retention periods, sensitive-data rules, or approval requirements. It records missing decisions as `[NEEDS CLARIFICATION: specific question]` markers in the specification. Policy markers do not count toward the limit of three routine clarification markers. Specify asks up to three questions and leaves remaining decisions for xref:reference:specify/clarify.adoc[]. A specification with unresolved policy markers is not ready for planning.
 
 Specify defines observable behavior; xref:reference:specify/plan.adoc[] selects mechanisms for your installed Akka SDK version.
 
