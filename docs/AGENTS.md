@@ -1,4 +1,4 @@
-# Writing Akka SDK documentation
+# Writing Akka Agentic AI Platform documentation
 
 Standards for writing and editing pages under `docs/src`. The migration plan (positioning, target
 structure, page audit, llms.txt generator) lives in `docs-overhaul-spec.md`; the spec takes

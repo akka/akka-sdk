@@ -1,4 +1,4 @@
-# Akka SDK Documentation — Writing Standards
+# Akka Agentic AI Platform Documentation — Writing Standards
 
 These standards govern all documentation prose. Vale enforces the automatable subset
 (`docs/styles/Akka/`); reviewers enforce the rest. They apply to net-new and rewritten

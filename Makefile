@@ -1,4 +1,4 @@
-# Make Akka SDK for Java documentation
+# Make Akka Agentic AI Platform documentation
 SHELL_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 ROOT_DIR := ${SHELL_DIR}
 TARGET_DIR := ${ROOT_DIR}/target/site

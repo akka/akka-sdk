@@ -21,8 +21,6 @@ The Akka runtime enforces governance while it executes each agent interaction, s
 
 The ledger records every agent interaction with its model calls, tool calls, token usage, and outcome. The new xref:sdk:evaluators.adoc[Evaluator] component assesses the interactions of the agents that you bind it to. The runtime runs an evaluator in the background after each interaction and records the verdict in the ledger.
 
-This functionality evolves quickly, the behavior and APIs might change between releases without further notice.
-
 ****
 
 * Akka CLI 3.0.78
@@ -31,7 +29,7 @@ This functionality evolves quickly, the behavior and APIs might change between r
 - Service components watermark and check-progress commands 
 - Akka Specify improvements
 
-* https://github.com/akka/akka-sdk/releases/tag/v3.7.0[Akka SDK 3.7.0]
+* [[sdk-3-7-0]]https://github.com/akka/akka-sdk/releases/tag/v3.7.0[Akka SDK 3.7.0]
 - Runtime 1.7.2
 - Guardrails for model calls, agent responses, function tool calls, and MCP tool calls.
 - Classifiers
@@ -68,7 +66,7 @@ This functionality evolves quickly, the behavior and APIs might change between r
 - Routes apply command added
 - Akka model and akka optimize support added
 
-* https://github.com/akka/akka-sdk/releases/tag/v3.6.6[Akka SDK 3.6.6]
+* [[sdk-3-6-6]]https://github.com/akka/akka-sdk/releases/tag/v3.6.6[Akka SDK 3.6.6]
 - Runtime 1.6.17
 - EvalKit in the TestKit for evaluation tests of agents, see xref:testing:evaluation/getting-started.adoc[Getting started with evaluation]
 - Additional model request headers can be set from code on a model provider
