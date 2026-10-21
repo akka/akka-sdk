@@ -1,6 +1,21 @@
 {
   "schemaVersion": 1,
-  "sdk": { "releases": [] },
-  "runtime": { "releases": [] },
-  "cli": { "releases": [] }
+  "sdk": {
+    "releases": [
+      {
+        "version": "3.7.0",
+        "releasedAt": "2026-10-16T12:00:46Z",
+        "releaseNotesUrl": "https://doc.akka.io/reference/release-notes.html#sdk-3-7-0",
+        "requiredRuntime": "1.7.2",
+        "protocolVersion": "1.1",
+        "notifyAt": "2026-10-16T12:00:46Z"
+      }
+    ]
+  },
+  "runtime": {
+    "releases": []
+  },
+  "cli": {
+    "releases": []
+  }
 }
