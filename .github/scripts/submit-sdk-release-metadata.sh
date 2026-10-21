@@ -25,9 +25,9 @@ protocol_version=$(sed -nE 's|.*<akka-protocol.version>([^<]+)</akka-protocol.ve
 [[ $required_runtime =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9]+([.-][A-Za-z0-9]+)*)?$ && ! $required_runtime =~ [Ss][Nn][Aa][Pp][Ss][Hh][Oo][Tt] ]] || { echo 'Invalid Runtime version in generated parent POM' >&2; exit 1; }
 [[ $protocol_version =~ ^[0-9]+\.[0-9]+$ ]] || { echo 'Invalid protocol version in generated parent POM' >&2; exit 1; }
 
-# The public notes and their version anchor can be published after the release.
+# Submit a URL only when one has been designated; notes can be added later.
 gh workflow run update-release-metadata.yml --repo "$GITHUB_REPOSITORY" --ref main \
   -f component=sdk -f version="$version" -f released_at="$released_at" \
   -f prerelease=false \
-  -f release_notes_url="https://doc.akka.io/reference/release-notes.html#sdk-${version//./-}" \
+  -f release_notes_url="${RELEASE_NOTES_URL:-}" \
   -f required_runtime="$required_runtime" -f protocol_version="$protocol_version"

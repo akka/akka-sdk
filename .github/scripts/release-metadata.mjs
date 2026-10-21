@@ -17,22 +17,28 @@ function validateDate(value) {
 function validateRelease(component, release) {
   check(components.includes(component), 'Unknown component');
   check(release && typeof release === 'object' && !Array.isArray(release), 'Missing release');
-  check(versionPattern.test(release.version) && !release.version.includes('-'), 'Expected a stable numeric version without a tag prefix');
-  check(!('channel' in release || 'releases' in release || 'latestStable' in release), 'Expected one release object per component');
+  check(typeof release.version === 'string' && versionPattern.test(release.version) && !release.version.includes('-'), 'Expected a stable numeric version without a tag prefix');
+  check(!('channel' in release || 'releases' in release || 'latestStable' in release), 'Unexpected release entry field');
   validateDate(release.releasedAt);
-  check(typeof release.releaseNotesUrl === 'string' && /^https:\/\/doc\.akka\.io\/[^\s]+$/.test(release.releaseNotesUrl), 'Release notes must use https://doc.akka.io/');
-  const url = new URL(release.releaseNotesUrl);
-  check(!url.username && !url.password && !url.port, 'Invalid release-notes URL');
+  check(typeof release.releaseNotesUrl === 'string', 'Release notes URL must be a string');
+  if (release.releaseNotesUrl !== '') {
+    check(/^https:\/\/doc\.akka\.io\/[^\s]+$/.test(release.releaseNotesUrl), 'Release notes must use https://doc.akka.io/');
+    const url = new URL(release.releaseNotesUrl);
+    check(!url.username && !url.password && !url.port, 'Invalid release-notes URL');
+  }
   if (component === 'sdk') {
     check(typeof release.requiredRuntime === 'string' && versionPattern.test(release.requiredRuntime) && !/snapshot/i.test(release.requiredRuntime), 'SDK required Runtime must be a release version');
-    check(protocolPattern.test(release.protocolVersion), 'SDK protocol must be major.minor');
+    check(typeof release.protocolVersion === 'string' && protocolPattern.test(release.protocolVersion), 'SDK protocol must be major.minor');
     check(release.supportedProtocol === undefined, 'SDK cannot set Runtime protocol range');
+    validateDate(release.notifyAt);
+    check(Date.parse(release.notifyAt) >= Date.parse(release.releasedAt), 'SDK notifyAt cannot precede releasedAt');
   } else {
     check(release.requiredRuntime === undefined && release.protocolVersion === undefined, 'Only SDK releases can set SDK compatibility fields');
+    check(release.notifyAt === undefined, 'Only SDK releases can set notifyAt');
   }
   if (component === 'runtime') {
     const { minimum, maximum } = release.supportedProtocol ?? {};
-    check(protocolPattern.test(minimum) && protocolPattern.test(maximum), 'Runtime protocol range must be major.minor');
+    check(typeof minimum === 'string' && typeof maximum === 'string' && protocolPattern.test(minimum) && protocolPattern.test(maximum), 'Runtime protocol range must be major.minor');
     const [minMajor, minMinor] = minimum.split('.').map(BigInt);
     const [maxMajor, maxMinor] = maximum.split('.').map(BigInt);
     check(minMajor === maxMajor && minMinor <= maxMinor, 'Invalid Runtime protocol range');
@@ -49,12 +55,18 @@ export function releaseFromEnvironment(env) {
   const component = env.COMPONENT;
   const release = {
     version: env.VERSION, releasedAt: env.RELEASED_AT,
-    releaseNotesUrl: env.RELEASE_NOTES_URL,
+    releaseNotesUrl: env.RELEASE_NOTES_URL ?? '',
   };
   if (component === 'sdk') {
     check(!env.MINIMUM_PROTOCOL && !env.MAXIMUM_PROTOCOL, 'SDK cannot set Runtime protocol range');
     release.requiredRuntime = env.REQUIRED_RUNTIME;
     release.protocolVersion = env.PROTOCOL_VERSION;
+    validateDate(release.releasedAt);
+    const delay = env.NOTIFY_DELAY_DAYS || '10';
+    check(/^\d+$/.test(delay) && Number.isSafeInteger(Number(delay)), 'SDK notification delay must be a non-negative whole number of days');
+    const notifyAt = new Date(Date.parse(release.releasedAt) + Number(delay) * 86400000);
+    check(Number.isFinite(notifyAt.valueOf()), 'SDK notification delay is out of range');
+    release.notifyAt = notifyAt.toISOString().replace('.000Z', 'Z');
   } else {
     check(!env.REQUIRED_RUNTIME && !env.PROTOCOL_VERSION, 'Only SDK releases can set SDK compatibility fields');
     if (component === 'runtime') {
@@ -77,22 +89,45 @@ export function compareVersions(left, right) {
 
 export function validateCatalog(catalog) {
   check(catalog?.schemaVersion === 1, 'Unsupported schema version');
-  if (catalog.generatedAt !== null) validateDate(catalog.generatedAt);
   for (const component of components) {
-    // Null represents a component whose first real release has not been submitted.
-    if (catalog[component] !== null) validateRelease(component, catalog[component]);
+    const releases = catalog[component]?.releases;
+    check(Array.isArray(releases), `Expected ${component}.releases array`);
+    const versions = new Set();
+    for (const release of releases) {
+      validateRelease(component, release);
+      check(!versions.has(release.version), `Duplicate ${component} version ${release.version}`);
+      versions.add(release.version);
+    }
+    for (let i = 1; i < releases.length; i++) {
+      check(compareVersions(releases[i - 1].version, releases[i].version) > 0, `${component} releases must be ordered newest first`);
+    }
   }
 }
 
-export function updateCatalog(catalog, component, release, now = new Date()) {
+export function updateCatalog(catalog, component, release) {
   validateCatalog(catalog);
   validateRelease(component, release);
-  if (catalog[component] && compareVersions(release.version, catalog[component].version) < 0) return catalog;
-  if (isDeepStrictEqual(catalog[component], release)) return catalog;
+  if (component === 'sdk') {
+    const previous = catalog.sdk.releases.find(item => compareVersions(item.version, release.version) < 0);
+    // Compare against the preceding SDK version, including out-of-order submissions.
+    // Zero delay remains a timestamp so consumers use the same eligibility rule.
+    if (previous?.requiredRuntime === release.requiredRuntime) {
+      release = { ...release, notifyAt: release.releasedAt };
+    }
+  }
+  const existing = catalog[component].releases.find(item => item.version === release.version);
+  // A repeat release submission without notes must not erase a designated URL.
+  if (existing?.releaseNotesUrl && release.releaseNotesUrl === '') {
+    release = { ...release, releaseNotesUrl: existing.releaseNotesUrl };
+  }
+  if (isDeepStrictEqual(existing, release)) return catalog;
+  const releases = catalog[component].releases
+    .filter(item => item.version !== release.version)
+    .concat(structuredClone(release))
+    .sort((a, b) => compareVersions(b.version, a.version));
   const updated = {
     ...catalog,
-    [component]: structuredClone(release),
-    generatedAt: now.toISOString().replace(/\.\d{3}Z$/, 'Z'),
+    [component]: { ...catalog[component], releases },
   };
   validateCatalog(updated);
   return updated;

@@ -1,7 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": null,
-  "sdk": null,
-  "runtime": null,
-  "cli": null
+  "sdk": { "releases": [] },
+  "runtime": { "releases": [] },
+  "cli": { "releases": [] }
 }

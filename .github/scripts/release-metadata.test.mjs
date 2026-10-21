@@ -8,19 +8,18 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { compareVersions, releaseFromEnvironment, updateCatalog, validateCatalog } from './release-metadata.mjs';
 
-const empty = () => ({ schemaVersion: 1, generatedAt: null, sdk: null, runtime: null, cli: null });
-const now = new Date('2026-10-20T12:00:00Z');
+const empty = () => ({ schemaVersion: 1, sdk: { releases: [] }, runtime: { releases: [] }, cli: { releases: [] } });
 const sdk = {
-  version: '3.7.0', releasedAt: '2026-10-16T12:00:46Z',
+  version: '3.7.0', releasedAt: '2026-10-16T12:00:46Z', notifyAt: '2026-10-26T12:00:46Z',
   releaseNotesUrl: 'https://doc.akka.io/reference/release-notes.html#sdk-3-7-0',
   requiredRuntime: '1.7.2', protocolVersion: '1.1',
 };
 const environment = {
   COMPONENT: 'sdk', VERSION: sdk.version, RELEASED_AT: sdk.releasedAt,
   RELEASE_NOTES_URL: sdk.releaseNotesUrl, REQUIRED_RUNTIME: sdk.requiredRuntime,
-  PROTOCOL_VERSION: sdk.protocolVersion, PRERELEASE: 'false',
+  PROTOCOL_VERSION: sdk.protocolVersion, PRERELEASE: 'false', NOTIFY_DELAY_DAYS: '',
 };
-const add = (catalog, release = sdk) => updateCatalog(catalog, 'sdk', release, now);
+const add = (catalog, release = sdk) => updateCatalog(catalog, 'sdk', release);
 
 test('compares numeric versions including four-part CLI releases', () => {
   for (const [a, b] of [['3.7.0', '3.6.99'], ['3.0.49.1', '3.0.49'], ['3.0.100', '3.0.99']]) {
@@ -30,28 +29,76 @@ test('compares numeric versions including four-part CLI releases', () => {
   }
 });
 
-test('replaces one component, preserving other producers and ignoring downgrades and duplicates', () => {
+test('retains sorted history, preserves other components, and corrects the same version', () => {
   const original = { ...empty(), platform: { version: '2026.42.1' } };
   const catalog = add(original);
-  assert.equal(original.sdk, null);
-  assert.deepEqual(catalog.sdk, sdk);
+  assert.deepEqual(original.sdk.releases, []);
+  assert.deepEqual(catalog.sdk.releases, [sdk]);
   assert.deepEqual(catalog.platform, original.platform);
-  assert.equal(catalog.generatedAt, '2026-10-20T12:00:00Z');
   assert.equal(add(catalog), catalog);
-  assert.equal(add(catalog, { ...sdk, version: '3.6.99' }), catalog);
-  const runtime = updateCatalog(catalog, 'runtime', {
+  const newer = add(catalog, { ...sdk, version: '3.7.1' });
+  const historical = add(newer, { ...sdk, version: '3.6.99' });
+  assert.deepEqual(historical.sdk.releases.map(r => r.version), ['3.7.1', '3.7.0', '3.6.99']);
+  const runtime = updateCatalog(historical, 'runtime', {
     version: '1.7.2', releasedAt: sdk.releasedAt, releaseNotesUrl: sdk.releaseNotesUrl,
     supportedProtocol: { minimum: '1.0', maximum: '1.2' },
-  }, now);
-  assert.deepEqual(runtime.sdk, sdk);
+  });
+  assert.deepEqual(runtime.sdk, historical.sdk);
   const corrected = add(runtime, { ...sdk, releaseNotesUrl: `${sdk.releaseNotesUrl}-corrected` });
-  assert.ok(corrected.sdk.releaseNotesUrl.endsWith('-corrected'));
+  assert.ok(corrected.sdk.releases[1].releaseNotesUrl.endsWith('-corrected'));
+  assert.equal(corrected.sdk.releases.length, 3);
   assert.deepEqual(corrected.runtime, runtime.runtime);
   const cli = updateCatalog(corrected, 'cli', {
     version: '3.0.49.1', releasedAt: sdk.releasedAt, releaseNotesUrl: sdk.releaseNotesUrl,
-  }, now);
+  });
   assert.deepEqual(cli.sdk, corrected.sdk);
-  assert.equal(cli.cli.version, '3.0.49.1');
+  assert.equal(cli.cli.releases[0].version, '3.0.49.1');
+});
+
+test('weekly SDK releases remain eligible after their delay and zero-day corrections take effect', () => {
+  let catalog = empty();
+  for (const [version, date, runtime] of [['3.7.0', '01', '1.7.1'], ['3.7.1', '08', '1.7.2'], ['3.7.2', '15', '1.7.3']]) {
+    const { release } = releaseFromEnvironment({ ...environment, VERSION: version, REQUIRED_RUNTIME: runtime, RELEASED_AT: `2026-10-${date}T12:00:00Z` });
+    catalog = add(catalog, release);
+  }
+  const eligible = date => catalog.sdk.releases.find(r => r.notifyAt <= date)?.version;
+  assert.equal(eligible('2026-10-21T12:00:00Z'), '3.7.1');
+  assert.equal(eligible('2026-10-25T11:59:59Z'), '3.7.1');
+  assert.equal(eligible('2026-10-25T12:00:00Z'), '3.7.2');
+  const { release } = releaseFromEnvironment({ ...environment, VERSION: '3.7.2', REQUIRED_RUNTIME: '1.7.3', RELEASED_AT: '2026-10-15T12:00:00Z', NOTIFY_DELAY_DAYS: '0' });
+  assert.equal(release.notifyAt, release.releasedAt);
+  catalog = add(catalog, release);
+  assert.equal(catalog.sdk.releases.length, 3);
+  assert.equal(eligible('2026-10-21T12:00:00Z'), '3.7.2');
+});
+
+test('unchanged Runtime requirements skip the delay without changing incoming metadata', () => {
+  const first = add(empty());
+  assert.equal(first.sdk.releases[0].notifyAt, sdk.notifyAt);
+  const next = { ...sdk, version: '3.7.1' };
+  const immediate = add(first, next);
+  assert.equal(immediate.sdk.releases[0].notifyAt, next.releasedAt);
+  assert.equal(next.notifyAt, sdk.notifyAt);
+  assert.equal(add(immediate, next), immediate);
+  const changed = { ...sdk, version: '3.7.2', requiredRuntime: '1.7.3' };
+  const delayed = add(immediate, changed);
+  assert.equal(delayed.sdk.releases[0].notifyAt, changed.notifyAt);
+  // A historical release uses its predecessor rather than the newest SDK entry.
+  const historical = add(delayed, { ...sdk, version: '3.7.0.1' });
+  assert.equal(historical.sdk.releases[2].notifyAt, sdk.releasedAt);
+});
+
+test('only SDK entries receive notifyAt and delay inputs are validated', () => {
+  assert.equal(releaseFromEnvironment(environment).release.notifyAt, sdk.notifyAt);
+  for (const delay of ['-1', '1.5', 'NaN', 'Infinity', '999999999999999999999999']) {
+    assert.throws(() => releaseFromEnvironment({ ...environment, NOTIFY_DELAY_DAYS: delay }), /delay/);
+  }
+  const cli = releaseFromEnvironment({ ...environment, COMPONENT: 'cli', REQUIRED_RUNTIME: '', PROTOCOL_VERSION: '' });
+  assert.equal(cli.release.notifyAt, undefined);
+  const runtime = releaseFromEnvironment({ ...environment, COMPONENT: 'runtime', REQUIRED_RUNTIME: '', PROTOCOL_VERSION: '', MINIMUM_PROTOCOL: '1.0', MAXIMUM_PROTOCOL: '1.2' });
+  assert.equal(runtime.release.notifyAt, undefined);
+  assert.throws(() => updateCatalog(empty(), 'cli', { ...cli.release, notifyAt: sdk.notifyAt }), /Only SDK/);
+  assert.throws(() => add(empty(), { ...sdk, notifyAt: sdk.releasedAt.replace('2026', '2025') }), /precede/);
 });
 
 test('ignores prerelease flags, qualifiers, and snapshots', () => {
@@ -75,12 +122,36 @@ test('validates dates, public URLs and component-specific compatibility fields',
   }));
 });
 
-test('rejects unsupported schemas, missing components, and the old array format', () => {
+test('release notes can be supplied later without a blank resubmission erasing them', () => {
+  for (const url of ['', undefined]) {
+    const { release } = releaseFromEnvironment({ ...environment, RELEASE_NOTES_URL: url });
+    assert.equal(release.releaseNotesUrl, '');
+    const initial = add(empty(), release);
+    validateCatalog(initial);
+    const designated = add(initial, sdk);
+    assert.equal(designated.sdk.releases[0].releaseNotesUrl, sdk.releaseNotesUrl);
+    assert.equal(add(designated, release), designated);
+  }
+  const cli = releaseFromEnvironment({ ...environment, COMPONENT: 'cli', REQUIRED_RUNTIME: '', PROTOCOL_VERSION: '', RELEASE_NOTES_URL: '' });
+  validateCatalog(updateCatalog(empty(), 'cli', cli.release));
+  const runtime = releaseFromEnvironment({ ...environment, COMPONENT: 'runtime', REQUIRED_RUNTIME: '', PROTOCOL_VERSION: '', MINIMUM_PROTOCOL: '1.0', MAXIMUM_PROTOCOL: '1.2', RELEASE_NOTES_URL: '' });
+  validateCatalog(updateCatalog(empty(), 'runtime', runtime.release));
+  assert.throws(() => add(empty(), { ...sdk, releaseNotesUrl: null }), /string/);
+  assert.throws(() => add(empty(), { ...sdk, releaseNotesUrl: ' ' }), /https/);
+});
+
+test('validates release lists, rejects duplicate versions and requires SDK notifyAt', () => {
   validateCatalog(empty());
   assert.throws(() => validateCatalog({ ...empty(), schemaVersion: 2 }), /schema/);
-  assert.throws(() => validateCatalog({ ...empty(), cli: undefined }), /Missing release/);
-  assert.throws(() => validateCatalog({ ...empty(), sdk: { latestStable: sdk.version, releases: [sdk] } }));
-  assert.throws(() => add(empty(), { ...sdk, channel: 'stable' }), /one release/);
+  assert.throws(() => validateCatalog({ ...empty(), cli: undefined }), /array/);
+  assert.throws(() => validateCatalog({ ...empty(), sdk }), /array/);
+  assert.throws(() => validateCatalog({ ...empty(), sdk: { releases: [sdk, sdk] } }), /Duplicate/);
+  assert.throws(() => validateCatalog({ ...empty(), sdk: { releases: [sdk, { ...sdk, version: '3.7.1' }] } }), /newest first/);
+  const { notifyAt, ...withoutNotification } = sdk;
+  assert.throws(() => add(empty(), withoutNotification), /timestamp/);
+  assert.throws(() => add(empty(), { ...sdk, version: [sdk.version] }), /version/);
+  assert.throws(() => add(empty(), { ...sdk, protocolVersion: [sdk.protocolVersion] }), /protocol/);
+  assert.throws(() => add(empty(), { ...sdk, channel: 'stable' }), /Unexpected/);
 });
 
 test('command updates and validates files and preserves them on ignored or invalid input', () => {
@@ -94,15 +165,17 @@ test('command updates and validates files and preserves them on ignored or inval
     writeFileSync(path, JSON.stringify(empty()));
     const first = run();
     assert.equal(first.status, 0, first.stderr);
-    assert.deepEqual(JSON.parse(readFileSync(path)).sdk, sdk);
+    assert.deepEqual(JSON.parse(readFileSync(path)).sdk.releases, [sdk]);
     assert.equal(run(['--validate', path]).status, 0);
     const before = readFileSync(path, 'utf8');
-    for (const change of [{}, { VERSION: '3.6.99' }, { VERSION: '3.8.0-RC1' }, { PRERELEASE: 'true' }]) {
+    for (const change of [{}, { VERSION: '3.8.0-RC1' }, { PRERELEASE: 'true' }]) {
       assert.equal(run([path], change).status, 0);
       assert.equal(readFileSync(path, 'utf8'), before);
     }
     assert.notEqual(run([path], { RELEASED_AT: 'invalid' }).status, 0);
     assert.equal(readFileSync(path, 'utf8'), before);
+    assert.equal(run([path], { VERSION: '3.6.99' }).status, 0);
+    assert.deepEqual(JSON.parse(readFileSync(path)).sdk.releases.map(r => r.version), ['3.7.0', '3.6.99']);
     writeFileSync(path, '{invalid');
     assert.notEqual(run().status, 0);
     assert.equal(readFileSync(path, 'utf8'), '{invalid');
@@ -131,6 +204,7 @@ if (args[0] === 'api') {
   const env = {
     ...process.env, PATH: `${temporary}:${process.env.PATH}`, GH_CALLS: calls,
     GITHUB_REF_TYPE: 'tag', GITHUB_REF_NAME: 'v3.7.0', GITHUB_REPOSITORY: 'akka/akka-sdk',
+    RELEASE_NOTES_URL: '',
     RELEASE_JSON: JSON.stringify(release), FAIL_API: '', FAIL_DISPATCH: '',
   };
   const run = (extra = {}) => {
@@ -146,9 +220,12 @@ if (args[0] === 'api') {
     assert.deepEqual(result.calls[1], [
       'workflow', 'run', 'update-release-metadata.yml', '--repo', 'akka/akka-sdk', '--ref', 'main',
       '-f', 'component=sdk', '-f', 'version=3.7.0', '-f', `released_at=${sdk.releasedAt}`,
-      '-f', 'prerelease=false', '-f', `release_notes_url=${sdk.releaseNotesUrl}`,
+      '-f', 'prerelease=false', '-f', 'release_notes_url=',
       '-f', 'required_runtime=1.7.2', '-f', 'protocol_version=1.1',
     ]);
+    const withNotes = run({ RELEASE_NOTES_URL: sdk.releaseNotesUrl });
+    assert.equal(withNotes.status, 0, withNotes.stderr);
+    assert.ok(withNotes.calls[1].includes(`release_notes_url=${sdk.releaseNotesUrl}`));
     for (const extra of [{ GITHUB_REF_TYPE: 'branch' }, { GITHUB_REF_NAME: 'v3.8.0-RC1' }, { GITHUB_REF_NAME: 'v3.8.0-SNAPSHOT' }]) {
       const skipped = run(extra);
       assert.equal(skipped.status, 0);

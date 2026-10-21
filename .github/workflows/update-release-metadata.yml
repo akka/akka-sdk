@@ -23,20 +23,23 @@ on:
         type: boolean
         default: false
       release_notes_url:
-        description: Intended public doc.akka.io release-notes URL (need not exist yet)
-        required: true
+        description: Optional designated doc.akka.io release-notes URL (may be added later)
         type: string
+      notify_delay_days:
+        description: 'SDK only: days after release before notifying (0 for immediate eligibility)'
+        type: number
+        default: 10
       required_runtime:
-        description: SDK only — expected Runtime version
+        description: 'SDK only: expected Runtime version'
         type: string
       protocol_version:
-        description: SDK only — protocol major.minor
+        description: 'SDK only: protocol major.minor'
         type: string
       minimum_protocol:
-        description: Runtime only — minimum supported protocol major.minor
+        description: 'Runtime only: minimum supported protocol major.minor'
         type: string
       maximum_protocol:
-        description: Runtime only — maximum supported protocol major.minor
+        description: 'Runtime only: maximum supported protocol major.minor'
         type: string
 
 permissions:
@@ -65,6 +68,7 @@ jobs:
           RELEASED_AT: ${{ inputs.released_at }}
           PRERELEASE: ${{ inputs.prerelease }}
           RELEASE_NOTES_URL: ${{ inputs.release_notes_url }}
+          NOTIFY_DELAY_DAYS: ${{ inputs.notify_delay_days }}
           REQUIRED_RUNTIME: ${{ inputs.required_runtime }}
           PROTOCOL_VERSION: ${{ inputs.protocol_version }}
           MINIMUM_PROTOCOL: ${{ inputs.minimum_protocol }}

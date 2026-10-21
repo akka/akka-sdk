@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - 'docs-current'
-    paths-ignore:
-      - 'release-metadata/**'
 
 permissions:
   contents: read
