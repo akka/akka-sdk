@@ -5,12 +5,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths:
-      - release-metadata/versions.json
-      - .github/scripts/publish-release-metadata.sh
-      - .github/scripts/update-release-metadata.mjs
-      - .github/scripts/release-metadata.mjs
-      - .github/workflows/publish-release-metadata.yml
+    paths: [release-metadata/versions.json]
 
 permissions:
   contents: read

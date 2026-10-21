@@ -2,9 +2,6 @@
 # Workflow and pull request behavior: release-metadata/README.md
 set -euo pipefail
 
-[[ ${GITHUB_ACTIONS:-} == true ]] || { echo 'Run this script only in the disposable Actions checkout' >&2; exit 1; }
-[[ -z $(git status --porcelain) ]] || { echo 'Expected a clean checkout' >&2; exit 1; }
-
 catalog=release-metadata/versions.json
 branch="automation/release-metadata-${GITHUB_RUN_ID:?}-${GITHUB_RUN_ATTEMPT:?}"
 git config user.name 'github-actions[bot]'

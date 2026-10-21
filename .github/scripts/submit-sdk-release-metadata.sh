@@ -14,7 +14,6 @@ if jq -e '.draft == true or .prerelease == true' <<< "$release" >/dev/null; then
   echo 'Skipping draft or prerelease metadata'
   exit 0
 fi
-jq -e --arg tag "$tag" '.tag_name == $tag' <<< "$release" >/dev/null
 released_at=$(jq -er '.published_at' <<< "$release")
 
 # publishM2 has installed this exact release's generated parent, including the
@@ -28,6 +27,5 @@ protocol_version=$(sed -nE 's|.*<akka-protocol.version>([^<]+)</akka-protocol.ve
 # Blank input preserves an existing URL or uses the catalog's public page default.
 gh workflow run update-release-metadata.yml --repo "$GITHUB_REPOSITORY" --ref main \
   -f component=sdk -f version="$version" -f released_at="$released_at" \
-  -f prerelease=false \
   -f release_notes_url="${RELEASE_NOTES_URL:-}" \
   -f required_runtime="$required_runtime" -f protocol_version="$protocol_version"

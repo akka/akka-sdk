@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Usage and release metadata contract: release-metadata/README.md
-import { readFile, mkdtemp, writeFile, rename, rm } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { readFile, writeFile } from 'node:fs/promises';
+import { isDeepStrictEqual } from 'node:util';
 import { releaseFromEnvironment, updateCatalog, validateCatalog } from './release-metadata.mjs';
 
 async function main() {
@@ -12,30 +12,18 @@ async function main() {
   const path = args[0] ?? 'release-metadata/versions.json';
   const catalog = JSON.parse(await readFile(path, 'utf8'));
   validateCatalog(catalog);
-  const submission = validateOnly ? null : releaseFromEnvironment(process.env, catalog);
-  if (!validateOnly && !submission) {
-    console.log('Ignoring prerelease or snapshot');
-    return;
-  }
   if (validateOnly) {
     console.log('Catalog valid');
     return;
   }
-  const updated = updateCatalog(catalog, submission.component, submission.release);
-  if (updated === catalog) {
+  const { component, release } = releaseFromEnvironment(process.env, catalog);
+  const updated = updateCatalog(catalog, component, release);
+  if (isDeepStrictEqual(updated, catalog)) {
     console.log('Metadata unchanged');
     return;
   }
-  // Rename within the same directory so readers never see a partial JSON file.
-  const temporary = await mkdtemp(join(dirname(path), '.release-metadata-'));
-  try {
-    const staged = join(temporary, 'versions.json');
-    await writeFile(staged, `${JSON.stringify(updated, null, 2)}\n`);
-    await rename(staged, path);
-  } finally {
-    await rm(temporary, { recursive: true, force: true });
-  }
-  console.log(`Updated ${submission.component} metadata for ${submission.release.version}`);
+  await writeFile(path, `${JSON.stringify(updated, null, 2)}\n`);
+  console.log(`Updated ${component} metadata for ${release.version}`);
 }
 
 main().catch(error => {

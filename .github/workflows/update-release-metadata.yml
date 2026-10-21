@@ -17,10 +17,6 @@ on:
       released_at:
         description: GitHub Release published_at (required for new releases, preserved when omitted)
         type: string
-      prerelease:
-        description: GitHub Release prerelease flag (ignored when true)
-        type: boolean
-        default: false
       release_notes_url:
         description: Optional URL; omitted values preserve an existing URL or use the public release-notes page
         type: string
@@ -64,7 +60,6 @@ jobs:
           COMPONENT: ${{ inputs.component }}
           VERSION: ${{ inputs.version }}
           RELEASED_AT: ${{ inputs.released_at }}
-          PRERELEASE: ${{ inputs.prerelease }}
           RELEASE_NOTES_URL: ${{ inputs.release_notes_url }}
           NOTIFY_DELAY_DAYS: ${{ inputs.notify_delay_days }}
           REQUIRED_RUNTIME: ${{ inputs.required_runtime }}
