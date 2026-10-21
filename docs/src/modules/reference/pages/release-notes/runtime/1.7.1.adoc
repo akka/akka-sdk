@@ -7,7 +7,7 @@ Released 2026-10-15.
 
 == Governance features
 
-The governance features evolves quickly, the behavior and APIs might change between releases without further notice. See xref:concepts:governance-and-the-runtime.adoc[].
+See xref:concepts:governance-and-the-runtime.adoc[].
 
 * Ledger: the runtime records agent interactions, tool calls, guardrail decisions, classifications, evaluations, and the control configuration. Each record includes the SPIFFE id, the trace id, and the span id. The xref:sdk:evaluators.adoc#_the_ledger_client[ledger client] fetches the records. The runtime writes the ledger in local development and tests. For a deployed service, the ledger is off by default.
 * Guardrails: the runtime evaluates xref:sdk:agents/guardrails.adoc[guardrails] before each model call, on the final reply of the agent, and before a function tool call. A guardrail receives multimodal content. The runtime also evaluates the guardrails for autonomous agents.
