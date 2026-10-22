@@ -65,12 +65,12 @@ A period can be divided into rows, and the rows always add up to the total:
 
 * by _model_, one row for each served name,
 * by _use case_, the use case that the router assigned, which is the same use case that targeting ranks and the trainer specializes for,
-* by _model and use case_ together,
-* by _system id_, with one row, `unidentified`, for traffic that named none.
+* by _system id_, with one row, `unidentified`, for traffic that named none,
+* by _route_, how the gateway router reached the destination, with each revision of a routing ruleset as a row of its own.
 
-A system id names the AI system that a request was sent for, in the `x-akka-system-id` header. The system id combines with the other divisions. See xref:inference:tracking-spend.adoc#systems[Attribute spend to systems].
+The divisions combine, for example model and use case together. A system id names the AI system that a request was sent for, in the `x-akka-system-id` header. See xref:inference:tracking-spend.adoc#systems[Attribute spend to systems].
 
-Conversations are ranked by spend rather than divided, so the most expensive conversations of a period can be found. That ranking does not add up to the period total. Two periods can be compared, and a difference has a value only when both periods have one in the same currency.
+Conversations are ranked by spend rather than divided, so the most expensive conversations of a period can be found. That ranking does not add up to the period total. Two periods can be compared, and a difference has a value only when both periods have one in the same currency. A period can also be read as a series of hours or days, each answered as a period of its own. The most recent exchanges can be listed one by one, each with its system id, outcome, tokens and spend.
 
 == Guarantees
 

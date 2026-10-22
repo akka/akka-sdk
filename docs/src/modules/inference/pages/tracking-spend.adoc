@@ -293,6 +293,8 @@ finetune-model  12         285+    0.0000615000000000 USD  0         0
 TOTAL           81         1860+   0.0256365000000000 USD  0         0
 ----
 
+A `+` after a token count marks a lower bound: some exchanges did not report every token class, so the true count can be higher. This is common, because providers do not report every class. For example, OpenAI responses report cache-write tokens only for the models that charge for them, GPT-5.6 and later, and Anthropic responses do not report reasoning tokens. The command prints a note that names the classes that were not reported.
+
 [cols="1,3", options="header"]
 |===
 | `--by`
@@ -302,16 +304,67 @@ TOTAL           81         1860+   0.0256365000000000 USD  0         0
 | Served name.
 
 | `useCase`
-| Use case that the gateway router assigned. See xref:inference:routing.adoc[Routing requests to models].
-
-| `model,useCase`
-| Combination of the two.
+| Use case that the gateway router assigned. A row shows the label of the use case, or its id when it has no label. See xref:inference:routing.adoc[Routing requests to models].
 
 | `system`
 | System id that the request named, and one row, `unidentified`, for traffic that named none. See <<systems>>.
+
+| `route`
+| Route that the gateway router took to the destination of the exchange.
+
+| A comma-separated list, such as `model,useCase` or `system,route`
+| Combination of the listed divisions.
 |===
 
-A `+` after a token count marks a lower bound: some exchanges did not report every token class, so the true count can be higher. This is common, because providers do not report every class. For example, OpenAI responses report cache-write tokens only for the models that charge for them, GPT-5.6 and later, and Anthropic responses do not report reasoning tokens. The command prints a note that names the classes that were not reported.
+A route holds how the gateway router reached the destination of an exchange: the basis, the routing ruleset and its revision, the rule, and the destination. Each revision of a ruleset is a row of its own, so a period that spans a ruleset change shows the spend of each revision. See xref:inference:routing.adoc[Routing requests to models].
+
+[source,shell]
+----
+akka optimize spend get --from 2026-09-15T00:00:00Z --to 2026-09-16T00:00:00Z --by useCase,route
+----
+
+[source,text]
+----
+USE-CASE         ROUTE                                 EXCHANGES  TOKENS  SPEND       UNPRICED  UNPRICED TOKENS
+support triage   rule optimize@7 summarise → frontier  2140       51200+  0.6400 USD  0         0
+—                none                                  310        7400+   0.0930 USD  0         0
+—                unknown                               120        2900+   0.0310 USD  0         0
+billing reports  manifest → finetune-billing           980        22100+  0.0210 USD  0         0
+support triage   rule optimize@8 summarise → finetune  610        14800+  0.0120 USD  0         0
+TOTAL                                                  4160       98400+  0.7970 USD  0         0
+----
+
+A route reads as its basis, then `ruleset@revision` and the rule where the route has them, then `→` and the destination where it has one. The basis is one of these:
+
+[cols="1,3", options="header"]
+|===
+| Basis
+| How the gateway router reached the destination
+
+| `rule`
+| A rule chose the destination, with or without a classifier.
+
+| `fallback`
+| The classifier of a rule failed, and the fallback of the rule chose the destination.
+
+| `default`
+| No rule in the ruleset matched, and the default destination of the ruleset applied.
+
+| `manifest`
+| No rule matched, and the use case manifest chose the destination.
+
+| `denied`
+| A rule refused the request. There is no destination.
+
+| `failed`
+| The ruleset could not run.
+
+| `none`
+| No routing ruleset ran.
+
+| `unknown`
+| The record of the exchange does not state the route.
+|===
 
 [#systems]
 === Attribute spend to systems
@@ -368,7 +421,7 @@ svc-search   88100  2026-08-30T14:00:00Z  2026-09-16T00:00:00Z
 svc-support  96400  2026-05-11T08:00:00Z  2026-09-16T00:00:00Z
 ----
 
-Each row states how many exchanges named the system id, and the first and the last UTC hour in which one did. These are whole hours, not instants.
+Each row states how many exchanges named the system id, and the first and the last UTC hour in which one did. These are whole hours, not instants. To list the last exchanges of a system id, run `akka optimize spend recent --system ID`. See <<recent>>.
 
 Nothing vouches for a system id: a client sends the value it chooses, unless your deployment overwrites the header at its own edge. The service keeps every system id that it sees, and nothing deletes one. Use the name of a system as the system id, never personal data.
 
@@ -397,6 +450,57 @@ akka optimize spend compare --from 2026-09-15T16:00:00Z --to 2026-09-15T17:00:00
 ----
 
 The answer gives the tokens and spend for each period, and the difference between them. A difference has a value only when both periods have one in the same currency.
+
+=== Follow spend over time
+
+`spend series` divides a period into UTC hours or UTC days. It answers each of them as `spend get` answers that hour or day alone, completeness included.
+
+[source,shell]
+----
+akka optimize spend series --from 2026-09-13T00:00:00Z --to 2026-09-15T00:00:00Z --granularity day --by model
+----
+
+[source,text]
+----
+BUCKET                COMPLETENESS  PERMANENCE  MODEL           EXCHANGES  TOKENS  SPEND        UNPRICED  UNPRICED TOKENS
+2026-09-13T00:00:00Z  complete      reported    frontier-model  1204       29800+  12.4010 USD  0         0
+2026-09-13T00:00:00Z  complete      reported    finetune-model  610        14200+  0.0453 USD   0         0
+2026-09-13T00:00:00Z  complete      reported    TOTAL           1814       44000+  12.4463 USD  0         0
+2026-09-14T00:00:00Z  complete      reported    frontier-model  1188       29350+  12.2260 USD  0         0
+2026-09-14T00:00:00Z  complete      reported    finetune-model  645        15020+  0.0479 USD   0         0
+2026-09-14T00:00:00Z  complete      reported    TOTAL           1833       44370+  12.2739 USD  0         0
+----
+
+`--granularity` is `hour` or `day`, and has no default. A day series starts and ends at midnight UTC. For days in another time zone, ask for hours and add them up. `PERMANENCE` is `reported` when nothing more arrives for that hour or day, and a publish can still price its unpriced traffic. `--by` and `--system` work as they do for one period.
+
+[#recent]
+=== List the most recent model calls
+
+`spend recent` lists the most recent exchanges, newest first. `--since` is required. It is an ISO-8601 instant, and it is inclusive.
+
+[source,shell]
+----
+akka optimize spend recent --since 2026-09-15T16:00:00Z --limit 3
+----
+
+[source,text]
+----
+SERVED AT                 EXCHANGE                    SYSTEM ID     TAGS           MODEL           PROVIDER  OUTCOME   TOKENS  SPEND
+2026-09-15T16:04:12.481Z  01K5AZ3V9JQ8M4T2X7C1D6E0RB  svc-support   team=payments  frontier-model  example   answered  212+    0.0003672000000000 USD
+2026-09-15T16:04:09.032Z  01K5AZ3RZ4P1N8W3Y6B0F2H9QK  svc-billing   —              —               —         refused   0+      — (no-price)
+2026-09-15T16:03:58.770Z  01K5AZ3E8C5V2R7T0M4X9D1GJS  unidentified  team=search    frontier-model  example   answered  65+     0.0001384500000000 USD
+----
+
+Each row is one exchange: when it was served, its exchange id, its system id, its tags, the model, the provider that the pricing catalog names for the model, its outcome, its tokens and its spend. `--limit` sets how many rows the command returns: 20 by default, and at most 100. `--system` lists the exchanges of one system id.
+
+`OUTCOME` is one of these:
+
+* `answered`: the upstream answered with a status from 200 to 299.
+* `refused`: a gateway policy answered, and the request reached no upstream.
+* `failed`: the upstream answered with an error status, or the exchange ended with no answer recorded. A refusal by the provider, such as a 429, is a failure.
+* `unknown`: nothing recorded an answer for the exchange.
+
+An exchange appears only after the service has read its capture, so the newest exchanges may not be in the list yet.
 
 === Find the most expensive conversations
 
