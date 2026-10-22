@@ -22,7 +22,7 @@ Spend has figures only for traffic that the gateway router recorded. Traffic tha
 
 The pricing catalog holds the price of each served name as rates per million tokens. A response without a `model` field is unpriced.
 
-The catalog is versioned. A published version is never edited, so an exchange that a version priced keeps that price. To change a price, publish a new version that takes effect later.
+The catalog is versioned. A published version is never edited, so an exchange that a version priced keeps that price. To change a price, publish a new version that takes effect later. See <<change-price>>.
 
 === Write a catalog document
 
@@ -85,7 +85,7 @@ A catalog document is JSON:
 | Optional. The rate per million tokens of these classes.
 |===
 
-An exchange is priced only when every token class that it used has a rate. A rate that you leave out means the class has no price, not that it costs nothing. If a model does not charge for a class, set its rate to `0`. If you leave out `cacheRead` for a model whose traffic uses cached input, that traffic is unpriced.
+An exchange is priced only when every token class that it used has a rate. A rate that you leave out means the class has no price, not that it costs nothing. If a model does not charge for a class, set its rate to `0`. If you leave out `cacheRead` for a model whose traffic uses cached input, that traffic is unpriced. An OpenAI model that charges for cache writes, GPT-5.6 and later, needs a `cacheWrite` rate, or its traffic that wrote to the cache is unpriced. The service ignores a field that the document does not define, so a misspelled rate counts as a rate that you left out.
 
 A version can price some served names and leave out others. The served names that it leaves out keep their earlier price.
 
@@ -198,7 +198,7 @@ A document that the service refuses is not published, and the error names what i
 
 === Read the catalog
 
-Read the version in force now:
+Read the prices in force now:
 
 [source,shell]
 ----
@@ -207,18 +207,18 @@ akka optimize pricing-catalog get
 
 [source,text]
 ----
-Version       1
-Effective at  2026-09-15T16:00:00Z
-Published at  2026-09-15T15:58:12.353062Z
-Source        list prices
-SERVED NAME     MODEL                CURRENCY  ASSIGNED  INPUT  CACHE-READ  CACHE-WRITE  OUTPUT  REASONING
-frontier-model  example/frontier/1   USD       no        5      —           —            25      —
-finetune-model  example/finetune/1   USD       yes       0.1    0.01        —            0.3     —
+Version       2
+Effective at  2026-10-01T00:00:00Z
+Published at  2026-09-30T09:12:40.118204Z
+Source        negotiated rate
+SERVED NAME     VERSION  MODEL               CURRENCY  ASSIGNED  INPUT  CACHE-READ  CACHE-WRITE  OUTPUT  REASONING
+frontier-model  2        example/frontier/1  USD       yes       4      —           —            20      —
+finetune-model  1        example/finetune/1  USD       yes       0.1    0.01        —            0.3     —
 ----
 
-A class with no price shows `—`. Pass `--at` with an ISO-8601 instant to read the version that was in force at that time.
+`get` lists every served name that has a price in force, each with the entry of the version that prices it. `VERSION` names that version. The top block names the version that most recently took effect. In this example, version 2 priced only `frontier-model`, so `finetune-model` keeps the price that version 1 set. A class with no price shows `—`. Pass `--at` with an ISO-8601 instant to read the prices in force at that time.
 
-`get` shows one version: the latest one in force at that instant. If that version priced only some served names, the prices that earlier versions set for the other names still apply, but `get` does not show them. List the versions to see them all:
+To see when each version took effect, list the versions:
 
 [source,shell]
 ----
@@ -226,6 +226,34 @@ akka optimize pricing-catalog versions list
 ----
 
 The list is newest first.
+
+[#change-price]
+=== Change a price
+
+`get -o json` writes a catalog document that `apply` takes. When you publish it, the service ignores the fields that the service sets: `version` and `publishedAt` at the top, and `version` on each entry. The service refuses the document if you publish it unchanged, because its `effectiveAt` is not later than the prices it carries.
+
+. Write the prices in force to a file:
++
+[source,shell]
+----
+akka optimize pricing-catalog get -o json > catalog.json
+----
+
+. Edit the rates in `catalog.json`.
+. Set `effectiveAt` to an instant later than every price in the file.
+. Check the document:
++
+[source,shell]
+----
+akka optimize pricing-catalog apply -f catalog.json --dry-run
+----
+
+. Publish it:
++
+[source,shell]
+----
+akka optimize pricing-catalog apply -f catalog.json
+----
 
 [#read-spend]
 == Read spend for a period
@@ -282,7 +310,7 @@ TOTAL           81         1860+   0.0256365000000000 USD  0         0
 
 `--limit` sets how many rows a ranked division returns. The service sets the default.
 
-A `+` after a token count marks a lower bound: some exchanges did not report every token class, so the true count can be higher. This is common, because providers do not report every class. For example, OpenAI responses do not report cache-write tokens, and Anthropic responses do not report reasoning tokens. The command prints a note that names the classes that were not reported.
+A `+` after a token count marks a lower bound: some exchanges did not report every token class, so the true count can be higher. This is common, because providers do not report every class. For example, OpenAI responses report cache-write tokens only for the models that charge for them, GPT-5.6 and later, and Anthropic responses do not report reasoning tokens. The command prints a note that names the classes that were not reported.
 
 [#unpriced]
 === Find unpriced traffic

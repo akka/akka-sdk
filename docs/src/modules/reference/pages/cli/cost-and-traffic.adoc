@@ -55,7 +55,7 @@ These commands cover what an organization spends on inference. Every command on 
 | Description
 
 | `akka optimize pricing-catalog get`
-| The version in force now, or at an instant.
+| The prices in force now, or at an instant.
 
 | `akka optimize pricing-catalog apply -f FILE`
 | Publish a catalog version, or check one.
