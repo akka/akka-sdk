@@ -87,7 +87,7 @@ The incident feed collects what went wrong in the same traffic: anomalies, reque
 
 | A figure is read again later
 | It is the same, unless a publish has since priced traffic of the period that was unpriced. A published catalog version is never edited, and an exchange that a version priced keeps that price.
-| None.
+| The window is complete.
 
 | A served name or token class has no price
 | The exchange counts in exchanges and tokens, not in spend, and the answer states the cause.
