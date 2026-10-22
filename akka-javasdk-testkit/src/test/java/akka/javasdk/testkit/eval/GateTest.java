@@ -9,8 +9,12 @@ import static akka.javasdk.testkit.eval.Targets.TONE;
 import static akka.javasdk.testkit.eval.Targets.bindings;
 import static akka.javasdk.testkit.eval.Targets.interaction;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import akka.javasdk.annotations.Component;
 import akka.javasdk.evaluation.Evaluation;
+import akka.javasdk.evaluation.EvaluationContext;
+import akka.javasdk.evaluation.Evaluator;
 import akka.javasdk.ledger.GuardrailDecisionRecord;
 import akka.javasdk.testkit.TestLedgerClient;
 import java.time.Duration;
@@ -84,12 +88,22 @@ class GateTest {
     var cases = List.of(evalCase("c1"), evalCase("c2"));
 
     var report =
-        run(Gate.passRateShouldBeAtLeast(TONE, 1.0), target, bindings(QUALITY, TONE), 1, cases);
+        run(
+            Gate.passRateShouldBeAtLeast(ToneEvaluator.class, 1.0),
+            target,
+            bindings(QUALITY, TONE),
+            1,
+            cases);
 
     assertThat(report.passed()).isTrue();
     assertThat(report.render()).contains("tone 2/2").contains("quality 0/0 (2 inconclusive)");
     var quality =
-        run(Gate.passRateShouldBeAtLeast(QUALITY, 0.5), target, bindings(QUALITY, TONE), 1, cases);
+        run(
+            Gate.passRateShouldBeAtLeast(QualityEvaluator.class, 0.5),
+            target,
+            bindings(QUALITY, TONE),
+            1,
+            cases);
     assertThat(quality.passed()).isFalse();
     assertThat(quality.render()).contains("quality judged no case");
   }
@@ -109,7 +123,7 @@ class GateTest {
             });
     var cases = List.of(evalCase("c1"), evalCase("c2"));
 
-    var report = run(Gate.passRateShouldBeAtLeast(QUALITY, 1.0), target, cases);
+    var report = run(Gate.passRateShouldBeAtLeast(QualityEvaluator.class, 1.0), target, cases);
 
     assertThat(report.passed()).isTrue();
     assertThat(report.render())
@@ -173,7 +187,11 @@ class GateTest {
 
   @Test
   void anEvaluatorThatJudgedNothingCannotBeRated() {
-    var report = run(Gate.passRateShouldBeAtLeast(TONE, 1.0), failingOn(), List.of(evalCase("c1")));
+    var report =
+        run(
+            Gate.passRateShouldBeAtLeast(ToneEvaluator.class, 1.0),
+            failingOn(),
+            List.of(evalCase("c1")));
 
     assertThat(report.passed()).isFalse();
     assertThat(report.render()).contains("tone judged no case");
@@ -240,13 +258,38 @@ class GateTest {
   void anEvaluatorIsRatedOverEveryAttemptOfARepeatedRun() {
     var report =
         run(
-            Gate.passRateShouldBeAtLeast(QUALITY, 0.5),
+            Gate.passRateShouldBeAtLeast(QualityEvaluator.class, 0.5),
             wrongOnCalls(1),
             2,
             List.of(evalCase("c1")));
 
     assertThat(report.passed()).isTrue();
     assertThat(report.render()).contains("quality rate 0.50 over 2 judged attempts, required 0.50");
+  }
+
+  @Test
+  void anEvaluatorWithoutAComponentAnnotationIsRejected() {
+    assertThatThrownBy(() -> Gate.passRateShouldBeAtLeast(Object.class, 0.5))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("@Component");
+  }
+
+  /** Stands for the evaluator bound as {@link Targets#QUALITY}; the ledger is seeded directly. */
+  @Component(id = QUALITY)
+  static class QualityEvaluator extends Evaluator {
+    @Override
+    public Effect evaluate(EvaluationContext context) {
+      return effects().inconclusive("not run");
+    }
+  }
+
+  /** Stands for the evaluator bound as {@link Targets#TONE}; the ledger is seeded directly. */
+  @Component(id = TONE)
+  static class ToneEvaluator extends Evaluator {
+    @Override
+    public Effect evaluate(EvaluationContext context) {
+      return effects().inconclusive("not run");
+    }
   }
 
   /** The quality evaluator passes; the no-refunds guardrail denies the given cases. */

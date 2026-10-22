@@ -50,8 +50,8 @@ A link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Gate.html[Gate] is wha
 | `Gate.passRateShouldBeAtLeast(minimumRate)`
 | The share of attempts that passed is at least `minimumRate`. An inconclusive attempt counts against the rate.
 
-| `Gate.passRateShouldBeAtLeast(evaluator, minimumRate)`
-| The share of the evaluator's results that passed is at least `minimumRate`. Inconclusive and not applicable results are left out of the count. The gate fails when the evaluator has no result to count. The evaluator is named by its component id.
+| `Gate.passRateShouldBeAtLeast(evaluatorClass, minimumRate)`
+| The share of the evaluator's results that passed is at least `minimumRate`. Inconclusive and not applicable results are left out of the count. The gate fails when the evaluator has no result to count. The evaluator is named by its component class.
 
 | `Gate.targetShouldNotFail()`
 | No attempt failed in the agent call.
@@ -80,7 +80,7 @@ Assert on the report, and use the rendered report as the failure message.
 === Gating a judged batch
 
 A judged score can differ between runs of the same reply, so hold a batch to the rate the xref:sdk:evaluators.adoc#judging[judge evaluator] passed rather than asserting on one judged case.
-`Gate.passRateShouldBeAtLeast("judge", minimumRate)` rates the evaluator over the attempts where it reached a verdict, and fails when it judged none.
+`Gate.passRateShouldBeAtLeast(JudgeEvaluator.class, minimumRate)` rates the evaluator over the attempts where it reached a verdict, and fails when it judged none.
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[OrderAgentQualityIntegrationTest.java]

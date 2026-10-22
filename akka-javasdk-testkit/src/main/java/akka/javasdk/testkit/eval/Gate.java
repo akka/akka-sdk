@@ -4,6 +4,7 @@
 
 package akka.javasdk.testkit.eval;
 
+import akka.javasdk.annotations.Component;
 import akka.javasdk.ledger.GuardrailDecisionRecord;
 import akka.javasdk.testkit.eval.ExperimentRunner.CaseResult;
 import java.util.ArrayList;
@@ -91,12 +92,10 @@ public final class Gate {
    * {@code minimumRate}. An inconclusive or not applicable result is left out. Fails when the
    * evaluator judged no attempt.
    *
-   * @param evaluator the component id of the evaluator
+   * @param evaluatorClass the evaluator component class, annotated with {@link Component}
    */
-  public static Gate passRateShouldBeAtLeast(String evaluator, double minimumRate) {
-    if (evaluator == null || evaluator.isBlank())
-      throw new IllegalArgumentException("evaluator component id required");
-
+  public static Gate passRateShouldBeAtLeast(Class<?> evaluatorClass, double minimumRate) {
+    var evaluator = componentId(evaluatorClass);
     return new Gate(
         (results, runs) -> {
           var evalResults =
@@ -124,6 +123,15 @@ public final class Gate {
                   minimumRate);
           return actual >= minimumRate ? Verdict.pass(summary) : Verdict.fail(summary);
         });
+  }
+
+  private static String componentId(Class<?> componentClass) {
+    if (componentClass == null) throw new IllegalArgumentException("evaluator class required");
+    var component = componentClass.getAnnotation(Component.class);
+    if (component == null)
+      throw new IllegalArgumentException(
+          componentClass.getName() + " has no @Component annotation");
+    return component.id();
   }
 
   /** No agent call may fail. */
