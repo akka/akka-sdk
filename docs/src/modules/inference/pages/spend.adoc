@@ -1,6 +1,6 @@
 = Understanding inference costs
 :page-summary: Spend is the cost of model traffic in a period, with the tokens it consumed, computed from recorded exchanges and priced from a versioned pricing catalog by served name.
-:page-when-to-use: When you need to understand how Akka prices model traffic, why a figure can be unpriced or a lower bound, and how spend is attributed to models, use cases, system ids and conversations.
+:page-when-to-use: When you need to understand how Akka prices model traffic, why a figure can be unpriced or a lower bound, and how spend is attributed to models, use cases, system ids, routes, tags and conversations.
 :page-banner: inference
 :page-related: reference:cli/cost-and-traffic.adoc, concepts:model-training.adoc, concepts:models.adoc
 :page-persona: builder-ai-ml, operator-platform
@@ -16,7 +16,7 @@ A provider's invoice states what an account cost. It does not say which agent, u
 === From exchange to figure
 
 . An agent's model request passes through the gateway, and the exchange is captured. See xref:concepts:model-training.adoc#capture-and-grading[].
-. The capture refinery derives a derived capture from it, with the served name, the use case, the system id, the conversation and the tokens of each class.
+. The capture refinery derives a derived capture from it, with the served name, the use case, the system id, the tags, the conversation and the tokens of each class.
 . The portfolio service prices the derived capture from the pricing catalog when it stores it. If its served name has no price at that time, the service prices it later, once a published version prices that served name at the instant it was served.
 . Spend for a period is read from the priced derived captures.
 
