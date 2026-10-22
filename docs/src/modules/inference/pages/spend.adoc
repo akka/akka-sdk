@@ -1,6 +1,6 @@
 = Understanding inference costs
 :page-summary: Spend is the cost of model traffic in a period, with the tokens it consumed, computed from recorded exchanges and priced from a versioned pricing catalog by served name.
-:page-when-to-use: When you need to understand how Akka prices model traffic, why a figure can be unpriced or a lower bound, and how spend is attributed to models, use cases, callers and conversations.
+:page-when-to-use: When you need to understand how Akka prices model traffic, why a figure can be unpriced or a lower bound, and how spend is attributed to models, use cases, system ids and conversations.
 :page-banner: inference
 :page-related: reference:cli/cost-and-traffic.adoc, concepts:model-training.adoc, concepts:models.adoc
 :page-persona: builder-ai-ml, operator-platform
@@ -9,14 +9,14 @@ include::ROOT:partial$include.adoc[]
 
 Spend is the cost of model traffic in a period, together with the tokens that traffic consumed. Akka computes it from the exchanges that the gateway recorded and prices each exchange from a versioned pricing catalog. No figure is estimated or entered by hand.
 
-A provider's invoice states what an account cost. It does not say which agent, use case or caller the cost came from, and it arrives after the period is over. Deciding where a smaller model reduces cost, holding a team to a budget, or showing what a change saved all need figures that are divided the way the system is built and that can be read again later with the same result. This page explains how those figures are produced.
+A provider's invoice states what an account cost. It does not say which agent, use case or system id the cost came from, and it arrives after the period is over. Deciding where a smaller model reduces cost, holding a team to a budget, or showing what a change saved all need figures that are divided the way the system is built and that can be read again later with the same result. This page explains how those figures are produced.
 
 == How it works
 
 === From exchange to figure
 
 . An agent's model request passes through the gateway, and the exchange is captured. See xref:concepts:model-training.adoc#capture-and-grading[].
-. The capture refinery derives a derived capture from it, with the served name, the use case, the caller, the conversation and the tokens of each class.
+. The capture refinery derives a derived capture from it, with the served name, the use case, the system id, the conversation and the tokens of each class.
 . The portfolio service prices the derived capture from the pricing catalog when it stores it. If its served name has no price at that time, the service prices it later, once a published version prices that served name at the instant it was served.
 . Spend for a period is read from the priced derived captures.
 
@@ -66,9 +66,9 @@ A period can be divided into rows, and the rows always add up to the total:
 * by _model_, one row for each served name,
 * by _use case_, the use case that the router assigned, which is the same use case that targeting ranks and the trainer specializes for,
 * by _model and use case_ together,
-* by _caller_, ranked, with one row for the remainder.
+* by _system id_, with one row, `unidentified`, for traffic that named none.
 
-A caller is the identifier that the request declared in the `x-optimize-caller` header, or the address a proxy forwarded. Erasing a caller, for example to answer a privacy request, removes the identifier that figures are attributed to and leaves every figure unchanged.
+A system id names the AI system that a request was sent for, in the `x-akka-system-id` header. The system id combines with the other divisions. See xref:inference:tracking-spend.adoc#systems[Attribute spend to systems].
 
 Conversations are ranked by spend rather than divided, so the most expensive conversations of a period can be found. That ranking does not add up to the period total. Two periods can be compared, and a difference has a value only when both periods have one in the same currency.
 
@@ -99,10 +99,6 @@ The incident feed collects what went wrong in the same traffic: anomalies, reque
 | A window includes hours not yet reported on
 | The answer is marked incomplete or unknown.
 | None.
-
-| A caller is erased
-| Every figure stays the same.
-| None.
 |===
 
 == Limits and trade-offs
@@ -111,7 +107,7 @@ The incident feed collects what went wrong in the same traffic: anomalies, reque
 * A period is whole UTC hours.
 * The catalog holds one currency.
 * A new price cannot take effect earlier than the latest price for the same served name. A later rate does not change an exchange that an earlier version priced or left unpriced, and an exchange older than the record period stays as it is. Publish a price for every served name before its traffic is served.
-* Erasing a caller does not change capture artifacts or the derived captures, which still hold the identifier.
+* Nothing vouches for a system id: a client sends the value it chooses, unless your deployment overwrites the header at its own edge. The service keeps every system id that it sees, also past the record period, and nothing deletes one. Use the name of a system as the system id, never personal data.
 
 == Next steps
 

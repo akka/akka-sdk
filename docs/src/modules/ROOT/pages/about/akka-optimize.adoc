@@ -44,7 +44,7 @@ See xref:concepts:models.adoc#model-serving[], xref:inference:index.adoc[Inferen
 
 == Tracking spend
 
-Akka Optimize prices every recorded exchange from a versioned pricing catalog, and reports spend and tokens by model, use case, caller and conversation. Budgets, forecasts and the trade-off between cost and quality build on the same figures.
+Akka Optimize prices every recorded exchange from a versioned pricing catalog, and reports spend and tokens by model, use case, system and conversation. Budgets, forecasts and the trade-off between cost and quality build on the same figures.
 
 See xref:concepts:model-training.adoc#spend-and-budgets[] and xref:reference:cli/cost-and-traffic.adoc[Cost and traffic commands].
 

@@ -131,10 +131,6 @@ These commands serve models and decide which model serves a request. They are an
 | What an organization spends on inference, and the prices it is computed from.
 | xref:inference:tracking-spend.adoc[]
 
-| xref:reference:cli/cost-and-traffic.adoc#_callers[`akka optimize callers`]
-| The callers that spend is attributed to.
-| xref:inference:erasing-caller-data.adoc[]
-
 | xref:reference:cli/cost-and-traffic.adoc#_incidents[`akka optimize incidents`] and xref:reference:cli/cost-and-traffic.adoc#_captures[`captures`]
 | The incident feed, and recorded exchanges read from disk.
 | Reference only
