@@ -37,6 +37,10 @@ If a consumer method throws an exception, or an `asyncDone`, `asyncProduce`, or 
 
 Because redelivery retries indefinitely, an exception that a message will always trigger, for example a bug in the handling logic or a message that can never be deserialized correctly, blocks that consumer from making progress until the underlying issue is fixed and a new version of the service is deployed.
 
+The consumer stalls so that it does not lose the message. After the fixed version is deployed, the consumer processes the message and continues with the next one. Catch the exception and return `effects().ignore()` only when losing the message is acceptable, because the consumer never processes an ignored message again.
+
+A message from a topic or a service stream can have a type that no consumer method accepts, for example a message type that the producer added after the consumer was deployed. Akka treats such a message as a failure and redelivers it, so the consumer stalls until a version that handles the type is deployed. Setting `ignoreUnknown = true` on `@Consume.FromTopic` or `@Consume.FromServiceStream` makes the consumer ignore such messages instead. The consumer then also ignores every message type that the producer adds later, and never processes those messages.
+
 [#consume-from-event-sourced-entity]
 == Consume from Event Sourced Entity
 

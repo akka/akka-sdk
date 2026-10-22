@@ -933,6 +933,10 @@ Before presenting code, verify:
 - [ ] Uses method references for step names (e.g., `TransferWorkflow::withdrawStep`)
 - [ ] Uses `stepEffects()` in steps, `effects()` in command handlers
 
+**Consumer**
+- [ ] Every handler path returns an Effect, never `null`; use `effects().ignore()` for events the consumer does not act on
+- [ ] The handler does not catch an exception and return `effects().ignore()` unless losing the message is acceptable. A thrown exception stalls the consumer until a fixed version is deployed, so the message is not lost
+
 **Endpoint**
 - [ ] Has `@Acl` annotation
 - [ ] Synchronous style, uses `.invoke()`
