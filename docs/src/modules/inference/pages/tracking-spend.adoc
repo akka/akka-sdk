@@ -170,7 +170,7 @@ The rates are the list prices that link:{url-ext-openai-pricing}[OpenAI API pric
 Change the example before you publish it:
 
 * Keep only the models that your traffic uses. Each `servedName` must be the string that your provider's responses report in their `model` field. OpenAI responses report the dated snapshot, such as `gpt-5.4-mini-2026-03-17`, also when the request names `gpt-5.4-mini`. To see the served names that your traffic reports, divide a recent period by `model`, as in <<read-spend>>. Add an entry for each served name in that division that has no price yet.
-* Set `effectiveAt` to the instant from which the prices apply, and `source` to where they came from.
+* Set `effectiveAt` to the instant from which the prices apply, and `source` to where they came from. To price traffic that is already recorded, set `effectiveAt` at or before its earliest exchange. Only the first price of a served name can take effect that early. See <<unpriced>>.
 * Where your organization has a negotiated rate, state that rate and set `assigned` to `true`.
 
 Check the document with `--dry-run` before you publish it.
@@ -457,7 +457,7 @@ An exchange is unpriced when no price covers every token class that it used. It 
 
 Which unpriced traffic the new version prices depends on the cause:
 
-* A served name with no price. The service prices the recorded traffic of that served name that was served at or after the `effectiveAt` of the new price. To price traffic that is already recorded, set `effectiveAt` at or before its earliest exchange. The service prices the first exchanges shortly after the publish, and a long range takes longer. The service keeps the record of each exchange for at least 90 days. Older traffic keeps its figures and remains unpriced.
+* A served name with no price. The service prices the recorded traffic of that served name that was served at or after the `effectiveAt` of the new price. To price traffic that is already recorded, set `effectiveAt` at or before its earliest exchange. Only the first price of a served name can do this, because each later price must take effect after the latest one. Once a served name has a price, traffic served before that price remains unpriced. The `effectiveAt` must also be later than the latest price of every other served name that the document carries, so leave out the served names that already have a later price. The service starts to price the recorded traffic shortly after the publish, and a long range takes longer. The service keeps the record of each exchange for at least 90 days. Older traffic keeps its figures and remains unpriced.
 * A token class with no rate. The exchange keeps the version that priced its served name, and that version has no rate for the class. The new rate applies only to traffic served after the new version takes effect and recorded after it is published. Traffic recorded before that remains unpriced.
 
 The spend of a period can rise after a publish, and its unpriced count fall, also when the period is `complete`.
