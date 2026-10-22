@@ -25,8 +25,6 @@ public class OrderLookupEvaluator extends Evaluator {
     var interaction = ledger.getInteraction(context.subject().interactionId()); // <3>
     var namesAnOrder = ORDER_ID.matcher(interaction.inputText()).find();
     var lookedUp = !interaction.toolCalls("getOrder").isEmpty();
-    // A complete check also compares the orderId argument of the call with the id in the message,
-    // read with ToolCall.argumentsAs.
     if (namesAnOrder && !lookedUp) {
       return effects()
         .complete(Evaluation.failed("no getOrder call for a message that names an order")); // <4>

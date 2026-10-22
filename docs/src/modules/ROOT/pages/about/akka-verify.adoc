@@ -12,7 +12,7 @@ An agent that works in a demo is not yet one that customers and regulators can r
 
 == Evaluating agents
 
-Evaluations measure an agent against defined quality criteria for its task, with deterministic evaluators and with a model acting as judge. They run in your tests before an agent is released, in batches against recorded traffic, and continuously on live traffic. Replay runs a new evaluator against past traffic by replaying the real execution. Adversarial tests attack your own agent with jailbreaks, prompt injection and known hazard categories, and report whether the agent resisted each attack.
+Evaluations measure an agent against defined quality criteria for its task, with deterministic evaluators and with a model acting as judge. They run in your tests before an agent is released, in batches against recorded traffic, and continuously on live traffic. Adversarial tests attack your own agent with jailbreaks, prompt injection and known hazard categories, and report whether the agent resisted each attack.
 
 See xref:concepts:evaluation.adoc[], xref:testing:evaluation/index.adoc[Evaluation in tests], xref:testing:evaluation/adversarial.adoc[] and xref:sdk:evaluators.adoc[Evaluators].
 

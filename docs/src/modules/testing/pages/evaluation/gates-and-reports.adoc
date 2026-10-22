@@ -16,7 +16,7 @@ A gate is what a batch of cases must satisfy over all case results, and the repo
 An attempt is one case in one run.
 Its results are the xref:sdk:evaluators.adoc#outcomes[outcomes] of the evaluators bound to the agent, one per evaluator. A failed agent call is a failed result named `target`, and an evaluator that recorded nothing within 10 seconds is inconclusive.
 
-The verdict of the attempt (which might include many evaluators) follows from its results.
+The verdict of the attempt follows from the results of all its evaluators.
 
 [cols="1,3"]
 |===
@@ -114,7 +114,7 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 | One `CaseResult` per attempt: every case in the order the cases were given, its runs ascending. A `CaseResult` carries the case id, the run, the `Evidence` and the results. `describe()` renders one attempt as in the report.
 
 | `cases()`
-| One `CaseSummary` per case, in the order the cases were given: the outcome over all runs, the passed, failed and inconclusive run counts, the case's attempts, and its requirements. The outcome is `PASSED` when every run passed, `FAILED` when every run failed, `INCONCLUSIVE` when every run was inconclusive, and `INCONSISTENT` otherwise. A `RequirementSummary` is one evaluator at one position in the case's results, with the runs it passed, failed, was inconclusive and was not applicable in, and its outcome over the conclusive runs.
+| One `CaseSummary` per case, in the order the cases were given: the outcome over all runs, the passed, failed and inconclusive run counts, the case's attempts, and its requirements. The outcome is `PASSED` when every run passed, `FAILED` when every run failed, `INCONCLUSIVE` when every run was inconclusive, and `INCONSISTENT` otherwise. A `RequirementSummary` is one evaluator of the case, with the runs it passed, failed, was inconclusive and was not applicable in, and its outcome over the conclusive runs.
 
 | `render()`
 | The report as text.

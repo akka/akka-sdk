@@ -23,8 +23,6 @@ public class RefundPolicyEvaluator extends Evaluator {
     if (interaction.toolCalls("issueRefund").isEmpty()) {
       return effects().notApplicable("no refund was issued"); // <1>
     }
-    // A complete check reads the order from the getOrder response with ToolCall.responseAs and
-    // checks that the order was delivered and that the refund stays within its total.
     if (interaction.toolCalls("getOrder").isEmpty()) {
       return effects().complete(Evaluation.failed("refunded without looking the order up"));
     }

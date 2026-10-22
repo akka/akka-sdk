@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-Testing Agents involves two complementary approaches: evaluating the quality of the non-deterministic model behavior with xref:testing:evaluation/index.adoc[evaluations] and writing deterministic unit tests for the agent's and surrounding components' logic.
+Testing agents involves two complementary approaches: evaluating the quality of the non-deterministic model behavior with xref:testing:evaluation/index.adoc[evaluations] and writing deterministic unit tests for the agent's and surrounding components' logic.
 
 == Mocking responses from the model
 

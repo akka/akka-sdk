@@ -1,6 +1,6 @@
 = Evaluators
 :page-component-type: evaluator
-:page-aliases: sdk:agents/llm_eval.adoc
+:page-aliases: sdk:agents/llm_eval.adoc, testing:evaluation/judges.adoc
 :page-summary: A component the runtime triggers for the interactions of a bound agent, to assess them and record a verdict.
 :page-when-to-use: When you want agent interactions assessed automatically as they happen, for quality tracking, regression detection, or compliance, without adding evaluation calls to the agents themselves.
 :page-related: xref:sdk:agents.adoc[], xref:testing:evaluation/index.adoc[], xref:concepts:controls.adoc#evals[], xref:concepts:evaluation.adoc[]
@@ -71,7 +71,7 @@ include::example$doc-snippets/src/test/java/com/example/eval/OrderJudge.java[tag
 ----
 include::example$doc-snippets/src/test/java/com/example/eval/JudgeEvaluator.java[tag=all]
 ----
-<1> The criterion and the threshold are xref:_configuration_properties_of_an_evaluator[configuration properties of the evaluator], so one class serves any criterion. In this case is one sentence that states what a good reply does.
+<1> The criterion and the threshold are xref:_configuration_properties_of_an_evaluator[configuration properties of the evaluator], so one class serves any criterion. The criterion is one sentence that states what a good reply does.
 <2> The judge runs in a session named after the evaluation id, apart from the session of the evaluated agent.
 <3> The transcript of the interaction, `InteractionRecord.transcript()`, as the ledger recorded it.
 <4> The verdict passes at the threshold. The score goes on the evaluation.

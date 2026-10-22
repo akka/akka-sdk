@@ -2,8 +2,8 @@ package com.example.eval;
 
 // tag::class[]
 /**
- * Production wires a client for the real system,
- * an evaluation wires a stub that answers with what a case loaded into it.
+ * The order system the agent's tools call. Production provides a client for the real system, a
+ * test provides a stub.
  */
 public interface OrderService {
   /** The order, or a thrown {@link java.util.NoSuchElementException} when the id is unknown. */

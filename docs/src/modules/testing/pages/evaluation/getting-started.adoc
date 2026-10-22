@@ -1,4 +1,5 @@
 = Getting started with evaluation
+:page-aliases: testing:evaluation/eval-cases.adoc, testing:evaluation/replay.adoc
 :page-summary: A first evaluation against a real model: an agent with two tools, two evaluator components in the test sources, a test class that binds them, one case, then a gated batch.
 :page-when-to-use: Writing the first evaluation of an agent.
 :page-prerequisites: A Maven project on the Akka SDK with an agent and a model API key. Familiarity with JUnit and with `TestKitSupport`.
@@ -16,7 +17,7 @@ An agent's reply cannot be asserted that way. The model decides which tools to c
 An evaluation test sends the agent a fixed set of messages, the eval cases, and lets evaluator components judge each interaction: the tool calls, the reply, or a criterion scored by a judge.
 It counts the results over all cases and requires a minimum pass rate.
 
-This page writes an evaluation in a form of integration test for the order agent of an online shop against the model the agent uses in production. The complete code is in the link:{sample-base-url}/doc-snippets/src/test/java/com/example/eval[doc-snippets sample, window="new"].
+This page writes an evaluation, as an integration test, for the order agent of an online shop. The test runs against the model the agent uses in production. The complete code is in the link:{sample-base-url}/doc-snippets/src/test/java/com/example/eval[doc-snippets sample, window="new"].
 
 == The agent under evaluation
 
@@ -61,7 +62,7 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderLookupEval
 <4> The reason of a verdict is the detail the report prints.
 <5> A passed verdict.
 
-The second one checks that a refund goes to an order the agent looked up first. A interaction without a refund gives it nothing to check.
+The second one checks that a refund goes to an order the agent looked up first. An interaction without a refund gives it nothing to check.
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/test/java/com/example/eval/RefundPolicyEvaluator.java[RefundPolicyEvaluator.java]
