@@ -17,7 +17,7 @@ A provider's invoice states what an account cost. It does not say which agent, u
 
 . An agent's model request passes through the gateway, and the exchange is captured. See xref:concepts:model-training.adoc#capture-and-grading[].
 . The capture refinery derives a derived capture from it, with the served name, the use case, the caller, the conversation and the tokens of each class.
-. The portfolio service prices the derived capture once, when it stores it, from the pricing catalog.
+. The portfolio service prices the derived capture from the pricing catalog when it stores it. If its served name has no price at that time, the service prices it later, once a published version prices that served name at the instant it was served.
 . Spend for a period is read from the priced derived captures.
 
 Traffic that the gateway did not record does not appear in spend.
@@ -26,15 +26,20 @@ Traffic that the gateway did not record does not appear in spend.
 
 The pricing catalog holds the price of each served name as rates per million tokens. Input and output have rates, and so can cache reads, cache writes and reasoning tokens. A price applies to a served name: the `model` field in the body of the model's response. A response without that field is unpriced. See xref:concepts:models.adoc#_served_names_and_endpoints[Served names].
 
-The catalog is versioned, and a published version is never edited, so a figure computed under a price stays the same when you read it again. Each version states the instant from which its prices apply, which can be in the past or the future but must be later than the latest price of each served name it carries. A version can price some served names and leave out others, and the names it leaves out keep their earlier price. A price is marked as assigned when your organization set the rate, for example a negotiated rate, and as a list price otherwise. The catalog holds one currency.
+The catalog is versioned, and a published version is never edited. Each version states the instant from which its prices apply, which can be in the past or the future but must be later than the latest price of each served name it carries. A version can price some served names and leave out others, and the names it leaves out keep their earlier price. A price is marked as assigned when your organization set the rate, for example a negotiated rate, and as a list price otherwise. The catalog holds one currency.
 
 === When a price applies
 
-The rate that applies to an exchange is the one that the catalog holds, when the exchange is recorded, for the instant it was served. The exchange is priced once and not again. It follows that:
+The rate that applies to an exchange is the one that the catalog holds for its served name at the instant the exchange was served. The portfolio service prices the exchange when it stores it, from the catalog as it stands then:
 
-* A price published with a past effective instant does not reprice traffic that is already recorded.
+* When the served name has a price at that instant, the service prices the exchange, or leaves it unpriced if a token class it used has no rate. Either way the exchange keeps that catalog version. A later version does not change it, also when the later version takes effect from an instant in the past.
+* When the served name has no price at that instant, the service stores the exchange unpriced, with no catalog version. Once a published version prices that served name at that instant, the service prices the exchange. It prices the first such exchanges shortly after the publish, and a long range takes longer.
+
+The service keeps the record of each exchange for a record period of at least 90 days, and pricing after the fact reaches back that far. Hours older than the record period keep their figures and their unpriced counts. It follows that:
+
+* The spend of a period can rise after a publish, and its unpriced count fall, also when the period is complete.
 * Traffic recorded soon after a publish can still be priced at the previous rate.
-* A new price applies to traffic served after it takes effect and recorded after it is published.
+* A new rate for a served name that already had a price applies to traffic served after the rate takes effect and recorded after it is published.
 
 === Unpriced traffic and lower bounds
 
@@ -78,7 +83,7 @@ The incident feed collects what went wrong in the same traffic: anomalies, reque
 | Precondition
 
 | A figure is read again later
-| It is the same, because a published catalog version is never edited and an exchange is priced once.
+| It is the same, unless a publish has since priced traffic of the period that was unpriced. A published catalog version is never edited, and an exchange that a version priced keeps that price.
 | None.
 
 | A served name or token class has no price
@@ -103,7 +108,7 @@ The incident feed collects what went wrong in the same traffic: anomalies, reque
 * Spend covers traffic that the gateway recorded. A call made directly to a provider does not appear.
 * A period is whole UTC hours.
 * The catalog holds one currency.
-* A new price cannot take effect earlier than the latest price for the same served name, and it does not reprice recorded traffic. Publish a price for every served name before its traffic is served.
+* A new price cannot take effect earlier than the latest price for the same served name. A later rate does not change an exchange that an earlier version priced or left unpriced, and an exchange older than the record period stays as it is. Publish a price for every served name before its traffic is served.
 * Erasing a caller does not change capture artifacts or the derived captures, which still hold the identifier.
 
 == Next steps
