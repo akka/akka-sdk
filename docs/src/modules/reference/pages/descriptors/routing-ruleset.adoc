@@ -172,7 +172,7 @@ A `byAttribute` outcome maps a value that the request already carries onto a des
 |Field |Value
 
 |*input*
-|The attribute whose value is mapped. In practice this is a header, such as `header.x-optimize-team`.
+|The attribute whose value is mapped, such as `header.x-optimize-team`. It can be any attribute in <<attributes>>.
 
 |*values*
 |A map from the values of the attribute to destination labels. Several values can map to one destination. Every destination must be declared by the ruleset.
