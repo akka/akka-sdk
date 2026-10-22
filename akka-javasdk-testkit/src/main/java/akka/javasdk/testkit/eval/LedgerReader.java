@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 final class LedgerReader {
 
   private static final Duration POLL_INTERVAL = Duration.ofMillis(100);
+  private static final Duration FAILED_CALL_WAIT = Duration.ofSeconds(2);
 
   private final LedgerClient ledger;
   private final Duration timeout;
@@ -49,9 +50,12 @@ final class LedgerReader {
   }
 
   // A failed call carries no interaction id. The session is fresh per attempt, so the newest
-  // interaction of the agent in it is the attempt's, when the runtime recorded one.
+  // interaction of the agent in it is the attempt's, when the runtime recorded one. A call that
+  // failed before the agent ran recorded none, so the wait is short.
   Optional<InteractionRecord> newestInteraction(String agentComponentId, String sessionId) {
-    return poll(() -> ledger.getInteractions(agentComponentId, sessionId).stream().findFirst());
+    var wait = timeout.compareTo(FAILED_CALL_WAIT) < 0 ? timeout : FAILED_CALL_WAIT;
+    return poll(
+        () -> ledger.getInteractions(agentComponentId, sessionId).stream().findFirst(), wait);
   }
 
   List<GuardrailDecisionRecord> guardrails(InteractionRecord interaction) {
@@ -81,6 +85,10 @@ final class LedgerReader {
   }
 
   private <T> Optional<T> poll(Supplier<Optional<T>> read) {
+    return poll(read, timeout);
+  }
+
+  private <T> Optional<T> poll(Supplier<Optional<T>> read, Duration timeout) {
     var deadline = Instant.now().plus(timeout);
     while (true) {
       var result = read.get();

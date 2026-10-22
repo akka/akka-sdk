@@ -4,7 +4,6 @@
 
 package akkajavasdk.eval;
 
-import akka.javasdk.JsonSupport;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.evaluation.Evaluation;
 import akka.javasdk.evaluation.EvaluationContext;
@@ -46,12 +45,16 @@ public class ToolUseEvaluator extends Evaluator {
           : effects()
               .complete(
                   Evaluation.failed(
-                      "called " + names(calls) + " for a question that names no customer"));
+                      "called "
+                          + interaction.toolNames()
+                          + " for a question that names no customer"));
     }
     var lookups = callsTo(calls, "getCustomer");
     if (lookups.size() != 1) {
       return effects()
-          .complete(Evaluation.failed("expected one getCustomer call, called " + names(calls)));
+          .complete(
+              Evaluation.failed(
+                  "expected one getCustomer call, called " + interaction.toolNames()));
     }
     var lookedUp = argument(lookups.getFirst(), "customerId");
     if (!customerId.get().equals(lookedUp)) {
@@ -67,7 +70,8 @@ public class ToolUseEvaluator extends Evaluator {
         return effects()
             .complete(
                 Evaluation.failed(
-                    "expected openTickets once, after getCustomer; called " + names(calls)));
+                    "expected openTickets once, after getCustomer; called "
+                        + interaction.toolNames()));
       }
       if (!customerId.get().equals(argument(tickets.getFirst(), "customerId"))) {
         return effects()
@@ -93,19 +97,6 @@ public class ToolUseEvaluator extends Evaluator {
   }
 
   static String argument(ToolCall call, String name) {
-    var arguments = JsonSupport.getObjectMapper().convertValue(parse(call.arguments()), Map.class);
-    return String.valueOf(arguments.get(name));
-  }
-
-  private static Object parse(String json) {
-    try {
-      return JsonSupport.getObjectMapper().readTree(json);
-    } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
-      throw new IllegalArgumentException("tool arguments are not JSON", e);
-    }
-  }
-
-  private static List<String> names(List<ToolCall> calls) {
-    return calls.stream().map(ToolCall::name).toList();
+    return String.valueOf(call.argumentsAs(Map.class).get(name));
   }
 }

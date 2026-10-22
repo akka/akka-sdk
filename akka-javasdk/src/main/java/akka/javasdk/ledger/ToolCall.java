@@ -21,13 +21,14 @@ public record ToolCall(String id, String name, String arguments, String response
 
   /**
    * The arguments passed to the tool, decoded from their JSON as the given type, for example a
-   * record with one component per tool parameter.
+   * record with one component per tool parameter. Empty arguments decode as an empty JSON object.
    *
    * @throws IllegalArgumentException when the arguments do not decode as the type
    */
   public <T> T argumentsAs(Class<T> type) {
+    var json = arguments == null || arguments.isBlank() ? "{}" : arguments;
     try {
-      return JsonSupport.getObjectMapper().readValue(arguments, type);
+      return JsonSupport.getObjectMapper().readValue(json, type);
     } catch (JsonProcessingException e) {
       throw new IllegalArgumentException(
           "the arguments of tool call [" + name + "] do not decode as " + type.getName(), e);

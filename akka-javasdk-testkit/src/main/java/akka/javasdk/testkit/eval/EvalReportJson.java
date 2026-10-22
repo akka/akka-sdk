@@ -108,7 +108,6 @@ final class EvalReportJson {
 
   private static ReportDocument.Requirement requirement(RequirementSummary requirement) {
     return new ReportDocument.Requirement(
-        requirement.index(),
         requirement.evaluator(),
         requirement.outcome(),
         requirement.passedIn(),

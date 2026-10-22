@@ -336,7 +336,6 @@ public final class ExperimentRunner {
           interaction = reader.newestInteraction(agent.agentComponentId(), turn.sessionId());
         }
       }
-      var guardrails = interaction.map(reader::guardrails).orElse(List.of());
       interaction.ifPresent(
           record -> {
             var expected = agent.expectedEvaluators(record.failed());
@@ -345,6 +344,8 @@ public final class ExperimentRunner {
               for (var evaluator : expected) results.add(resultOf(evaluator, records));
             }
           });
+      // Read last, so a decision the runtime writes after the interaction record is included.
+      var guardrails = interaction.map(reader::guardrails).orElse(List.of());
       return new CaseResult(
           evalCase.id(),
           run,
@@ -576,11 +577,10 @@ public final class ExperimentRunner {
   }
 
   /**
-   * One requirement of a case over all runs: one evaluator at one position in the results of the
-   * case's attempts. The runner's {@link #TARGET} result is a requirement too, with no run passed.
+   * One requirement of a case over all runs: one evaluator over the results of the case's attempts.
+   * The runner's {@link #TARGET} result is a requirement too, with no run passed.
    *
    * @param caseId the case
-   * @param index the position of the result in the attempt, from 0
    * @param evaluator the evaluator component id, or {@link #TARGET}
    * @param passedIn the runs with the verdict PASS, ascending
    * @param failedIn the runs with the verdict FAIL, ascending
@@ -589,7 +589,6 @@ public final class ExperimentRunner {
    */
   public record RequirementSummary(
       String caseId,
-      int index,
       String evaluator,
       List<Integer> passedIn,
       List<Integer> failedIn,
@@ -611,30 +610,24 @@ public final class ExperimentRunner {
       return Outcome.INCONSISTENT;
     }
 
-    private record Key(int index, String evaluator) {}
-
     /** The requirements of one case, in the order their results first appear in its attempts. */
     static List<RequirementSummary> of(List<CaseResult> attempts) {
-      var byKey = new LinkedHashMap<Key, Map<EvalResult.Verdict, List<Integer>>>();
+      var byEvaluator = new LinkedHashMap<String, Map<EvalResult.Verdict, List<Integer>>>();
       for (var attempt : attempts) {
-        var results = attempt.evalResults();
-        for (var i = 0; i < results.size(); i++) {
-          var result = results.get(i);
-          byKey
-              .computeIfAbsent(
-                  new Key(i, result.evaluator()), k -> new EnumMap<>(EvalResult.Verdict.class))
+        for (var result : attempt.evalResults()) {
+          byEvaluator
+              .computeIfAbsent(result.evaluator(), k -> new EnumMap<>(EvalResult.Verdict.class))
               .computeIfAbsent(result.verdict(), v -> new ArrayList<>())
               .add(attempt.run());
         }
       }
       var caseId = attempts.getFirst().caseId();
-      return byKey.entrySet().stream()
+      return byEvaluator.entrySet().stream()
           .map(
               e ->
                   new RequirementSummary(
                       caseId,
-                      e.getKey().index(),
-                      e.getKey().evaluator(),
+                      e.getKey(),
                       e.getValue().getOrDefault(EvalResult.Verdict.PASS, List.of()),
                       e.getValue().getOrDefault(EvalResult.Verdict.FAIL, List.of()),
                       e.getValue().getOrDefault(EvalResult.Verdict.INCONCLUSIVE, List.of()),
@@ -642,15 +635,14 @@ public final class ExperimentRunner {
           .toList();
     }
 
-    private String render(boolean nameShared) {
-      var name = nameShared ? evaluator + " #" + (index + 1) : evaluator;
+    private String render() {
       var parts = new ArrayList<String>();
       if (!passedIn.isEmpty()) parts.add("passed in " + describeRuns(passedIn));
       if (!failedIn.isEmpty()) parts.add("failed in " + describeRuns(failedIn));
       if (!inconclusiveIn.isEmpty()) parts.add("inconclusive in " + describeRuns(inconclusiveIn));
       if (!notApplicableIn.isEmpty())
         parts.add("not applicable in " + describeRuns(notApplicableIn));
-      return caseId + " " + name + ": " + String.join(", ", parts);
+      return caseId + " " + evaluator + ": " + String.join(", ", parts);
     }
   }
 
@@ -704,16 +696,12 @@ public final class ExperimentRunner {
     // One line per requirement that passed in some runs and failed in others, and one per target
     // failure when the case itself is inconsistent.
     private List<String> renderInconsistencies() {
-      var requirements = requirements();
-      var nameCounts = new LinkedHashMap<String, Integer>();
-      for (var requirement : requirements)
-        nameCounts.merge(requirement.evaluator(), 1, Integer::sum);
       var lines = new ArrayList<String>();
-      for (var requirement : requirements) {
+      for (var requirement : requirements()) {
         var runnerResult = requirement.evaluator().equals(TARGET);
         if (requirement.outcome() == Outcome.INCONSISTENT
             || (runnerResult && outcome() == Outcome.INCONSISTENT)) {
-          lines.add(requirement.render(nameCounts.get(requirement.evaluator()) > 1));
+          lines.add(requirement.render());
         }
       }
       return lines;

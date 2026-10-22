@@ -28,7 +28,7 @@ import java.util.Locale;
  * @deprecated Write an {@link akka.javasdk.evaluation.Evaluator} component that calls a judge agent
  *     of your own to judge a summarization.
  */
-@Deprecated(since = "3.7.0")
+@Deprecated(since = "3.7.1")
 @Component(
     id = SummarizationEvaluator.COMPONENT_ID,
     name = "Summarization Evaluator Agent",

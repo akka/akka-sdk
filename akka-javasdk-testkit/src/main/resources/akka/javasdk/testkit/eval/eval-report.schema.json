@@ -106,9 +106,8 @@
     },
     "requirement": {
       "type": "object",
-      "required": ["index", "evaluator", "outcome", "passedIn", "failedIn", "inconclusiveIn", "notApplicableIn"],
+      "required": ["evaluator", "outcome", "passedIn", "failedIn", "inconclusiveIn", "notApplicableIn"],
       "properties": {
-        "index": { "type": "integer", "minimum": 0, "description": "The position of the result in the attempt, from 0." },
         "evaluator": { "type": "string", "description": "The evaluator component id, or target." },
         "outcome": { "enum": ["PASSED", "FAILED", "INCONSISTENT", "INCONCLUSIVE"], "description": "Over the runs where the requirement was conclusive. INCONSISTENT when it passed in some runs and failed in others, INCONCLUSIVE when it was conclusive in no run." },
         "passedIn": { "type": "array", "items": { "type": "integer", "minimum": 1 }, "description": "The runs with the verdict PASS, ascending." },

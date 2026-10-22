@@ -55,7 +55,6 @@
     "failedRuns" : 0,
     "inconclusiveRuns" : 0,
     "requirements" : [ {
-      "index" : 0,
       "evaluator" : "quality",
       "outcome" : "PASSED",
       "passedIn" : [ 1 ],
@@ -63,7 +62,6 @@
       "inconclusiveIn" : [ ],
       "notApplicableIn" : [ ]
     }, {
-      "index" : 1,
       "evaluator" : "tone",
       "outcome" : "PASSED",
       "passedIn" : [ 1 ],
@@ -78,7 +76,6 @@
     "failedRuns" : 1,
     "inconclusiveRuns" : 0,
     "requirements" : [ {
-      "index" : 0,
       "evaluator" : "quality",
       "outcome" : "FAILED",
       "passedIn" : [ ],
@@ -86,7 +83,6 @@
       "inconclusiveIn" : [ ],
       "notApplicableIn" : [ ]
     }, {
-      "index" : 1,
       "evaluator" : "tone",
       "outcome" : "PASSED",
       "passedIn" : [ 1 ],
@@ -101,7 +97,6 @@
     "failedRuns" : 0,
     "inconclusiveRuns" : 1,
     "requirements" : [ {
-      "index" : 0,
       "evaluator" : "quality",
       "outcome" : "PASSED",
       "passedIn" : [ 1 ],
@@ -109,7 +104,6 @@
       "inconclusiveIn" : [ ],
       "notApplicableIn" : [ ]
     }, {
-      "index" : 1,
       "evaluator" : "tone",
       "outcome" : "INCONCLUSIVE",
       "passedIn" : [ ],

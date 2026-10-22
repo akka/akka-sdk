@@ -164,7 +164,6 @@ public record ReportDocument(
   /**
    * One requirement of a case over all runs.
    *
-   * @param index the position of the result in the attempt, from 0
    * @param evaluator the evaluator component id, or {@link ExperimentRunner#TARGET}
    * @param outcome over the runs where the requirement was conclusive: PASSED, FAILED, INCONSISTENT
    *     when it passed in some runs and failed in others, or INCONCLUSIVE when it was conclusive in
@@ -175,7 +174,6 @@ public record ReportDocument(
    * @param notApplicableIn the runs with the verdict NOT_APPLICABLE, ascending
    */
   public record Requirement(
-      int index,
       String evaluator,
       Outcome outcome,
       List<Integer> passedIn,
