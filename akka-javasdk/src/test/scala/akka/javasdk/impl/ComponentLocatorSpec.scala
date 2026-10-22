@@ -387,7 +387,7 @@ class ComponentLocatorSpec extends AnyWordSpec with Matchers {
       exception.getMessage should include("Found no component descriptor for the service")
       exception.getMessage should include(s"only descriptors without the service marker [${libraryDescriptor.url}]")
       exception.getMessage should include("earlier SDK version")
-      exception.getMessage should include("`non-akka-service`")
+      (exception.getMessage should not).include("`non-akka-service`")
       exception.getMessage should include(s"If this is a test of a component library")
     }
 
