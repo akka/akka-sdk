@@ -324,8 +324,9 @@ include::example$event-sourced-counter-brokers/src/test/java/counter/application
 <2> Add the subject to which the message is related, that is the `counterId`.
 <3> Set the mandatory header "Content-Type" accordingly.
 <4> Publish the message along with its metadata to topic `commandsTopic`.
-<5> Upon receiving the message, access the metadata.
-<6> Assert the headers `Content-Type` and `ce-subject` (every CloudEvent header is prefixed with "ce-") have the expected values.
+<5> Read the next message with subject `counterId` from topic `counter-events-with-meta`. The call drops messages with a different or missing subject, such as messages from other tests.
+<6> After the call returns the message, read the metadata.
+<7> Assert the headers `Content-Type` and `ce-subject` (every CloudEvent header is prefixed with "ce-") have the expected values.
 
 
 ==== One Suite, Multiple Tests
@@ -347,6 +348,8 @@ include::example$event-sourced-counter-brokers/src/test/java/counter/application
 <2> Clear the topic ignoring any unread messages.
 
 NOTE: Despite the example, you are neither forced to clear all topics nor to do it before each test. You can do it selectively, or you might not even need it depending on your tests and the flows they test.
+
+Clearing a topic removes only the messages that have already arrived. A message from a previous test can still arrive after you clear the topic. A consumer can write such a message to a topic that the previous test never read. Call `expectOneTyped(Class, String)` to skip such messages. This method returns the next message with the given CloudEvent subject, the `ce-subject` metadata. It drops messages with a different or missing subject. A topic message carries a subject only when the producing consumer sets `ce-subject` in its metadata, as `CounterJournalToTopicWithMetaConsumer` does. The `verifyCounterCommandsAndPublishWithMetadata` test in `CounterIntegrationTest` uses it.
 
 === External Broker
 
@@ -408,6 +411,8 @@ include::example$event-sourced-customer-registry/src/test/java/customer/api/Cust
 <4> Assert against the transformed public event type.
 
 `OutgoingMessages` exposes the same assertions used for topic outgoing messages, such as `expectN(...)` to read several messages or `expectNone(...)` to verify that a given internal event produces no public event (for example, when the transformation uses `effects().ignore()`).
+
+Each stream message carries the id of the source entity as its `ce-subject`. Call `expectOneTyped(Class, String)` with an entity id to read the next event of that entity.
 
 == Multi-region replication
 

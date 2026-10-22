@@ -7,6 +7,7 @@ package akka.javasdk.testkit.impl
 import java.time
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import java.util.function.Predicate
 import java.util.{ List => JList }
 
 import scala.concurrent.Await
@@ -19,6 +20,7 @@ import scala.jdk.DurationConverters._
 import scala.jdk.OptionConverters._
 import scala.util.Failure
 import scala.util.Success
+import scala.util.Try
 
 import akka.NotUsed
 import akka.actor.ActorRef
@@ -427,18 +429,58 @@ private[testkit] class OutgoingMessagesImpl(
 
   override def expectOneTyped[T](clazz: Class[T], timeout: time.Duration): TestKitMessage[T] = {
     val msg = expectMsgInternal(destinationProbe, timeout, Some(clazz))
+    decodeTyped(msg, clazz)
+  }
+
+  override def expectOneTyped[T](clazz: Class[T], subject: String): TestKitMessage[T] =
+    expectOneTyped(clazz, subject, DefaultTimeout)
+
+  override def expectOneTyped[T](clazz: Class[T], subject: String, timeout: time.Duration): TestKitMessage[T] =
+    fishTyped(clazz, _.getMetadata.get("ce-subject").toScala.contains(subject), timeout, s"with subject $subject")
+
+  override def expectOneTyped[T](clazz: Class[T], matching: Predicate[TestKitMessage[T]]): TestKitMessage[T] =
+    expectOneTyped(clazz, matching, DefaultTimeout)
+
+  override def expectOneTyped[T](
+      clazz: Class[T],
+      matching: Predicate[TestKitMessage[T]],
+      timeout: time.Duration): TestKitMessage[T] =
+    fishTyped(clazz, matching.test, timeout, "matching the predicate")
+
+  private def fishTyped[T](
+      clazz: Class[T],
+      matching: TestKitMessage[T] => Boolean,
+      timeout: time.Duration,
+      description: String): TestKitMessage[T] = {
+    var found: Option[TestKitMessage[T]] = None
+    try {
+      destinationProbe.fishForMessage(timeout.toScala) { case cmd: EmitSingleCommand =>
+        // a message that does not decode to the type does not match
+        found = Try(decodeTyped(cmd, clazz)).toOption.filter(matching)
+        found.isDefined
+      }
+    } catch {
+      case _: AssertionError =>
+        throw new AssertionError(
+          s"timeout (${timeout.toScala}) while waiting for message of type ${clazz.getName} $description")
+    }
+    found.get
+  }
+
+  private def decodeTyped[T](msg: EmitSingleCommand, clazz: Class[T]): TestKitMessage[T] = {
     val metadata = MetadataImpl.of(metadataToSpi(msg.getMessage.getMetadata))
     // FIXME don't use proto
     val scalaPb = ScalaPbAny(typeUrlFor(metadata), msg.getMessage.payload)
 
-    val decodedMsg = if (serializer.isJsonContentType(typeUrlFor(metadata))) {
+    val decodedMsg =
+      if (serializer.isJsonContentType(typeUrlFor(metadata))) {
       JsonSupport.getObjectMapper
         .readerFor(clazz)
         .readValue(msg.getMessage.payload.toByteArray)
-    } else {
-      val anySupport = new AnySupport(Array(), getClass.getClassLoader)
-      anySupport.decodeMessage(scalaPb)
-    }
+      } else {
+        val anySupport = new AnySupport(Array(), getClass.getClassLoader)
+        anySupport.decodeMessage(scalaPb)
+      }
 
     val concreteType = TestKitMessageImpl.expectType(decodedMsg, clazz)
     TestKitMessageImpl(concreteType, metadata)

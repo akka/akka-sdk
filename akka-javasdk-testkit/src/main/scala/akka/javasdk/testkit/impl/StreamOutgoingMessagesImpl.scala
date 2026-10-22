@@ -22,6 +22,7 @@ import akka.javasdk.impl.serialization.Serializer
 import akka.persistence.Persistence
 import akka.persistence.query.Offset
 import akka.persistence.query.typed.EventEnvelope
+import akka.persistence.typed.PersistenceId
 import akka.projection.AllowSeqNrGapsMetadata
 import akka.projection.grpc.consumer.GrpcQuerySettings
 import akka.projection.grpc.consumer.scaladsl.GrpcReadJournal
@@ -218,6 +219,9 @@ private[testkit] object StreamOutgoingMessagesImpl {
 
           val metadata = Metadata(entries = Seq(
             MetadataEntry("ce-type", MetadataEntry.Value.StringValue(ceType)),
+            MetadataEntry(
+              "ce-subject",
+              MetadataEntry.Value.StringValue(PersistenceId.extractEntityId(env.persistenceId))),
             MetadataEntry("Content-Type", MetadataEntry.Value.StringValue(contentType))))
 
           Some(
