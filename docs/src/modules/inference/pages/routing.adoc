@@ -252,7 +252,7 @@ You write, apply, test and version a tagging ruleset as you do a routing ruleset
 
 All rulesets of an exchange share one classifier deadline. A tagging ruleset that defers to a classifier spends part of it, and a routing ruleset that runs after it can have nothing left. Set the priority of a tagging ruleset that defers so that it runs after the routing rulesets, or use a xref:reference:descriptors/routing-ruleset.adoc#byattribute[`byAttribute`] outcome, which maps an attribute and consults no classifier.
 
-To read spend by tag, see xref:inference:tracking-spend.adoc#tags[Divide by a tag].
+To read spend by tag, see xref:inference:tracking-spend.adoc#tags[Divide spend by a tag].
 
 [#request-meaning]
 == Routing on request meaning
