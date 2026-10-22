@@ -35,10 +35,10 @@ public interface OriginAwareContext extends Context {
    *
    * <ul>
    *   <li>If the message is an event from an {@link EventSourcedEntity} or a change update from a
-   *       {@link KeyValueEntity}, it returns {@code true} if it originated in the region where
-   *       this consumer is running. Otherwise, it returns {@code false}.
-   *   <li>This method always returns {@code true} when consuming messages from another service
-   *       (see {@link Consume.FromServiceStream}) or from a topic (see {@link Consume.FromTopic}),
+   *       {@link KeyValueEntity}, it returns {@code true} if it originated in the region where this
+   *       consumer is running. Otherwise, it returns {@code false}.
+   *   <li>This method always returns {@code true} when consuming messages from another service (see
+   *       {@link Consume.FromServiceStream}) or from a topic (see {@link Consume.FromTopic}),
    *       because their {@link #originRegion()} is empty. This does not establish where the message
    *       was created or prevent processing in multiple regions.
    * </ul>
