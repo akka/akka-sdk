@@ -55,6 +55,8 @@ A period is a window of whole UTC hours. Each answer states whether its figures 
 * _incomplete_: some hours have not been reported on yet, for example because the window includes the current hour, or some exchanges were lost,
 * _unknown_: no hour of the window has been reported on yet.
 
+An hour is reported on about a day after it ends, with or without traffic. Until then, a window that holds it is not complete.
+
 A figure with no value says why, and never reads as zero.
 
 === Attribution
