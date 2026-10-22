@@ -191,7 +191,6 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Understanding inference costs](https://doc.akka.io/inference/spend.html.md): Pricing rules, unpriced traffic, token lower bounds, reporting completeness, and attribution
 
 - [Tracking inference spend](https://doc.akka.io/inference/tracking-spend.html.md): Publishing a versioned pricing catalog, and reading what model traffic in a period consumed and cost
-- [Erasing caller data](https://doc.akka.io/inference/erasing-caller-data.html.md): Removing the identifier that spend is attributed to, and what an erasure does not change
 
 ## Concepts
 
@@ -239,7 +238,7 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [CLI command map](https://doc.akka.io/reference/cli/command-map.html.md): Which section describes the tasks for each akka command group
 - [Model commands](https://doc.akka.io/reference/cli/models.html.md): akka models — deployments, hardware, routes, keys, and governance
 - [Routing commands](https://doc.akka.io/reference/cli/routing.html.md): akka rulesets, routing-classifiers, and use-cases
-- [Cost and traffic commands](https://doc.akka.io/reference/cli/cost-and-traffic.html.md): akka optimize spend, callers, pricing-catalog, and captures
+- [Cost and traffic commands](https://doc.akka.io/reference/cli/cost-and-traffic.html.md): akka optimize spend, pricing-catalog, and captures
 - [Training and evaluation commands](https://doc.akka.io/reference/cli/training.html.md): akka optimize training, trained-models, datasets, and eval
 - [Model descriptor](https://doc.akka.io/reference/descriptors/model-descriptor.html.md): Every field of the YAML that declares accelerator allocations, models, and model endpoints
 - [Routing ruleset](https://doc.akka.io/reference/descriptors/routing-ruleset.html.md): Predicates, attributes, match blocks, and outcomes for attribute routing

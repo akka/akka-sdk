@@ -1,4 +1,5 @@
 = Tracking inference spend
+:page-aliases: inference:erasing-caller-data.adoc
 :page-summary: Inference spend is the cost of the model traffic in a period and the tokens it consumed, computed from recorded exchanges and priced from a versioned pricing catalog.
 :page-persona: builder-ai-ml, operator
 :page-banner: inference
@@ -306,13 +307,70 @@ TOTAL           81         1860+   0.0256365000000000 USD  0         0
 | `model,useCase`
 | Combination of the two.
 
-| `caller`
-| Caller, ranked, with one row for the remainder. `caller` cannot be combined with other divisions.
+| `system`
+| System id that the request named, and one row, `unidentified`, for traffic that named none. See <<systems>>.
 |===
 
-`--limit` sets how many rows a ranked division returns. The service sets the default.
-
 A `+` after a token count marks a lower bound: some exchanges did not report every token class, so the true count can be higher. This is common, because providers do not report every class. For example, OpenAI responses report cache-write tokens only for the models that charge for them, GPT-5.6 and later, and Anthropic responses do not report reasoning tokens. The command prints a note that names the classes that were not reported.
+
+[#systems]
+=== Attribute spend to systems
+
+A system id names the AI system that a request was sent for. The request names it in the `x-akka-system-id` header. An agent of an Akka service sends this header with its identity headers. See xref:sdk:model-provider-details.adoc#_identity_headers[Identity headers]. Any other client sets the header itself. Traffic that names no system id is the row `unidentified`.
+
+Divide a period by system id:
+
+[source,shell]
+----
+akka optimize spend get --from 2026-09-15T00:00:00Z --to 2026-09-16T00:00:00Z --by system
+----
+
+[source,text]
+----
+SYSTEM ID     EXCHANGES  TOKENS   SPEND       UNPRICED  UNPRICED TOKENS
+svc-support   4210       98400+   1.2400 USD  0         0
+svc-search    2100       47600+   0.5900 USD  0         0
+svc-billing   980        22100+   0.2900 USD  0         0
+svc-triage    1200       23400+   0.2900 USD  0         0
+unidentified  120        2900+    0.0310 USD  0         0
+TOTAL         8610       194400+  2.4410 USD  0         0
+----
+
+The answer has a row for every system id with traffic in the period. Nothing is ranked or folded, so the rows add up to the total. `system` combines with the other divisions, for example `--by system,model` for what each system spent on each model.
+
+Pass `--system` to read the spend of one system id. It works on `spend get`, `spend compare` and `spend series`, with any division:
+
+[source,shell]
+----
+akka optimize spend get --from 2026-09-15T00:00:00Z --to 2026-09-16T00:00:00Z --by model --system svc-support
+----
+
+[source,text]
+----
+MODEL           EXCHANGES  TOKENS  SPEND       UNPRICED  UNPRICED TOKENS
+frontier-model  3890       91800+  1.2310 USD  0         0
+finetune-model  320        6600+   0.0090 USD  0         0
+TOTAL           4210       98400+  1.2400 USD  0         0
+----
+
+List every system id that the service has seen:
+
+[source,shell]
+----
+akka optimize spend system-ids
+----
+
+[source,text]
+----
+SYSTEM ID    CALLS  FIRST CALL HOUR       LAST CALL HOUR
+svc-billing  41200  2026-06-02T09:00:00Z  2026-09-15T23:00:00Z
+svc-search   88100  2026-08-30T14:00:00Z  2026-09-16T00:00:00Z
+svc-support  96400  2026-05-11T08:00:00Z  2026-09-16T00:00:00Z
+----
+
+Each row states how many exchanges named the system id, and the first and the last UTC hour in which one did. These are whole hours, not instants.
+
+Nothing vouches for a system id: a client sends the value it chooses, unless your deployment overwrites the header at its own edge. The service keeps every system id that it sees, and nothing deletes one. Use the name of a system as the system id, never personal data.
 
 [#unpriced]
 === Find unpriced traffic
@@ -357,4 +415,3 @@ include::partial$aao-inference-notice.adoc[]
 * xref:reference:cli/akka-cli/akka_optimize_spend.adoc[`akka optimize spend`]
 * xref:reference:cli/akka-cli/akka_optimize_pricing-catalog.adoc[`akka optimize pricing-catalog`]
 * xref:reference:cli/conventions.adoc#models-and-optimize[Model and optimize commands]
-* xref:inference:erasing-caller-data.adoc[]
