@@ -496,12 +496,12 @@ BUCKET                COMPLETENESS  PERMANENCE  MODEL           EXCHANGES  TOKEN
 2026-09-14T00:00:00Z  complete      reported    TOTAL           1833       44370+  12.2739 USD  0         0
 ----
 
-`--granularity` is `hour` or `day`, and has no default. A day series starts and ends at midnight UTC. For days in another time zone, ask for hours and add them up. `PERMANENCE` is `reported` when nothing more arrives for that hour or day, and a publish can still price its unpriced traffic. `--by` and `--system` work as they do for one period.
+`--granularity` is `hour` or `day`, and has no default. A day series starts and ends at midnight UTC. For days in another time zone, ask for hours and add them up. `PERMANENCE` is `reported` when nothing more arrives for that hour or day, and `working` otherwise. A publish can still price the unpriced traffic of a reported hour or day. `--by` and `--system` work as they do for one period.
 
 [#recent]
 === List the most recent exchanges
 
-`spend recent` lists the most recent exchanges, newest first. `--since` is required. It is an ISO-8601 instant, and it is inclusive.
+`spend recent` lists the most recent exchanges, newest first. `--since` is required. It is an ISO-8601 instant, and it is inclusive. The service refuses a `--since` older than its oldest record of an exchange, and the refusal names the oldest instant that you can ask for.
 
 [source,shell]
 ----
