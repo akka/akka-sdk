@@ -1,5 +1,5 @@
 = Cost and traffic commands
-:page-summary: The akka optimize commands for spend, callers, pricing, and recorded captures.
+:page-summary: The akka optimize commands for spend, pricing, and recorded captures.
 :page-persona: builder-ai-ml, operator
 :page-banner: inference
 
@@ -25,24 +25,11 @@ These commands cover what an organization spends on inference. Every command on 
 | `akka optimize spend conversations list --from INSTANT --to INSTANT`
 | The conversations of a period that cost the most.
 
+| `akka optimize spend system-ids`
+| Every system id the service has seen, with its calls and its first and last hour.
+
 | `akka optimize spend info`
 | Which service is answering at this address.
-|===
-
-== Callers
-
-`akka optimize callers` holds the callers that spend figures are attributed to. The alias `caller` is accepted.
-
-[cols="2,3", options="header"]
-|===
-| Command
-| Description
-
-| `akka optimize callers erase VALUE --basis BASIS`
-| Remove one caller and keep every figure it is behind. `BASIS` is `declared` when the request carried the `x-optimize-caller` header, or `forwarded` when a proxy reported the address.
-
-| `akka optimize callers erase VALUE --basis BASIS --dry-run`
-| Report what the erasure would reach without writing anything.
 |===
 
 == Pricing catalog
@@ -94,7 +81,6 @@ For pricing rules, unpriced traffic, reporting completeness, and attribution, se
 == See also
 
 * xref:inference:tracking-spend.adoc[]
-* xref:inference:erasing-caller-data.adoc[]
 * xref:reference:cli/akka-cli/akka_optimize.adoc[akka optimize command reference]
 * xref:reference:cli/models.adoc[Model commands]
 * xref:reference:cli/routing.adoc[Routing commands]
