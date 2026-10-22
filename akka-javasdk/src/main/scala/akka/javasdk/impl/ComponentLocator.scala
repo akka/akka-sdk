@@ -226,7 +226,7 @@ private[javasdk] object ComponentLocator {
    * processor marked, so a stale descriptor from main or test classes stays with the service. When no descriptor is
    * marked, the service descriptors are the ones with the descriptor file name of `project`. Fails on service
    * descriptors from more than one artifact. Fails on no service descriptor unless library components are listed in
-   * config.
+   * config or only SDK-provided descriptors are found.
    */
   private[impl] def classifyDescriptors(
       descriptors: Seq[Descriptor],
@@ -251,6 +251,12 @@ private[javasdk] object ComponentLocator {
             project.map(_.artifactId).getOrElse(""))
         ClassifiedDescriptors(service, sdkProvided, library)
       case 0 if libraryComponentsListed => ClassifiedDescriptors(Seq.empty, sdkProvided, library)
+      case 0 if library.isEmpty && sdkProvided.nonEmpty =>
+        logger.info(
+          "Found no component descriptor for the service, loading only the SDK components from [{}]. If you have " +
+          "components, run `mvn clean compile`.",
+          sdkProvided.map(_.url).mkString(", "))
+        ClassifiedDescriptors(Seq.empty, sdkProvided, library)
       case 0 if library.isEmpty =>
         throw new IllegalStateException(
           "Found no component descriptor for the service. If you have components, it looks like your project needs " +
