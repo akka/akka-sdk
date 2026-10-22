@@ -355,6 +355,21 @@ public Effect<Done> charge(ChargeCommand command) {
 }
 ```
 
+### Read-only Entity and Workflow Handlers
+
+Use `ReadOnlyEffect<T>` for Event Sourced Entity, Key Value Entity, and Workflow
+command handlers that only read state and return `effects().reply(...)` or
+`effects().error(...)`. The return type prevents state-changing effects at compile
+time, including in a single-region service.
+
+Use `Effect<T>` for handlers that persist events, update or delete state, or
+transition a workflow. A state-changing handler still returns `Effect<T>` when
+some validation branches only return an error.
+
+For entities in multiple regions, `ReadOnlyEffect<T>` permits local reads from
+replicated state, which can lag behind the primary region. Keep `Effect<T>` for
+entity reads that require the latest state from the primary region.
+
 ### View Event Handler (from ESE)
 
 ```java
@@ -543,7 +558,7 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> {
       .thenReply(Done.getInstance());
   }
 
-  public Effect<String> getAnswer() {
+  public ReadOnlyEffect<String> getAnswer() {
     if (currentState() == null || currentState().answer.isEmpty()) {
       return effects().error("Workflow not completed");
     }
@@ -860,6 +875,7 @@ public class MyEndpointIntegrationTest extends TestKitSupport {
 - Use `@McpTool` parameter types other than primitives, boxed primitives, or `String` → unsupported; mark optional parameters `Optional<T>`
 
 ✅ **DO:**
+- Use `ReadOnlyEffect<T>` for entity and workflow read-only handlers; keep `Effect<T>` for entity reads requiring primary-region consistency
 - Use Java records for immutable data
 - Add `@TypeName` to all events
 - Validate in domain objects, return effects in entities
@@ -918,6 +934,7 @@ Before presenting code, verify:
 - [ ] State uses immutable records
 
 **Entity**
+- [ ] Read-only handlers return `ReadOnlyEffect<T>` unless primary-region consistency is required; state-changing handlers return `Effect<T>`
 - [ ] Inject `EventSourcedEntityContext` if needed, `emptyState()` uses injected context
 
 **View**
@@ -928,7 +945,7 @@ Before presenting code, verify:
 **Workflow**
 - [ ] **STOP: Did you read `workflows.html.md` BEFORE writing any code?** (Required for first workflow in session)
 - [ ] Uses `settings()` with `WorkflowSettings` (NOT `definition()`)
-- [ ] Command handlers accept 0 or 1 parameter and return `Effect<T>`
+- [ ] Command handlers accept 0 or 1 parameter; read-only handlers return `ReadOnlyEffect<T>`, state-changing handlers return `Effect<T>`
 - [ ] Step methods accept 0 or 1 parameter and return `StepEffect` (NOT `Effect`)
 - [ ] Uses method references for step names (e.g., `TransferWorkflow::withdrawStep`)
 - [ ] Uses `stepEffects()` in steps, `effects()` in command handlers
