@@ -14,7 +14,7 @@ An agent that works in a demo is not yet one that customers and regulators can r
 
 Evaluations measure an agent against defined quality criteria for its task, with deterministic evaluators and with a model acting as judge. They run in your tests before an agent is released, in batches against recorded traffic, and continuously on live traffic. Replay runs a new evaluator against past traffic by replaying the real execution. Adversarial tests attack your own agent with jailbreaks, prompt injection and known hazard categories, and report whether the agent resisted each attack.
 
-See xref:concepts:evaluation.adoc[], xref:testing:evaluation/index.adoc[Evaluation in tests], xref:testing:evaluation/adversarial.adoc[], xref:testing:evaluation/replay.adoc[] and xref:sdk:evaluators.adoc[Evaluators].
+See xref:concepts:evaluation.adoc[], xref:testing:evaluation/index.adoc[Evaluation in tests], xref:testing:evaluation/adversarial.adoc[] and xref:sdk:evaluators.adoc[Evaluators].
 
 == Enforcing controls
 
@@ -34,7 +34,7 @@ A control is an obligation plus the mechanism that meets it. Every control is on
 
 | Evaluation
 | Measures and scores behavior, live or in a test.
-| xref:sdk:evaluators.adoc[Evaluators], xref:testing:evaluation/judges.adoc[]
+| xref:sdk:evaluators.adoc[Evaluators], xref:sdk:evaluators.adoc#judging[Judging with a model]
 
 | Human
 | Gives a named person authority over a decision. The agent waits, durably, until the person decides.
@@ -83,7 +83,7 @@ Agents that do not run on Akka send their traces over OpenTelemetry. For those a
 | xref:sdk:agents/guardrails.adoc[Guardrails], xref:sdk:agents/classifiers.adoc[Classifiers], xref:sdk:evaluators.adoc[Evaluators], xref:sdk:sanitization.adoc[Data sanitization], xref:sdk:access-control.adoc[]
 
 | Testing
-| xref:testing:evaluation/index.adoc[Evaluation], xref:testing:evaluation/adversarial.adoc[], xref:testing:evaluation/replay.adoc[]
+| xref:testing:evaluation/index.adoc[Evaluation], xref:testing:evaluation/adversarial.adoc[]
 
 | Reference
 | xref:reference:specify/auditors.adoc[Auditors], xref:reference:specify/catalog/agentic-ai-safety.adoc[Agentic AI safety exit conditions]

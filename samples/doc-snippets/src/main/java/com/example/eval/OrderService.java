@@ -2,7 +2,7 @@ package com.example.eval;
 
 // tag::class[]
 /**
- * The shop's order system as the agent sees it. Production wires a client for the real system,
+ * Production wires a client for the real system,
  * an evaluation wires a stub that answers with what a case loaded into it.
  */
 public interface OrderService {

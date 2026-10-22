@@ -30,8 +30,8 @@ Read each result in its own context. Missing evidence is not a successful check,
 
 == Next steps
 
-* xref:testing:evaluation/index.adoc[] and xref:testing:evaluation/eval-cases.adoc[] define test evaluation.
-* xref:testing:evaluation/judges.adoc[] and xref:testing:evaluation/gates-and-reports.adoc[] configure scoring and acceptance.
-* xref:testing:evaluation/replay.adoc[] and xref:testing:evaluation/adversarial.adoc[] test recorded traffic and attacks.
+* xref:testing:evaluation/index.adoc[] and xref:testing:evaluation/getting-started.adoc[] define test evaluation.
+* xref:testing:evaluation/gates-and-reports.adoc[] configures scoring and acceptance.
+* xref:testing:evaluation/adversarial.adoc[] tests attacks.
 * xref:sdk:evaluators.adoc[] evaluates live interactions.
 * xref:optimize:trainer/evaluation.adoc[] evaluates trained models.
