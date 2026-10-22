@@ -370,7 +370,7 @@ A route reads as its basis, then `ruleset@revision` and the rule where the route
 |===
 
 [#tags]
-==== Divide by a tag
+==== Divide spend by a tag
 
 A tag is a value that a tagging ruleset gives an exchange, and `KEY` is the name of the tagging ruleset. See xref:inference:routing.adoc#tagging[Tagging traffic].
 
@@ -499,7 +499,7 @@ BUCKET                COMPLETENESS  PERMANENCE  MODEL           EXCHANGES  TOKEN
 `--granularity` is `hour` or `day`, and has no default. A day series starts and ends at midnight UTC. For days in another time zone, ask for hours and add them up. `PERMANENCE` is `reported` when nothing more arrives for that hour or day, and a publish can still price its unpriced traffic. `--by` and `--system` work as they do for one period.
 
 [#recent]
-=== List the most recent model calls
+=== List the most recent exchanges
 
 `spend recent` lists the most recent exchanges, newest first. `--since` is required. It is an ISO-8601 instant, and it is inclusive.
 
