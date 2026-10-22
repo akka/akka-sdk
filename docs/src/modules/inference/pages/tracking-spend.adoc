@@ -312,6 +312,9 @@ A `+` after a token count marks a lower bound: some exchanges did not report eve
 | `route`
 | Route that the gateway router took to the destination of the exchange.
 
+| `tag:KEY`
+| Value that the tagging ruleset `KEY` gave the exchange, and one row for traffic that got no value. See <<tags>>.
+
 | A comma-separated list, such as `model,useCase` or `system,route`
 | Combination of the listed divisions.
 |===
@@ -365,6 +368,28 @@ A route reads as its basis, then `ruleset@revision` and the rule where the route
 | `unknown`
 | The record of the exchange does not state the route.
 |===
+
+[#tags]
+==== Divide by a tag
+
+A tag is a value that a tagging ruleset gives an exchange, and `KEY` is the name of the tagging ruleset. See xref:inference:routing.adoc#tagging[Tagging traffic].
+
+[source,shell]
+----
+akka optimize spend get --from 2026-09-15T16:00:00Z --to 2026-09-15T17:00:00Z --by model,tag:team
+----
+
+[source,text]
+----
+MODEL           TEAM      EXCHANGES  TOKENS  SPEND                   UNPRICED  UNPRICED TOKENS
+frontier-model  payments  41         948+    0.0154000000000000 USD  0         0
+frontier-model  support   19         441+    0.0071750000000000 USD  0         0
+frontier-model  —         9          186+    0.0030000000000000 USD  0         0
+finetune-model  payments  12         285+    0.0000615000000000 USD  0         0
+TOTAL                     81         1860+   0.0256365000000000 USD  0         0
+----
+
+The row with no name holds the traffic that got no value for the key, so the rows still add up to the total. The gateway router sets the tag when it serves the exchange, so a ruleset that you change later does not move a figure.
 
 [#systems]
 === Attribute spend to systems
@@ -491,7 +516,7 @@ SERVED AT                 EXCHANGE                    SYSTEM ID     TAGS        
 2026-09-15T16:03:58.770Z  01K5AZ3E8C5V2R7T0M4X9D1GJS  unidentified  team=search    frontier-model  example   answered  65+     0.0001384500000000 USD
 ----
 
-Each row is one exchange: when it was served, its exchange id, its system id, its tags, the model, the provider that the pricing catalog names for the model, its outcome, its tokens and its spend. `--limit` sets how many rows the command returns: 20 by default, and at most 100. `--system` lists the exchanges of one system id.
+Each row is one exchange: when it was served, its exchange id, its system id, its tags, the model, the provider that the pricing catalog names for the model, its outcome, its tokens and its spend. `TAGS` holds every tag of the exchange, written `KEY=VALUE`, such as `team=payments`. `--limit` sets how many rows the command returns: 20 by default, and at most 100. `--system` lists the exchanges of one system id, and `--tag KEY:VALUE` lists the exchanges that carry that tag. With both flags, a row has to match both.
 
 `OUTCOME` is one of these:
 
