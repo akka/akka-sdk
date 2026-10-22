@@ -5,9 +5,9 @@
 
 include::ROOT:partial$include.adoc[]
 
-Inference spend is the cost of the model traffic in a period, together with the tokens that traffic consumed. An exchange is one request to a model and the response that the model returns. The gateway router records each exchange, and Akka computes spend from the recorded exchanges. The portfolio service prices each exchange once, when it stores the exchange, at the rate that the pricing catalog then holds for the instant the exchange was served.
+Inference spend is the cost of the model traffic in a period, together with the tokens that traffic consumed. An exchange is one request to a model and the response that the model returns. The gateway router records each exchange, and Akka computes spend from the recorded exchanges. The portfolio service prices each exchange when it stores the exchange, at the rate that the pricing catalog holds for the instant the exchange was served. If the served name has no price at that time, the service prices the exchange later, once a published price covers the instant it was served.
 
-Two command groups work together. `akka optimize pricing-catalog` publishes the prices, and `akka optimize spend` reads the figures computed from them. Each price belongs to a served name: the model name that the provider reports in the `model` field of its response, for example `claude-sonnet-5-5`. Publish a price for each served name before your services send traffic to that model. An exchange that has no price counts in the token totals and adds nothing to the spend. See <<unpriced>>.
+Two command groups work together. `akka optimize pricing-catalog` publishes the prices, and `akka optimize spend` reads the figures computed from them. Each price belongs to a served name: the model name that the provider reports in the `model` field of its response, for example `claude-sonnet-5-5`. Publish a price for each served name before your services send traffic to that model. An exchange that has no price counts in the token totals and adds nothing to the spend. When traffic is recorded before its served name has a price, the service prices it after you publish a price that takes effect at or before that traffic. See <<unpriced>>.
 
 == Before you begin
 
@@ -22,7 +22,7 @@ Spend has figures only for traffic that the gateway router recorded. Traffic tha
 
 The pricing catalog holds the price of each served name as rates per million tokens. A response without a `model` field is unpriced.
 
-The catalog is versioned. A published version is never edited, so a figure computed under a price stays the same when you read it again. To change a price, publish a new version that takes effect later.
+The catalog is versioned. A published version is never edited, so an exchange that a version priced keeps that price. To change a price, publish a new version that takes effect later.
 
 === Write a catalog document
 
@@ -61,7 +61,7 @@ A catalog document is JSON:
 | Meaning
 
 | `effectiveAt`
-| Required. The ISO-8601 instant in UTC from which the prices apply. It must be later than the latest price of every served name that the document carries. It can be in the future or in the past. A price with a past `effectiveAt` does not reprice traffic that is already recorded.
+| Required. The ISO-8601 instant in UTC from which the prices apply. It must be later than the latest price of every served name that the document carries. It can be in the future or in the past. When the document holds the first price of a served name and `effectiveAt` is in the past, that price also prices the recorded traffic of the served name from that instant on. A later price with a past `effectiveAt` does not change traffic that an earlier price covered.
 
 | `source`
 | Optional. Free text that records where the prices came from.
@@ -287,9 +287,14 @@ A `+` after a token count marks a lower bound: some exchanges did not report eve
 [#unpriced]
 === Find unpriced traffic
 
-An exchange is unpriced when no price covers every token class that it used. It counts in the exchanges and tokens, and not in the spend. When a period has unpriced traffic, the answer states the cause: a served name with no price, or a token class with no rate. Divide by `model` to see which served names have unpriced traffic. Publish a catalog version that adds the price or the missing rate. The new price applies to traffic that is served after it takes effect and recorded after it is published. Traffic that was already recorded stays unpriced.
+An exchange is unpriced when no price covers every token class that it used. It counts in the exchanges and tokens, and not in the spend. When a period has unpriced traffic, the answer states the cause: a served name with no price, or a token class with no rate. Divide by `model` to see which served names have unpriced traffic. Publish a catalog version that adds the price or the missing rate.
 
-The rate that applies to an exchange is the one that the catalog holds, when the exchange is recorded, for the instant it was served. The service prices the exchange once and does not price it again. Traffic recorded soon after a publish can still be priced at the previous rate, or recorded as unpriced if the served name had no earlier price, and a new price cannot take effect earlier than the latest price for the same served name.
+Which unpriced traffic the new version prices depends on the cause:
+
+* A served name with no price. The service prices the recorded traffic of that served name that was served at or after the `effectiveAt` of the new price. To price traffic that is already recorded, set `effectiveAt` at or before its earliest exchange. The service prices the first exchanges shortly after the publish, and a long range takes longer. The service keeps the record of each exchange for at least 90 days. Older traffic keeps its figures and remains unpriced.
+* A token class with no rate. The exchange keeps the version that priced its served name, and that version has no rate for the class. The new rate applies only to traffic served after the new version takes effect and recorded after it is published. Traffic recorded before that remains unpriced.
+
+The spend of a period can rise after a publish, and its unpriced count fall, also when the period is `complete`.
 
 === When a price changes during a period
 
