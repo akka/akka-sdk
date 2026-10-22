@@ -22,6 +22,12 @@ These commands cover what an organization spends on inference. Every command on 
 | `akka optimize spend compare --from INSTANT --to INSTANT --against-from INSTANT --against-to INSTANT`
 | Two periods, and the difference between them.
 
+| `akka optimize spend series --from INSTANT --to INSTANT --granularity hour\|day`
+| A period in hour or day buckets, each what a read of it alone states.
+
+| `akka optimize spend recent --since INSTANT`
+| The most recent model calls, newest first.
+
 | `akka optimize spend conversations list --from INSTANT --to INSTANT`
 | The conversations of a period that cost the most.
 
