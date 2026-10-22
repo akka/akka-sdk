@@ -417,6 +417,9 @@ The origin of an event is the region where a message was first created. You can 
 
 A Consumer can also receive messages from a broker topic, and that could be regional or global depending on how the message broker is configured.
 
+For messages from a topic or another service's event stream, `originRegion()` is empty and `hasLocalOrigin()` returns `true`.
+This means that a filter based on `hasLocalOrigin()` accepts these messages in every region where they are delivered. It does not establish where they were created or select a single processing region.
+
 === Choose where Consumers perform external actions
 
 For each Consumer that calls an external API, publishes a message, or updates an external store, choose where processing should happen.
