@@ -45,7 +45,7 @@ The service keeps the record of each exchange for a record period of at least 90
 
 An exchange is priced only when every token class it used has a rate. A rate left out means the class has no price, not that it costs nothing, so a free class is given a rate of zero. An unpriced exchange counts in the exchanges and tokens of a period and not in its spend. The cause is one of two: the served name has no price, or a token class it used has no rate. Dividing the period by model shows which served names have unpriced traffic.
 
-A token count marked with `+` is a lower bound. Some exchanges did not report every token class, so the true count can be higher. This is common, because providers do not report every class: OpenAI responses do not report cache-write tokens, and Anthropic responses do not report reasoning tokens. The command output names the classes that were not reported.
+A token count marked with `+` is a lower bound. Some exchanges did not report every token class, so the true count can be higher. This is common, because providers do not report every class: OpenAI responses report cache-write tokens only for the models that charge for them, GPT-5.6 and later, and Anthropic responses do not report reasoning tokens. The command output names the classes that were not reported.
 
 === Completeness
 
