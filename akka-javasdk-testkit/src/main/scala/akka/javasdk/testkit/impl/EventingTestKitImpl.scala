@@ -427,6 +427,30 @@ private[testkit] class OutgoingMessagesImpl(
 
   override def expectOneTyped[T](clazz: Class[T], timeout: time.Duration): TestKitMessage[T] = {
     val msg = expectMsgInternal(destinationProbe, timeout, Some(clazz))
+    decodeTyped(msg, clazz)
+  }
+
+  override def expectOneTyped[T](clazz: Class[T], subject: String): TestKitMessage[T] =
+    expectOneTyped(clazz, subject, DefaultTimeout)
+
+  override def expectOneTyped[T](clazz: Class[T], subject: String, timeout: time.Duration): TestKitMessage[T] = {
+    val msg =
+      try {
+        destinationProbe.fishForSpecificMessage[EmitSingleCommand](timeout.toScala) {
+          case cmd: EmitSingleCommand if subjectOf(cmd).contains(subject) => cmd
+        }
+      } catch {
+        case _: AssertionError =>
+          throw new AssertionError(
+            s"timeout (${timeout.toScala}) while waiting for message of type ${clazz.getName} with subject $subject")
+      }
+    decodeTyped(msg, clazz)
+  }
+
+  private def subjectOf(cmd: EmitSingleCommand): Option[String] =
+    MetadataImpl.of(metadataToSpi(cmd.getMessage.getMetadata)).get("ce-subject").toScala
+
+  private def decodeTyped[T](msg: EmitSingleCommand, clazz: Class[T]): TestKitMessage[T] = {
     val metadata = MetadataImpl.of(metadataToSpi(msg.getMessage.getMetadata))
     // FIXME don't use proto
     val scalaPb = ScalaPbAny(typeUrlFor(metadata), msg.getMessage.payload)

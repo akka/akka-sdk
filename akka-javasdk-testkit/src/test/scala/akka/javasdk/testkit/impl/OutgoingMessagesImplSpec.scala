@@ -4,6 +4,8 @@
 
 package akka.javasdk.testkit.impl
 
+import java.time.Duration
+
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.language.existentials
@@ -93,7 +95,31 @@ class OutgoingMessagesImplSpec
       // third message was there already but was not read yet
       destination.expectOne().expectType(classOf[com.google.protobuf.StringValue]).getValue shouldBe msg3
     }
+
+    "read the next message for a subject and drop the messages before it" in {
+      outProbe.ref ! msgWithMetadata("no subject", textPlainHeader)
+      outProbe.ref ! msgWithMetadata("for a", textPlainHeader, subjectHeader("a"))
+      outProbe.ref ! msgWithMetadata("for b", textPlainHeader, subjectHeader("b"))
+      outProbe.ref ! msgWithMetadata("for a again", textPlainHeader, subjectHeader("a"))
+
+      val receivedMsg = destination.expectOneTyped(classOf[com.google.protobuf.StringValue], "b")
+      receivedMsg.getPayload.getValue shouldBe "for b"
+      receivedMsg.getMetadata.get("ce-subject").get() shouldBe "b"
+
+      destination.expectOne().expectType(classOf[com.google.protobuf.StringValue]).getValue shouldBe "for a again"
+    }
+
+    "fail when no message for a subject arrives" in {
+      outProbe.ref ! msgWithMetadata("for a", textPlainHeader, subjectHeader("a"))
+
+      val error = intercept[AssertionError] {
+        destination.expectOneTyped(classOf[com.google.protobuf.StringValue], "b", Duration.ofMillis(200))
+      }
+      error.getMessage should include("with subject b")
+    }
   }
+
+  private def subjectHeader(subject: String) = MetadataEntry("ce-subject", StringValue(subject))
 
   override def beforeEach(): Unit = {
     super.beforeEach()
