@@ -74,7 +74,7 @@ NOTE: The `@Component` value `counter` is common for all instances of this entit
 
 === Updating state
 
-We will now show how to add the command handlers for supporting the two desired operations (`set` and `plusOne`). Command handlers are implemented as methods on the entity class but are also exposed for external interactions and always return an `Effect` of some type.
+Define command handlers as methods on the entity class. The following handlers, `set` and `plusOne`, return an `Effect` to update state and reply to the caller.
 
 .src/main/java/com/example/application/CounterEntity.java
 [source,java,indent=0]
@@ -98,7 +98,11 @@ To access the current state of the entity, use `currentState()` as shown in the 
 ----
 include::example$key-value-counter/src/main/java/com/example/application/CounterEntity.java[tags=query]
 ----
-<1> Reply with the current state.
+<1> Reply with the current state. The `ReadOnlyEffect<Counter>` return type declares that this handler cannot update state or delete the entity.
+
+Use `ReadOnlyEffect` for handlers that only read state or return a reply. The return type prevents you from returning a state-changing effect at compile time, including when your service runs in a single region.
+Use `Effect` for handlers that update state or delete the entity.
+In multiple regions, the return type also determines request routing: `ReadOnlyEffect` permits local reads from replicated state, while `Effect` routes to the primary region, including for reads that require the latest state. See xref:key-value-entities.adoc#_replication[Multi-region replication] for the consistency trade-offs.
 
 What if this is the first command received for this entity? The initial state is provided by overriding `emptyState()`. Always override `emptyState()` to return a sensible default. If not overridden, `currentState()` will return `null` until the first state update, which requires null checks in all command handlers.
 
