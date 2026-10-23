@@ -362,3 +362,42 @@ A full error handling and compensation sample can be downloaded as a link:../jav
 
 [#_replication]
 include::partial$mutli-region-replication.adoc[]
+
+=== Workflow execution in the primary region
+
+Only the Workflow instance in its primary region executes steps. Replicated state in other regions supports local reads; it does not cause those regions to execute the same steps independently.
+
+In request-region mode, a Workflow keeps its primary in the region where it was created. Later commands received in another region are forwarded to that primary, rather than moving it as they can for an entity.
+In pinned-region mode, the project's primary region is used.
+See xref:operations:regions/setup.adoc#_how_each_stateful_component_uses_its_primary_region[How each stateful component uses its primary region].
+
+Choose `ReadOnlyEffect` for status queries that can tolerate stale replicated state. Use `Effect` when a query must read from the primary, for example when checking the result of a command you just sent.
+
+=== External calls and repeated step execution
+
+A single primary does not make an external call execute exactly once.
+A step can repeat after a failure or timeout, even when its previous attempt completed the external action but did not commit the result to Workflow state.
+See xref:workflows.adoc#_recover_strategy[Recover strategy] for retry behavior.
+
+Use a stable business operation identifier for each external action and keep it unchanged across retries.
+The destination must make repeated attempts safe, for example by accepting an idempotency key that prevents a second charge for the same payment.
+Do not include the executing region in that key.
+If an outcome is uncertain, reconcile it with the external destination before deciding whether to retry or compensate.
+
+=== Starting Workflows from Consumers in multiple regions
+
+Consumers in different regions can receive the same event. If they start a Workflow for that event, derive the same Workflow identifier from the business operation in every region.
+Generating a new random identifier in each Consumer would start separate Workflows for the same operation.
+
+Make the start command safe to repeat: if the operation has already started, return its existing status without resetting state or starting the steps again.
+Reject attempts to reuse the identifier for different operation details.
+A shared Workflow identifier does not replace handling repeated external calls within its steps.
+See xref:consuming-producing.adoc#_choose_where_consumers_perform_external_actions[Choose where Consumers perform external actions] for regional processing options.
+
+=== Regional recovery for Workflows
+
+Follow xref:operations:regions/setup.adoc[Multi-region setup] for regional failover. Sending traffic to another region alone does not move a Workflow's primary.
+Because replication is asynchronous, a surviving region may not have the latest committed Workflow state.
+An external system can also have completed an action whose result is absent from that state.
+Keep the same operation identifiers during recovery and verify uncertain outcomes with external systems.
+See xref:concepts:availability.adoc[] for recovery scopes and data loss considerations.
