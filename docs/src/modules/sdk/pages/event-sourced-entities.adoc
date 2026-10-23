@@ -129,7 +129,7 @@ include::example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/Shop
 
 === Retrieving state
 
-To access the current state of the entity, use `currentState()` as shown in the examples above. However, what if this is the first command received for this entity? The following example shows the implementation of the read-only command handler `getCart`:
+Use `currentState()` to access the entity's state. The following example defines the initial state and a read-only command handler, `getCart`:
 
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[ShoppingCartEntity.java]
@@ -138,7 +138,11 @@ include::example$shopping-cart-quickstart/src/main/java/shoppingcart/application
 ----
 <1> Stores the `entityId` on an internal attribute for later use.
 <2> Provides initial state — always override `emptyState()` to return a sensible default. If not overridden, `currentState()` will return `null` until the first event is persisted, which requires null checks in all command and event handlers.
-<3> Returns the current state as reply for the request.
+<3> Returns the current state as reply for the request. The `ReadOnlyEffect<ShoppingCart>` return type declares that this handler cannot persist events or delete the entity.
+
+Use `ReadOnlyEffect` for handlers that only read state or return a reply. The return type prevents you from returning a state-changing effect at compile time, including when your service runs in a single region.
+Use `Effect` for handlers that persist events or delete the entity.
+In multiple regions, the return type also determines request routing: `ReadOnlyEffect` permits local reads from replicated state, while `Effect` routes to the primary region, including for reads that require the latest state. See xref:event-sourced-entities.adoc#_replication[Multi-region replication] for the consistency trade-offs.
 
 IMPORTANT: We are returning the internal state directly back to the requester. In the endpoint, it is usually best to convert this internal domain model into a public model so the internal representation is free to evolve without breaking clients code.
 
