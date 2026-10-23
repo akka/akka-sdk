@@ -474,9 +474,9 @@ private[testkit] class OutgoingMessagesImpl(
 
     val decodedMsg =
       if (serializer.isJsonContentType(typeUrlFor(metadata))) {
-      JsonSupport.getObjectMapper
-        .readerFor(clazz)
-        .readValue(msg.getMessage.payload.toByteArray)
+        JsonSupport.getObjectMapper
+          .readerFor(clazz)
+          .readValue(msg.getMessage.payload.toByteArray)
       } else {
         val anySupport = new AnySupport(Array(), getClass.getClassLoader)
         anySupport.decodeMessage(scalaPb)
