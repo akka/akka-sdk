@@ -162,7 +162,7 @@ object Dependencies {
     deps ++= Seq(
       // FIXME why doesn't these two come along transitively from the testkit?
       "org.assertj" % "assertj-core" % AssertJVersion % Test,
-      "org.awaitility" % "awaitility" % "4.2.1" % Test,
+      "org.awaitility" % "awaitility" % "4.2.2" % Test,
       AkkaDevRuntime % Test,
       akkaDependency("akka-testkit"),
       // These are for the test of the testkit
