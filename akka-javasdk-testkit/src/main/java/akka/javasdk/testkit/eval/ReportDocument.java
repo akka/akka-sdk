@@ -11,8 +11,6 @@ import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 /**
  * The report file as data: what {@link Experiment#run} writes to {@code
@@ -34,10 +32,12 @@ import java.util.Optional;
  * @param runs how many times every case ran
  * @param gate the gate verdict
  * @param summary the case and attempt counts and the pass rate
- * @param evaluators one entry per evaluator label, in the order the labels first appear in the
+ * @param evaluators one entry per evaluator, in the order the evaluators first appear in the
  *     attempts, counting every attempt
- * @param spend model calls, tokens and latency summed over the attempts whose evidence carries
- *     model calls
+ * @param guardrails one entry per guardrail, in the order the guardrails first appear in the
+ *     attempts, counting every decision
+ * @param spend model responses, tokens and latency summed over the attempts with a recorded
+ *     interaction
  * @param cases one entry per case, in the order the cases were given, with its outcome over all
  *     runs and its requirements
  * @param attempts one entry per attempt: every case in the order the cases were given, its runs
@@ -53,12 +53,13 @@ public record ReportDocument(
     Gate gate,
     Summary summary,
     List<EvaluatorCounts> evaluators,
+    List<GuardrailCounts> guardrails,
     Spend spend,
     List<Case> cases,
     List<Attempt> attempts) {
 
   public static final String FORMAT = "akka-eval-report";
-  public static final int FORMAT_VERSION = 2;
+  public static final int FORMAT_VERSION = 4;
 
   /** Reads a report file written by {@link Experiment#run}. */
   public static ReportDocument read(Path file) {
@@ -105,27 +106,36 @@ public record ReportDocument(
       double passRate) {}
 
   /**
-   * @param evaluator the evaluator label; a custom evaluator carries the {@link
-   *     Evaluators#CUSTOM_PREFIX}, and {@link Evaluators#TARGET} and {@link Evaluators#SETUP} are
-   *     reported by the runner when an attempt did not reach evaluation
+   * @param evaluator the evaluator component id, or {@link ExperimentRunner#TARGET} for the result
+   *     the runner reports when the agent call failed
    * @param passed results with the verdict PASS
    * @param failed results with the verdict FAIL
    * @param inconclusive results with the verdict INCONCLUSIVE
+   * @param notApplicable results with the verdict NOT_APPLICABLE
    */
-  public record EvaluatorCounts(String evaluator, int passed, int failed, int inconclusive) {}
+  public record EvaluatorCounts(
+      String evaluator, int passed, int failed, int inconclusive, int notApplicable) {}
 
   /**
-   * All zero when no attempt carries model calls.
+   * @param guardrail the configured name of the guardrail
+   * @param allowed decisions that allowed the content
+   * @param denied decisions that denied the content
+   * @param failed guardrail runs that threw instead of deciding
+   */
+  public record GuardrailCounts(String guardrail, int allowed, int denied, int failed) {}
+
+  /**
+   * All zero when no attempt has a recorded interaction.
    *
-   * @param attemptsWithEvidence attempts whose evidence carries model calls
-   * @param modelCalls summed over those attempts
+   * @param attemptsWithEvidence attempts with a recorded interaction
+   * @param modelResponses summed over those attempts
    * @param inputTokens summed over those attempts
    * @param outputTokens summed over those attempts
    * @param latencyMs summed over those attempts
    */
   public record Spend(
       int attemptsWithEvidence,
-      int modelCalls,
+      int modelResponses,
       long inputTokens,
       long outputTokens,
       long latencyMs) {}
@@ -140,8 +150,8 @@ public record ReportDocument(
    * @param failedRuns runs with the verdict FAIL
    * @param inconclusiveRuns runs with the verdict INCONCLUSIVE
    * @param requirements one entry per evaluator at one position in the results of the case's
-   *     attempts, in the order the results first appear; the runner's target and setup results are
-   *     requirements too
+   *     attempts, in the order the results first appear; the runner's target result is a
+   *     requirement too
    */
   public record Case(
       String id,
@@ -154,112 +164,91 @@ public record ReportDocument(
   /**
    * One requirement of a case over all runs.
    *
-   * @param index the position of the result in the attempt, from 0
-   * @param evaluator the evaluator label
+   * @param evaluator the evaluator component id, or {@link ExperimentRunner#TARGET}
    * @param outcome over the runs where the requirement was conclusive: PASSED, FAILED, INCONSISTENT
    *     when it passed in some runs and failed in others, or INCONCLUSIVE when it was conclusive in
    *     no run
    * @param passedIn the runs with the verdict PASS, ascending
    * @param failedIn the runs with the verdict FAIL, ascending
    * @param inconclusiveIn the runs with the verdict INCONCLUSIVE, ascending
+   * @param notApplicableIn the runs with the verdict NOT_APPLICABLE, ascending
    */
   public record Requirement(
-      int index,
       String evaluator,
       Outcome outcome,
       List<Integer> passedIn,
       List<Integer> failedIn,
-      List<Integer> inconclusiveIn) {}
+      List<Integer> inconclusiveIn,
+      List<Integer> notApplicableIn) {}
 
   /**
    * One case in one run.
    *
    * @param id the case id
    * @param run the run, from 1
-   * @param verdict PASS when every result passed, FAIL when a result failed, INCONCLUSIVE when no
-   *     result failed and a result is inconclusive or there is none
-   * @param interaction the input, the reply and the traced evidence
+   * @param verdict FAIL when a result failed, INCONCLUSIVE when no result failed and a result is
+   *     inconclusive or no result passed, PASS otherwise
+   * @param evidence what the attempt left in the ledger
    * @param results one entry per evaluator
    */
   public record Attempt(
-      String id,
-      int run,
-      Evaluator.EvalResult.Verdict verdict,
-      Interaction interaction,
-      List<Result> results) {}
+      String id, int run, EvalResult.Verdict verdict, Evidence evidence, List<Result> results) {}
 
   /**
    * @param input the command sent to the agent; a String command as is, any other command as JSON
-   * @param userMessage the user message the agent sent the model; empty when the trace did not
-   *     carry it
-   * @param reply the agent's reply as text; empty when the agent call failed
-   * @param finalModelText the text of the last model response, before the agent mapped it into the
-   *     reply; empty when the trace did not carry it
-   * @param latencyMs from the start of the agent command to its end
+   * @param interactionId the id of the recorded interaction; empty when none was recorded
+   * @param reply the agent's reply as text; empty when none was recorded
+   * @param failure why the interaction failed; empty when it did not fail
+   * @param latencyMs from the start of the model call to its end
    * @param inputTokens summed over the model calls
    * @param outputTokens summed over the model calls
-   * @param blocked whether a guardrail blocked the turn
+   * @param modelResponses how many model responses the interaction holds
+   * @param denied whether a guardrail denied content in the interaction
    * @param toolCalls in call order
-   * @param modelCalls in call order
-   * @param guardrails every guardrail evaluation, in order
+   * @param guardrails the guardrail decisions made in the interaction, newest first
    */
-  public record Interaction(
+  public record Evidence(
       String input,
-      String userMessage,
+      String interactionId,
       String reply,
-      String finalModelText,
+      String failure,
       long latencyMs,
       long inputTokens,
       long outputTokens,
-      boolean blocked,
+      int modelResponses,
+      boolean denied,
       List<ToolCall> toolCalls,
-      List<ModelCall> modelCalls,
       List<Guardrail> guardrails) {}
 
   /**
-   * @param name the plain tool name, without the agent class prefix
-   * @param arguments by parameter name; a value is null when the model sent null
-   * @param result the tool's result as the model saw it, when recorded
-   * @param error the failure message when the tool threw
+   * @param name the registered tool name, {@code <Class>_<method>} for a function tool method
+   *     without a name of its own
+   * @param arguments the arguments as the JSON the model sent
+   * @param response the tool's result as recorded; empty when none was recorded
    */
-  public record ToolCall(
-      String name,
-      Map<String, Object> arguments,
-      Optional<String> result,
-      Optional<String> error) {}
-
-  /**
-   * @param model the model name, as sent in the request
-   * @param provider the provider name
-   * @param finishReasons why the model stopped, as the provider reports it
-   * @param inputTokens tokens sent; zero when the provider reports none
-   * @param outputTokens tokens received; zero when the provider reports none
-   * @param durationMs the duration of the call
-   * @param inputMessages the messages sent, as the runtime renders them; empty when not recorded
-   * @param outputMessages the messages received; empty when not recorded
-   */
-  public record ModelCall(
-      String model,
-      String provider,
-      List<String> finishReasons,
-      long inputTokens,
-      long outputTokens,
-      long durationMs,
-      String inputMessages,
-      String outputMessages) {}
+  public record ToolCall(String name, String arguments, String response) {}
 
   /**
    * @param name the configured name of the guardrail
    * @param category the configured category
-   * @param passed whether the guardrail let the content through
-   * @param explanation why it blocked; empty when it passed
+   * @param boundary where in the interaction the guardrail ran
+   * @param decision what the guardrail decided
+   * @param reportOnly whether the guardrail only reports, so the interaction continued regardless
+   * @param explanation the explanation the guardrail gave; empty when it gave none
    */
-  public record Guardrail(String name, String category, boolean passed, String explanation) {}
+  public record Guardrail(
+      String name,
+      String category,
+      String boundary,
+      String decision,
+      boolean reportOnly,
+      String explanation) {}
 
   /**
-   * @param evaluator the evaluator label
-   * @param verdict PASS, FAIL or INCONCLUSIVE
-   * @param detail the reason, or the score; empty when the evaluator gave none
+   * @param evaluator the evaluator component id, or {@link ExperimentRunner#TARGET}
+   * @param verdict PASS, FAIL, INCONCLUSIVE or NOT_APPLICABLE
+   * @param detail the explanation and the score, or why there is no verdict; empty when the
+   *     evaluator gave none
    */
-  public record Result(String evaluator, Evaluator.EvalResult.Verdict verdict, String detail) {}
+  public record Result(String evaluator, EvalResult.Verdict verdict, String detail) {}
 }

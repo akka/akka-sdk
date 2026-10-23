@@ -1,14 +1,39 @@
 = Gates and reports
 :page-aliases: testing:evaluation/experiments.adoc
-:page-summary: A Gate is what a batch must satisfy over all case results; the EvalReport carries the gate verdict, the pass rate and the evidence of every case.
+:page-summary: A Gate is what a batch must satisfy over all case results, by case, by evaluator or by guardrail; the EvalReport carries the gate verdict, the pass rate and the evidence of every case.
 :page-when-to-use: Choosing the gate for a mocked or a real model, and reading a report.
-:page-related: testing:evaluation/getting-started.adoc, testing:evaluation/eval-cases.adoc, testing:evaluation/judges.adoc
+:page-related: testing:evaluation/getting-started.adoc, testing:evaluation/adversarial.adoc, sdk:evaluators.adoc
 :page-persona: builder-developer, builder-ai-ml
 :page-banner: evaluations
 
 include::ROOT:partial$include.adoc[]
 
 A gate is what a batch of cases must satisfy over all case results, and the report is what a run returns.
+
+[#outcomes]
+== The attempt verdict
+
+An attempt is one case in one run.
+Its results are the xref:sdk:evaluators.adoc#outcomes[outcomes] of the evaluators bound to the agent, one per evaluator. A failed agent call is a failed result named `target`, and an evaluator that recorded nothing within 10 seconds is inconclusive.
+
+The verdict of the attempt follows from the results of all its evaluators.
+
+[cols="1,3"]
+|===
+| Attempt verdict | When
+
+| `FAIL`
+| Any result failed.
+
+| `INCONCLUSIVE`
+| No result failed and any result is inconclusive, or no result passed: every result is not applicable, or no evaluator is bound.
+
+| `PASS`
+| At least one result passed and the others are not applicable.
+|===
+
+Only a passed attempt counts as passed, so an evaluator that could not judge is visible in the gate and in the report rather than silently passed.
+A not applicable result is neutral. The gates leave it out, and the report counts it.
 
 [#gates]
 == Gates
@@ -20,16 +45,22 @@ A link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Gate.html[Gate] is wha
 | Gate | Passes when
 
 | `Gate.allCasesShouldPass()`
-| Every attempt passed, with every result passed. An inconclusive attempt fails the gate. This is the gate that applies when none is given.
+| Every attempt passed. An inconclusive attempt fails the gate. This is the gate that applies when none is given.
 
 | `Gate.passRateShouldBeAtLeast(minimumRate)`
 | The share of attempts that passed is at least `minimumRate`. An inconclusive attempt counts against the rate.
 
 | `Gate.passRateShouldBeAtLeast(evaluatorClass, minimumRate)`
-| The share of the evaluator's results that passed is at least `minimumRate`. Inconclusive results are left out of the count. The gate fails when the evaluator has no result to count. The class is a built-in nested in `Evaluators`, for example `Evaluators.ToolArgument.class`, or your own evaluator class.
+| The share of the evaluator's results that passed is at least `minimumRate`. Inconclusive and not applicable results are left out of the count. The gate fails when the evaluator has no result to count. The evaluator is named by its component class.
 
 | `Gate.targetShouldNotFail()`
-| No attempt failed while loading its recorded calls or in the agent call.
+| No attempt failed in the agent call.
+
+| `Gate.guardrailShouldNotDeny(name)`
+| The named guardrail denied nothing in any attempt. For a guardrail that must stay silent on legitimate traffic.
+
+| `Gate.guardrailShouldDeny(name)`
+| The named guardrail denied in every attempt. For a guardrail that must catch an attack every case carries.
 
 | `gate.and(other)`
 | Both gates hold. The verdict lists both details.
@@ -38,13 +69,25 @@ A link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Gate.html[Gate] is wha
 The gates count attempts, not cases.
 An attempt is one execution of one case, so an experiment with `repeat(3)` has three attempts per case.
 `Gate.allCasesShouldPass()` then requires every case to pass in every run, and a pass rate is the share of all attempts that passed.
-An attempt with an inconclusive result, or with no result, is inconclusive and does not pass, see xref:testing:evaluation/eval-cases.adoc#inconclusive[Inconclusive results].
-Without `repeat(n)` a case has one attempt and the gates read as the table states.
+An attempt with an inconclusive result, or without a passed result, is inconclusive and does not pass, see <<outcomes>>.
 A pass rate pools the attempts of all cases: one case that fails in every run and three cases that each fail once give the same rate.
 See <<repeated-runs>>.
 
 A failed gate does not throw.
 Assert on the report, and use the rendered report as the failure message.
+
+[#judged-batch]
+=== Gating a judged batch
+
+A judged score can differ between runs of the same reply, so hold a batch to the rate the xref:sdk:evaluators.adoc#judging[judge evaluator] passed rather than asserting on one judged case.
+`Gate.passRateShouldBeAtLeast(JudgeEvaluator.class, minimumRate)` rates the evaluator over the attempts where it reached a verdict, and fails when it judged none.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[OrderAgentQualityIntegrationTest.java]
+----
+include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[tag=judged-batch]
+----
+<1> At least 80% of the judged attempts must pass. The other evaluators still decide each attempt, but only the judge and the agent call are gated here.
 
 [#reading-the-report]
 == Reading the report
@@ -56,7 +99,7 @@ Assert on the report, and use the rendered report as the failure message.
 | Accessor | Content
 
 | `name()`
-| The name given with `name(...)`, or the test method that ran the experiment, for example `SupportAgentEvalTest.qualityGate`.
+| The name given with `name(...)`, or the test method that ran the experiment, for example `OrderAgentEvalIntegrationTest.qualityGate`.
 
 | `passed()`
 | Whether the gate passed.
@@ -68,10 +111,10 @@ Assert on the report, and use the rendered report as the failure message.
 | How many times every case ran, see <<repeated-runs>>.
 
 | `results()`
-| One `CaseResult` per attempt: every case in the order the cases were given, its runs ascending. A `CaseResult` carries the case id, the run, the `Interaction` and the results. `describe()` renders one attempt as in the report.
+| One `CaseResult` per attempt: every case in the order the cases were given, its runs ascending. A `CaseResult` carries the case id, the run, the `Evidence` and the results. `describe()` renders one attempt as in the report.
 
 | `cases()`
-| One `CaseSummary` per case, in the order the cases were given: the outcome over all runs, the passed, failed and inconclusive run counts, the case's attempts, and its requirements. The outcome is `PASSED` when every run passed, `FAILED` when every run failed, `INCONCLUSIVE` when every run was inconclusive, and `INCONSISTENT` otherwise. A `RequirementSummary` is one evaluator at one position in the case's results, with the runs it passed, failed and was inconclusive in, and its outcome over the conclusive runs.
+| One `CaseSummary` per case, in the order the cases were given: the outcome over all runs, the passed, failed and inconclusive run counts, the case's attempts, and its requirements. The outcome is `PASSED` when every run passed, `FAILED` when every run failed, `INCONCLUSIVE` when every run was inconclusive, and `INCONSISTENT` otherwise. A `RequirementSummary` is one evaluator of the case, with the runs it passed, failed, was inconclusive and was not applicable in, and its outcome over the conclusive runs.
 
 | `render()`
 | The report as text.
@@ -80,7 +123,7 @@ Assert on the report, and use the rendered report as the failure message.
 | The report as data, a `ReportDocument` with every case, every attempt and its evidence, for tools that render their own reports.
 
 | `reportFile()`
-| The JSON file `run()` wrote to `target/eval-reports/<name>-<start time>.json`, for example `SupportAgentEvalTest.qualityGate-20261001-101530-123.json`, holding `document()`. Every run keeps its own file. See the xref:sdk:attachment$eval-report.example.json[example report]. `ReportDocument.read(path)` reads it back. `reportDirectory(path)` on the experiment changes the directory, `withoutReportFile()` writes none. Empty when no file was written.
+| The JSON file `run()` wrote to `target/eval-reports/<name>-<start time>.json`, for example `OrderAgentEvalIntegrationTest.qualityGate-20261001-101530-123.json`, holding `document()`. Every run keeps its own file. See the xref:sdk:attachment$eval-report.example.json[example report]. `ReportDocument.read(path)` reads it back. `reportDirectory(path)` on the experiment changes the directory, `withoutReportFile()` writes none. Empty when no file was written.
 |===
 
 A rendered report of a passing batch:
@@ -88,49 +131,73 @@ A rendered report of a passing batch:
 [listing]
 ----
 3 cases, 1 run: 3/3 attempts passed (100%)
-gate: passed — pass rate 1.00 over 3 attempts (3 cases, 1 run), required 0.90; tool-arguments rate 1.00 over 2 judged attempts, required 1.00; no target failures
-  tools 1/1
-  tool-arguments 2/2
-  forbidden-tools 2/2
-  reply-contains 2/2
-  tool-order 1/1
-  reply-matches 1/1
-  tool-call-budget 1/1
-  model-call-budget 1/1
-spend: 6 model calls, 123 tokens in, 321 out, 550 ms in total, slowest order-status run 1 at 489 ms, over 3/3 attempts with evidence
+gate: passed — pass rate 1.00 over 3 attempts (3 cases, 1 run), required 0.90; order-lookup rate 1.00 over 3 judged attempts, required 1.00; no target failures
+  judge 3/3
+  order-lookup 3/3
+  refund-policy 1/1 (2 not applicable)
+  reply-grounding 2/2 (1 not applicable)
+spend: 7 model responses, 0 tokens in, 0 out, 31 ms in total, slowest full-refund run 1 at 14 ms, over 3/3 attempts with a recorded interaction
 ----
 
 Line by line:
 
 . The cases, the runs, and the attempts that passed with their share. Inconclusive attempts follow when there are any: `3 cases, 1 run: 2/3 attempts passed (67%), 1 inconclusive`. An attempt is one case in one run, so without `repeat(n)` on the experiment the attempts are the cases.
 . The gate's verdict and its detail. A combined gate lists the detail of each part. The detail counts attempts and names the runs a case failed or was inconclusive in: `failed cases [order-status (run 2)], inconclusive cases [refund (run 1)]`.
-. One line per evaluator, under its xref:testing:evaluation/eval-cases.adoc#evaluator-labels[label]: the attempts it passed over the attempts it judged. An evaluator that was inconclusive on some attempts shows the count in brackets, for example `token-budget 0/0 (2 inconclusive)`.
-. The spend: model calls, tokens and latency summed over the attempts whose trace carried model calls, and the slowest attempt. The line is absent when no attempt carried model calls.
-. `inconsistent across runs`, only when a requirement passed in some runs and failed in others: one line per such requirement with the runs it passed, failed and was inconclusive in, for example `order-status tool-arguments: passed in runs 1, 3, failed in run 2`. A requirement that failed in every run is not listed here. See <<repeated-runs>>.
+. One line per evaluator, under its component id: the attempts it passed over the attempts where it reached a verdict. The attempts where it was inconclusive or not applicable follow in brackets, for example `refund-policy 1/1 (2 not applicable)`.
+. One line per guardrail that decided in the batch, for example `guardrail refund-limit: denied 1, allowed 0`. Absent when no guardrail decided.
+. The spend: model responses, tokens and latency summed over the attempts with a recorded interaction, and the slowest attempt. A mocked model reports no tokens.
+. `inconsistent across runs`, only when a requirement passed in some runs and failed in others: one line per such requirement with the runs it passed, failed and was inconclusive in, for example `order-status order-lookup: passed in runs 1, 3, failed in run 2`. A requirement that failed in every run is not listed here. See <<repeated-runs>>.
 . After these lines, every attempt that did not pass, failed or inconclusive, with its evidence, see <<reading-a-failed-case>>.
 
 [#reading-a-failed-case]
 == Reading an attempt that did not pass
 
 The rendered report ends with every attempt that did not pass, failed or inconclusive, and its evidence.
-This report is from a case that asks where order o_42 is, with an evaluator that expects `getOrder` to be called with `o_43`:
+The evidence is what the attempt left in the ledger: the reply, the tool calls with their arguments, the model spend, and the guardrail decisions.
+This report is from the sample's `aReplyWithoutALookupFailsTheCase` in the xref:testing:evaluation/getting-started.adoc#mocked[mocked variant], where the model answers without calling a tool:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderAgentEvalIntegrationTest.java[OrderAgentEvalIntegrationTest.java]
+----
+include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentEvalIntegrationTest.java[tag=failed-case]
+----
+<1> The script of a model that invents a status.
+<2> The lookup check fails and names what was called.
+<3> The grounding check had no tool response to compare the reply with.
 
 [listing]
 ----
 1 case, 1 run: 0/1 attempts passed (0%)
-gate: FAILED — failed cases [wrong-order (run 1)]
-  tool-arguments 0/1
-spend: 2 model calls, 123 tokens in, 321 out, 6 ms in total, slowest wrong-order run 1 at 6 ms, over 1/1 attempts with evidence
-case wrong-order run 1 FAILED
-  reply: Order o_42 is shipped.
-  tools: getOrder{orderId=o_42}
-  model: 2 calls, 123 tokens in, 321 out, 6 ms
-  FAIL tool-arguments: getOrder(orderId) expected o_43, was [o_42]
+gate: FAILED — failed cases [order-status (run 1)]
+  judge 1/1
+  order-lookup 0/1
+  refund-policy 0/0 (1 not applicable)
+  reply-grounding 0/0 (1 not applicable)
+spend: 1 model responses, 0 tokens in, 0 out, 4 ms in total, slowest order-status run 1 at 4 ms, over 1/1 attempts with a recorded interaction
+case order-status run 1 FAILED
+  reply: Order o_42 was delivered yesterday.
+  tools: none called
+  model: 1 responses, 0 tokens in, 0 out, 4 ms
+  PASS judge: answers from what the tools returned (score 0.90)
+  FAIL order-lookup: no getOrder call for a message that names an order
+  NOT_APPLICABLE refund-policy: no refund was issued
+  NOT_APPLICABLE reply-grounding: no order was looked up
 ----
 
-An attempt that did not pass is named by its case and its run, and prints the reply, the tool calls with their arguments, the model spend, and every result with its detail.
-When the agent mapped the model's text into the reply, a `model text:` line shows the model's own text as well.
+An attempt that did not pass is named by its case and its run, and prints the reply, the tool calls with their arguments, the model spend, the guardrail decisions when there are any, and every result with its detail.
 The reply is cut to one line of at most 200 characters.
+`CaseResult.evidence()` gives the same facts as data: `reply()`, `toolCalls()`, `failure()`, `guardrails()`, `denied()`, and the `InteractionRecord` itself.
+
+A case whose agent call throws fails with a result named `target`:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderAgentEvalIntegrationTest.java[OrderAgentEvalIntegrationTest.java]
+----
+include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentEvalIntegrationTest.java[tag=target-failure]
+----
+<1> The runner's own result for the failed call.
+<2> The ledger still has the interaction, with the tool call that threw and the failure.
+<3> An evaluator bound with `trigger-on-failure = true` still judges the failed interaction. The other evaluators are not expected on it.
 
 [#repeated-runs]
 == Running every case several times
@@ -157,11 +224,8 @@ Choose `n` by the failure rate you need to detect, and gate on a rate rather tha
 Nothing is reset between runs.
 The stubs the agent's tools call serve every run, a `@BeforeEach` runs once per experiment, and state that a tool writes to an entity is still there in the next run.
 A stub or an evaluator must not depend on state an attempt writes, or a side effect of run 1 reads as a failure of every later run.
-A replayed case has its recorded results loaded again before each run.
-The wall clock time and the model spend grow with the number of runs, and judge calls are not part of the spend line.
+The wall clock time and the model spend grow with the number of runs, and the calls of a judge are not part of the spend line.
 
 == See also
 
 * xref:testing:evaluation/getting-started.adoc[]
-* xref:testing:evaluation/judges.adoc[]
-* xref:testing:evaluation/replay.adoc[]

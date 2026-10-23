@@ -116,12 +116,10 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Testing overview](https://doc.akka.io/testing/index.html.md): Three kinds of testing — unit, integration, evaluation
 - [Unit testing](https://doc.akka.io/testing/unit.html.md): Exercise one component at a time with per-component TestKits
 - [Integration testing](https://doc.akka.io/testing/integration.html.md): Exercise multiple components together against an in-process runtime
-- [Evaluation](https://doc.akka.io/testing/evaluation/index.html.md): Run an agent through evaluation cases in a TestKit test and check replies and traced tool calls with built-in evaluators, a judge and a gate
-- [Evaluation getting started](https://doc.akka.io/testing/evaluation/getting-started.html.md): An agent with two tools, a test class with a mocked model, one case, then a gated batch
-- [Evaluation cases and evaluators](https://doc.akka.io/testing/evaluation/eval-cases.html.md): `EvalCase` parts and every built-in evaluator with its report name and when it is inconclusive
-- [Model judges](https://doc.akka.io/testing/evaluation/judges.html.md): `Judge.modelBased`, `shouldSatisfy` and `shouldScoreAtLeast`, the judge prompt, gating on the judge pass rate
-- [Gates and reports](https://doc.akka.io/testing/evaluation/gates-and-reports.html.md): Gate factories, reading an `EvalReport` and a failed case
-- [Replaying recorded interactions](https://doc.akka.io/testing/evaluation/replay.html.md): `EvalCaseParser`, the JSONL format, `ToolBindings` and budgets from recorded spend
+- [Evaluation](https://doc.akka.io/testing/evaluation/index.html.md): Run an agent through eval cases in a TestKit test, judged by evaluator components bound to the agent, behind a gate
+- [Evaluation getting started](https://doc.akka.io/testing/evaluation/getting-started.html.md): An agent with two tools, two evaluators in the test sources, a test class against the real model, one case, a gated batch, cases in a file
+- [Gates and reports](https://doc.akka.io/testing/evaluation/gates-and-reports.html.md): The attempt verdict, gate factories, reading an EvalReport and a failed case, repeated runs
+- [Adversarial tests](https://doc.akka.io/testing/evaluation/adversarial.html.md): Attacks as eval cases, attacks planted in a tool result, guardrails for what the model must never do
 
 ## Samples and blueprints
 

@@ -16,8 +16,9 @@ import akka.javasdk.impl.workflow.WorkflowDescriptor
  * INTERNAL API
  *
  * Effect model for [[akka.javasdk.evaluation.DurableEvaluator]]. A deliberately small subset of the workflow effects:
- * state update plus either a step transition or a terminal evaluation outcome (complete / inconclusive). There is no
- * pause, end, delete or reply — the component's lifecycle guarantees are enforced by construction.
+ * state update plus either a step transition or a terminal evaluation outcome (complete / inconclusive / not
+ * applicable). There is no pause, end, delete or reply — the component's lifecycle guarantees are enforced by
+ * construction.
  */
 @InternalApi
 private[javasdk] object DurableEvaluatorEffects {
@@ -26,6 +27,7 @@ private[javasdk] object DurableEvaluatorEffects {
   final case class StepTransition(stepName: String, input: Option[Any], declaringClass: Class[_]) extends Transition
   final case class CompleteTransition(evaluation: Evaluation) extends Transition
   final case class InconclusiveTransition(reason: String) extends Transition
+  final case class NotApplicableTransition(reason: String) extends Transition
 
   sealed trait Persistence[+S]
   final case class UpdateState[S](newState: S) extends Persistence[S] {
@@ -54,6 +56,11 @@ private[javasdk] object DurableEvaluatorEffects {
     EffectImpl(persistence, InconclusiveTransition(reason))
   }
 
+  private def notApplicableEffect[S](persistence: Persistence[S], reason: String): Effect = {
+    require(reason != null && reason.nonEmpty, "Given reason must not be null or empty")
+    EffectImpl(persistence, NotApplicableTransition(reason))
+  }
+
   private def transitionEffect[S](persistence: Persistence[S], methodRef: AnyRef): Effect = {
     val step = resolveStep(methodRef)
     EffectImpl(persistence, StepTransition(step.stepName, None, step.declaringClass))
@@ -80,6 +87,9 @@ private[javasdk] object DurableEvaluatorEffects {
 
     override def inconclusive(reason: String): Effect =
       inconclusiveEffect(persistence, reason)
+
+    override def notApplicable(reason: String): Effect =
+      notApplicableEffect(persistence, reason)
   }
 
   final case class PersistenceEffectBuilderImpl[S](persistence: Persistence[S])
@@ -96,5 +106,8 @@ private[javasdk] object DurableEvaluatorEffects {
 
     override def inconclusive(reason: String): Effect =
       inconclusiveEffect(persistence, reason)
+
+    override def notApplicable(reason: String): Effect =
+      notApplicableEffect(persistence, reason)
   }
 }

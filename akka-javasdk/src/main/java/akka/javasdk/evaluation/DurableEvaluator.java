@@ -22,10 +22,10 @@ import java.util.Optional;
  * configuration under {@code akka.javasdk.evaluation.evaluators}, keyed by the evaluator's
  * component id. The runtime invokes {@link #onEvaluation(EvaluationContext)} for each interaction
  * of a bound agent. The evaluation then progresses through steps, methods returning {@link Effect},
- * until it finishes with {@link Effect.Builder#complete} or {@link Effect.Builder#inconclusive},
- * which records the outcome and cleans up the instance. There is no other way to finish: every
- * evaluation terminates with a recorded outcome, including step failures that exhaust their
- * retries.
+ * until it finishes with {@link Effect.Builder#complete}, {@link Effect.Builder#inconclusive} or
+ * {@link Effect.Builder#notApplicable}, which records the outcome and cleans up the instance. There
+ * is no other way to finish: every evaluation terminates with a recorded outcome, including step
+ * failures that exhaust their retries.
  *
  * <p>Concrete class must be annotated with {@link akka.javasdk.annotations.Component}.
  *
@@ -123,10 +123,12 @@ public abstract class DurableEvaluator<S> {
    *   <li>transition to the next step
    *   <li>complete the evaluation with an {@link Evaluation} (the verdict)
    *   <li>report that the evaluation was inconclusive: it ran but reached no verdict
+   *   <li>report that the evaluation was not applicable: the interaction gave it nothing to
+   *       evaluate
    * </ul>
    *
-   * <p>Completing (or reporting inconclusive) records the outcome and cleans up the evaluation
-   * instance; no further transitions are possible.
+   * <p>Completing, or reporting inconclusive or not applicable, records the outcome and cleans up
+   * the evaluation instance; no further transitions are possible.
    */
   public interface Effect {
 
@@ -174,11 +176,19 @@ public abstract class DurableEvaluator<S> {
 
       /**
        * Report that the evaluation was inconclusive: it ran but could not reach a verdict, for
-       * example there was no transcript or the interaction was not applicable.
+       * example the interaction failed and there is no reply to judge.
        *
        * @param reason why the evaluation was inconclusive
        */
       Effect inconclusive(String reason);
+
+      /**
+       * Report that the evaluation was not applicable: the interaction gave the evaluator nothing
+       * to evaluate.
+       *
+       * @param reason why the evaluation was not applicable
+       */
+      Effect notApplicable(String reason);
     }
 
     /** Effect builder after the state was updated, for defining the follow-up transition. */
@@ -218,6 +228,14 @@ public abstract class DurableEvaluator<S> {
        * @param reason why the evaluation was inconclusive
        */
       Effect inconclusive(String reason);
+
+      /**
+       * Report that the evaluation was not applicable: the interaction gave the evaluator nothing
+       * to evaluate.
+       *
+       * @param reason why the evaluation was not applicable
+       */
+      Effect notApplicable(String reason);
     }
   }
 
