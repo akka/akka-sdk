@@ -75,6 +75,7 @@ NOTE: The `@Component` value `counter` is common for all instances of this entit
 === Updating state
 
 Define command handlers as methods on the entity class. The following handlers, `set` and `plusOne`, return an `Effect` to update state and reply to the caller.
+All command handlers must return an effect.
 
 .src/main/java/com/example/application/CounterEntity.java
 [source,java,indent=0]

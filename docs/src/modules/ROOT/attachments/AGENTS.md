@@ -357,18 +357,10 @@ public Effect<Done> charge(ChargeCommand command) {
 
 ### Read-only Entity and Workflow Handlers
 
-Use `ReadOnlyEffect<T>` for Event Sourced Entity, Key Value Entity, and Workflow
-command handlers that only read state and return `effects().reply(...)` or
-`effects().error(...)`. The return type prevents state-changing effects at compile
-time, including in a single-region service.
-
-Use `Effect<T>` for handlers that persist events, update or delete state, or
-transition a workflow. A state-changing handler still returns `Effect<T>` when
-some validation branches only return an error.
-
-For entities in multiple regions, `ReadOnlyEffect<T>` permits local reads from
-replicated state, which can lag behind the primary region. Keep `Effect<T>` for
-entity reads that require the latest state from the primary region.
+Entity and workflow command handlers MUST return an effect. Use `ReadOnlyEffect<T>`
+for handlers that only read state or reply.
+Use `Effect<T>` for state changes or entity reads requiring the latest state from
+the primary region. Multi-region reads using `ReadOnlyEffect<T>` can lag behind.
 
 ### View Event Handler (from ESE)
 
@@ -875,7 +867,8 @@ public class MyEndpointIntegrationTest extends TestKitSupport {
 - Use `@McpTool` parameter types other than primitives, boxed primitives, or `String` → unsupported; mark optional parameters `Optional<T>`
 
 ✅ **DO:**
-- Use `ReadOnlyEffect<T>` for entity and workflow read-only handlers; keep `Effect<T>` for entity reads requiring primary-region consistency
+- Use `ReadOnlyEffect<T>` for entity and workflow read-only command handlers; keep `Effect<T>` for entity reads requiring primary-region consistency
+- Consumer and View event handlers MUST return an `Effect`; Event Sourced Entity event handlers return the updated state
 - Use Java records for immutable data
 - Add `@TypeName` to all events
 - Validate in domain objects, return effects in entities
