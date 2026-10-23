@@ -420,8 +420,50 @@ Each stream message carries the id of the source entity as its `ce-subject`. Cal
 
 == Multi-region replication
 
-Consumers are not replicated directly in the same way as for example xref:event-sourced-entities.adoc#_replication[Event Sourced Entity replication]. A Consumer receives events from entities in the same service, or another service, in the same region. The entities will replicate all events across regions and identical processing can occur in the consumers of each region.
+Consumers process events in their own region. They are not replicated directly like xref:event-sourced-entities.adoc#_replication[Event Sourced Entities]. When entity events replicate to another region, Consumers there can also process them.
 
 The origin of an event is the region where a message was first created. You can see the origin from `messageContext().hasLocalOrigin()` or `messageContext().originRegion()` and perform conditional processing of the event depending on the origin, such as ignoring events from other regions than the local region where the Consumer is running. The local region can be retrieved with `messageContext().selfRegion()`.
 
 A Consumer can also receive messages from a broker topic, and that could be regional or global depending on how the message broker is configured.
+
+For messages from a topic or another service's event stream, `originRegion()` is empty and `hasLocalOrigin()` returns `true`.
+This means that a filter based on `hasLocalOrigin()` accepts these messages in every region where they are delivered. It does not establish where they were created or select a single processing region.
+
+=== Choose where Consumers perform external actions
+
+For each Consumer that calls an external API, publishes a message, or updates an external store, choose where processing should happen.
+An event's origin can differ from its entity's current primary region.
+
+For messages from broker topics or another service's event stream, choose a processing option based on the source's delivery topology and whether the destination is regional or shared.
+Account for duplicate delivery in each case.
+
+==== Processing with regional destinations
+
+image:consumer-regional-destinations.svg[Consumers in each region update separate regional destinations,width=100,float=left] Process events in every receiving region when each region has its own external destination.
+For example, each Consumer can update its region's search index without depending on an update in another region.
+Make updates safe to repeat within each region, and define how to rebuild an index after losing its data.
+
+==== Origin-only processing
+
+image:consumer-origin-only.svg[Only the Consumer in origin region A calls the destination,width=100,float=left] Origin-only processing reduces attempts from other regions, but it does not prevent duplicate delivery in the origin region.
+If that region fails before an external action completes, surviving regions skip the replicated event when they apply the origin-only rule.
+Define how you will detect and recover unfinished actions, for example by reconciling durable order records with a payment provider.
+Replicating an event does not prove that its external action completed.
+
+==== Processing in a designated region
+
+image:consumer-designated-region.svg[Only the Consumer in designated region B calls the destination,width=100,float=left] Configure one designated processing region. Process all events received there, regardless of their origin, and acknowledge and skip events in other regions.
+Compare `messageContext().selfRegion()` with the configured region to decide whether to process or skip each event.
+You can also use this approach for messages from topics or another service's event stream.
+Check that the source delivers events to the designated region.
+
+Changing the configured region does not automatically replay events already acknowledged and skipped there.
+Define how you will recover unfinished actions when the designated region fails.
+During a transition, calls started in the previous region can still complete. Keep external actions idempotent to handle overlapping attempts and duplicate delivery.
+
+==== Processing with a shared destination
+
+image:consumer-shared-destination.svg[Consumers in each region call one shared destination with deduplication,width=100,float=left] For processing in every receiving region, make shared external actions idempotent: repeated attempts must have the same result as one attempt.
+The destination must also deduplicate concurrent attempts from different regions.
+An in-memory set in a Consumer cannot provide this guarantee across instances, restarts, or regions.
+See xref:dev-best-practices.adoc#message-deduplication[Message deduplication].

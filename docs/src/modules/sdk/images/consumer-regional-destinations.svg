@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="144" height="88" viewBox="0 0 144 88" role="img" aria-labelledby="title desc">
+  <title id="title">Processing with regional destinations</title>
+  <desc id="desc">Consumers in regions A, B, and C each update a separate external destination in their own region.</desc>
+  <rect width="144" height="88" rx="8" fill="#f4f4f5"/>
+  <g fill="#ffce4a" stroke="#18181b" stroke-width="2">
+    <circle cx="24" cy="22" r="14"/><circle cx="72" cy="22" r="14"/><circle cx="120" cy="22" r="14"/>
+  </g>
+  <g font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#18181b">
+    <text x="24" y="26">A</text><text x="72" y="26">B</text><text x="120" y="26">C</text>
+  </g>
+  <g fill="none" stroke="#18181b" stroke-width="2" stroke-linejoin="round">
+    <path d="M24 38V58M20 54L24 58L28 54"/><path d="M72 38V58M68 54L72 58L76 54"/><path d="M120 38V58M116 54L120 58L124 54"/>
+  </g>
+  <g fill="#00d8dd" stroke="#18181b" stroke-width="2">
+    <rect x="11" y="62" width="26" height="18" rx="3"/><rect x="59" y="62" width="26" height="18" rx="3"/><rect x="107" y="62" width="26" height="18" rx="3"/>
+  </g>
+</svg>
