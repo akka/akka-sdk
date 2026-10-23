@@ -10,7 +10,7 @@ This project illustrates a multi-agent system built around the Autonomous Agent 
 - Personalizes the request with any stored user preferences
 - Hands the request to an Autonomous Agent coordinator that delegates dynamically to a weather agent and an activity agent
 - Returns a typed answer once the coordinator's task completes
-- Evaluates each completed task with a custom LLM-as-judge and the built-in toxicity evaluator; verdicts are logged and surfaced through metrics and traces
+- Evaluates each completed task with a custom LLM-as-judge; the verdicts are recorded in the ledger and surfaced through metrics and traces
 
 ### Akka components
 
@@ -19,8 +19,8 @@ This sample leverages specific Akka components:
 - **Autonomous Agent (`ActivityCoordinator`)**: Accepts a `SuggestActivities` task and declares `Delegation` to the worker agents. The runtime drives its decision loop until the task completes.
 - **Agent (`WeatherAgent`, `ActivityAgent`)**: Plain request-based agents that the coordinator delegates to. Each exposes a `query` method whose parameter type is serialized into a tool schema for the coordinator's model. `WeatherAgent.query` takes a `String`; `ActivityAgent.query` takes an `AgentRequest` record so it can look up the user's preferences with the userId.
 - **Agent (`EvaluatorAgent`)**: An LLM-as-judge agent that evaluates the coordinator's answer against the original (preference-aware) request.
+- **Evaluator (`ActivityEvaluator`)**: Bound to the coordinator in `application.conf`. The runtime triggers it after each coordinator interaction; when the interaction completed the task, it asks the `EvaluatorAgent` for a verdict and records it in the ledger.
 - **EventSourced Entity (`PreferencesEntity`)**: Holds the user's preferences.
-- **Consumer (`EvaluationConsumer`)**: Subscribes to the runtime's task entity events. On task completion it runs `EvaluatorAgent` and the built-in `ToxicityEvaluator`, logging the verdicts.
 - **HTTP Endpoint (`ActivityEndpoint`)**: Exposes the `/activities` and `/preferences` routes.
 
 ### Other
@@ -37,7 +37,7 @@ sequenceDiagram
     participant Coordinator as ActivityCoordinator
     participant WeatherAgent as Weather Agent
     participant ActivityAgent as Activity Agent
-    participant EvalConsumer as EvaluationConsumer
+    participant Evaluator as ActivityEvaluator
 
     User->>HTTPEndpoint: POST /activities/alice "I am in Madrid..."
     HTTPEndpoint->>Coordinator: runSingleTask(SUGGEST_ACTIVITIES.instructions(message))
@@ -55,8 +55,8 @@ sequenceDiagram
     Note over Coordinator: Synthesize final answer
     Coordinator->>Task: complete with result
 
-    Task-->>EvalConsumer: TaskCompleted event
-    EvalConsumer->>EvalConsumer: run EvaluatorAgent + ToxicityEvaluator (log verdicts)
+    Coordinator-->>Evaluator: interaction recorded in the ledger
+    Evaluator->>Evaluator: run EvaluatorAgent, record the verdict
 
     User->>HTTPEndpoint: GET /activities/alice/{taskId}
     HTTPEndpoint->>Task: get snapshot
@@ -142,7 +142,7 @@ curl -i localhost:9000/preferences/alice \
   }'
 ```
 
-Preferences are read by the endpoint on each new request and inlined into the task instructions, so subsequent suggestions take them into account. The `EvaluationConsumer` runs on every completed task; inspect the service logs to see its verdicts.
+Preferences are read by the endpoint on each new request and inlined into the task instructions, so subsequent suggestions take them into account. The `ActivityEvaluator` judges every completed task; its verdicts are in the ledger, see the evaluations in the Akka console or the local backoffice.
 
 ## Deployment
 

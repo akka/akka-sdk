@@ -3,7 +3,6 @@ package demo.multiagent.application;
 // tag::all[]
 
 import akka.javasdk.agent.Agent;
-import akka.javasdk.agent.EvaluationResult;
 import akka.javasdk.annotations.Component;
 import java.util.Locale;
 
@@ -20,7 +19,7 @@ public class EvaluatorAgent extends Agent {
 
   public record EvaluationRequest(String originalRequest, String finalAnswer) {}
 
-  public record Result(String explanation, String label) implements EvaluationResult {
+  public record Result(String explanation, String label) {
     public boolean passed() {
       if (label == null) throw new IllegalArgumentException(
         "Model response must include label field"
