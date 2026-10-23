@@ -185,8 +185,7 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
         Future.successful(Seq(interaction))
 
       override def getGuardrailDecisions(
-          agentComponentId: String,
-          sessionId: String,
+          interactionId: String,
           from: Option[Instant],
           limit: Int): Future[Seq[SpiLedger.GuardrailDecisionRecord]] =
         Future.successful(guardrailDecisions)
@@ -321,7 +320,7 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
       interactions.map(_.interactionId()) shouldBe Seq("interaction-1")
       interactions.head.metadata().finishReason() shouldBe InteractionMetadata.FinishReason.UNSPECIFIED
 
-      val decisions = client.getGuardrailDecisions("support-agent", "session-1").asScala.toSeq
+      val decisions = client.getGuardrailDecisions("interaction-1").asScala.toSeq
       decisions.map(_.recordId()) shouldBe Seq("guardrail-1", "guardrail-2")
       decisions.map(_.decision()) shouldBe Seq(
         GuardrailDecisionRecord.Decision.DENY,

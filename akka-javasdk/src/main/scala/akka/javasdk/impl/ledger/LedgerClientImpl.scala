@@ -90,17 +90,15 @@ private[javasdk] final class LedgerClientImpl(spiLedgerClient: SpiLedgerClient, 
       .map(_.map(LedgerClientImpl.toInteractionRecord).asJava)
       .asJava
 
-  override def getGuardrailDecisions(agentComponentId: String, sessionId: String): util.List[GuardrailDecisionRecord] =
-    try getGuardrailDecisionsAsync(agentComponentId, sessionId).toCompletableFuture.join()
+  override def getGuardrailDecisions(interactionId: String): util.List[GuardrailDecisionRecord] =
+    try getGuardrailDecisionsAsync(interactionId).toCompletableFuture.join()
     catch {
       case e: CompletionException => throw ErrorHandling.unwrapCompletionException(e)
     }
 
-  override def getGuardrailDecisionsAsync(
-      agentComponentId: String,
-      sessionId: String): CompletionStage[util.List[GuardrailDecisionRecord]] =
+  override def getGuardrailDecisionsAsync(interactionId: String): CompletionStage[util.List[GuardrailDecisionRecord]] =
     spiLedgerClient
-      .getGuardrailDecisions(agentComponentId, sessionId, from = None, limit = LedgerClientImpl.ListLimit)
+      .getGuardrailDecisions(interactionId, from = None, limit = LedgerClientImpl.ListLimit)
       .map(_.map(LedgerClientImpl.toGuardrailDecisionRecord).asJava)
       .asJava
 }

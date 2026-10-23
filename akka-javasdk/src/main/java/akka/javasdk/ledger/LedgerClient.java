@@ -87,8 +87,7 @@ public interface LedgerClient {
 
   /**
    * Fetch the interactions of the agent with the given {@code agentComponentId} in the session with
-   * the given {@code sessionId}, newest first. The read covers the most recent interactions of the
-   * agent, so interactions older than that window are not returned.
+   * the given {@code sessionId}, newest first.
    *
    * <p>Blocks the calling thread until the records have been fetched. Safe to call on a virtual
    * thread. Use {@link #getInteractionsAsync(String, String)} for the non-blocking variant.
@@ -110,28 +109,22 @@ public interface LedgerClient {
       String agentComponentId, String sessionId);
 
   /**
-   * Fetch the guardrail decisions recorded for the agent with the given {@code agentComponentId} in
-   * the session with the given {@code sessionId}, newest first. Each record names the interaction
-   * the guardrail ran in. The read covers the most recent decisions of the agent, so decisions
-   * older than that window are not returned.
+   * Fetch the guardrail decisions recorded during the interaction with the given {@code
+   * interactionId}, newest first.
    *
    * <p>Blocks the calling thread until the records have been fetched. Safe to call on a virtual
-   * thread. Use {@link #getGuardrailDecisionsAsync(String, String)} for the non-blocking variant.
+   * thread. Use {@link #getGuardrailDecisionsAsync(String)} for the non-blocking variant.
    *
-   * @param agentComponentId the component id of the agent
-   * @param sessionId the session the decisions belong to
-   * @return the guardrail decisions of the agent in that session, or an empty list when none are
-   *     recorded
+   * @param interactionId the id of the interaction the guardrails ran in
+   * @return the guardrail decisions of that interaction, or an empty list when none are recorded
    */
-  List<GuardrailDecisionRecord> getGuardrailDecisions(String agentComponentId, String sessionId);
+  List<GuardrailDecisionRecord> getGuardrailDecisions(String interactionId);
 
   /**
-   * Async variant of {@link #getGuardrailDecisions(String, String)}.
+   * Async variant of {@link #getGuardrailDecisions(String)}.
    *
-   * @param agentComponentId the component id of the agent
-   * @param sessionId the session the decisions belong to
-   * @return a stage that completes with the guardrail decisions of the agent in that session
+   * @param interactionId the id of the interaction the guardrails ran in
+   * @return a stage that completes with the guardrail decisions of that interaction
    */
-  CompletionStage<List<GuardrailDecisionRecord>> getGuardrailDecisionsAsync(
-      String agentComponentId, String sessionId);
+  CompletionStage<List<GuardrailDecisionRecord>> getGuardrailDecisionsAsync(String interactionId);
 }

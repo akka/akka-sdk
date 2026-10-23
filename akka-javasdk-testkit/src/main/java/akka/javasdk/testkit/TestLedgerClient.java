@@ -142,20 +142,16 @@ public final class TestLedgerClient implements LedgerClient {
   }
 
   @Override
-  public List<GuardrailDecisionRecord> getGuardrailDecisions(
-      String agentComponentId, String sessionId) {
+  public List<GuardrailDecisionRecord> getGuardrailDecisions(String interactionId) {
     return guardrailDecisions.values().stream()
-        .filter(
-            record ->
-                record.agentComponentId().equals(agentComponentId)
-                    && record.sessionId().equals(sessionId))
+        .filter(record -> record.interactionId().equals(interactionId))
         .sorted(Comparator.comparing(GuardrailDecisionRecord::timestamp).reversed())
         .toList();
   }
 
   @Override
   public CompletionStage<List<GuardrailDecisionRecord>> getGuardrailDecisionsAsync(
-      String agentComponentId, String sessionId) {
-    return CompletableFuture.completedFuture(getGuardrailDecisions(agentComponentId, sessionId));
+      String interactionId) {
+    return CompletableFuture.completedFuture(getGuardrailDecisions(interactionId));
   }
 }

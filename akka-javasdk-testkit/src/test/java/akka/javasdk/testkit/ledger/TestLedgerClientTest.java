@@ -46,11 +46,11 @@ public class TestLedgerClientTest {
   }
 
   private static GuardrailDecisionRecord decision(
-      String id, String agentId, String sessionId, Instant timestamp) {
+      String id, String interactionId, String sessionId, Instant timestamp) {
     return new GuardrailDecisionRecord(
         id,
-        agentId,
-        "interaction-" + id,
+        "support-agent",
+        interactionId,
         sessionId,
         Optional.empty(),
         "no-refunds",
@@ -84,18 +84,16 @@ public class TestLedgerClientTest {
   }
 
   @Test
-  public void listsTheGuardrailDecisionsOfAnAgentInASessionNewestFirst() {
-    var first = decision("g1", "support-agent", "session-1", Instant.ofEpochSecond(1));
-    var second = decision("g2", "support-agent", "session-1", Instant.ofEpochSecond(2));
+  public void listsTheGuardrailDecisionsOfAnInteractionNewestFirst() {
+    var first = decision("g1", "interaction-1", "session-1", Instant.ofEpochSecond(1));
+    var second = decision("g2", "interaction-1", "session-1", Instant.ofEpochSecond(2));
     var ledger =
         TestLedgerClient.create()
             .seed(first)
             .seed(second)
-            .seed(decision("g3", "support-agent", "session-2", Instant.ofEpochSecond(3)))
-            .seed(decision("g4", "other-agent", "session-1", Instant.ofEpochSecond(4)));
+            .seed(decision("g3", "interaction-2", "session-1", Instant.ofEpochSecond(3)));
 
-    assertEquals(
-        List.of(second, first), ledger.getGuardrailDecisions("support-agent", "session-1"));
-    assertTrue(ledger.getGuardrailDecisions("other-agent", "session-2").isEmpty());
+    assertEquals(List.of(second, first), ledger.getGuardrailDecisions("interaction-1"));
+    assertTrue(ledger.getGuardrailDecisions("interaction-3").isEmpty());
   }
 }

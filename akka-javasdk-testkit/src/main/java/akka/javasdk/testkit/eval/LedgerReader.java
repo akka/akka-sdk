@@ -59,11 +59,7 @@ final class LedgerReader {
   }
 
   List<GuardrailDecisionRecord> guardrails(InteractionRecord interaction) {
-    return ledger
-        .getGuardrailDecisions(interaction.agentComponentId(), interaction.sessionId())
-        .stream()
-        .filter(decision -> decision.interactionId().equals(interaction.interactionId()))
-        .toList();
+    return ledger.getGuardrailDecisions(interaction.interactionId());
   }
 
   /**
