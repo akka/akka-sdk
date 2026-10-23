@@ -238,6 +238,22 @@ Retiring a classifier is unconditional. Nothing checks whether a rule still name
 akka optimize routing-classifiers delete commit-router-v4
 ----
 
+[#tagging]
+=== Tagging traffic
+
+A tagging ruleset classifies traffic instead of routing it. It is a ruleset of kind `tag`. The name that you apply it under is the tag key, and its declared destinations are the values that the key can take. The capture of each exchange records the tag, and you can divide spend by it.
+
+[source, shell]
+----
+akka optimize rulesets apply team -f team.json
+----
+
+You write, apply, test and version a tagging ruleset as you do a routing ruleset, with the same match blocks and attributes. A tagging ruleset states no output header and no reason header, and no rule of it may deny a request. See xref:reference:descriptors/routing-ruleset.adoc#tagging-ruleset[A ruleset that tags traffic] for an example document.
+
+All rulesets of an exchange share one classifier deadline. A tagging ruleset that defers to a classifier spends part of it, and a routing ruleset that runs after it can have nothing left. Rulesets run lowest priority first, and a ruleset with no priority set runs at 1000. Give a tagging ruleset that defers a higher priority than every routing ruleset, for example with `akka optimize rulesets priority team --set 2000`, so that it runs after them. Otherwise, use a xref:reference:descriptors/routing-ruleset.adoc#byattribute[`byAttribute`] outcome, which maps an attribute and consults no classifier.
+
+To read spend by tag, see xref:inference:tracking-spend.adoc#tags[Divide spend by a tag].
+
 [#request-meaning]
 == Routing on request meaning
 
