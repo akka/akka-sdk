@@ -411,7 +411,7 @@ include::example$event-sourced-customer-registry/src/test/java/customer/api/Cust
 
 == Multi-region replication
 
-Consumers process events in their own region. They are not replicated directly like xref:event-sourced-entities.adoc#_replication[Event Sourced Entities]. When entity events replicate to another region, Consumers there can also process them, subject to replication filters.
+Consumers process events in their own region. They are not replicated directly like xref:event-sourced-entities.adoc#_replication[Event Sourced Entities]. When entity events replicate to another region, Consumers there can also process them.
 
 The origin of an event is the region where a message was first created. You can see the origin from `messageContext().hasLocalOrigin()` or `messageContext().originRegion()` and perform conditional processing of the event depending on the origin, such as ignoring events from other regions than the local region where the Consumer is running. The local region can be retrieved with `messageContext().selfRegion()`.
 
@@ -425,35 +425,8 @@ This means that a filter based on `hasLocalOrigin()` accepts these messages in e
 For each Consumer that calls an external API, publishes a message, or updates an external store, choose where processing should happen.
 An event's origin can differ from its entity's current primary region.
 
-In the illustrations, circles represent Consumers in regions A, B, and C. Boxes represent external destinations, and arrows represent calls.
-A dashed circle represents a Consumer that skips the event. A check mark represents deduplication at the shared destination.
-
-[cols="2,2,3", options="header"]
-|===
-| Destination | Processing regions | Required handling
-
-| A separate search index or database in each region
-a| image:consumer-regional-destinations.svg[Consumers in each region update separate regional destinations,width=144]
-
-Every region receiving the events
-| Handle duplicate delivery within each region and define how to rebuild a regional projection.
-
-| A shared external system, with actions assigned to the event's origin region
-a| image:consumer-origin-only.svg[Only the Consumer in origin region A calls the destination,width=144]
-
-Only the origin region
-| Handle duplicate delivery and recover actions left unfinished when the origin region fails.
-
-| A shared external system that accepts attempts from surviving regions
-a| image:consumer-shared-destination.svg[Consumers in each region call one shared destination with deduplication,width=144]
-
-Every region receiving the events
-| Deduplicate concurrent and repeated attempts at the shared destination using the same stable business operation identifier.
-
-| A destination updated from a broker topic or another service's event stream
-| Choose based on the source's delivery topology and the destination
-| `originRegion()` is empty for these sources. Check whether delivery and destinations are regional or shared, and handle duplicates accordingly.
-|===
+For messages from broker topics or another service's event stream, choose a processing option based on the source's delivery topology and whether the destination is regional or shared.
+Account for duplicate delivery in each case.
 
 ==== Processing with regional destinations
 
@@ -468,70 +441,20 @@ If that region fails before an external action completes, surviving regions skip
 Define how you will detect and recover unfinished actions, for example by reconciling durable order records with a payment provider.
 Replicating an event does not prove that its external action completed.
 
+==== Processing in a designated region
+
+image:consumer-designated-region.svg[Only the Consumer in designated region B calls the destination,width=100,float=left] Configure one designated processing region. Process all events received there, regardless of their origin, and acknowledge and skip events in other regions.
+Compare `messageContext().selfRegion()` with the configured region to decide whether to process or skip each event.
+You can also use this approach for messages from topics or another service's event stream.
+Check that the source delivers events to the designated region.
+
+Changing the configured region does not automatically replay events already acknowledged and skipped there.
+Define how you will recover unfinished actions when the designated region fails.
+During a transition, calls started in the previous region can still complete. Keep external actions idempotent to handle overlapping attempts and duplicate delivery.
+
 ==== Processing with a shared destination
 
 image:consumer-shared-destination.svg[Consumers in each region call one shared destination with deduplication,width=100,float=left] For processing in every receiving region, make shared external actions idempotent: repeated attempts must have the same result as one attempt.
 The destination must also deduplicate concurrent attempts from different regions.
 An in-memory set in a Consumer cannot provide this guarantee across instances, restarts, or regions.
 See xref:dev-best-practices.adoc#message-deduplication[Message deduplication].
-
-=== Regional order indexes and shared payments example
-
-The following order fulfilment example has an Event Sourced `OrderEntity` and two Consumers.
-`RegionalOrderIndex` updates an index in each receiving region.
-`PaymentRequester` calls one shared payment provider from every receiving region, using the same payment operation identifier.
-
-[source,java,indent=0]
-.{sample-base-url}/doc-snippets/src/main/java/com/example/multiregion/OrderEvent.java[OrderEvent.java]
-----
-include::example$doc-snippets/src/main/java/com/example/multiregion/OrderEvent.java[tag=event]
-----
-
-[source,java,indent=0]
-.{sample-base-url}/doc-snippets/src/main/java/com/example/multiregion/OrderPlaced.java[OrderPlaced.java]
-----
-include::example$doc-snippets/src/main/java/com/example/multiregion/OrderPlaced.java[tag=event]
-----
-
-[source,java,indent=0]
-.{sample-base-url}/doc-snippets/src/main/java/com/example/multiregion/OrderEntity.java[OrderEntity.java]
-----
-include::example$doc-snippets/src/main/java/com/example/multiregion/OrderEntity.java[tag=entity]
-----
-
-The entity persists the payment operation identifier with the order, so every regional Consumer receives the same identifier.
-An order can be placed once. Repeating the command with the same amount does not persist another event.
-Use order identifiers that are unique across all services and environments sharing the payment provider's idempotency namespace.
-Do not include the processing region in the payment operation identifier.
-
-[source,java,indent=0]
-.{sample-base-url}/doc-snippets/src/main/java/com/example/multiregion/RegionalOrderIndex.java[RegionalOrderIndex.java]
-----
-include::example$doc-snippets/src/main/java/com/example/multiregion/RegionalOrderIndex.java[tag=consumer]
-----
-<1> Upsert by order identifier in the processing region's index. Repeating the same update leaves the same index entry.
-
-[source,java,indent=0]
-.{sample-base-url}/doc-snippets/src/main/java/com/example/multiregion/PaymentRequester.java[PaymentRequester.java]
-----
-include::example$doc-snippets/src/main/java/com/example/multiregion/PaymentRequester.java[tag=consumer]
-----
-<1> Use the persisted operation identifier for every payment attempt, including retries after a lost response. `asyncDone` acknowledges processing only after the provider call succeeds.
-
-These are compiled service components in the documentation snippets project, rather than a standalone deployable service.
-Supply implementations of `RegionalIndex` and `PaymentProvider` through xref:setup-and-dependency-injection.adoc#_dependency_injection[dependency injection].
-`RegionalIndex` must select the regional destination and upsert by order identifier.
-`PaymentProvider` must atomically deduplicate requests by operation identifier and reject reuse with different payment details.
-Its deduplication retention must cover your retry and replay period.
-If the provider does not offer that contract, this payment processing approach is not sufficient to prevent duplicate charges.
-
-The example does not mark an order as paid. In a complete service, record payment outcomes durably and reconcile uncertain outcomes with the provider.
-Processing in every region allows another region to attempt the payment only if that region received the order event and can reach the provider.
-
-==== Testing regional processing and external actions
-
-The example's `OrderConsumersTest` uses a fake provider to check duplicate delivery, concurrent attempts from independent Consumers, and retry after a payment succeeds but its response is lost.
-These unit tests verify the use of a stable operation identifier and the required destination contract. They do not simulate regional replication or prove an external provider's guarantees.
-
-In a deployed multi-region project, also verify that each regional index receives the order and that the shared provider records one charge when Consumers in different regions attempt it.
-For origin-only processing, test an outage before the origin Consumer completes its action and verify your reconciliation or takeover procedure.

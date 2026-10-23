@@ -34,9 +34,8 @@ public interface OriginAwareContext extends Context {
    * <p>The result depends on the message source:
    *
    * <ul>
-   *   <li>If the message originates from a component ({@link EventSourcedEntity}, {@link
-   *       KeyValueEntity}, or {@link Workflow}) in the same region as this consumer is running, it
-   *       returns {@code true}.
+   *   <li>If the message originates from an {@link EventSourcedEntity}, {@link KeyValueEntity}, or
+   *       {@link Workflow} in the same region as this consumer is running, it returns {@code true}.
    *   <li>When consuming messages from another service (see {@link Consume.FromServiceStream}) or
    *       from a topic (see {@link Consume.FromTopic}), it returns {@code true}. This does not
    *       establish where the message was created or prevent processing in multiple regions.
