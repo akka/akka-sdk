@@ -4,6 +4,8 @@
 
 package akka.javasdk.testkit.impl
 
+import java.time.Duration
+
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.language.existentials
@@ -11,6 +13,7 @@ import scala.language.existentials
 import akka.actor.ActorSystem
 import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.serialization.Serializer
+import akka.javasdk.testkit.EventingTestKit.{ Message => TestKitMessage }
 import akka.testkit.TestKit
 import akka.testkit.TestProbe
 import com.google.protobuf.ByteString
@@ -93,7 +96,57 @@ class OutgoingMessagesImplSpec
       // third message was there already but was not read yet
       destination.expectOne().expectType(classOf[com.google.protobuf.StringValue]).getValue shouldBe msg3
     }
+
+    "read the next message for a subject and drop the messages before it" in {
+      outProbe.ref ! msgWithMetadata("no subject", textPlainHeader)
+      outProbe.ref ! msgWithMetadata("for a", textPlainHeader, subjectHeader("a"))
+      outProbe.ref ! msgWithMetadata("for b", textPlainHeader, subjectHeader("b"))
+      outProbe.ref ! msgWithMetadata("for a again", textPlainHeader, subjectHeader("a"))
+
+      val receivedMsg = destination.expectOneTyped(classOf[com.google.protobuf.StringValue], "b")
+      receivedMsg.getPayload.getValue shouldBe "for b"
+      receivedMsg.getMetadata.get("ce-subject").get() shouldBe "b"
+
+      destination.expectOne().expectType(classOf[com.google.protobuf.StringValue]).getValue shouldBe "for a again"
+    }
+
+    "fail when no message for a subject arrives" in {
+      outProbe.ref ! msgWithMetadata("for a", textPlainHeader, subjectHeader("a"))
+
+      val error = intercept[AssertionError] {
+        destination.expectOneTyped(classOf[com.google.protobuf.StringValue], "b", Duration.ofMillis(200))
+      }
+      error.getMessage should include("with subject b")
+    }
+
+    "read the next message matching a predicate and drop the messages before it" in {
+      outProbe.ref ! msgWithMetadata(ByteString.copyFromUtf8("not a string"), bytesHeader)
+      outProbe.ref ! msgWithMetadata("first", textPlainHeader)
+      outProbe.ref ! msgWithMetadata("second", textPlainHeader)
+      outProbe.ref ! msgWithMetadata("third", textPlainHeader)
+
+      val receivedMsg = destination.expectOneTyped(
+        classOf[com.google.protobuf.StringValue],
+        (msg: TestKitMessage[com.google.protobuf.StringValue]) => msg.getPayload.getValue == "second")
+      receivedMsg.getPayload.getValue shouldBe "second"
+
+      destination.expectOne().expectType(classOf[com.google.protobuf.StringValue]).getValue shouldBe "third"
+    }
+
+    "fail when no message matches a predicate" in {
+      outProbe.ref ! msgWithMetadata("first", textPlainHeader)
+
+      val error = intercept[AssertionError] {
+        destination.expectOneTyped(
+          classOf[com.google.protobuf.StringValue],
+          (msg: TestKitMessage[com.google.protobuf.StringValue]) => msg.getPayload.getValue == "second",
+          Duration.ofMillis(200))
+      }
+      error.getMessage should include("matching the predicate")
+    }
   }
+
+  private def subjectHeader(subject: String) = MetadataEntry("ce-subject", StringValue(subject))
 
   override def beforeEach(): Unit = {
     super.beforeEach()
