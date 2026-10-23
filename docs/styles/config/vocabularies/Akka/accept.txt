@@ -62,6 +62,7 @@ browsable
 Buildah
 bulkheaded
 burstable
+byAttribute
 byClassifier
 CA
 CA's
@@ -320,6 +321,7 @@ Okta
 [Oo]llama
 onboarding
 onFailure
+onUnmapped
 [Oo]pen[Aa]i
 (?i)OpenID
 OpenTelemetry
