@@ -11,7 +11,8 @@ import java.util.concurrent.CompletionStage;
 
 /**
  * A guardrail that decides whether the agent's final reply may be returned. The runtime evaluates
- * it once per agent interaction.
+ * it once per agent interaction. On an autonomous agent, the runtime also evaluates it on the
+ * message of each {@code broadcast}, {@code direct}, and {@code submit_turn} tool call.
  *
  * <p>An implementation has a public constructor, optionally taking a {@link GuardrailContext}
  * parameter, which gives access to the guardrail's configured name and config section. The per-call
