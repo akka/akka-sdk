@@ -143,9 +143,13 @@ TIP: Key Value Entity metrics use `akka.component.type="key-value-entity"` to di
 | `akka.projection.consumer.lag` (max)
 | > 1 min
 
-| Stuck projection (time behind the latest event)
-| `akka.projection.backlog.lag`
+| Running projection behind the latest event
+| `akka.projection.backlog.lag` (max)
 | > 1 min
+
+| Projection failed
+| `akka.projection.failed` (counter)
+| > 0
 
 | Events processing time (avg)
 | `akka.consumer.message.duration` (average)
@@ -155,6 +159,8 @@ TIP: Key Value Entity metrics use `akka.component.type="key-value-entity"` to di
 | `akka.eventing.stream.failed` (counter)
 | > 0
 |===
+
+NOTE: `akka.projection.backlog.lag` has one series per `akka.projection.key`, so alert on the maximum across series. A projection that failed and stopped reports a backlog lag of 0, so the projection failed alert is needed to catch it.
 
 == Replication
 
