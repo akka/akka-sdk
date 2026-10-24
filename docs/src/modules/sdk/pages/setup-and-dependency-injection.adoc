@@ -86,7 +86,7 @@ Create the library as a Maven project with the Akka parent pom, like a service. 
 </properties>
 ----
 
-With this property, the build validates the components but does not build a container image. The build marks the component descriptor of the library as a library descriptor. In a multi-module build, set the property in each module that is a library.
+With this property, the build validates the components but does not build a container image. You cannot run the library with `mvn exec:java`. The build marks the component descriptor of the library as a library descriptor. In a multi-module build, set the property in each module that is a library.
 
 The tests of the library load the components of the library itself, like the tests of a service.
 

@@ -76,10 +76,6 @@ A curated collection of Akka technical content beyond the Akka Agentic AI Platfo
 
 * link:{url-akka-benchmarks}[Akka Performance Benchmarks, window="new"] — 1.4M TPS, 9ms latency, $11.77 per 1K TPS
 
-== Training
-
-* link:{url-ext-akkademy}[Akkademy, window="new"] — Free training courses
-
 == Community
 
 * link:{url-akka-github}[GitHub, window="new"]

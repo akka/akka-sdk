@@ -6,6 +6,7 @@ package akka.javasdk.impl.agent
 
 import akka.javasdk.impl.ControlId
 import akka.javasdk.impl.agent.ConfiguredGuardrail.UseFor
+import akka.runtime.sdk.spi.SpiGuardrail
 import com.typesafe.config.ConfigFactory
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -91,6 +92,30 @@ class GuardrailSettingsSpec extends AnyWordSpec with Matchers {
           GuardrailSettings(faulty)
         }.getMessage should include(s"Unknown use-for [$boundary]")
       }
+    }
+
+    "default fail-mode to fail-closed" in {
+      val settings = GuardrailSettings(config.getConfig("akka.javasdk.agent.guardrails"))
+      settings.configuredGuardrails.map(_.failMode).toSet shouldBe Set(SpiGuardrail.FailMode.FailClosed)
+    }
+
+    Seq("fail-open", "Fail-Open").foreach { value =>
+      s"read fail-mode = $value" in {
+        val settings = GuardrailSettings(ConfigFactory.parseString(s"""
+          "open guard" { class = "test.MyGuard", category = TOXIC, fail-mode = $value }
+          """))
+        settings.configuredGuardrails.head.failMode shouldBe SpiGuardrail.FailMode.FailOpen
+      }
+    }
+
+    "fail on an unknown fail-mode" in {
+      val message = intercept[IllegalArgumentException] {
+        GuardrailSettings(ConfigFactory.parseString("""
+          "lenient guard" { class = "test.MyGuard", category = TOXIC, fail-mode = lenient }
+          """))
+      }.getMessage
+      message should include("[lenient guard]")
+      message should include("fail-closed, fail-open")
     }
 
     "read the control id, and keep it in the config" in {

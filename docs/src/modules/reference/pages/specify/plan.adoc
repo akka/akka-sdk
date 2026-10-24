@@ -15,6 +15,12 @@ Takes a natural-language prompt describing the technical architecture and design
 
 The plan defines the _how_ of your application: service architecture, endpoint design, authentication strategy, UI approach, and more.
 
+The command checks the specification for unresolved `[NEEDS CLARIFICATION]` markers for policy decisions, such as thresholds, access permissions, retention periods, sensitive-data rules, and approvals. If any remain, it reports them, recommends xref:reference:specify/clarify.adoc[], and stops. Research does not resolve policy decisions.
+
+== Select mechanisms for your Akka SDK version
+
+For agent features, Plan checks your installed Akka SDK version and local documentation before selecting protection, evaluation, and identity mechanisms. Required upgrades become explicit decisions in `research.md`; they are not applied implicitly.
+
 == See also
 
 * xref:sdk:spec-driven-development.adoc[]

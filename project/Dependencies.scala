@@ -8,7 +8,7 @@ object Dependencies {
     val ProtocolVersionMinor = 1
   }
 
-  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.7.2")
+  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.7.2-15-bf1be0f2-SNAPSHOT")
 
   // NOTE: embedded SDK should have the AkkaVersion aligned, when updating RuntimeVersion, make sure to check
   // if AkkaVersion and AkkaHttpVersion are aligned
@@ -162,7 +162,7 @@ object Dependencies {
     deps ++= Seq(
       // FIXME why doesn't these two come along transitively from the testkit?
       "org.assertj" % "assertj-core" % AssertJVersion % Test,
-      "org.awaitility" % "awaitility" % "4.2.1" % Test,
+      "org.awaitility" % "awaitility" % "4.2.2" % Test,
       AkkaDevRuntime % Test,
       akkaDependency("akka-testkit"),
       // These are for the test of the testkit
