@@ -154,13 +154,11 @@ private[ledger] object LedgerClientImpl {
       record.category,
       toGuardrailBoundary(record.boundary),
       toGuardrailDecision(record.decision),
+      record.decision.explanation,
       record.reportOnly,
-      record.explanation,
+      toFailMode(record.failMode),
       record.duration,
-      record.toolCallId.toJava,
-      record.toolName.toJava,
-      toToolOrigin(record.toolOrigin),
-      record.mcpEndpoint.toJava,
+      record.toolCall.map(toToolCall).toJava,
       record.timestamp)
 
   private def toGuardrailBoundary(boundary: SpiLedger.GuardrailBoundary): GuardrailDecisionRecord.Boundary =
@@ -176,21 +174,42 @@ private[ledger] object LedgerClientImpl {
   private def toGuardrailDecision(decision: SpiLedger.GuardrailDecision): GuardrailDecisionRecord.Decision =
     knownOr(GuardrailDecisionRecord.Decision.UNSPECIFIED) {
       decision match {
-        case SpiLedger.GuardrailDecision.Unspecified => GuardrailDecisionRecord.Decision.UNSPECIFIED
-        case SpiLedger.GuardrailDecision.Allow       => GuardrailDecisionRecord.Decision.ALLOW
-        case SpiLedger.GuardrailDecision.Deny        => GuardrailDecisionRecord.Decision.DENY
-        case SpiLedger.GuardrailDecision.Fail        => GuardrailDecisionRecord.Decision.FAIL
+        case _: SpiLedger.GuardrailDecision.Unspecified => GuardrailDecisionRecord.Decision.UNSPECIFIED
+        case _: SpiLedger.GuardrailDecision.Allow       => GuardrailDecisionRecord.Decision.ALLOW
+        case _: SpiLedger.GuardrailDecision.Deny        => GuardrailDecisionRecord.Decision.DENY
+        case _: SpiLedger.GuardrailDecision.Fail        => GuardrailDecisionRecord.Decision.FAIL
       }
     }
+
+  private def toFailMode(failMode: SpiLedger.GuardrailFailMode): GuardrailDecisionRecord.FailMode =
+    knownOr(GuardrailDecisionRecord.FailMode.UNSPECIFIED) {
+      failMode match {
+        case SpiLedger.GuardrailFailMode.Unspecified => GuardrailDecisionRecord.FailMode.UNSPECIFIED
+        case SpiLedger.GuardrailFailMode.FailClosed  => GuardrailDecisionRecord.FailMode.FAIL_CLOSED
+        case SpiLedger.GuardrailFailMode.FailOpen    => GuardrailDecisionRecord.FailMode.FAIL_OPEN
+      }
+    }
+
+  private def toToolCall(toolCall: SpiLedger.GuardrailToolCall): GuardrailDecisionRecord.ToolCall =
+    new GuardrailDecisionRecord.ToolCall(
+      toolCall.toolCallId.toJava,
+      toolCall.toolName,
+      toToolOrigin(toolCall.origin),
+      mcpEndpoint(toolCall.origin).toJava)
 
   private def toToolOrigin(origin: SpiLedger.ToolOrigin): GuardrailDecisionRecord.ToolOrigin =
     knownOr(GuardrailDecisionRecord.ToolOrigin.UNSPECIFIED) {
       origin match {
         case SpiLedger.ToolOrigin.Unspecified  => GuardrailDecisionRecord.ToolOrigin.UNSPECIFIED
         case SpiLedger.ToolOrigin.FunctionTool => GuardrailDecisionRecord.ToolOrigin.FUNCTION_TOOL
-        case SpiLedger.ToolOrigin.RemoteMcp    => GuardrailDecisionRecord.ToolOrigin.REMOTE_MCP
+        case _: SpiLedger.ToolOrigin.RemoteMcp => GuardrailDecisionRecord.ToolOrigin.REMOTE_MCP
       }
     }
+
+  private def mcpEndpoint(origin: SpiLedger.ToolOrigin): Option[String] = origin match {
+    case remote: SpiLedger.ToolOrigin.RemoteMcp => Some(remote.endpoint).filter(_.nonEmpty)
+    case _                                      => None
+  }
 
   private def toEvaluationTrigger(trigger: SpiLedger.EvaluationTrigger): EvaluationRecord.Trigger =
     knownOr(EvaluationRecord.Trigger.UNSPECIFIED) {

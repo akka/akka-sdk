@@ -49,10 +49,7 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
 
   private def spiGuardrailDecisionRecord(
       controlId: Option[String],
-      toolCallId: Option[String],
-      toolName: Option[String],
-      toolOrigin: SpiLedger.ToolOrigin,
-      mcpEndpoint: Option[String]): SpiLedger.GuardrailDecisionRecord =
+      toolCall: Option[SpiLedger.GuardrailToolCall]): SpiLedger.GuardrailDecisionRecord =
     new SpiLedger.GuardrailDecisionRecord(
       recordId = "guardrail-1",
       agentComponentId = "support-agent",
@@ -63,14 +60,11 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
       controlId = controlId,
       category = "policy",
       boundary = SpiLedger.GuardrailBoundary.BeforeToolCall,
-      decision = SpiLedger.GuardrailDecision.Deny,
+      decision = new SpiLedger.GuardrailDecision.Deny("refunds are not allowed"),
       reportOnly = true,
-      explanation = "refunds are not allowed",
+      failMode = SpiLedger.GuardrailFailMode.FailOpen,
       duration = Duration.ofMillis(12),
-      toolCallId = toolCallId,
-      toolName = toolName,
-      toolOrigin = toolOrigin,
-      mcpEndpoint = mcpEndpoint,
+      toolCall = toolCall,
       timestamp = Instant.EPOCH)
 
   private def spiModelResponse(tokenUsage: SpiAgent.SpiTokenUsage): SpiLedger.ModelResponse =
@@ -129,14 +123,15 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
 
   "Mapping a guardrail decision record" should {
 
-    "carry the decision and the inspected tool" in {
+    "carry the decision and the tool call" in {
       val record = LedgerClientImpl.toGuardrailDecisionRecord(
         spiGuardrailDecisionRecord(
           controlId = Some("GR-1"),
-          toolCallId = Some("call-1"),
-          toolName = Some("RefundTools_refund"),
-          toolOrigin = SpiLedger.ToolOrigin.RemoteMcp,
-          mcpEndpoint = Some("https://mcp.example.com")))
+          toolCall = Some(
+            new SpiLedger.GuardrailToolCall(
+              toolCallId = Some("call-1"),
+              toolName = "RefundTools_refund",
+              origin = new SpiLedger.ToolOrigin.RemoteMcp("https://mcp.example.com")))))
 
       record.recordId() shouldEqual "guardrail-1"
       record.agentComponentId() shouldEqual "support-agent"
@@ -148,30 +143,25 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
       record.category() shouldEqual "policy"
       record.boundary() shouldEqual GuardrailDecisionRecord.Boundary.BEFORE_TOOL_CALL
       record.decision() shouldEqual GuardrailDecisionRecord.Decision.DENY
-      record.reportOnly() shouldBe true
       record.explanation() shouldEqual "refunds are not allowed"
+      record.reportOnly() shouldBe true
+      record.failMode() shouldEqual GuardrailDecisionRecord.FailMode.FAIL_OPEN
       record.duration() shouldEqual Duration.ofMillis(12)
-      record.toolCallId() shouldEqual Optional.of("call-1")
-      record.toolName() shouldEqual Optional.of("RefundTools_refund")
-      record.toolOrigin() shouldEqual GuardrailDecisionRecord.ToolOrigin.REMOTE_MCP
-      record.mcpEndpoint() shouldEqual Optional.of("https://mcp.example.com")
+      record.toolCall() shouldEqual Optional.of(
+        new GuardrailDecisionRecord.ToolCall(
+          Optional.of("call-1"),
+          "RefundTools_refund",
+          GuardrailDecisionRecord.ToolOrigin.REMOTE_MCP,
+          Optional.of("https://mcp.example.com")))
       record.timestamp() shouldEqual Instant.EPOCH
     }
 
-    "carry empty optionals when the guardrail inspected no tool and declares no control id" in {
-      val record = LedgerClientImpl.toGuardrailDecisionRecord(
-        spiGuardrailDecisionRecord(
-          controlId = None,
-          toolCallId = None,
-          toolName = None,
-          toolOrigin = SpiLedger.ToolOrigin.Unspecified,
-          mcpEndpoint = None))
+    "carry empty optionals when the guardrail decided on no tool call and declares no control id" in {
+      val record =
+        LedgerClientImpl.toGuardrailDecisionRecord(spiGuardrailDecisionRecord(controlId = None, toolCall = None))
 
       record.controlId() shouldEqual Optional.empty()
-      record.toolCallId() shouldEqual Optional.empty()
-      record.toolName() shouldEqual Optional.empty()
-      record.toolOrigin() shouldEqual GuardrailDecisionRecord.ToolOrigin.UNSPECIFIED
-      record.mcpEndpoint() shouldEqual Optional.empty()
+      record.toolCall() shouldEqual Optional.empty()
     }
   }
 }

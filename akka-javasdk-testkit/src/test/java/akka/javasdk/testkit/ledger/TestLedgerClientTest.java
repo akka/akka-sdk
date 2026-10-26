@@ -58,12 +58,10 @@ public class TestLedgerClientTest {
         "policy",
         GuardrailDecisionRecord.Boundary.BEFORE_MODEL_CALL,
         GuardrailDecisionRecord.Decision.ALLOW,
-        false,
         "",
+        false,
+        GuardrailDecisionRecord.FailMode.FAIL_CLOSED,
         Duration.ZERO,
-        Optional.empty(),
-        Optional.empty(),
-        GuardrailDecisionRecord.ToolOrigin.UNSPECIFIED,
         Optional.empty(),
         timestamp);
   }

@@ -64,26 +64,34 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
 
   private val decisions = Table[SpiLedger.GuardrailDecision, GuardrailDecisionRecord.Decision](
     ("spi", "public"),
-    (SpiLedger.GuardrailDecision.Unspecified, GuardrailDecisionRecord.Decision.UNSPECIFIED),
-    (SpiLedger.GuardrailDecision.Allow, GuardrailDecisionRecord.Decision.ALLOW),
-    (SpiLedger.GuardrailDecision.Deny, GuardrailDecisionRecord.Decision.DENY),
-    (SpiLedger.GuardrailDecision.Fail, GuardrailDecisionRecord.Decision.FAIL))
+    (new SpiLedger.GuardrailDecision.Unspecified(""), GuardrailDecisionRecord.Decision.UNSPECIFIED),
+    (new SpiLedger.GuardrailDecision.Allow(""), GuardrailDecisionRecord.Decision.ALLOW),
+    (new SpiLedger.GuardrailDecision.Deny(""), GuardrailDecisionRecord.Decision.DENY),
+    (new SpiLedger.GuardrailDecision.Fail(""), GuardrailDecisionRecord.Decision.FAIL))
+
+  private val failModes = Table[SpiLedger.GuardrailFailMode, GuardrailDecisionRecord.FailMode](
+    ("spi", "public"),
+    (SpiLedger.GuardrailFailMode.Unspecified, GuardrailDecisionRecord.FailMode.UNSPECIFIED),
+    (SpiLedger.GuardrailFailMode.FailClosed, GuardrailDecisionRecord.FailMode.FAIL_CLOSED),
+    (SpiLedger.GuardrailFailMode.FailOpen, GuardrailDecisionRecord.FailMode.FAIL_OPEN))
 
   private val toolOrigins = Table[SpiLedger.ToolOrigin, GuardrailDecisionRecord.ToolOrigin](
     ("spi", "public"),
     (SpiLedger.ToolOrigin.Unspecified, GuardrailDecisionRecord.ToolOrigin.UNSPECIFIED),
     (SpiLedger.ToolOrigin.FunctionTool, GuardrailDecisionRecord.ToolOrigin.FUNCTION_TOOL),
-    (SpiLedger.ToolOrigin.RemoteMcp, GuardrailDecisionRecord.ToolOrigin.REMOTE_MCP))
+    (new SpiLedger.ToolOrigin.RemoteMcp("https://mcp.example.com"), GuardrailDecisionRecord.ToolOrigin.REMOTE_MCP))
 
-  // The SPI traits are sealed, so the spec cannot extend them. Each one compiles to an interface without methods.
+  // The SPI traits are sealed, so the spec cannot extend them. Each one compiles to an interface, and the only
+  // abstract method, the explanation of a decision, reads as empty.
   private def unknownValue[T <: AnyRef](implicit tag: ClassTag[T]): T = {
     val name = s"unknown ${tag.runtimeClass.getSimpleName}"
     val handler: InvocationHandler = (proxy: AnyRef, method: Method, args: Array[AnyRef]) =>
       method.getName match {
-        case "equals"   => Boolean.box(proxy eq args(0))
-        case "hashCode" => Int.box(System.identityHashCode(proxy))
-        case "toString" => name
-        case other      => throw new UnsupportedOperationException(other)
+        case "equals"      => Boolean.box(proxy eq args(0))
+        case "hashCode"    => Int.box(System.identityHashCode(proxy))
+        case "toString"    => name
+        case "explanation" => ""
+        case other         => throw new UnsupportedOperationException(other)
       }
     Proxy.newProxyInstance(tag.runtimeClass.getClassLoader, Array(tag.runtimeClass), handler).asInstanceOf[T]
   }
@@ -131,7 +139,8 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
 
   private def spiGuardrailDecisionRecord(
       boundary: SpiLedger.GuardrailBoundary = SpiLedger.GuardrailBoundary.BeforeModelCall,
-      decision: SpiLedger.GuardrailDecision = SpiLedger.GuardrailDecision.Allow,
+      decision: SpiLedger.GuardrailDecision = new SpiLedger.GuardrailDecision.Allow(""),
+      failMode: SpiLedger.GuardrailFailMode = SpiLedger.GuardrailFailMode.FailClosed,
       toolOrigin: SpiLedger.ToolOrigin = SpiLedger.ToolOrigin.Unspecified,
       recordId: String = "guardrail-1"): SpiLedger.GuardrailDecisionRecord =
     new SpiLedger.GuardrailDecisionRecord(
@@ -146,12 +155,9 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
       boundary = boundary,
       decision = decision,
       reportOnly = false,
-      explanation = "",
+      failMode = failMode,
       duration = Duration.ZERO,
-      toolCallId = None,
-      toolName = None,
-      toolOrigin = toolOrigin,
-      mcpEndpoint = None,
+      toolCall = Some(new SpiLedger.GuardrailToolCall(toolCallId = None, toolName = "refund", origin = toolOrigin)),
       timestamp = Instant.EPOCH)
 
   private def ledgerClient(
@@ -237,11 +243,19 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
       }
     }
 
+    "keep the mapping of every known guardrail fail mode" in {
+      failModes.map(_._2).toSet shouldBe GuardrailDecisionRecord.FailMode.values().toSet
+      forAll(failModes) { (spiFailMode, publicFailMode) =>
+        val record = LedgerClientImpl.toGuardrailDecisionRecord(spiGuardrailDecisionRecord(failMode = spiFailMode))
+        record.failMode() shouldBe publicFailMode
+      }
+    }
+
     "keep the mapping of every known tool origin" in {
       toolOrigins.map(_._2).toSet shouldBe GuardrailDecisionRecord.ToolOrigin.values().toSet
       forAll(toolOrigins) { (spiOrigin, publicOrigin) =>
         val record = LedgerClientImpl.toGuardrailDecisionRecord(spiGuardrailDecisionRecord(toolOrigin = spiOrigin))
-        record.toolOrigin() shouldBe publicOrigin
+        record.toolCall().get().origin() shouldBe publicOrigin
       }
     }
 
@@ -283,25 +297,33 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
       record shouldBe LedgerClientImpl.toEvaluationRecord(spiEvaluationRecord(SpiLedger.EvaluationTrigger.Unspecified))
     }
 
-    "read a guardrail boundary, decision and tool origin that the SDK does not know as unspecified" in {
+    "read a guardrail boundary, decision, fail mode and tool origin that the SDK does not know as unspecified" in {
       val unknownBoundary = unknownValue[SpiLedger.GuardrailBoundary]
       val unknownDecision = unknownValue[SpiLedger.GuardrailDecision]
+      val unknownFailMode = unknownValue[SpiLedger.GuardrailFailMode]
       val unknownOrigin = unknownValue[SpiLedger.ToolOrigin]
       forAll(boundaries) { (known, _) => unknownBoundary should not be known }
       forAll(decisions) { (known, _) => unknownDecision should not be known }
+      forAll(failModes) { (known, _) => unknownFailMode should not be known }
       forAll(toolOrigins) { (known, _) => unknownOrigin should not be known }
 
       val record = LedgerClientImpl.toGuardrailDecisionRecord(
-        spiGuardrailDecisionRecord(boundary = unknownBoundary, decision = unknownDecision, toolOrigin = unknownOrigin))
+        spiGuardrailDecisionRecord(
+          boundary = unknownBoundary,
+          decision = unknownDecision,
+          failMode = unknownFailMode,
+          toolOrigin = unknownOrigin))
 
       record.boundary() shouldBe GuardrailDecisionRecord.Boundary.UNSPECIFIED
       record.decision() shouldBe GuardrailDecisionRecord.Decision.UNSPECIFIED
-      record.toolOrigin() shouldBe GuardrailDecisionRecord.ToolOrigin.UNSPECIFIED
+      record.failMode() shouldBe GuardrailDecisionRecord.FailMode.UNSPECIFIED
+      record.toolCall().get().origin() shouldBe GuardrailDecisionRecord.ToolOrigin.UNSPECIFIED
       record.name() shouldBe "no-refunds"
       record shouldBe LedgerClientImpl.toGuardrailDecisionRecord(
         spiGuardrailDecisionRecord(
           boundary = SpiLedger.GuardrailBoundary.Unspecified,
-          decision = SpiLedger.GuardrailDecision.Unspecified,
+          decision = new SpiLedger.GuardrailDecision.Unspecified(""),
+          failMode = SpiLedger.GuardrailFailMode.Unspecified,
           toolOrigin = SpiLedger.ToolOrigin.Unspecified))
     }
   }
@@ -313,7 +335,7 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
         spiInteractionRecord(finishReason = unknownValue[SpiLedger.FinishReason]),
         Seq.empty,
         Seq(
-          spiGuardrailDecisionRecord(decision = SpiLedger.GuardrailDecision.Deny, recordId = "guardrail-1"),
+          spiGuardrailDecisionRecord(decision = new SpiLedger.GuardrailDecision.Deny(""), recordId = "guardrail-1"),
           spiGuardrailDecisionRecord(decision = unknownValue[SpiLedger.GuardrailDecision], recordId = "guardrail-2")))
 
       val interactions = client.getInteractions("support-agent", "session-1").asScala.toSeq

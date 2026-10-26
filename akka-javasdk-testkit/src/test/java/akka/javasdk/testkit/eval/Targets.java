@@ -111,12 +111,10 @@ final class Targets {
         "policy",
         GuardrailDecisionRecord.Boundary.BEFORE_AGENT_RESPONSE,
         decision,
-        false,
         explanation,
+        false,
+        GuardrailDecisionRecord.FailMode.FAIL_CLOSED,
         Duration.ofMillis(5),
-        Optional.empty(),
-        Optional.empty(),
-        GuardrailDecisionRecord.ToolOrigin.UNSPECIFIED,
         Optional.empty(),
         STARTED.plusMillis(700));
   }

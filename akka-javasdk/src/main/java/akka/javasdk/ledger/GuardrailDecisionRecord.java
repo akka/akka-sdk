@@ -22,16 +22,14 @@ import java.util.Optional;
  * @param category the category of the guardrail
  * @param boundary where in the interaction the guardrail ran
  * @param decision what the guardrail decided
+ * @param explanation the explanation the guardrail gave for its decision, or the failure message
+ *     when the decision is {@link Decision#FAIL}
  * @param reportOnly true when the guardrail only reports and the interaction continues regardless
  *     of the decision
- * @param explanation the explanation the guardrail gave for its decision
+ * @param failMode what the runtime does when the guardrail fails to decide, without effect when
+ *     {@code reportOnly} is true
  * @param duration how long the guardrail took to decide
- * @param toolCallId the id of the tool call the guardrail inspected, or empty when it inspected
- *     none
- * @param toolName the name of the tool the guardrail inspected, or empty when it inspected none
- * @param toolOrigin where the inspected tool runs
- * @param mcpEndpoint the endpoint of the remote MCP server the inspected tool runs on, or empty
- *     when the tool is not a remote MCP tool
+ * @param toolCall the tool call the guardrail decided on, or empty when it decided on none
  * @param timestamp when the decision was recorded
  */
 public record GuardrailDecisionRecord(
@@ -45,13 +43,11 @@ public record GuardrailDecisionRecord(
     String category,
     Boundary boundary,
     Decision decision,
-    boolean reportOnly,
     String explanation,
+    boolean reportOnly,
+    FailMode failMode,
     Duration duration,
-    Optional<String> toolCallId,
-    Optional<String> toolName,
-    ToolOrigin toolOrigin,
-    Optional<String> mcpEndpoint,
+    Optional<ToolCall> toolCall,
     Instant timestamp) {
 
   /** Where in an interaction a guardrail ran. A later SDK version can add values. */
@@ -78,13 +74,39 @@ public record GuardrailDecisionRecord(
     FAIL
   }
 
-  /** Where the tool inspected by a guardrail runs. A later SDK version can add values. */
+  /** What the runtime does when a guardrail fails to decide. A later SDK version can add values. */
+  public enum FailMode {
+    /** This version of the SDK does not know the fail mode. */
+    UNSPECIFIED,
+    /** A failing guardrail stops the interaction. */
+    FAIL_CLOSED,
+    /** A failing guardrail lets the interaction continue. */
+    FAIL_OPEN
+  }
+
+  /** Where the tool of a guardrail decision runs. A later SDK version can add values. */
   public enum ToolOrigin {
-    /** The guardrail inspected no tool, or this version of the SDK does not know the origin. */
+    /** The runtime did not report the origin, or this version of the SDK does not know it. */
     UNSPECIFIED,
     /** A function tool of the service. */
     FUNCTION_TOOL,
     /** A tool on a remote MCP server. */
     REMOTE_MCP
   }
+
+  /**
+   * The tool call a guardrail decided on. Set for a before-tool-call guardrail, and for a
+   * before-agent-response guardrail on the response a control tool carries.
+   *
+   * @param toolCallId the id the model gave the call, or empty when it gave none
+   * @param toolName the name of the called tool
+   * @param origin where the tool runs
+   * @param mcpEndpoint the endpoint of the remote MCP server the tool runs on, or empty when the
+   *     tool is not a remote MCP tool
+   */
+  public record ToolCall(
+      Optional<String> toolCallId,
+      String toolName,
+      ToolOrigin origin,
+      Optional<String> mcpEndpoint) {}
 }
