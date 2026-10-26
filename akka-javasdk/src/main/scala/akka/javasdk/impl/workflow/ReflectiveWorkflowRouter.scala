@@ -20,6 +20,7 @@ import akka.javasdk.impl.client.DeferredCallImpl
 import akka.javasdk.impl.client.MethodRefResolver
 import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
+import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.WorkflowStepNotFound
 import akka.javasdk.impl.workflow.WorkflowEffects.DeleteTransition
 import akka.javasdk.impl.workflow.WorkflowEffects.EndTransition
@@ -159,18 +160,20 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
     descriptor
       .findStepMethodByName(stepName)
       .map { stepMethod =>
+        val otelContext = commandContext.tracing().asInstanceOf[SpanTracingImpl].context
         val effect =
           if (stepMethod.javaMethod().getParameterCount == 1) {
             Future {
-              val decodedInput = decodeInputForClass(stepMethod.javaMethod().getParameterTypes()(0))
-              stepMethod.invoke(workflow, decodedInput)
+              Telemetry.withCurrentContext(otelContext) {
+                val decodedInput = decodeInputForClass(stepMethod.javaMethod().getParameterTypes()(0))
+                stepMethod.invoke(workflow, decodedInput)
+              }
             }
           } else {
             Future {
-              stepMethod.invoke(workflow)
+              Telemetry.withCurrentContext(otelContext)(stepMethod.invoke(workflow))
             }
           }
-        val otelContext = commandContext.tracing().asInstanceOf[SpanTracingImpl].context
         val componentClient =
           ComponentClientImpl(runtimeComponentClients, serializer, Map.empty, None, otelContext)(
             sdkExecutionContext,

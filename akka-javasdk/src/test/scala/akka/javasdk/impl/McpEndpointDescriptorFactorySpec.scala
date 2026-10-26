@@ -7,10 +7,20 @@ package akka.javasdk.impl
 import scala.concurrent.ExecutionContext
 
 import akka.javasdk.impl.mcp.TestMcpEndpoints
+import akka.runtime.sdk.spi.HttpRequestHeaders
+import akka.runtime.sdk.spi.JwtClaims
+import akka.runtime.sdk.spi.McpEndpointConstructionContext
 import akka.runtime.sdk.spi.McpEndpointDescriptor.TextContent
 import akka.runtime.sdk.spi.McpEndpointDescriptor.ToolCallResult
+import akka.runtime.sdk.spi.RequestPrincipal
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaArray
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaObject
+import akka.runtime.sdk.spi.SpiSpiffeContext
+import io.opentelemetry.api.trace.Span
+import io.opentelemetry.api.trace.SpanContext
+import io.opentelemetry.api.trace.TraceFlags
+import io.opentelemetry.api.trace.TraceState
+import io.opentelemetry.context.Context
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -71,6 +81,26 @@ class McpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers with Sc
       textOf(call("async-void-tool")) should ===("SUCCESS")
       textOf(call("unit")) should ===("\"CELSIUS\"")
       textOf(call("optional-weather")) should ===("""{"city":"Leuven","tempC":20}""")
+    }
+
+    "call a tool with the request telemetry context current" in {
+      val descriptor =
+        McpEndpointDescriptorFactory(
+          classOf[TestMcpEndpoints.CurrentSpanMcpEndpoint],
+          _ => new TestMcpEndpoints.CurrentSpanMcpEndpoint)
+      val spanId = "b7ad6b7169203331"
+      val span = Span.wrap(
+        SpanContext.create("0af7651916cd43dd8448eb211c80319c", spanId, TraceFlags.getSampled, TraceState.getDefault))
+      val context = new McpEndpointConstructionContext {
+        override def telemetryContext: Context = Context.root().`with`(span)
+        override def openTelemetrySpan: Option[Span] = Some(span)
+        override def principal: RequestPrincipal = null
+        override def jwt: Option[JwtClaims] = None
+        override def requestHeaders: HttpRequestHeaders = null
+        override def spiffeContext: Option[SpiSpiffeContext] = None
+      }
+
+      textOf(descriptor.tools.head.call(context, Map.empty).futureValue) should ===(spanId)
     }
 
     "fail tool calls returning null" in {

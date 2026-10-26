@@ -46,12 +46,10 @@ import akka.runtime.sdk.spi.SpiWorkflow.StepCallReply
 import akka.runtime.sdk.spi.SpiWorkflow.StepCommand
 import akka.runtime.sdk.spi.SpiWorkflow.StepResult
 import akka.runtime.sdk.spi.TimerClient
-import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.slf4j.MDC
 
 /**
  * INTERNAL API
@@ -141,10 +139,6 @@ class WorkflowImpl[S, W <: Workflow[S]](
       command: SpiEntity.Command): Future[SpiWorkflow.CommandEffect] = {
 
     val telemetryContext = Option(command.telemetryContext)
-    val traceId = telemetryContext.flatMap { context =>
-      Option(Span.fromContextOrNull(context)).map(_.getSpanContext.getTraceId)
-    }
-    traceId.foreach(id => MDC.put(Telemetry.TRACE_ID, id))
 
     val workflowContext = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, telemetryContext, tracerFactory)
 
@@ -157,6 +151,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
     // smuggling 0 arity method called from component client through here
     val cmd = command.payload.getOrElse(BytesPayload.empty)
 
+    val traceScope = Telemetry.makeCurrent(telemetryContext)
     try {
       val effect = router.handleCommand(
         userState = userState,
@@ -179,7 +174,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
       case NonFatal(error) =>
         throw WorkflowException(workflowId, command.name, s"unexpected failure: $error", Some(error))
     } finally {
-      if (traceId.isDefined) MDC.remove(Telemetry.TRACE_ID)
+      traceScope.close()
     }
 
   }
@@ -188,16 +183,13 @@ class WorkflowImpl[S, W <: Workflow[S]](
 
     val stepName = stepCommand.stepName
     val telemetryContext = Option(stepCommand.telemetryContext)
-    val traceId = telemetryContext.flatMap { context =>
-      Option(Span.fromContextOrNull(context)).map(_.getSpanContext.getTraceId)
-    }
-    traceId.foreach(id => MDC.put(Telemetry.TRACE_ID, id))
     val workflowContext = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, telemetryContext, tracerFactory)
 
     val context = commandContext(stepName, telemetryContext, MetadataImpl.of(stepCommand.metadata))
     val timerScheduler =
       new TimerSchedulerImpl(timerClient, context.componentCallMetadata)
 
+    val traceScope = Telemetry.makeCurrent(telemetryContext)
     try {
       val handleStep = router.handleStep(
         userState,
@@ -210,7 +202,9 @@ class WorkflowImpl[S, W <: Workflow[S]](
 
       handleStep.onComplete {
         case Failure(exception) =>
-          log.error(s"Workflow [$workflowId], failed to execute step [$stepName]", exception)
+          Telemetry.withCurrentContext(telemetryContext) {
+            log.error(s"Workflow [$workflowId], failed to execute step [$stepName]", exception)
+          }
         case Success(_) =>
       }(sdkExecutionContext)
 
@@ -222,7 +216,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
         log.error(message, ex)
         throw WorkflowException(message, Some(ex))
     } finally {
-      if (traceId.isDefined) MDC.remove(Telemetry.TRACE_ID)
+      traceScope.close()
     }
   }
 
