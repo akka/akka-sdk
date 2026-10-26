@@ -37,11 +37,27 @@ akka logs <<service-name>> --follow --tail 50
 Logs can be exported for searching, reporting, alerting and long term storage by configuring the Akka observability configuration for your project. See xref:observability-and-monitoring/observability-exports.adoc[here] for detailed documentation.
 
 
-== Correlating logs
+[#_correlating_logs]
+== Correlating logs with traces
 
-The JSON log messages include a `trace_id` field when tracing is xref:operations:observability-and-monitoring/observability-exports.adoc#activating_tracing[enabled].
+When tracing is xref:operations:observability-and-monitoring/observability-exports.adoc#activating_tracing[enabled], JSON log messages written while Akka handles a traced request or message include these fields:
 
-This way, the trace ID that is passed through your components will be added to your logs. For more information on tracing, click xref:operations:observability-and-monitoring/traces.adoc[here].
+* `trace_id`: the ID of the trace, 32 hexadecimal characters.
+* `span_id`: the ID of the current span, 16 hexadecimal characters.
+* `trace_flags`: the W3C trace flags, for example `01` for a sampled trace.
+
+Use the trace ID to find the trace of a log message in your tracing backend. For more information on tracing, see xref:operations:observability-and-monitoring/traces.adoc[Traces].
+
+Akka adds the fields to logs written from:
+
+* command handlers of entities, workflows, timed actions and agents
+* consumers and view updaters
+* workflow steps and agent function tools
+* HTTP endpoint methods, and MCP endpoint tools, prompts and resources
+
+If you start a span with `tracing().startSpan(...)` and make it current, logs written in that scope carry the ID of your span.
+
+Akka sets the trace context on the thread that calls your code. Logs written later on another thread, for example in a callback on a returned `CompletionStage`, do not include the fields. Logs written in gRPC endpoint methods do not include the fields.
 
 == See also
 
