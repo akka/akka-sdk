@@ -10,6 +10,7 @@ import akka.javasdk.annotations.mcp.McpResource;
 import akka.javasdk.annotations.mcp.McpTool;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.google.protobuf.Timestamp;
+import io.opentelemetry.api.trace.Span;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -216,6 +217,14 @@ public class TestMcpEndpoints {
     @McpTool(description = "raw completion stage")
     public CompletionStage rawStage() {
       return CompletableFuture.completedFuture("text");
+    }
+  }
+
+  @McpEndpoint(serverName = "current-span")
+  public static class CurrentSpanMcpEndpoint {
+    @McpTool(description = "current span id")
+    public String currentSpanId() {
+      return Span.current().getSpanContext().getSpanId();
     }
   }
 

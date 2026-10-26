@@ -190,7 +190,7 @@ private[javasdk] class MetadataImpl private (val entries: Seq[SpiMetadataEntry])
   lazy val traceId: Option[String] = {
     val otelContext = W3CTraceContextPropagator
       .getInstance()
-      .extract(OtelContext.current(), asMetadata(), metadataGetter)
+      .extract(OtelContext.root(), asMetadata(), metadataGetter)
 
     Span.fromContext(otelContext).getSpanContext.getTraceId match {
       case "00000000000000000000000000000000" =>
@@ -202,7 +202,7 @@ private[javasdk] class MetadataImpl private (val entries: Seq[SpiMetadataEntry])
   lazy val context: Option[OtelContext] = {
     val otelContext = W3CTraceContextPropagator
       .getInstance()
-      .extract(OtelContext.current(), asMetadata(), metadataGetter)
+      .extract(OtelContext.root(), asMetadata(), metadataGetter)
 
     Span.fromContext(otelContext).getSpanContext.getTraceId match {
       case "00000000000000000000000000000000" =>

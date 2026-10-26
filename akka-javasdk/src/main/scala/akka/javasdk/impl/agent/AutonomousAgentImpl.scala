@@ -43,6 +43,7 @@ import akka.javasdk.impl.agent.task.BacklogState
 import akka.javasdk.impl.client.EntityClientImpl
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.Serializer
+import akka.javasdk.impl.telemetry.Telemetry
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.EventLogClient
 import akka.runtime.sdk.spi.RegionInfo
@@ -392,10 +393,14 @@ private[impl] final class AutonomousAgentImpl(
     }(sdkExecutionContext)
 
   override def callToolFunction(request: SpiAgent.ToolCallCommand): Future[String] =
-    Future(toolExecutor.execute(request))(sdkExecutionContext)
+    Future {
+      Telemetry.withCurrentContext(Option(request.telemetryContext))(toolExecutor.execute(request))
+    }(sdkExecutionContext)
 
   override def multimodalCallToolFunction(request: SpiAgent.ToolCallCommand): Future[Seq[SpiAgent.MessageContent]] =
-    Future(toolExecutor.executeMultimodal(request))(sdkExecutionContext)
+    Future {
+      Telemetry.withCurrentContext(Option(request.telemetryContext))(toolExecutor.executeMultimodal(request))
+    }(sdkExecutionContext)
 
   override val contentLoader: Option[SpiAgent.SpiContentLoader] =
     agentDefinition.contentLoader.map(AgentImpl.toSpiContentLoader(_, sdkExecutionContext))
