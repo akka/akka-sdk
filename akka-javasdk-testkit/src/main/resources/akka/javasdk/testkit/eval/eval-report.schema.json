@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://doc.akka.io/schemas/akka-eval-report/v3.json",
+  "$id": "https://doc.akka.io/schemas/akka-eval-report/v4.json",
   "title": "Akka eval report",
   "description": "The outcome of one ExperimentRunner run: the gate verdict, the rates per evaluator, the spend, every case with its outcome over all runs, and every attempt with its evidence and results. An attempt is one case in one run; without repeated runs every case has one attempt. A reader ignores properties it does not know. formatVersion increments when a property changes meaning or is removed.",
   "type": "object",
   "required": ["format", "formatVersion", "name", "startedAt", "finishedAt", "runs", "gate", "summary", "evaluators", "guardrails", "spend", "cases", "attempts"],
   "properties": {
     "format": { "const": "akka-eval-report" },
-    "formatVersion": { "const": 3 },
+    "formatVersion": { "const": 4 },
     "name": { "type": "string", "description": "The name given with Experiment.name, or the test method that ran the experiment, for example SupportAgentEvalTest.qualityGate. The same name over several runs." },
     "startedAt": { "type": "string", "format": "date-time", "description": "When the run started, UTC." },
     "finishedAt": { "type": "string", "format": "date-time", "description": "When the run finished, after the last attempt was evaluated, UTC." },
@@ -129,19 +129,43 @@
     },
     "evidence": {
       "type": "object",
-      "required": ["input", "interactionId", "reply", "failure", "latencyMs", "inputTokens", "outputTokens", "modelResponses", "denied", "toolCalls", "guardrails"],
+      "required": ["input", "interactionId", "systemMessage", "userMessage", "reply", "returned", "failure", "model", "finishReason", "latencyMs", "inputTokens", "outputTokens", "modelResponses", "responses", "denied", "toolCalls", "guardrails"],
       "properties": {
         "input": { "type": "string", "description": "The command sent to the agent. A String command as is, any other command as JSON." },
         "interactionId": { "type": "string", "description": "The id of the recorded interaction. Empty when none was recorded." },
+        "systemMessage": { "type": "string", "description": "The system message of the interaction. Empty when none was recorded." },
+        "userMessage": { "type": "string", "description": "The input message as the model saw it, as text. Empty when none was recorded." },
         "reply": { "type": "string", "description": "The agent's reply as text. Empty when none was recorded." },
+        "returned": { "type": "string", "description": "The value the command handler returned, as text. Empty when the call failed." },
         "failure": { "type": "string", "description": "Why the interaction failed. Empty when it did not fail." },
+        "model": { "$ref": "#/$defs/model" },
+        "finishReason": { "type": "string", "description": "Why the last model call finished, as recorded. Empty when none was recorded." },
         "latencyMs": { "type": "integer", "minimum": 0, "description": "From the start of the model call to its end." },
         "inputTokens": { "type": "integer", "minimum": 0, "description": "Summed over the model calls." },
         "outputTokens": { "type": "integer", "minimum": 0, "description": "Summed over the model calls." },
         "modelResponses": { "type": "integer", "minimum": 0, "description": "How many model responses the interaction holds." },
+        "responses": { "type": "array", "description": "The model responses, in order.", "items": { "$ref": "#/$defs/response" } },
         "denied": { "type": "boolean", "description": "Whether a guardrail denied content in the interaction." },
         "toolCalls": { "type": "array", "description": "In call order.", "items": { "$ref": "#/$defs/toolCall" } },
         "guardrails": { "type": "array", "description": "The guardrail decisions made in the interaction, newest first.", "items": { "$ref": "#/$defs/guardrail" } }
+      }
+    },
+    "model": {
+      "type": "object",
+      "required": ["provider", "name"],
+      "properties": {
+        "provider": { "type": "string", "description": "The model provider, as recorded. Empty when none was recorded." },
+        "name": { "type": "string", "description": "The model name, as recorded. Empty when none was recorded." }
+      }
+    },
+    "response": {
+      "type": "object",
+      "required": ["content", "inputTokens", "outputTokens", "toolCalls"],
+      "properties": {
+        "content": { "type": "string", "description": "The text of the response. Empty when the response holds only tool calls." },
+        "inputTokens": { "type": "integer", "minimum": 0, "description": "The input tokens of the model call." },
+        "outputTokens": { "type": "integer", "minimum": 0, "description": "The output tokens of the model call." },
+        "toolCalls": { "type": "array", "items": { "type": "string" }, "description": "The names of the tools the response requested, in order." }
       }
     },
     "toolCall": {

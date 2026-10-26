@@ -57,6 +57,9 @@ Access these documentation files for detailed patterns:
 - `akka-context/sdk/agents/guardrails.html.md` - Constraining and controlling agent behavior with guardrails
 - `akka-context/sdk/evaluators.html.md` - Evaluating agent interactions with evaluator components
 - `akka-context/sdk/agents/testing.html.md` - Testing request-based agents
+- `akka-context/testing/evaluation/getting-started.html.md` - Evaluating an agent with eval cases, evaluator components bound in the test, and a gated batch
+- `akka-context/testing/evaluation/gates-and-reports.html.md` - Gates, the attempt verdict, and reading the evaluation report
+- `akka-context/testing/evaluation/adversarial.html.md` - Adversarial eval cases and guardrail checks
 
 **Autonomous Agents (durable model-driven processes with typed tasks and multi-agent coordination):**
 - `akka-context/sdk/autonomous-agents.html.md` - Hub: when to use, comparison with request-based Agent, basic structure, sample matrix

@@ -23,11 +23,14 @@ public class OrderLookupEvaluator extends Evaluator {
   @Override
   public Effect evaluate(EvaluationContext context) {
     var interaction = ledger.getInteraction(context.subject().interactionId()); // <3>
+    if (interaction.failed() && interaction.toolCalls().isEmpty()) {
+      return effects().inconclusive("the interaction failed before any tool call"); // <4>
+    }
     var namesAnOrder = ORDER_ID.matcher(interaction.inputText()).find();
     var lookedUp = !interaction.toolCalls("getOrder").isEmpty();
     if (namesAnOrder && !lookedUp) {
       return effects()
-        .complete(Evaluation.failed("no getOrder call for a message that names an order")); // <4>
+        .complete(Evaluation.failed("no getOrder call for a message that names an order")); // <5>
     }
     if (!namesAnOrder && !interaction.toolCalls().isEmpty()) {
       return effects()
@@ -42,7 +45,7 @@ public class OrderLookupEvaluator extends Evaluator {
         Evaluation.passed(
           namesAnOrder ? "looked the order up" : "no tool for a message without an order id"
         )
-      ); // <5>
+      ); // <6>
   }
 }
 // end::all[]

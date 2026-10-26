@@ -6,6 +6,8 @@ package akka.javasdk.testkit.eval;
 
 import akka.javasdk.JsonSupport;
 import akka.javasdk.ledger.InteractionRecord;
+import akka.javasdk.ledger.ModelResponse;
+import akka.javasdk.ledger.ToolCall;
 import akka.javasdk.testkit.eval.ExperimentRunner.CaseResult;
 import akka.javasdk.testkit.eval.ExperimentRunner.CaseSummary;
 import akka.javasdk.testkit.eval.ExperimentRunner.Outcome;
@@ -128,15 +130,27 @@ final class EvalReportJson {
   }
 
   private static ReportDocument.Evidence evidence(Evidence evidence) {
+    var interaction = evidence.interaction();
+    var modelConfig = interaction.map(record -> record.metadata().modelConfig());
     return new ReportDocument.Evidence(
         evidence.input(),
-        evidence.interaction().map(InteractionRecord::interactionId).orElse(""),
+        interaction.map(InteractionRecord::interactionId).orElse(""),
+        interaction.map(InteractionRecord::systemMessage).orElse(""),
+        interaction.map(InteractionRecord::inputText).orElse(""),
         evidence.reply(),
+        evidence.returned().orElse(""),
         evidence.failure().orElse(""),
+        new ReportDocument.Model(
+            modelConfig.map(config -> orEmpty(config.providerName())).orElse(""),
+            modelConfig.map(config -> orEmpty(config.modelName())).orElse("")),
+        interaction.map(record -> record.metadata().finishReason().name()).orElse(""),
         evidence.latency().toMillis(),
         evidence.inputTokens(),
         evidence.outputTokens(),
         evidence.modelResponses(),
+        interaction.map(InteractionRecord::modelResponses).orElse(List.of()).stream()
+            .map(EvalReportJson::response)
+            .toList(),
         evidence.denied(),
         evidence.toolCalls().stream()
             .map(c -> new ReportDocument.ToolCall(c.name(), c.arguments(), c.response()))
@@ -152,5 +166,17 @@ final class EvalReportJson {
                         g.reportOnly(),
                         g.explanation()))
             .toList());
+  }
+
+  private static ReportDocument.Response response(ModelResponse response) {
+    return new ReportDocument.Response(
+        orEmpty(response.content()),
+        response.tokenUsage().totalInputTokens(),
+        response.outputTokenCount(),
+        response.toolCalls().stream().map(ToolCall::name).toList());
+  }
+
+  private static String orEmpty(String text) {
+    return text == null ? "" : text;
   }
 }

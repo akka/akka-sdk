@@ -7,6 +7,7 @@ package akka.javasdk.testkit.eval;
 import akka.japi.function.Function2;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.client.ComponentClient;
+import java.util.Optional;
 
 /**
  * Calls the agent's command handler through the component client in the turn's session.
@@ -30,14 +31,15 @@ final class AgentTarget<A extends Agent, C, R> implements EvalTarget<C> {
   @Override
   public Outcome call(Turn<C> turn) {
     try {
-      return Outcome.answered(
+      var reply =
           componentClient
               .forAgent()
               .inSession(turn.sessionId())
               .method(method)
               .withDetailedReply()
-              .invoke(turn.command())
-              .interactionId());
+              .invoke(turn.command());
+      return Outcome.answered(
+          reply.interactionId(), Optional.ofNullable(reply.value()).map(EvalCase::asText));
     } catch (RuntimeException e) {
       return Outcome.failed(e);
     }

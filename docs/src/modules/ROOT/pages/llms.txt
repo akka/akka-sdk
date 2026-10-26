@@ -207,7 +207,7 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Specifications and conformance](https://doc.akka.io/concepts/spec-driven-development.html.md): Specifications, project rules, exit conditions, and acceptance checks
 - [Governance and the runtime](https://doc.akka.io/concepts/governance-and-the-runtime.html.md): Why governance runs in the runtime, control ids and compliance
 - [Controls](https://doc.akka.io/concepts/controls.html.md): Guardrails, sanitizers, evals, human decisions and gates, verdicts and halt
-- [Evaluation](https://doc.akka.io/concepts/evaluation.html.md): Test, batch, replay and live evaluation, and how results map across sections
+- [Evaluation](https://doc.akka.io/concepts/evaluation.html.md): Test, batch and live evaluation, and how results map across sections
 - [From risk to controls](https://doc.akka.io/concepts/risk-to-controls.html.md): Risk envelope, risk survey, signed bundles and controls in force
 - [The ledger and evidence](https://doc.akka.io/concepts/evidence.html.md): Records, identity and authority, evidence packs and retention
 - [Models and inference](https://doc.akka.io/concepts/models.html.md): Model interactions, routing, hosted providers, and served models

@@ -197,12 +197,18 @@ public record ReportDocument(
   /**
    * @param input the command sent to the agent; a String command as is, any other command as JSON
    * @param interactionId the id of the recorded interaction; empty when none was recorded
+   * @param systemMessage the system message of the interaction; empty when none was recorded
+   * @param userMessage the input message as the model saw it, as text; empty when none was recorded
    * @param reply the agent's reply as text; empty when none was recorded
+   * @param returned the value the command handler returned, as text; empty when the call failed
    * @param failure why the interaction failed; empty when it did not fail
+   * @param model the model the interaction was recorded with
+   * @param finishReason why the last model call finished, as recorded; empty when none was recorded
    * @param latencyMs from the start of the model call to its end
    * @param inputTokens summed over the model calls
    * @param outputTokens summed over the model calls
    * @param modelResponses how many model responses the interaction holds
+   * @param responses the model responses, in order
    * @param denied whether a guardrail denied content in the interaction
    * @param toolCalls in call order
    * @param guardrails the guardrail decisions made in the interaction, newest first
@@ -210,15 +216,36 @@ public record ReportDocument(
   public record Evidence(
       String input,
       String interactionId,
+      String systemMessage,
+      String userMessage,
       String reply,
+      String returned,
       String failure,
+      Model model,
+      String finishReason,
       long latencyMs,
       long inputTokens,
       long outputTokens,
       int modelResponses,
+      List<Response> responses,
       boolean denied,
       List<ToolCall> toolCalls,
       List<Guardrail> guardrails) {}
+
+  /**
+   * @param provider the model provider, as recorded; empty when none was recorded
+   * @param name the model name, as recorded; empty when none was recorded
+   */
+  public record Model(String provider, String name) {}
+
+  /**
+   * @param content the text of the response; empty when the response holds only tool calls
+   * @param inputTokens the input tokens of the model call
+   * @param outputTokens the output tokens of the model call
+   * @param toolCalls the names of the tools the response requested, in order
+   */
+  public record Response(
+      String content, long inputTokens, long outputTokens, List<String> toolCalls) {}
 
   /**
    * @param name the registered tool name, {@code <Class>_<method>} for a function tool method

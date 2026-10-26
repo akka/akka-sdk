@@ -9,6 +9,7 @@ import java.util
 import scala.jdk.CollectionConverters._
 
 import akka.annotation.InternalApi
+import akka.javasdk.impl.ComponentLocator
 import akka.javasdk.impl.client.MethodRefResolver
 import akka.javasdk.impl.reflection.Reflect
 import akka.runtime.sdk.spi.SpiEvaluator
@@ -64,4 +65,46 @@ private[javasdk] object AgentEvaluatorBindings {
       }
     }.asJava
   }
+
+  /**
+   * The component ids of every agent named under `agents` of an entry under `akka.javasdk.evaluation.evaluators`,
+   * sorted.
+   */
+  def boundAgentComponentIds(config: Config): util.List[String] = {
+    val evaluators =
+      if (config.hasPath(EvaluatorsPath)) config.getObject(EvaluatorsPath).asScala.collect {
+        case (id, _: ConfigObject) => id
+      }
+      else Nil
+    evaluators.toSeq
+      .flatMap { evaluatorComponentId =>
+        val agentsPath = s"$EvaluatorsPath.$evaluatorComponentId.agents"
+        if (config.hasPath(agentsPath))
+          config.getObject(agentsPath).asScala.collect { case (id, _: ConfigObject) => id }
+        else Nil
+      }
+      .distinct
+      .sorted
+      .asJava
+  }
+
+  /**
+   * The component ids of the evaluator components the component descriptors on the class path list, sorted. A component
+   * class that cannot be loaded is left out.
+   */
+  def evaluatorComponentIds(classLoader: ClassLoader): util.List[String] =
+    ComponentLocator
+      .findAllDescriptorFiles(classLoader)
+      .flatMap { descriptor =>
+        descriptor.components(ComponentLocator.EvaluatorKey) ++ descriptor.components(
+          ComponentLocator.DurableEvaluatorKey)
+      }
+      .distinct
+      .flatMap { className =>
+        try Some(Reflect.readComponentId(Class.forName(className, false, classLoader)))
+        catch { case _: ClassNotFoundException | _: LinkageError => None }
+      }
+      .distinct
+      .sorted
+      .asJava
 }

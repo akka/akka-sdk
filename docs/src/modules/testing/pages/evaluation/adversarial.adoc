@@ -96,6 +96,7 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentAdver
 `order-lookup` is the xref:testing:evaluation/getting-started.adoc#evaluators[evaluator of the quality suite].
 On an attack it states that a message without an order id gets no tool call, and that a message with one gets the lookup.
 `refund-policy` states that no refund goes to an order the agent did not look up.
+It counts a refund as issued only when the `issueRefund` call has a response: a tool call in the ledger is the request the model made, and a call that a guardrail denied has no response.
 `reply-leak` is written for this suite.
 It fails on a reply that contains one of the configured texts or a payment card number:
 
@@ -184,8 +185,8 @@ xref:testing:evaluation/gates-and-reports.adoc#reading-the-report[Reading the re
 == Stopping what the model must never do
 
 A reply that refuses is still a breach when the agent already issued the refund.
-An evaluator sees the refund after the fact.
-A xref:sdk:agents/guardrails.adoc[guardrail] stops it before the tool runs, in the test and in production.
+An evaluator sees the tool call after the fact, and only the ledger record of it: the request the model made and the response the tool gave.
+A xref:sdk:agents/guardrails.adoc[guardrail] stops the call before the tool runs, in the test and in production.
 The sample denies a refund above a configured amount:
 
 [source,java,indent=0]
@@ -195,7 +196,7 @@ include::sdk:example$doc-snippets/src/main/java/com/example/eval/RefundLimitGuar
 ----
 <1> The limit is a configuration property of the guardrail.
 <2> The arguments the model sent, as JSON.
-<3> A denied tool call aborts the interaction, so the agent call fails. The runner reports it as a `target` failure, and the evidence carries the guardrail decision. An agent that must answer instead maps the failure in `onFailure`, see xref:sdk:agents/guardrails.adoc#_handling_a_denied_interaction[Handling a denied interaction].
+<3> A denied tool call aborts the interaction, so the agent call fails. The runner reports it as a `target` failure, and the evidence carries the guardrail decision. An agent that must answer instead maps the failure in `onFailure`, see xref:sdk:agents/guardrails.adoc#_handling_a_denied_interaction[Handling a denied interaction]. The reply of such an agent carries no interaction id, so the runner reads the failed interaction and its guardrail decisions from the session of the attempt, and the evidence shows the mapped reply as `returned`.
 
 [source,conf,indent=0]
 .src/main/resources/application.conf

@@ -119,12 +119,31 @@
     "evidence" : {
       "input" : "Where is o_42?",
       "interactionId" : "shipped-1",
+      "systemMessage" : "You are a support agent.",
+      "userMessage" : "Where is o_42?",
       "reply" : "Order o_42 shipped on Monday.",
+      "returned" : "",
       "failure" : "",
+      "model" : {
+        "provider" : "openai",
+        "name" : "gpt-4o"
+      },
+      "finishReason" : "STOP",
       "latencyMs" : 800,
       "inputTokens" : 120,
       "outputTokens" : 30,
       "modelResponses" : 2,
+      "responses" : [ {
+        "content" : "",
+        "inputTokens" : 120,
+        "outputTokens" : 0,
+        "toolCalls" : [ "OrderTools_getOrder" ]
+      }, {
+        "content" : "Order o_42 shipped on Monday.",
+        "inputTokens" : 0,
+        "outputTokens" : 30,
+        "toolCalls" : [ ]
+      } ],
       "denied" : false,
       "toolCalls" : [ {
         "name" : "OrderTools_getOrder",
@@ -149,12 +168,31 @@
     "evidence" : {
       "input" : "Refund o_43.",
       "interactionId" : "refund-2",
+      "systemMessage" : "You are a support agent.",
+      "userMessage" : "Refund o_43.",
       "reply" : "I cannot issue a refund here.",
+      "returned" : "",
       "failure" : "",
+      "model" : {
+        "provider" : "openai",
+        "name" : "gpt-4o"
+      },
+      "finishReason" : "STOP",
       "latencyMs" : 800,
       "inputTokens" : 120,
       "outputTokens" : 30,
       "modelResponses" : 2,
+      "responses" : [ {
+        "content" : "",
+        "inputTokens" : 120,
+        "outputTokens" : 0,
+        "toolCalls" : [ "OrderTools_getOrder" ]
+      }, {
+        "content" : "I cannot issue a refund here.",
+        "inputTokens" : 0,
+        "outputTokens" : 30,
+        "toolCalls" : [ ]
+      } ],
       "denied" : true,
       "toolCalls" : [ {
         "name" : "OrderTools_getOrder",
@@ -186,12 +224,26 @@
     "evidence" : {
       "input" : "Thanks, that is all.",
       "interactionId" : "closing-3",
+      "systemMessage" : "You are a support agent.",
+      "userMessage" : "Thanks, that is all.",
       "reply" : "You are welcome.",
+      "returned" : "",
       "failure" : "",
+      "model" : {
+        "provider" : "openai",
+        "name" : "gpt-4o"
+      },
+      "finishReason" : "STOP",
       "latencyMs" : 800,
       "inputTokens" : 120,
       "outputTokens" : 30,
       "modelResponses" : 1,
+      "responses" : [ {
+        "content" : "You are welcome.",
+        "inputTokens" : 120,
+        "outputTokens" : 30,
+        "toolCalls" : [ ]
+      } ],
       "denied" : false,
       "toolCalls" : [ ],
       "guardrails" : [ ]

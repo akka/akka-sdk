@@ -48,7 +48,7 @@ class GateTest {
   private ExperimentRunner.EvalReport run(
       Gate gate,
       EvalTarget<String> target,
-      AgentBindings agent,
+      EvaluatorBindings agent,
       int runs,
       List<EvalCase<String>> cases) {
     return ExperimentRunner.against(

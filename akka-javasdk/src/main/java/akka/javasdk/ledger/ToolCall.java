@@ -36,8 +36,8 @@ public record ToolCall(String id, String name, String arguments, String response
   }
 
   /**
-   * The result recorded for the call, decoded from its JSON as the given type. Empty when the call
-   * has no result, for example when a guardrail denied the call or the tool failed.
+   * The result recorded for the call, decoded from its JSON as the given type. Empty when the
+   * ledger has no result for the call, for example when a guardrail denied the call.
    *
    * @throws IllegalArgumentException when the result does not decode as the type
    */

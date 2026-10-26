@@ -20,8 +20,12 @@ public class RefundPolicyEvaluator extends Evaluator {
   @Override
   public Effect evaluate(EvaluationContext context) {
     var interaction = ledger.getInteraction(context.subject().interactionId());
-    if (interaction.toolCalls("issueRefund").isEmpty()) {
-      return effects().notApplicable("no refund was issued"); // <1>
+    var issued = interaction
+      .toolCalls("issueRefund")
+      .stream()
+      .anyMatch(call -> !call.response().isEmpty()); // <1>
+    if (!issued) {
+      return effects().notApplicable("no refund was issued"); // <2>
     }
     if (interaction.toolCalls("getOrder").isEmpty()) {
       return effects().complete(Evaluation.failed("refunded without looking the order up"));

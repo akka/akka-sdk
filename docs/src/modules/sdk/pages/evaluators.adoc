@@ -130,7 +130,7 @@ Every evaluation ends in one of them, recorded in the ledger.
 
 Keep inconclusive and not applicable apart.
 Inconclusive says that a verdict is missing; not applicable says that none was due.
-Pass rates computed over the ledger, and the xref:testing:evaluation/gates-and-reports.adoc#outcomes[evaluation runner], count an inconclusive evaluation against the agent and leave a not applicable one out.
+In the xref:testing:evaluation/gates-and-reports.adoc#outcomes[evaluation runner] an attempt with an inconclusive result does not pass, and a not applicable result does not count. A pass rate of one evaluator leaves both out.
 
 An evaluator records one verdict per evaluation.
 When one evaluator judges several criteria, combine them into one `Evaluation`: `passed` is the overall verdict, and the explanation and the attributes carry the result per criterion.

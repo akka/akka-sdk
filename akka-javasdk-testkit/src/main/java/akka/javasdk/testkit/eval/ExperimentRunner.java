@@ -6,6 +6,7 @@ package akka.javasdk.testkit.eval;
 
 import akka.japi.function.Function2;
 import akka.javasdk.agent.Agent;
+import akka.javasdk.impl.evaluation.AgentEvaluatorBindings;
 import akka.javasdk.ledger.EvaluationRecord;
 import akka.javasdk.ledger.GuardrailDecisionRecord;
 import akka.javasdk.ledger.InteractionRecord;
@@ -48,7 +49,8 @@ import org.slf4j.LoggerFactory;
  *
  * <p>An experiment is built in steps, each step offering only what comes next: the cases, the
  * agent, an optional {@link Gate}, then {@link Experiment#run}. Without a gate every case must
- * pass, which suits a mocked model. With a real model gate on rates instead.
+ * pass, which suits a mocked model. With a real model gate on rates instead. {@link
+ * Experiment#evaluationTimeout} sets how long an attempt waits for the verdicts.
  *
  * <p>{@link Experiment#repeat} runs every case several times. One execution of one case is an
  * attempt, and the gate, the rates and the spend count attempts. The report names the requirements
@@ -77,9 +79,9 @@ public final class ExperimentRunner {
 
   /**
    * How long an attempt waits for the ledger to hold its interaction and one evaluation per bound
-   * evaluator. An evaluator without an evaluation at the timeout is inconclusive on that attempt.
+   * evaluator, unless the experiment sets another with {@link Experiment#evaluationTimeout}.
    */
-  static final Duration EVALUATION_TIMEOUT = Duration.ofSeconds(10);
+  public static final Duration DEFAULT_EVALUATION_TIMEOUT = Duration.ofSeconds(10);
 
   /**
    * The evaluator name of the result the runner reports when the agent call failed: the call threw
@@ -148,39 +150,52 @@ public final class ExperimentRunner {
       ExperimentCases<C> cases,
       EvalTarget<C> target,
       LedgerClient ledger,
-      AgentBindings agent,
+      EvaluatorBindings bindings,
       Duration evaluationTimeout) {
-    return ((Cases<C>) cases).target(target, ledger, agent, evaluationTimeout).withoutReportFile();
+    return ((Cases<C>) cases)
+        .target(target, ledger, bindings, evaluationTimeout)
+        .withoutReportFile();
   }
 
   private record Cases<C>(TestKit testKit, List<EvalCase<C>> cases) implements ExperimentCases<C> {
 
+    // The bindings are checked here, before any case runs: a binding to an evaluator id without a
+    // component would leave every attempt waiting for the timeout, and an agent without a binding
+    // would leave every attempt inconclusive without saying why.
     @Override
     public <A extends Agent, R> Experiment agent(Function2<A, C, Agent.Effect<R>> method) {
       if (method == null) throw new IllegalArgumentException("agent method required");
+      var config = testKit.getApplicationConfig();
+      var bindings = EvaluatorBindings.of(config, method);
+      bindings.requireEvaluatorComponents(
+          AgentEvaluatorBindings.evaluatorComponentIds(
+              Thread.currentThread().getContextClassLoader()));
+      bindings
+          .describeUnbound(AgentEvaluatorBindings.boundAgentComponentIds(config))
+          .ifPresent(log::warn);
       return target(
           new AgentTarget<>(testKit.getComponentClient(), method),
           testKit.getLedgerClient(),
-          AgentBindings.of(testKit.getApplicationConfig(), method),
-          EVALUATION_TIMEOUT);
+          bindings,
+          DEFAULT_EVALUATION_TIMEOUT);
     }
 
     private Experiment target(
         EvalTarget<C> target,
         LedgerClient ledger,
-        AgentBindings agent,
+        EvaluatorBindings bindings,
         Duration evaluationTimeout) {
       if (target == null) throw new IllegalArgumentException("target required");
       if (ledger == null) throw new IllegalArgumentException("ledger required");
-      if (agent == null) throw new IllegalArgumentException("agent required");
-      if (evaluationTimeout == null || evaluationTimeout.isNegative() || evaluationTimeout.isZero())
-        throw new IllegalArgumentException("evaluation timeout must be positive");
-      agent.requireFullSampling();
+      if (bindings == null) throw new IllegalArgumentException("bindings required");
+      requirePositive(evaluationTimeout);
+      bindings.requireFullSampling();
+      bindings.requireNoTargetName();
       return new Ready<>(
           cases,
           target,
           ledger,
-          agent,
+          bindings,
           Gate.allCasesShouldPass(),
           "",
           Optional.of(DEFAULT_REPORT_DIRECTORY),
@@ -189,11 +204,16 @@ public final class ExperimentRunner {
     }
   }
 
+  private static void requirePositive(Duration evaluationTimeout) {
+    if (evaluationTimeout == null || evaluationTimeout.isNegative() || evaluationTimeout.isZero())
+      throw new IllegalArgumentException("evaluation timeout must be positive");
+  }
+
   private record Ready<C>(
       List<EvalCase<C>> cases,
       EvalTarget<C> target,
       LedgerClient ledger,
-      AgentBindings agent,
+      EvaluatorBindings bindings,
       Gate gate,
       String name,
       Optional<Path> reportDirectory,
@@ -204,35 +224,42 @@ public final class ExperimentRunner {
     @Override
     public Experiment gate(Gate gate) {
       if (gate == null) throw new IllegalArgumentException("gate required");
-      return with(gate, name, reportDirectory, runs);
+      return with(gate, name, reportDirectory, runs, evaluationTimeout);
     }
 
     @Override
     public Experiment name(String name) {
       requireFileName(name);
-      return with(gate, name, reportDirectory, runs);
+      return with(gate, name, reportDirectory, runs, evaluationTimeout);
     }
 
     @Override
     public Experiment reportDirectory(Path directory) {
       if (directory == null) throw new IllegalArgumentException("directory required");
-      return with(gate, name, Optional.of(directory), runs);
+      return with(gate, name, Optional.of(directory), runs, evaluationTimeout);
     }
 
     @Override
     public Experiment withoutReportFile() {
-      return with(gate, name, Optional.empty(), runs);
+      return with(gate, name, Optional.empty(), runs, evaluationTimeout);
     }
 
     @Override
     public Experiment repeat(int times) {
       if (times < 1) throw new IllegalArgumentException("repeat needs at least 1, was " + times);
-      return with(gate, name, reportDirectory, times);
+      return with(gate, name, reportDirectory, times, evaluationTimeout);
     }
 
-    private Ready<C> with(Gate gate, String name, Optional<Path> reportDirectory, int runs) {
+    @Override
+    public Experiment evaluationTimeout(Duration timeout) {
+      requirePositive(timeout);
+      return with(gate, name, reportDirectory, runs, timeout);
+    }
+
+    private Ready<C> with(
+        Gate gate, String name, Optional<Path> reportDirectory, int runs, Duration timeout) {
       return new Ready<>(
-          cases, target, ledger, agent, gate, name, reportDirectory, runs, evaluationTimeout);
+          cases, target, ledger, bindings, gate, name, reportDirectory, runs, timeout);
     }
 
     // Run-major, every case once and then every case again, so the attempts of one case are spread
@@ -327,18 +354,29 @@ public final class ExperimentRunner {
 
       var reader = new LedgerReader(ledger, evaluationTimeout);
       var results = new ArrayList<EvalResult>();
+      Optional<String> returned = Optional.empty();
       Optional<InteractionRecord> interaction;
       switch (outcome) {
-        case EvalTarget.Outcome.Answered answered ->
-            interaction = answered.interactionId().flatMap(reader::interaction);
+        // A reply without an interaction id, such as one the agent mapped from a failure in
+        // onFailure, is read from the session like a failed call.
+        case EvalTarget.Outcome.Answered answered -> {
+          returned = answered.returned();
+          interaction =
+              answered
+                  .interactionId()
+                  .map(reader::interaction)
+                  .orElseGet(
+                      () ->
+                          reader.newestInteraction(bindings.agentComponentId(), turn.sessionId()));
+        }
         case EvalTarget.Outcome.Failed failed -> {
           results.add(EvalResult.fail(TARGET, failed.reason()));
-          interaction = reader.newestInteraction(agent.agentComponentId(), turn.sessionId());
+          interaction = reader.newestInteraction(bindings.agentComponentId(), turn.sessionId());
         }
       }
       interaction.ifPresent(
           record -> {
-            var expected = agent.expectedEvaluators(record.failed());
+            var expected = bindings.expectedEvaluators(record.failed());
             if (!expected.isEmpty()) {
               var records = reader.awaitEvaluations(record.interactionId(), Set.copyOf(expected));
               for (var evaluator : expected) results.add(resultOf(evaluator, records));
@@ -349,7 +387,7 @@ public final class ExperimentRunner {
       return new CaseResult(
           evalCase.id(),
           run,
-          new Evidence(evalCase.commandText(), interaction, guardrails),
+          new Evidence(evalCase.commandText(), returned, interaction, guardrails),
           List.copyOf(results));
     }
 
@@ -377,10 +415,15 @@ public final class ExperimentRunner {
       case EvaluationRecord.Outcome.Verdict verdict -> {
         var evaluation = verdict.evaluation();
         var detail = evaluation.explanation();
-        var score =
-            evaluation.score().map(s -> String.format(Locale.ROOT, "score %.2f", s)).orElse("");
+        var facts = new ArrayList<String>();
+        evaluation.score().ifPresent(s -> facts.add(String.format(Locale.ROOT, "score %.2f", s)));
+        evaluation.label().ifPresent(label -> facts.add("label " + label));
+        evaluation.attributes().forEach((key, value) -> facts.add(key + "=" + value));
+        var inBrackets = String.join(", ", facts);
         var text =
-            detail.isEmpty() ? score : score.isEmpty() ? detail : detail + " (" + score + ")";
+            detail.isEmpty()
+                ? inBrackets
+                : inBrackets.isEmpty() ? detail : detail + " (" + inBrackets + ")";
         yield evaluation.passed()
             ? EvalResult.pass(evaluator, text)
             : EvalResult.fail(evaluator, text);
@@ -499,6 +542,11 @@ public final class ExperimentRunner {
         text.append("  interaction: none recorded\n");
       } else {
         text.append("  reply: ").append(oneLine(evidence.reply())).append('\n');
+        evidence
+            .returned()
+            .filter(returned -> !returned.equals(evidence.reply()))
+            .ifPresent(
+                returned -> text.append("  returned: ").append(oneLine(returned)).append('\n'));
         evidence
             .failure()
             .ifPresent(failure -> text.append("  failure: ").append(oneLine(failure)).append('\n'));

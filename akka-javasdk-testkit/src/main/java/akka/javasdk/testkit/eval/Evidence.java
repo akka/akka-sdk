@@ -13,29 +13,42 @@ import java.util.Optional;
 
 /**
  * What one attempt left in the ledger: the interaction the agent recorded and the guardrail
- * decisions made in it.
+ * decisions made in it, and the value the agent's command handler returned.
  *
  * @param input the command sent to the agent, as text. A String command is used as is, any other
  *     command is rendered as JSON
+ * @param returned the value the command handler returned, as text: a String as is, any other value
+ *     as JSON. Empty when the agent call failed. It differs from {@link #reply} when the handler
+ *     maps the model text, or maps a failure in {@code onFailure}
  * @param interaction the recorded interaction; empty when the agent call failed before the runtime
  *     recorded one
  * @param guardrails the guardrail decisions made in the interaction, newest first
  */
 public record Evidence(
     String input,
+    Optional<String> returned,
     Optional<InteractionRecord> interaction,
     List<GuardrailDecisionRecord> guardrails) {
 
   public Evidence {
     if (input == null) throw new IllegalArgumentException("input required");
+    if (returned == null) throw new IllegalArgumentException("returned required");
     if (interaction == null) throw new IllegalArgumentException("interaction required");
     if (guardrails == null) throw new IllegalArgumentException("guardrails required");
     guardrails = List.copyOf(guardrails);
   }
 
+  /** Evidence without a returned value. */
+  public Evidence(
+      String input,
+      Optional<InteractionRecord> interaction,
+      List<GuardrailDecisionRecord> guardrails) {
+    this(input, Optional.empty(), interaction, guardrails);
+  }
+
   /** An attempt that left nothing in the ledger. */
   public static Evidence none(String input) {
-    return new Evidence(input, Optional.empty(), List.of());
+    return new Evidence(input, Optional.empty(), Optional.empty(), List.of());
   }
 
   /** The agent's reply as recorded; empty when there is no interaction or the agent failed. */

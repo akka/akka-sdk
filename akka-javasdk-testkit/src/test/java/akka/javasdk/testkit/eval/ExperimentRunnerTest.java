@@ -28,6 +28,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
@@ -58,7 +59,7 @@ class ExperimentRunnerTest {
   /** The cases against a scripted target and the ledger, ready to run with a short timeout. */
   @SafeVarargs
   private Experiment experiment(
-      EvalTarget<String> target, AgentBindings agent, EvalCase<String>... cases) {
+      EvalTarget<String> target, EvaluatorBindings agent, EvalCase<String>... cases) {
     return ExperimentRunner.against(
         new ExperimentRunner().cases(List.of(cases)), target, ledger, agent, SHORT);
   }
@@ -68,7 +69,7 @@ class ExperimentRunnerTest {
     return single(target, bindings(QUALITY, TONE));
   }
 
-  private CaseResult single(EvalTarget<String> target, AgentBindings agent) {
+  private CaseResult single(EvalTarget<String> target, EvaluatorBindings agent) {
     return experiment(target, agent, EvalCase.of("c", "Where is o_42?")).run().results().getFirst();
   }
 
@@ -245,13 +246,81 @@ class ExperimentRunnerTest {
   }
 
   @Test
-  void anAnsweredTurnWithoutAnInteractionIdHasNoEvidence() {
+  void anAnsweredTurnWithoutAnInteractionIdAndWithoutAnInteractionHasNoEvidence() {
     EvalTarget<String> target = turn -> EvalTarget.Outcome.answered(Optional.empty());
 
     var result = single(target);
 
     assertThat(result.evidence()).isEqualTo(Evidence.none("Where is o_42?"));
     assertThat(result.evalResults()).isEmpty();
+  }
+
+  @Test
+  void anAnsweredTurnWithoutAnInteractionIdReadsTheInteractionOfItsSession() {
+    EvalTarget<String> target =
+        turn -> {
+          ledger.seed(
+              interaction(
+                  "i-44",
+                  turn.sessionId(),
+                  "",
+                  List.of(),
+                  Optional.of(new Failure(Failure.FailureReason.GUARDRAIL, "denied")),
+                  50,
+                  0,
+                  300));
+          ledger.seed(Targets.verdict("i-44", TONE, Evaluation.passed("refused")));
+          return EvalTarget.Outcome.answered(Optional.empty(), Optional.of("I cannot help"));
+        };
+    var bindings =
+        new EvaluatorBindings(
+            AGENT,
+            List.of(
+                new EvaluatorBindings.Binding(QUALITY, 1.0, false),
+                new EvaluatorBindings.Binding(TONE, 1.0, true)));
+
+    var result = single(target, bindings);
+
+    assertThat(result.passed()).isTrue();
+    assertThat(result.evidence().interaction().orElseThrow().interactionId()).isEqualTo("i-44");
+    assertThat(result.evidence().returned()).contains("I cannot help");
+    assertThat(result.evalResults()).containsExactly(EvalResult.pass(TONE, "refused"));
+    assertThat(result.describe()).contains("returned: I cannot help");
+  }
+
+  @Test
+  void aReturnedValueEqualToTheReplyIsNotDescribedTwice() {
+    EvalTarget<String> target =
+        turn -> {
+          ledger.seed(answered("i-45", turn.sessionId()));
+          verdict("i-45", QUALITY, Evaluation.passed("fine"));
+          return EvalTarget.Outcome.answered(
+              Optional.of("i-45"), Optional.of("Order o_42 shipped on Monday."));
+        };
+
+    var result = single(target, bindings(QUALITY));
+
+    assertThat(result.evidence().returned()).contains("Order o_42 shipped on Monday.");
+    assertThat(result.describe()).doesNotContain("returned:");
+  }
+
+  @Test
+  void theLabelAndTheAttributesOfAVerdictAreInTheDetail() {
+    var target =
+        Targets.scripted(
+            (turn, interactionId) -> {
+              ledger.seed(answered(interactionId, turn.sessionId()));
+              verdict(
+                  interactionId,
+                  QUALITY,
+                  Evaluation.passed("names the order")
+                      .withScore(0.9)
+                      .withLabel("grounded")
+                      .withAttributes(Map.of("orders", "1")));
+            });
+
+    assertThat(resultOf(single(target, bindings(QUALITY)), QUALITY).detail())
+        .isEqualTo("names the order (score 0.90, label grounded, orders=1)");
   }
 
   @Test
@@ -289,11 +358,11 @@ class ExperimentRunnerTest {
           return EvalTarget.Outcome.failed("ModelException: rate limited");
         };
     var agent =
-        new AgentBindings(
+        new EvaluatorBindings(
             AGENT,
             List.of(
-                new AgentBindings.Binding(QUALITY, 1.0, false),
-                new AgentBindings.Binding(TONE, 1.0, true)));
+                new EvaluatorBindings.Binding(QUALITY, 1.0, false),
+                new EvaluatorBindings.Binding(TONE, 1.0, true)));
 
     var result = single(target, agent);
 
@@ -486,11 +555,11 @@ class ExperimentRunnerTest {
           throw new AssertionError("no case must run");
         };
     var agent =
-        new AgentBindings(
+        new EvaluatorBindings(
             AGENT,
             List.of(
-                new AgentBindings.Binding(QUALITY, 1.0, false),
-                new AgentBindings.Binding(TONE, 0.25, false)));
+                new EvaluatorBindings.Binding(QUALITY, 1.0, false),
+                new EvaluatorBindings.Binding(TONE, 0.25, false)));
 
     assertThatThrownBy(
             () ->
@@ -506,6 +575,71 @@ class ExperimentRunnerTest {
                 + " (0.25). An experiment expects every bound evaluator to evaluate every attempt,"
                 + " so set sampling-ratio = 1.0 on these bindings in the test configuration, or"
                 + " disable them with enabled = false.");
+  }
+
+  @Test
+  void theEvaluationTimeoutOfTheExperimentBoundsTheWaitForAVerdict() {
+    var result =
+        experiment(answering(), bindings(QUALITY), EvalCase.of("c", "q"))
+            .evaluationTimeout(Duration.ofMillis(75))
+            .run()
+            .results()
+            .getFirst();
+
+    assertThat(resultOf(result, QUALITY).detail())
+        .startsWith("no evaluation recorded within 75 ms");
+  }
+
+  @Test
+  void theEvaluationTimeoutMustBePositive() {
+    var experiment = experiment(answering(), bindings(QUALITY), EvalCase.of("c", "q"));
+
+    assertThatThrownBy(() -> experiment.evaluationTimeout(Duration.ZERO))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("evaluation timeout must be positive");
+  }
+
+  @Test
+  void anEvaluatorNamedLikeTheRunnersOwnResultIsRefused() {
+    var bindings =
+        new EvaluatorBindings(
+            AGENT, List.of(new EvaluatorBindings.Binding(ExperimentRunner.TARGET, 1.0, false)));
+
+    assertThatThrownBy(
+            () ->
+                ExperimentRunner.against(
+                    new ExperimentRunner().cases(EvalCase.of("c", "q")),
+                    answering(),
+                    ledger,
+                    bindings,
+                    SHORT))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("has the component id [target]");
+  }
+
+  @Test
+  void aBindingToAnEvaluatorIdWithoutAComponentIsRefusedWithTheComponentsThatExist() {
+    assertThatThrownBy(
+            () -> bindings(QUALITY, "tne").requireEvaluatorComponents(List.of(QUALITY, TONE)))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage(
+            "Evaluators bound to agent [support-agent] without an evaluator component: [tne]. The"
+                + " evaluator components of the service are [quality, tone]. Bind the agent under"
+                + " the component id of an evaluator, or add the evaluator to the service.");
+    bindings(QUALITY).requireEvaluatorComponents(List.of(QUALITY, TONE));
+  }
+
+  @Test
+  void anAgentWithoutABindingIsDescribedWithTheAgentsTheConfigurationBinds() {
+    assertThat(bindings().describeUnbound(List.of("billing-agent")))
+        .contains(
+            "No evaluator is bound to agent [support-agent], so every attempt is inconclusive"
+                + " unless the gate reads only the guardrail decisions or the agent call. The"
+                + " configuration binds evaluators to the agents [billing-agent], under"
+                + " akka.javasdk.evaluation.evaluators.<evaluator>.agents.");
+    assertThat(bindings().describeUnbound(List.of()).orElseThrow())
+        .contains("The configuration binds no evaluator to any agent");
+    assertThat(bindings(QUALITY).describeUnbound(List.of())).isEmpty();
   }
 
   // ---- repeated runs
@@ -632,7 +766,18 @@ class ExperimentRunnerTest {
     assertThat(attempt.get("verdict").asText()).isEqualTo("INCONCLUSIVE");
     var evidence = attempt.get("evidence");
     assertThat(evidence.get("interactionId").asText()).isEqualTo("shipped-1");
+    assertThat(evidence.get("systemMessage").asText()).isEqualTo("You are a support agent.");
+    assertThat(evidence.get("userMessage").asText()).isEqualTo("Where is o_42?");
     assertThat(evidence.get("reply").asText()).isEqualTo("Order o_42 shipped on Monday.");
+    assertThat(evidence.get("returned").asText()).isEmpty();
+    assertThat(evidence.get("model").get("provider").asText()).isEqualTo("openai");
+    assertThat(evidence.get("model").get("name").asText()).isEqualTo("gpt-4o");
+    assertThat(evidence.get("finishReason").asText()).isEqualTo("STOP");
+    assertThat(evidence.get("responses")).hasSize(2);
+    assertThat(evidence.get("responses").get(0).get("toolCalls").get(0).asText())
+        .isEqualTo("OrderTools_getOrder");
+    assertThat(evidence.get("responses").get(1).get("content").asText())
+        .isEqualTo("Order o_42 shipped on Monday.");
     assertThat(evidence.get("denied").asBoolean()).isTrue();
     assertThat(evidence.get("toolCalls").get(0).get("name").asText())
         .isEqualTo("OrderTools_getOrder");
@@ -741,6 +886,9 @@ class ExperimentRunnerTest {
                 .repeat(2)
                 .run());
 
+    assertThat(schema.at("/properties/formatVersion/const").asInt())
+        .isEqualTo(ReportDocument.FORMAT_VERSION);
+    assertThat(schema.get("$id").asText()).endsWith("/v" + ReportDocument.FORMAT_VERSION + ".json");
     assertRequiredPresent(schema, schema, json);
   }
 
@@ -809,6 +957,7 @@ class ExperimentRunnerTest {
                 case "refund" -> {
                   var interaction =
                       interaction(
+                          turn.command(),
                           interactionId,
                           turn.sessionId(),
                           "I cannot issue a refund here.",
@@ -830,7 +979,12 @@ class ExperimentRunnerTest {
                 }
                 default -> {
                   ledger.seed(
-                      interaction(interactionId, turn.sessionId(), "You are welcome.", List.of()));
+                      interaction(
+                          turn.command(),
+                          interactionId,
+                          turn.sessionId(),
+                          "You are welcome.",
+                          List.of()));
                   verdict(interactionId, QUALITY, Evaluation.passed("closes").withScore(1));
                   ledger.seed(Targets.inconclusive(interactionId, TONE, "nothing to judge"));
                 }

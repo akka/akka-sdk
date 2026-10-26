@@ -8,15 +8,16 @@ import akka.javasdk.impl.evaluation.AgentEvaluatorBindings;
 import com.typesafe.config.Config;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * The agent under test and the evaluators bound to it.
+ * The evaluators bound to the agent under test.
  *
  * @param agentComponentId the component id of the agent
  * @param bindings the enabled bindings, sorted by evaluator component id
  */
-record AgentBindings(String agentComponentId, List<Binding> bindings) {
+record EvaluatorBindings(String agentComponentId, List<Binding> bindings) {
 
   /**
    * @param evaluator the evaluator component id
@@ -25,16 +26,16 @@ record AgentBindings(String agentComponentId, List<Binding> bindings) {
    */
   record Binding(String evaluator, double samplingRatio, boolean triggerOnFailure) {}
 
-  AgentBindings {
+  EvaluatorBindings {
     if (agentComponentId == null || agentComponentId.isBlank())
       throw new IllegalArgumentException("agent component id required");
     bindings = List.copyOf(bindings);
   }
 
   /** The bindings of the agent a method reference belongs to, from the application config. */
-  static AgentBindings of(Config config, Object methodRef) {
+  static EvaluatorBindings of(Config config, Object methodRef) {
     var agentClass = AgentEvaluatorBindings.agentClass(methodRef);
-    return new AgentBindings(
+    return new EvaluatorBindings(
         AgentEvaluatorBindings.agentComponentId(agentClass),
         AgentEvaluatorBindings.bindings(config, agentClass).stream()
             .map(
@@ -76,5 +77,60 @@ record AgentBindings(String agentComponentId, List<Binding> bindings) {
               + " sampling-ratio = 1.0 on these bindings in the test configuration, or disable"
               + " them with enabled = false.");
     }
+  }
+
+  // The runner's own result is named after the target, so an evaluator with that id would merge
+  // with it in the report.
+  void requireNoTargetName() {
+    if (bindings.stream().anyMatch(binding -> binding.evaluator().equals(ExperimentRunner.TARGET)))
+      throw new IllegalArgumentException(
+          "An evaluator bound to agent ["
+              + agentComponentId
+              + "] has the component id ["
+              + ExperimentRunner.TARGET
+              + "], which the runner uses for its own result on a failed agent call. Give the"
+              + " evaluator another id.");
+  }
+
+  // A binding to an evaluator id without a component never records an evaluation, so every attempt
+  // would wait for the timeout and end inconclusive.
+  void requireEvaluatorComponents(List<String> evaluatorComponentIds) {
+    var unknown =
+        bindings.stream()
+            .map(Binding::evaluator)
+            .filter(evaluator -> !evaluatorComponentIds.contains(evaluator))
+            .toList();
+    if (!unknown.isEmpty()) {
+      throw new IllegalArgumentException(
+          "Evaluators bound to agent ["
+              + agentComponentId
+              + "] without an evaluator component: "
+              + unknown
+              + ". The evaluator components of the service are "
+              + evaluatorComponentIds
+              + ". Bind the agent under the component id of an evaluator, or add the evaluator"
+              + " to the service.");
+    }
+  }
+
+  /**
+   * Why no evaluator is bound, with the agents the configuration does bind. Empty when an evaluator
+   * is bound.
+   */
+  Optional<String> describeUnbound(List<String> boundAgentComponentIds) {
+    if (!bindings.isEmpty()) return Optional.empty();
+    var others =
+        boundAgentComponentIds.isEmpty()
+            ? "The configuration binds no evaluator to any agent under"
+                + " akka.javasdk.evaluation.evaluators."
+            : "The configuration binds evaluators to the agents "
+                + boundAgentComponentIds
+                + ", under akka.javasdk.evaluation.evaluators.<evaluator>.agents.";
+    return Optional.of(
+        "No evaluator is bound to agent ["
+            + agentComponentId
+            + "], so every attempt is inconclusive unless the gate reads only the guardrail"
+            + " decisions or the agent call. "
+            + others);
   }
 }

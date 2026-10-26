@@ -14,7 +14,7 @@ A gate is what a batch of cases must satisfy over all case results, and the repo
 == The attempt verdict
 
 An attempt is one case in one run.
-Its results are the xref:sdk:evaluators.adoc#outcomes[outcomes] of the evaluators bound to the agent, one per evaluator. A failed agent call is a failed result named `target`, and an evaluator that recorded nothing within 10 seconds is inconclusive.
+Its results are the xref:sdk:evaluators.adoc#outcomes[outcomes] of the evaluators bound to the agent, one per evaluator. A failed agent call is a failed result named `target`, and an evaluator that recorded nothing within the evaluation timeout is inconclusive. The timeout is 10 seconds unless the experiment sets another with `evaluationTimeout(Duration)`.
 
 The verdict of the attempt follows from the results of all its evaluators.
 
@@ -154,6 +154,7 @@ Line by line:
 
 The rendered report ends with every attempt that did not pass, failed or inconclusive, and its evidence.
 The evidence is what the attempt left in the ledger: the reply, the tool calls with their arguments, the model spend, and the guardrail decisions.
+The report file holds more of the ledger record per attempt: the system message, the input as the model saw it, each model response with its tokens and tool calls, the model name and provider, and the value the command handler returned.
 This report is from the sample's `aReplyWithoutALookupFailsTheCase` in the xref:testing:evaluation/getting-started.adoc#mocked[mocked variant], where the model answers without calling a tool:
 
 [source,java,indent=0]
@@ -186,7 +187,8 @@ case order-status run 1 FAILED
 
 An attempt that did not pass is named by its case and its run, and prints the reply, the tool calls with their arguments, the model spend, the guardrail decisions when there are any, and every result with its detail.
 The reply is cut to one line of at most 200 characters.
-`CaseResult.evidence()` gives the same facts as data: `reply()`, `toolCalls()`, `failure()`, `guardrails()`, `denied()`, and the `InteractionRecord` itself.
+`CaseResult.evidence()` gives the same facts as data: `reply()`, `returned()`, `toolCalls()`, `failure()`, `guardrails()`, `denied()`, and the `InteractionRecord` itself.
+A `returned` line follows the reply when the command handler returned something other than the model text, for example a typed reply or a failure mapped in `onFailure`.
 
 A case whose agent call throws fails with a result named `target`:
 

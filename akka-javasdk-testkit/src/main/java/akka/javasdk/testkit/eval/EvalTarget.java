@@ -35,11 +35,15 @@ interface EvalTarget<C> {
   sealed interface Outcome {
 
     static Outcome answered(Optional<String> interactionId) {
-      return new Answered(interactionId);
+      return new Answered(interactionId, Optional.empty());
     }
 
     static Outcome answered(String interactionId) {
-      return new Answered(Optional.of(interactionId));
+      return new Answered(Optional.of(interactionId), Optional.empty());
+    }
+
+    static Outcome answered(Optional<String> interactionId, Optional<String> returned) {
+      return new Answered(interactionId, returned);
     }
 
     static Outcome failed(String reason) {
@@ -52,12 +56,14 @@ interface EvalTarget<C> {
     }
 
     /**
-     * @param interactionId the id of the interaction the turn recorded; empty when the ledger
-     *     recorded none
+     * @param interactionId the id of the interaction the turn recorded; empty when the reply
+     *     carried none
+     * @param returned the value the target returned, as text; empty when the target gave none
      */
-    record Answered(Optional<String> interactionId) implements Outcome {
+    record Answered(Optional<String> interactionId, Optional<String> returned) implements Outcome {
       public Answered {
         if (interactionId == null) throw new IllegalArgumentException("interactionId required");
+        if (returned == null) throw new IllegalArgumentException("returned required");
       }
     }
 

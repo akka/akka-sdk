@@ -38,10 +38,10 @@ final class Targets {
   static final Instant STARTED = Instant.parse("2026-10-01T10:15:30Z");
 
   /** Bindings of the agent to the given evaluators, fully sampled, not on failure. */
-  static AgentBindings bindings(String... evaluators) {
-    return new AgentBindings(
+  static EvaluatorBindings bindings(String... evaluators) {
+    return new EvaluatorBindings(
         AGENT,
-        Arrays.stream(evaluators).map(e -> new AgentBindings.Binding(e, 1.0, false)).toList());
+        Arrays.stream(evaluators).map(e -> new EvaluatorBindings.Binding(e, 1.0, false)).toList());
   }
 
   /** The interaction one turn recorded, with the reply and the tool calls. */
@@ -50,7 +50,40 @@ final class Targets {
     return interaction(interactionId, sessionId, reply, toolCalls, Optional.empty(), 120, 30, 800);
   }
 
+  /** The interaction one turn recorded, with the input the model saw. */
   static InteractionRecord interaction(
+      String input,
+      String interactionId,
+      String sessionId,
+      String reply,
+      List<ToolCall> toolCalls) {
+    return interaction(
+        input, interactionId, sessionId, reply, toolCalls, Optional.empty(), 120, 30, 800);
+  }
+
+  static InteractionRecord interaction(
+      String interactionId,
+      String sessionId,
+      String reply,
+      List<ToolCall> toolCalls,
+      Optional<Failure> failure,
+      int inputTokens,
+      int outputTokens,
+      long latencyMs) {
+    return interaction(
+        "Where is o_42?",
+        interactionId,
+        sessionId,
+        reply,
+        toolCalls,
+        failure,
+        inputTokens,
+        outputTokens,
+        latencyMs);
+  }
+
+  static InteractionRecord interaction(
+      String input,
       String interactionId,
       String sessionId,
       String reply,
@@ -83,7 +116,7 @@ final class Targets {
             STARTED.plusMillis(latencyMs),
             InteractionMetadata.FinishReason.STOP),
         "You are a support agent.",
-        List.of(new MessageContent.TextMessageContent("Where is o_42?")),
+        List.of(new MessageContent.TextMessageContent(input)),
         responses,
         List.of(),
         Optional.empty(),
