@@ -77,9 +77,11 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
 
   private val toolOrigins = Table[SpiLedger.ToolOrigin, GuardrailDecisionRecord.ToolOrigin](
     ("spi", "public"),
-    (SpiLedger.ToolOrigin.Unspecified, GuardrailDecisionRecord.ToolOrigin.UNSPECIFIED),
-    (SpiLedger.ToolOrigin.FunctionTool, GuardrailDecisionRecord.ToolOrigin.FUNCTION_TOOL),
-    (new SpiLedger.ToolOrigin.RemoteMcp("https://mcp.example.com"), GuardrailDecisionRecord.ToolOrigin.REMOTE_MCP))
+    (SpiLedger.ToolOrigin.Unspecified, new GuardrailDecisionRecord.ToolOrigin.Unspecified()),
+    (SpiLedger.ToolOrigin.FunctionTool, new GuardrailDecisionRecord.ToolOrigin.FunctionTool()),
+    (
+      new SpiLedger.ToolOrigin.RemoteMcp("https://mcp.example.com"),
+      new GuardrailDecisionRecord.ToolOrigin.RemoteMcp("https://mcp.example.com")))
 
   // The SPI traits are sealed, so the spec cannot extend them. Each one compiles to an interface, and the only
   // abstract method, the explanation of a decision, reads as empty.
@@ -252,7 +254,9 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
     }
 
     "keep the mapping of every known tool origin" in {
-      toolOrigins.map(_._2).toSet shouldBe GuardrailDecisionRecord.ToolOrigin.values().toSet
+      toolOrigins
+        .map(_._2.getClass)
+        .toSet shouldBe classOf[GuardrailDecisionRecord.ToolOrigin].getPermittedSubclasses.toSet
       forAll(toolOrigins) { (spiOrigin, publicOrigin) =>
         val record = LedgerClientImpl.toGuardrailDecisionRecord(spiGuardrailDecisionRecord(toolOrigin = spiOrigin))
         record.toolCall().get().origin() shouldBe publicOrigin
@@ -317,7 +321,7 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
       record.boundary() shouldBe GuardrailDecisionRecord.Boundary.UNSPECIFIED
       record.decision() shouldBe GuardrailDecisionRecord.Decision.UNSPECIFIED
       record.failMode() shouldBe GuardrailDecisionRecord.FailMode.UNSPECIFIED
-      record.toolCall().get().origin() shouldBe GuardrailDecisionRecord.ToolOrigin.UNSPECIFIED
+      record.toolCall().get().origin() shouldBe new GuardrailDecisionRecord.ToolOrigin.Unspecified()
       record.name() shouldBe "no-refunds"
       record shouldBe LedgerClientImpl.toGuardrailDecisionRecord(
         spiGuardrailDecisionRecord(

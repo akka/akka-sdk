@@ -4,6 +4,7 @@
 
 package akka.javasdk.ledger;
 
+import akka.annotation.DoNotInherit;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.CompletionStage;
@@ -18,6 +19,7 @@ import java.util.concurrent.CompletionStage;
  *
  * <p>Not for user extension.
  */
+@DoNotInherit
 public interface LedgerClient {
 
   /**
@@ -87,14 +89,15 @@ public interface LedgerClient {
 
   /**
    * Fetch the interactions of the agent with the given {@code agentComponentId} in the session with
-   * the given {@code sessionId}, newest first.
+   * the given {@code sessionId}, newest first. At most the 100 newest interactions are returned.
    *
    * <p>Blocks the calling thread until the records have been fetched. Safe to call on a virtual
    * thread. Use {@link #getInteractionsAsync(String, String)} for the non-blocking variant.
    *
    * @param agentComponentId the component id of the agent
    * @param sessionId the session the interactions belong to
-   * @return the interactions of the agent in that session, or an empty list when none are recorded
+   * @return the newest interactions of the agent in that session, or an empty list when none are
+   *     recorded
    */
   List<InteractionRecord> getInteractions(String agentComponentId, String sessionId);
 

@@ -151,8 +151,7 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
         new GuardrailDecisionRecord.ToolCall(
           Optional.of("call-1"),
           "RefundTools_refund",
-          GuardrailDecisionRecord.ToolOrigin.REMOTE_MCP,
-          Optional.of("https://mcp.example.com")))
+          new GuardrailDecisionRecord.ToolOrigin.RemoteMcp("https://mcp.example.com")))
       record.timestamp() shouldEqual Instant.EPOCH
     }
 

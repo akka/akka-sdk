@@ -191,25 +191,16 @@ private[ledger] object LedgerClientImpl {
     }
 
   private def toToolCall(toolCall: SpiLedger.GuardrailToolCall): GuardrailDecisionRecord.ToolCall =
-    new GuardrailDecisionRecord.ToolCall(
-      toolCall.toolCallId.toJava,
-      toolCall.toolName,
-      toToolOrigin(toolCall.origin),
-      mcpEndpoint(toolCall.origin).toJava)
+    new GuardrailDecisionRecord.ToolCall(toolCall.toolCallId.toJava, toolCall.toolName, toToolOrigin(toolCall.origin))
 
   private def toToolOrigin(origin: SpiLedger.ToolOrigin): GuardrailDecisionRecord.ToolOrigin =
-    knownOr(GuardrailDecisionRecord.ToolOrigin.UNSPECIFIED) {
+    knownOr[GuardrailDecisionRecord.ToolOrigin](new GuardrailDecisionRecord.ToolOrigin.Unspecified()) {
       origin match {
-        case SpiLedger.ToolOrigin.Unspecified  => GuardrailDecisionRecord.ToolOrigin.UNSPECIFIED
-        case SpiLedger.ToolOrigin.FunctionTool => GuardrailDecisionRecord.ToolOrigin.FUNCTION_TOOL
-        case _: SpiLedger.ToolOrigin.RemoteMcp => GuardrailDecisionRecord.ToolOrigin.REMOTE_MCP
+        case SpiLedger.ToolOrigin.Unspecified       => new GuardrailDecisionRecord.ToolOrigin.Unspecified()
+        case SpiLedger.ToolOrigin.FunctionTool      => new GuardrailDecisionRecord.ToolOrigin.FunctionTool()
+        case remote: SpiLedger.ToolOrigin.RemoteMcp => new GuardrailDecisionRecord.ToolOrigin.RemoteMcp(remote.endpoint)
       }
     }
-
-  private def mcpEndpoint(origin: SpiLedger.ToolOrigin): Option[String] = origin match {
-    case remote: SpiLedger.ToolOrigin.RemoteMcp => Some(remote.endpoint).filter(_.nonEmpty)
-    case _                                      => None
-  }
 
   private def toEvaluationTrigger(trigger: SpiLedger.EvaluationTrigger): EvaluationRecord.Trigger =
     knownOr(EvaluationRecord.Trigger.UNSPECIFIED) {

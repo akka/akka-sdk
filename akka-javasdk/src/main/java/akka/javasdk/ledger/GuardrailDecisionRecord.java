@@ -84,14 +84,24 @@ public record GuardrailDecisionRecord(
     FAIL_OPEN
   }
 
-  /** Where the tool of a guardrail decision runs. A later SDK version can add values. */
-  public enum ToolOrigin {
+  /** Where the tool of a guardrail decision runs. A later SDK version can add kinds. */
+  public sealed interface ToolOrigin {
     /** The runtime did not report the origin, or this version of the SDK does not know it. */
-    UNSPECIFIED,
+    record Unspecified() implements ToolOrigin {}
+
     /** A function tool of the service. */
-    FUNCTION_TOOL,
-    /** A tool on a remote MCP server. */
-    REMOTE_MCP
+    record FunctionTool() implements ToolOrigin {}
+
+    /**
+     * A tool on a remote MCP server.
+     *
+     * @param endpoint the endpoint of the MCP server
+     */
+    record RemoteMcp(String endpoint) implements ToolOrigin {
+      public RemoteMcp {
+        if (endpoint == null) throw new IllegalArgumentException("endpoint required");
+      }
+    }
   }
 
   /**
@@ -101,12 +111,6 @@ public record GuardrailDecisionRecord(
    * @param toolCallId the id the model gave the call, or empty when it gave none
    * @param toolName the name of the called tool
    * @param origin where the tool runs
-   * @param mcpEndpoint the endpoint of the remote MCP server the tool runs on, or empty when the
-   *     tool is not a remote MCP tool
    */
-  public record ToolCall(
-      Optional<String> toolCallId,
-      String toolName,
-      ToolOrigin origin,
-      Optional<String> mcpEndpoint) {}
+  public record ToolCall(Optional<String> toolCallId, String toolName, ToolOrigin origin) {}
 }
