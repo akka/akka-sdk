@@ -897,6 +897,7 @@ class GuardrailProviderSpec
       conversation.newMessages().asScala.toSeq shouldBe Seq(toolResult)
     }
 
+    // FIXME: TestModelProvider cannot return thinking or attributes, see https://github.com/lightbend/akka-runtime/issues/5999
     "expose the thinking and attributes of an AiMessage to a ModelCallGuardrail" in {
       val cfg = ConfigFactory
         .parseString(s"""
@@ -1274,7 +1275,7 @@ class GuardrailProviderSpec
       val cfg = ConfigFactory
         .parseString(s"""
           akka.javasdk.agent.guardrails {
-            "capturing model guard" {
+            "capturing response guard" {
               class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$CapturingResponseGuard"
               agents = ["model-agent"]
               category = MODEL_POLICY
@@ -1299,7 +1300,7 @@ class GuardrailProviderSpec
       val cfg = ConfigFactory
         .parseString(s"""
           akka.javasdk.agent.guardrails {
-            "capturing model guard" {
+            "capturing response guard" {
               class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$CapturingResponseGuard"
               agents = ["model-agent"]
               category = MODEL_POLICY
@@ -1319,7 +1320,7 @@ class GuardrailProviderSpec
       reply.attributes() shouldBe java.util.Map.of("signature", "abc")
     }
 
-    "give empty thinking and attributes to an AiMessage built with text and tool call requests only" in {
+    "default thinking and attributes to empty in the AiMessage two-argument constructor" in {
       val aiMessage = new Message.AiMessage("text", java.util.List.of())
 
       aiMessage.thinking() shouldBe java.util.Optional.empty()

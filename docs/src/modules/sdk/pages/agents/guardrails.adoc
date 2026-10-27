@@ -81,8 +81,7 @@ The reply also carries the model's thinking in `thinking()` and the values set b
 Both are empty when the model returns none.
 The keys and the value types of `attributes()` are provider-specific.
 
-On an autonomous agent, the runtime also evaluates the guardrail on each call to the built-in `broadcast`, `direct`, and `submit_turn` tools.
-For these tool calls, `text()` holds the message or response argument.
+On an autonomous agent, for a call to the built-in `broadcast`, `direct`, or `submit_turn` tool, `text()` holds the message or response argument.
 `thinking()` and `attributes()` come from the model reply that requested the tool call.
 The runtime does not evaluate the guardrail on the other built-in tools, such as `provide_prompt` and `complete_task`.
 

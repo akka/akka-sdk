@@ -62,9 +62,9 @@ public sealed interface Guardrail
     /**
      * A model reply with its text, requested tool calls, thinking, and provider attributes.
      *
-     * @param thinking the model's thinking, empty when the model returns none
-     * @param attributes values set by the model provider, empty when it sets none. The keys and the
-     *     value types are provider-specific.
+     * @param thinking the model's thinking, never null, but empty when the model returns none
+     * @param attributes values that the model provider sets, never null, but empty when the model
+     *     provider sets none. The keys and the value types are provider-specific.
      */
     record AiMessage(
         String text,

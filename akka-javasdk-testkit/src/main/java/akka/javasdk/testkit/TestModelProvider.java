@@ -41,7 +41,6 @@ import java.util.stream.Stream;
  * A {@code ModelProvider} implementation for testing purposes that does not use a real AI model. It
  * allows defining mock responses based on input predicates.
  */
-// TODO: support model replies with thinking and attributes.
 public final class TestModelProvider implements ModelProvider.Custom {
 
   @Override
