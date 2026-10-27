@@ -142,6 +142,7 @@ message CustomerState {
   }
 }
 
+// Nested message in the customer state, used to cover presence of a message field in views
 message ContactInfo {
   string phone = 1;
 }

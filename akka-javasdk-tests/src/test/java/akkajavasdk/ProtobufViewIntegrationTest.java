@@ -137,7 +137,7 @@ public class ProtobufViewIntegrationTest extends TestKitSupport {
 
   @Test
   public void shouldStoreProtobufStateWithUnsetOptionalFieldsInView() {
-    var entityId = "view-proto-unset-ts-1";
+    var entityId = "view-proto-unset-1";
     var message = SimpleMessage.newBuilder().setText("ProtoState Unset Fields").build();
 
     // this command creates a state without created_at, nickname and review_date

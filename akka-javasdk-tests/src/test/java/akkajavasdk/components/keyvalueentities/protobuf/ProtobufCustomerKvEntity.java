@@ -42,7 +42,10 @@ public class ProtobufCustomerKvEntity extends KeyValueEntity<CustomerState> {
   }
 
   public Effect<String> createWithPresenceFields(CreateWithPresenceFieldsCommand command) {
-    var builder =
+    if (!currentState().getCustomerId().isEmpty()) {
+      return effects().error("Customer already exists");
+    }
+    var newState =
         CustomerState.newBuilder()
             .setCustomerId(commandContext().entityId())
             .setName(command.name())
@@ -50,10 +53,9 @@ public class ProtobufCustomerKvEntity extends KeyValueEntity<CustomerState> {
             .setNickname(command.nickname())
             .setReviewDate(Timestamps.now())
             .setContact(ContactInfo.newBuilder().setPhone("123").build())
-            .setPreferredEmail(command.preferredEmail());
-    return effects()
-        .updateState(builder.build())
-        .thenReply("Customer created with presence fields");
+            .setPreferredEmail(command.preferredEmail())
+            .build();
+    return effects().updateState(newState).thenReply("Customer created");
   }
 
   public Effect<String> changeName(ChangeNameCommand command) {
