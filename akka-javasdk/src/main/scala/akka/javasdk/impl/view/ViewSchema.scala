@@ -141,9 +141,9 @@ private[view] object ViewSchema {
   private def protobufSchemaFromDescriptor(descriptor: Descriptors.Descriptor): SpiClass = {
     val fields = descriptor.getFields.asScala.map { field =>
       val baseType = protobufFieldToSpiType(field)
+      // fields with explicit presence (message, oneof, optional) are left out of the JSON when unset
       val spiType =
         if (field.isRepeated) new SpiList(baseType.asInstanceOf[SpiNestableType])
-        // message fields and proto3 optional fields have explicit presence, an unset value is stored as null
         else if (field.hasPresence) new SpiOptional(baseType.asInstanceOf[SpiNestableType])
         else baseType
       new SpiField(field.getName, spiType)
