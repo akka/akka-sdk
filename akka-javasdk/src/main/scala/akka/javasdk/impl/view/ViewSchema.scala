@@ -129,7 +129,10 @@ private[view] object ViewSchema {
     else protobufSchemaFromDescriptor(descriptor, protobufPresence)
   }
 
-  private def protobufFieldToSpiType(field: Descriptors.FieldDescriptor, protobufPresence: Boolean): SpiNestableType = {
+  private def protobufFieldToSpiType(
+      field: Descriptors.FieldDescriptor,
+      protobufPresence: Boolean,
+      seenMessages: Set[String]): SpiNestableType = {
     import Descriptors.FieldDescriptor.JavaType
     field.getJavaType match {
       case JavaType.STRING      => SpiString
@@ -143,13 +146,18 @@ private[view] object ViewSchema {
       case JavaType.MESSAGE =>
         val msgType = field.getMessageType
         if (msgType.getFullName == ProtobufTimestampFullName) SpiTimestamp
-        else protobufSchemaFromDescriptor(msgType, protobufPresence)
+        else if (seenMessages.contains(msgType.getFullName)) new SpiClassRef(msgType.getFullName)
+        else protobufSchemaFromDescriptor(msgType, protobufPresence, seenMessages)
     }
   }
 
-  private def protobufSchemaFromDescriptor(descriptor: Descriptors.Descriptor, protobufPresence: Boolean): SpiClass = {
+  private def protobufSchemaFromDescriptor(
+      descriptor: Descriptors.Descriptor,
+      protobufPresence: Boolean,
+      seenMessages: Set[String] = Set.empty): SpiClass = {
+    val seenIncludingThis = seenMessages + descriptor.getFullName
     val fields = descriptor.getFields.asScala.map { field =>
-      val baseType = protobufFieldToSpiType(field, protobufPresence)
+      val baseType = protobufFieldToSpiType(field, protobufPresence, seenIncludingThis)
       // fields with explicit presence (message, oneof, optional) can be unset, the table stores an unset field as null
       val spiType =
         if (field.isRepeated) new SpiList(baseType)

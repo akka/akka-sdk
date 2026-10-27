@@ -111,6 +111,27 @@ class ViewSchemaSpec extends AnyWordSpec with Matchers {
         .get
         .fieldType shouldBe new SpiClassRef(classOf[ViewTestModels.TwoStepRecursive].getName)
     }
+
+    "handle recursive protobuf messages" in {
+      val result = ViewSchema(classOf[protoconsumer.EventsForConsumer.CircularParent])
+      result shouldBe a[SpiClass]
+      result
+        .asInstanceOf[SpiClass]
+        .getField("child")
+        .get
+        .fieldType
+        .asInstanceOf[SpiOptional]
+        .valueType
+        .asInstanceOf[SpiClass]
+        .getField("parent")
+        .get
+        .fieldType shouldBe new SpiOptional(new SpiClassRef("protoconsumer.CircularParent"))
+    }
+
+    "handle google.protobuf.Struct" in {
+      val result = ViewSchema(classOf[com.google.protobuf.Struct])
+      result shouldBe a[SpiClass]
+    }
   }
 
 }
