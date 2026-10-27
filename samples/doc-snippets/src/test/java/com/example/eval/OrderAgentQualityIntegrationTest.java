@@ -117,7 +117,9 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
       .agent(OrderAgent::ask)
       .repeat(3)
       .gate(
-        Gate.passRateShouldBeAtLeast(JudgeEvaluator.class, 0.8).and(Gate.targetShouldNotFail()) // <1>
+        Gate.passRateShouldBeAtLeast(JudgeEvaluator.class, 0.8).and(
+          Gate.targetShouldNotFail()
+        ) // <1>
       )
       .run();
 
