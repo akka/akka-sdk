@@ -6,8 +6,6 @@ syntax = "proto3";
 
 package protoconsumer;
 
-import "google/protobuf/timestamp.proto";
-
 option java_outer_classname = "EventsForConsumer";
 
 // for test coverage - consuming protobuf events from a Kalix service over service to service
@@ -28,15 +26,4 @@ message CircularParent {
 message CircularChild {
   string name = 1;
   CircularParent parent = 2;
-}
-
-// proto3 optional fields, for view schema presence coverage
-message OptionalFields {
-  string id = 1;
-  optional string nickname = 2;
-  optional google.protobuf.Timestamp review_date = 3;
-  oneof contact {
-    string email = 4;
-    string phone = 5;
-  }
 }

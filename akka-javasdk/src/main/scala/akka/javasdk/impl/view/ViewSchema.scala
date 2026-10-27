@@ -120,7 +120,7 @@ private[view] object ViewSchema {
     else protobufSchemaFromDescriptor(descriptor)
   }
 
-  private def protobufFieldToSpiType(field: Descriptors.FieldDescriptor): SpiType = {
+  private def protobufFieldToSpiType(field: Descriptors.FieldDescriptor): SpiNestableType = {
     import Descriptors.FieldDescriptor.JavaType
     field.getJavaType match {
       case JavaType.STRING      => SpiString
@@ -143,8 +143,8 @@ private[view] object ViewSchema {
       val baseType = protobufFieldToSpiType(field)
       // fields with explicit presence (message, oneof, optional) are left out of the JSON when unset
       val spiType =
-        if (field.isRepeated) new SpiList(baseType.asInstanceOf[SpiNestableType])
-        else if (field.hasPresence) new SpiOptional(baseType.asInstanceOf[SpiNestableType])
+        if (field.isRepeated) new SpiList(baseType)
+        else if (field.hasPresence) new SpiOptional(baseType)
         else baseType
       new SpiField(field.getName, spiType)
     }.toSeq

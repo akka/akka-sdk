@@ -136,12 +136,11 @@ public class ProtobufViewIntegrationTest extends TestKitSupport {
   }
 
   @Test
-  public void shouldStoreProtobufStateWithUnsetTimestampInView() {
+  public void shouldStoreProtobufStateWithUnsetOptionalFieldsInView() {
     var entityId = "view-proto-unset-ts-1";
-    var message =
-        SimpleMessage.newBuilder().setText("ProtoState Unset Timestamp").setNumber(1).build();
+    var message = SimpleMessage.newBuilder().setText("ProtoState Unset Fields").build();
 
-    // this command creates a state without created_at
+    // this command creates a state without created_at, nickname and review_date
     componentClient
         .forKeyValueEntity(entityId)
         .method(ProtobufCustomerKvEntity::createFromProtobuf)
@@ -152,13 +151,11 @@ public class ProtobufViewIntegrationTest extends TestKitSupport {
         .atMost(20, TimeUnit.of(SECONDS))
         .untilAsserted(
             () -> {
-              var queryParam =
-                  SimpleMessage.newBuilder().setText("ProtoState Unset Timestamp").build();
               var result =
                   componentClient
                       .forView()
                       .method(ProtobufCustomerStateView::getCustomerByName)
-                      .invoke(queryParam);
+                      .invoke(message);
               assertThat(result.getCustomerId()).isEqualTo(entityId);
               assertThat(result.hasCreatedAt()).isFalse();
               assertThat(result.hasNickname()).isFalse();

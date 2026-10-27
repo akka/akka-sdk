@@ -68,20 +68,17 @@ class ViewSchemaSpec extends AnyWordSpec with Matchers {
       ViewSchema(classOf[com.google.protobuf.Timestamp]) shouldBe SpiTimestamp
     }
 
-    "map protobuf fields with presence to SpiOptional" in {
-      val result = ViewSchema(classOf[com.google.protobuf.Api]).asInstanceOf[SpiClass]
-      result.getField("name").get.fieldType shouldBe SpiString
-      result.getField("methods").get.fieldType shouldBe a[SpiList]
-      result.getField("source_context").get.fieldType shouldBe a[SpiOptional]
-    }
-
-    "map protobuf optional fields to SpiOptional" in {
-      val result = ViewSchema(classOf[protoconsumer.EventsForConsumer.OptionalFields]).asInstanceOf[SpiClass]
-      result.getField("id").get.fieldType shouldBe SpiString
-      result.getField("nickname").get.fieldType shouldBe new SpiOptional(SpiString)
-      result.getField("review_date").get.fieldType shouldBe new SpiOptional(SpiTimestamp)
-      result.getField("email").get.fieldType shouldBe new SpiOptional(SpiString)
-      result.getField("phone").get.fieldType shouldBe new SpiOptional(SpiString)
+    "map protobuf fields with explicit presence to SpiOptional" in {
+      val result = ViewSchema(classOf[presence.PresenceProtos.PresenceFields]).asInstanceOf[SpiClass]
+      val fieldTypes = result.fields.map(f => f.name -> f.fieldType).toMap
+      fieldTypes("id") shouldBe SpiString
+      fieldTypes("nested") shouldBe new SpiOptional(
+        new SpiClass("presence.Nested", Seq(new SpiField("value", SpiString))))
+      fieldTypes("nickname") shouldBe new SpiOptional(SpiString)
+      fieldTypes("review_date") shouldBe new SpiOptional(SpiTimestamp)
+      fieldTypes("tags") shouldBe new SpiList(SpiString)
+      fieldTypes("email") shouldBe new SpiOptional(SpiString)
+      fieldTypes("phone") shouldBe new SpiOptional(SpiString)
     }
 
     "handle self referencing type trees" in {
