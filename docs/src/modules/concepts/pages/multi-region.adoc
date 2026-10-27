@@ -22,6 +22,39 @@ In *pinned-region* mode, entities use the project's primary region. Writes arriv
 
 Replicated writes are another option for Event Sourced Entities: regions update independently using conflict-free replicated data types. That requires state that can be merged and accepts eventual consistency.
 
+=== Entity reads and writes with pinned-region selection
+
+In this example, the project's primary region is Los Angeles (USA), so Alice's entity accepts writes there.
+
+image::geo-a.svg[Local reads and writes in Los Angeles with replication and local reads in London,width=600]
+
+A request from client A in Los Angeles image:steps-1.svg[Step 1,width=20] is handled locally, and the reply returns to the client image:steps-2.svg[Step 2,width=20].
+For a write, the persisted change is replicated asynchronously to London (UK) image:steps-3.svg[Step 3,width=20]. The reply does not wait for replication to complete.
+
+A local read from client B in London image:steps-4.svg[Step 4,width=20] uses the replicated state there and returns a reply image:steps-5.svg[Step 5,width=20].
+That state can lag behind writes accepted in Los Angeles. A read that requires primary-region consistency must be routed to Los Angeles instead.
+
+image::geo-b.svg[A write received in London is forwarded to the primary region in Los Angeles,width=600]
+
+When client B writes to Alice's entity in London image:steps-1.svg[Step 1,width=20], Akka forwards the request to Los Angeles image:steps-2.svg[Step 2,width=20].
+The primary handles the write and returns the reply image:steps-3.svg[Step 3,width=20]. Receiving the request in London does not move the primary.
+
+=== Entity reads and writes with request-region selection
+
+In request-region mode, each entity can have a different primary region.
+In this example, Alice's entity accepts writes in Los Angeles, while Bob's entity accepts writes in London.
+
+image::geo-c.svg[Alice's entity has its primary in Los Angeles and Bob's entity has its primary in London,width=600]
+
+A write to Bob's entity in London image:steps-1.svg[Step 1,width=20] is handled locally and returns a reply image:steps-2.svg[Step 2,width=20].
+The change is replicated asynchronously to Los Angeles image:steps-3.svg[Step 3,width=20]. Alice's writes follow the same process in the opposite direction.
+
+image::geo-e.svg[Bob's entity moves its primary to Los Angeles when Bob writes there,width=600]
+
+If Bob travels to Los Angeles, local reads can use his entity's replicated state there.
+His first write in Los Angeles moves the entity's primary there: Akka synchronizes and applies the earlier writes from London before handling the new write.
+Later writes in Los Angeles are handled locally. Alice's entity continues accepting writes in Los Angeles independently, with its changes replicated to London.
+
 == Failure and data placement
 
 Replication resumes from recorded progress after an interruption. A surviving region can serve only the writes it has received. Failover can lose writes that never reached a surviving replica; returning regions can also contain conflicting changes that must be resolved.

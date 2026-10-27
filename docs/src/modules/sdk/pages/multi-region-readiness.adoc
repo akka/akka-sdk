@@ -1,0 +1,82 @@
+= Multi-region readiness
+:page-summary: Review application code, request routing, and recovery expectations before running an Akka service in multiple regions.
+:page-when-to-use: Before adding a region to a project or reviewing an existing service for multi-region deployment
+:page-related: concepts:multi-region.adoc, sdk:consuming-producing.adoc, sdk:dev-best-practices.adoc, operations:regions/setup.adoc
+:page-persona: builder-developer, operator-platform, operator-sre
+
+include::ROOT:partial$include.adoc[]
+
+Multi-region readiness is a review of how your application handles regional replication, repeated processing, and regional outages.
+Use this checklist before adding a region to your project.
+
+Start with xref:concepts:multi-region.adoc[] for primary regions, asynchronous replication, and primary selection modes.
+
+== Review Consumers and external side effects
+
+* Choose where each Consumer processes events: in every receiving region, only in the origin region, or in one designated region. Check whether external destinations are regional or shared.
+* Make external actions safe to repeat, including concurrent attempts from different regions when applicable.
+* Define how to recover unfinished actions after an outage, including events acknowledged and skipped in other regions.
+
+See xref:consuming-producing.adoc#_multi_region_replication[Consumer multi-region processing options] and xref:dev-best-practices.adoc#message-deduplication[Message deduplication].
+
+== Choose read consistency for each handler
+
+Identify reads that tolerate stale replicated state and those that require primary-region consistency.
+Check flows that write and immediately read, such as submitting an order and displaying its status.
+Review each handler's `ReadOnlyEffect` or `Effect` return type using xref:event-sourced-entities.adoc#_replication[Event Sourced Entity replication] and xref:key-value-entities.adoc#_replication[Key Value Entity replication].
+
+== Review Workflow retries
+
+Make external calls safe to retry after a failure or lost response.
+When a Consumer starts a Workflow, use a deterministic Workflow identifier and make repeated start commands safe.
+See xref:workflows.adoc[] for execution, retries, and replication.
+
+== Check payload sizes and replication filters
+
+Review the serialized size of Key Value Entity state and Event Sourced Entity events against the 1 MB replication limit.
+Keep large assets in external storage and persist references to them.
+See xref:dev-best-practices.adoc#_payload_and_state_size[Payload and state size].
+
+Inventory replication filters and record which regions can receive each entity's data.
+Do not rely on excluded regions having an up-to-date recovery copy; previously replicated data can remain there but become stale.
+
+Check agent session memory placement separately. Do not assume that every session has a copy in every project region.
+See xref:agents/memory.adoc#_multi_region_replication[Session memory replication].
+
+== Remove dependencies on process-local state
+
+These checks also apply to multiple instances in a single region:
+
+* Keep authoritative business state out of mutable static fields and local caches.
+* Define how caches tolerate stale data and recover after a restart.
+* Review Java timers and scheduled executors that run independently in each instance. Use xref:timed-actions.adoc[Akka timers] for durable scheduled calls, and handle repeated execution.
+
+== Align request routing with primary selection
+
+In request-region mode, keep writes for a given entity in a consistent region during normal operation to avoid repeated primary transfers.
+Review routing for clients and background jobs, and define a failover route.
+
+In pinned-region mode, changing incoming traffic does not change the primary region.
+Follow the failover procedure in xref:operations:regions/setup.adoc[].
+
+== Testing
+
+Use xref:local-cluster.adoc[a local cluster] to check behavior with multiple service instances.
+Validate regional routing and recovery in a deployed multi-region project.
+
+* Write in one region and read from another. Check both local reads and reads routed to the primary.
+* Deliver the same business operation more than once and verify that external actions are deduplicated, including attempts from different regions when applicable.
+* Exercise regional failover and recover unfinished external actions. For designated-region processing, include events already acknowledged and skipped in the replacement region.
+* Verify which data is available in the recovery region, including agent session memory.
+* Verify that external databases, object stores, and APIs remain reachable from the failover region, with the required data and credentials.
+
+Record the data loss and interruption your application can tolerate.
+Asynchronous replication means that a surviving region may not contain the latest writes from a failed region.
+See xref:concepts:availability.adoc[] for recovery scopes.
+
+== See Also
+
+* xref:concepts:multi-region.adoc[]
+* xref:operations:regions/setup.adoc[]
+* xref:consuming-producing.adoc[]
+* xref:dev-best-practices.adoc[]

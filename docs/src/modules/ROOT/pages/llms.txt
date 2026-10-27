@@ -222,6 +222,7 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [Observability](https://doc.akka.io/concepts/observability.html.md): Logs, metrics and traces, and how they differ from the ledger
 - [Architecture model](https://doc.akka.io/sdk/architecture-model.html.md): How an Akka project is structured across api, application, and domain layers
 - [Design considerations](https://doc.akka.io/sdk/dev-best-practices.html.md): Reactive principles, domain-driven design, service sizing, and deduplication
+- [Multi-region readiness](https://doc.akka.io/sdk/multi-region-readiness.html.md): Application checks for regional replication, request routing, external side effects, and recovery
 
 
 ## Training
