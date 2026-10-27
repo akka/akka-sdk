@@ -126,7 +126,7 @@ private[view] object ViewSchema {
   private def protobufSchema(clazz: Class[_ <: GeneratedMessageV3], protobufPresence: Boolean): SpiType = {
     val descriptor = Reflect.protoDescriptorFor(clazz)
     if (descriptor.getFullName == ProtobufTimestampFullName) SpiTimestamp
-    else protobufSchemaFromDescriptor(descriptor, protobufPresence)
+    else protobufSchemaFromDescriptor(descriptor, protobufPresence, Set.empty)
   }
 
   private def protobufFieldToSpiType(
@@ -154,7 +154,7 @@ private[view] object ViewSchema {
   private def protobufSchemaFromDescriptor(
       descriptor: Descriptors.Descriptor,
       protobufPresence: Boolean,
-      seenMessages: Set[String] = Set.empty): SpiClass = {
+      seenMessages: Set[String]): SpiClass = {
     val seenIncludingThis = seenMessages + descriptor.getFullName
     val fields = descriptor.getFields.asScala.map { field =>
       val baseType = protobufFieldToSpiType(field, protobufPresence, seenIncludingThis)

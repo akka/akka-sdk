@@ -137,11 +137,12 @@ class ViewSchemaSpec extends AnyWordSpec with Matchers {
       val fieldsEntry = fieldsType.asInstanceOf[SpiList].valueType.asInstanceOf[SpiClass]
       fieldsEntry.name shouldBe "google.protobuf.Struct.FieldsEntry"
 
-      val value = fieldsEntry.getField("value").get.fieldType.asInstanceOf[SpiClass]
+      val value = fieldsEntry.getField("value").get.fieldType.asInstanceOf[SpiOptional].valueType.asInstanceOf[SpiClass]
       value.name shouldBe "google.protobuf.Value"
-      value.getField("struct_value").get.fieldType shouldBe new SpiClassRef("google.protobuf.Struct")
+      value.getField("struct_value").get.fieldType shouldBe new SpiOptional(new SpiClassRef("google.protobuf.Struct"))
 
-      val listValue = value.getField("list_value").get.fieldType.asInstanceOf[SpiClass]
+      val listValue =
+        value.getField("list_value").get.fieldType.asInstanceOf[SpiOptional].valueType.asInstanceOf[SpiClass]
       listValue.getField("values").get.fieldType shouldBe new SpiList(new SpiClassRef("google.protobuf.Value"))
     }
   }
