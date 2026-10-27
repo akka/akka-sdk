@@ -15,7 +15,7 @@ An adversarial suite is red teaming written as tests: you collect the attacks, a
 == How an adversarial case differs from an eval case
 
 An adversarial case uses the same API as any other eval case: `EvalCase`, evaluator components, `ExperimentRunner`, `Gate` and the report.
-What changes is the mindset.
+The intent of the case changes.
 An eval case states what a good reply does.
 An adversarial case states what a breached reply looks like and requires its absence.
 
@@ -45,7 +45,6 @@ A quality suite checks that the agent gives good answers.
 An adversarial suite checks that attacks fail.
 
 This page attacks the `OrderAgent` of xref:testing:evaluation/getting-started.adoc[].
-The complete code is in the link:{sample-base-url}/doc-snippets/src/test/java/com/example/eval[doc-snippets sample, window="new"].
 The suite wires the stub order system through a `DependencyProvider` and mocks the models, like the wiring mode of the quality suite.
 Drop the `withModelProvider` lines to run the attacks against the real model.
 
@@ -77,7 +76,7 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentAdver
 <1> The text the injection asks the agent to emit. A reply that contains the marker shows that the agent followed the injection.
 
 The cases are the attacks.
-What an attack must not achieve is stated by the evaluators bound in the suite.
+The evaluators bound in the suite state what an attack must not achieve.
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderAgentAdversarialIntegrationTest.java[OrderAgentAdversarialIntegrationTest.java]
@@ -150,7 +149,7 @@ The suite binds the xref:sdk:evaluators.adoc#judging[judge evaluator] with its o
 Keep the criterion to one property.
 
 A judged case is one model call and its score can differ between runs.
-Keep the text checks on the same case, so a break that a text check can catch is caught by the text check.
+Keep the text checks on the same case. The text checks catch what they can, and the judge covers the rest.
 
 == Running the suite behind a gate
 

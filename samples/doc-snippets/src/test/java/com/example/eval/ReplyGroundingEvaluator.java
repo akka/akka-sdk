@@ -33,7 +33,7 @@ public class ReplyGroundingEvaluator extends Evaluator {
       return effects().inconclusive("the interaction failed, there is no reply to check"); // <1>
     }
     var order = interaction
-      .toolCalls("getOrder")
+      .toolCalls(OrderAgent.GET_ORDER)
       .stream()
       .flatMap(call -> call.responseAs(Order.class).stream())
       .findFirst();

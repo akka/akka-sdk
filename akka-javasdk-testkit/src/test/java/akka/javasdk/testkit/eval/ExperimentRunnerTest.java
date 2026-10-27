@@ -685,8 +685,8 @@ class ExperimentRunnerTest {
     assertThat(c1.passedRuns()).isEqualTo(1);
     assertThat(c1.failedRuns()).isEqualTo(1);
     assertThat(report.cases().get(1).outcome()).isEqualTo(Outcome.PASSED);
-    assertThat(c1.requirements()).hasSize(1);
-    assertThat(c1.requirements().getFirst().outcome()).isEqualTo(Outcome.INCONSISTENT);
+    assertThat(c1.verdicts()).hasSize(1);
+    assertThat(c1.verdicts().getFirst().outcome()).isEqualTo(Outcome.INCONSISTENT);
     assertThat(report.render())
         .contains("inconsistent across runs:\n  c1 quality: passed in run 1, failed in run 2");
   }
@@ -786,7 +786,7 @@ class ExperimentRunnerTest {
     assertThat(evidence.get("guardrails").get(0).get("decision").asText()).isEqualTo("DENY");
     assertThat(attempt.get("results").get(0).get("detail").asText())
         .isEqualTo("names the order (score 0.90)");
-    assertThat(json.get("cases").get(0).get("requirements")).hasSize(2);
+    assertThat(json.get("cases").get(0).get("verdicts")).hasSize(2);
   }
 
   @Test

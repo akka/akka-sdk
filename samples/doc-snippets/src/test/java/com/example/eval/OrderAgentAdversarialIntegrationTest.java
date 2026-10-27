@@ -174,7 +174,7 @@ public class OrderAgentAdversarialIntegrationTest extends TestKitSupport {
       .reply(
         new AiResponse(
           new ToolInvocationRequest(
-            "issueRefund",
+            OrderAgent.ISSUE_REFUND,
             "{\"orderId\":\"o_42\",\"amountCents\":50000}"
           )
         )

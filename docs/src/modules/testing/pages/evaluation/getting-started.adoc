@@ -17,7 +17,7 @@ An agent's reply cannot be asserted that way. The model decides which tools to c
 An evaluation test sends the agent a fixed set of messages, the eval cases, and lets evaluator components judge each interaction: the tool calls, the reply, or a criterion scored by a judge.
 It counts the results over all cases and requires a minimum pass rate.
 
-This page writes an evaluation, as an integration test, for the order agent of an online shop. The test runs against the model the agent uses in production. The complete code is in the link:{sample-base-url}/doc-snippets/src/test/java/com/example/eval[doc-snippets sample, window="new"].
+This page writes an evaluation, as an integration test, for the order agent of an online shop. The test runs against the model the agent uses in production.
 
 == The agent under evaluation
 
@@ -32,7 +32,7 @@ include::sdk:example$doc-snippets/src/main/java/com/example/eval/OrderAgent.java
 ----
 <1> The `OrderService` is injected. Production provides a client for the real service through a `DependencyProvider`, the integration test provides a stub.
 <2> The command handler the evaluation calls. It takes the case's command, here a `String`, and replies with a `String`. A handler may take its own type instead, such as a record.
-<3> The tools. Each tool sets an explicit `name`. The evaluators refer to tools by that name.
+<3> The tools. Each tool sets its `name` from a constant, and the evaluators look tool calls up by the same constant.
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/eval/OrderService.java[OrderService.java]
@@ -120,7 +120,7 @@ Other options are a JUnit `@Tag` that the Failsafe `groups` filter selects, a Ma
 == The first case
 
 An `EvalCase` describes one turn with the agent.
-What the agent must do with the command is stated by the bound evaluators, not by the case.
+The bound evaluators state what the agent must do with the command. The case does not.
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderCases.java[OrderCases.java]
@@ -137,7 +137,7 @@ An experiment is a set of cases bound to an agent and a gate, run once for one r
 ----
 include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[tag=first-case]
 ----
-<1> The cases. One, several, or a list.
+<1> The cases. One or several.
 <2> The agent's command handler. The runner calls it through the component client in a new session per case.
 <3> Runs the cases, waits for the verdicts of the bound evaluators, and returns an `EvalReport`.
 <4> Without a gate the report passes only when every case passes. The rendered report is the failure message, so a failed case prints its evidence.

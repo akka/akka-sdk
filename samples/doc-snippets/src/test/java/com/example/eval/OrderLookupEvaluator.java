@@ -27,7 +27,7 @@ public class OrderLookupEvaluator extends Evaluator {
       return effects().inconclusive("the interaction failed before any tool call"); // <4>
     }
     var namesAnOrder = ORDER_ID.matcher(interaction.inputText()).find();
-    var lookedUp = !interaction.toolCalls("getOrder").isEmpty();
+    var lookedUp = !interaction.toolCalls(OrderAgent.GET_ORDER).isEmpty();
     if (namesAnOrder && !lookedUp) {
       return effects()
         .complete(Evaluation.failed("no getOrder call for a message that names an order")); // <5>

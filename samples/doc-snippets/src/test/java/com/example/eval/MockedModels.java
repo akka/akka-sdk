@@ -36,14 +36,14 @@ final class MockedModels {
       .reply(message -> {
         var orderId = group(ORDER_ID, message.content(), 0);
         return new AiResponse(
-          new ToolInvocationRequest("getOrder", "{\"orderId\":\"" + orderId + "\"}")
+          new ToolInvocationRequest(OrderAgent.GET_ORDER, "{\"orderId\":\"" + orderId + "\"}")
         );
       });
 
     // A tool result arrives without the question, so the script decides from the record it read:
     // a delivered order is refunded, any other order is reported.
     model
-      .whenToolResult(result -> result.name().equals("getOrder"))
+      .whenToolResult(result -> result.name().equals(OrderAgent.GET_ORDER))
       .thenReply(result -> {
         var orderId = group(RESULT_ID, result.content(), 1);
         var status = group(RESULT_STATUS, result.content(), 1);
@@ -51,7 +51,7 @@ final class MockedModels {
           var total = group(RESULT_TOTAL, result.content(), 1);
           return new AiResponse(
             new ToolInvocationRequest(
-              "issueRefund",
+              OrderAgent.ISSUE_REFUND,
               "{\"orderId\":\"" + orderId + "\",\"amountCents\":" + total + "}"
             )
           );
@@ -60,7 +60,7 @@ final class MockedModels {
       });
 
     model
-      .whenToolResult(result -> result.name().equals("issueRefund"))
+      .whenToolResult(result -> result.name().equals(OrderAgent.ISSUE_REFUND))
       .thenReply(result -> {
         var cents = Integer.parseInt(group(REFUND_AMOUNT, result.content(), 1));
         return new AiResponse(

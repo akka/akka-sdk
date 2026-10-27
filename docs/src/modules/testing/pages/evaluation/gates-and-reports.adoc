@@ -1,6 +1,6 @@
 = Gates and reports
 :page-aliases: testing:evaluation/experiments.adoc
-:page-summary: A Gate is what a batch must satisfy over all case results, by case, by evaluator or by guardrail; the EvalReport carries the gate verdict, the pass rate and the evidence of every case.
+:page-summary: A Gate is a condition on the results of all cases in a batch, by case, by evaluator or by guardrail. The EvalReport carries the gate verdict, the pass rate and the evidence of every case.
 :page-when-to-use: Choosing the gate for a mocked or a real model, and reading a report.
 :page-related: testing:evaluation/getting-started.adoc, testing:evaluation/adversarial.adoc, sdk:evaluators.adoc
 :page-persona: builder-developer, builder-ai-ml
@@ -8,7 +8,8 @@
 
 include::ROOT:partial$include.adoc[]
 
-A gate is what a batch of cases must satisfy over all case results, and the report is what a run returns.
+A gate is a condition on the results of all cases in a batch.
+A report is the result of one run.
 
 [#outcomes]
 == The attempt verdict
@@ -32,13 +33,13 @@ The verdict of the attempt follows from the results of all its evaluators.
 | At least one result passed and the others are not applicable.
 |===
 
-Only a passed attempt counts as passed, so an evaluator that could not judge is visible in the gate and in the report rather than silently passed.
-A not applicable result is neutral. The gates leave it out, and the report counts it.
+An inconclusive result does not pass the attempt. The gate and the report show it.
+A not applicable result does not count for the gates. The report lists it.
 
 [#gates]
 == Gates
 
-A link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Gate.html[Gate] is what the batch must satisfy over all case results.
+A link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Gate.html[Gate] is a condition on the results of all cases in the batch.
 
 [cols="2,3"]
 |===
@@ -79,7 +80,8 @@ Assert on the report, and use the rendered report as the failure message.
 [#judged-batch]
 === Gating a judged batch
 
-A judged score can differ between runs of the same reply, so hold a batch to the rate the xref:sdk:evaluators.adoc#judging[judge evaluator] passed rather than asserting on one judged case.
+A judge can give the same reply a different score on another run.
+Gate a batch on the pass rate of the xref:sdk:evaluators.adoc#judging[judge evaluator] instead of asserting on one judged case.
 `Gate.passRateShouldBeAtLeast(JudgeEvaluator.class, minimumRate)` rates the evaluator over the attempts where it reached a verdict, and fails when it judged none.
 
 [source,java,indent=0]
@@ -114,7 +116,7 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 | One `CaseResult` per attempt: every case in the order the cases were given, its runs ascending. A `CaseResult` carries the case id, the run, the `Evidence` and the results. `describe()` renders one attempt as in the report.
 
 | `cases()`
-| One `CaseSummary` per case, in the order the cases were given: the outcome over all runs, the passed, failed and inconclusive run counts, the case's attempts, and its requirements. The outcome is `PASSED` when every run passed, `FAILED` when every run failed, `INCONCLUSIVE` when every run was inconclusive, and `INCONSISTENT` otherwise. A `RequirementSummary` is one evaluator of the case, with the runs it passed, failed, was inconclusive and was not applicable in, and its outcome over the conclusive runs.
+| One `CaseSummary` per case, in the order the cases were given. It carries the outcome over all runs, the number of runs that passed, failed and were inconclusive, the attempts of the case, and the verdicts of each evaluator. The outcome is `PASSED` when every run passed, `FAILED` when every run failed, `INCONCLUSIVE` when every run was inconclusive, and `INCONSISTENT` otherwise. `verdicts()` holds one `EvaluatorVerdicts` per evaluator of the case: the runs where the evaluator passed, failed, was inconclusive or was not applicable, and its outcome over the runs where it reached a verdict.
 
 | `render()`
 | The report as text.
@@ -146,7 +148,7 @@ Line by line:
 . One line per evaluator, under its component id: the attempts it passed over the attempts where it reached a verdict. The attempts where it was inconclusive or not applicable follow in brackets, for example `refund-policy 1/1 (2 not applicable)`.
 . One line per guardrail that decided in the batch, for example `guardrail refund-limit: denied 1, allowed 0`. Absent when no guardrail decided.
 . The spend: model responses, tokens and latency summed over the attempts with a recorded interaction, and the slowest attempt. A mocked model reports no tokens.
-. `inconsistent across runs`, only when a requirement passed in some runs and failed in others: one line per such requirement with the runs it passed, failed and was inconclusive in, for example `order-status order-lookup: passed in runs 1, 3, failed in run 2`. A requirement that failed in every run is not listed here. See <<repeated-runs>>.
+. `inconsistent across runs`, only when an evaluator passed in some runs of a case and failed in others: one line per such evaluator with the runs it passed, failed and was inconclusive in, for example `order-status order-lookup: passed in runs 1, 3, failed in run 2`. An evaluator that failed in every run is not listed here. See <<repeated-runs>>.
 . After these lines, every attempt that did not pass, failed or inconclusive, with its evidence, see <<reading-a-failed-case>>.
 
 [#reading-a-failed-case]
@@ -185,7 +187,7 @@ case order-status run 1 FAILED
   NOT_APPLICABLE reply-grounding: no order was looked up
 ----
 
-An attempt that did not pass is named by its case and its run, and prints the reply, the tool calls with their arguments, the model spend, the guardrail decisions when there are any, and every result with its detail.
+The report names such an attempt by its case and its run, and prints the reply, the tool calls with their arguments, the model spend, the guardrail decisions when there are any, and every result with its detail.
 The reply is cut to one line of at most 200 characters.
 `CaseResult.evidence()` gives the same facts as data: `reply()`, `returned()`, `toolCalls()`, `failure()`, `guardrails()`, `denied()`, and the `InteractionRecord` itself.
 A `returned` line follows the reply when the command handler returned something other than the model text, for example a typed reply or a failure mapped in `onFailure`.
@@ -204,7 +206,7 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentEvalI
 [#repeated-runs]
 == Running every case several times
 
-One run of a case against a real model is one sample, and a case that passes once may fail on the next run with the same input.
+A case that passes once against a real model can fail on the next run with the same input.
 `repeat(n)` on the experiment runs every case `n` times in total, each time in a fresh session.
 
 [source,java,indent=0]
@@ -212,20 +214,21 @@ One run of a case against a real model is one sample, and a case that passes onc
 ----
 include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[tag=repeated-runs]
 ----
-<1> Every case runs three times. The runner runs every case once, then every case again, so the attempts of one case are spread over the batch rather than sent to the model within the same seconds.
+<1> Every case runs three times. The runner runs every case once, then every case again, so the attempts of one case are spread over the batch.
 <2> The gate counts attempts: nine with three cases. 0.85 tolerates one attempt that did not pass, failed or inconclusive. 0.9 would require all nine.
 
-The report lists the requirements that passed in some runs and failed in others under `inconsistent across runs`, see <<reading-the-report>>.
-`cases()` carries the outcome of every case over all runs, and of every requirement over the runs where it was conclusive.
-A requirement is one evaluator of one case, so a case whose evaluators fail in different runs is a case that failed in every run with two inconsistent requirements.
+The report lists the evaluators that passed in some runs of a case and failed in others under `inconsistent across runs`, see <<reading-the-report>>.
+`cases()` carries the outcome of every case over all runs, and the verdicts of every evaluator over the runs of the case.
+A case whose two evaluators fail in different runs failed in every run, and the report lists both evaluators as inconsistent.
 
-Three passes out of three do not show that a case always passes.
-`n` runs cannot show a failure rate below one in `n`, and a case that fails one time in four still passes three runs out of three about four times in ten.
-Choose `n` by the failure rate you need to detect, and gate on a rate rather than on a clean sweep when the model is real.
+Three passes out of three do not prove that a case always passes.
+A case that fails one time in four passes three runs out of three in about four of ten experiments.
+Choose `n` by the failure rate you need to detect.
+Gate on a rate, not on every run passing, when the model is real.
 
 Nothing is reset between runs.
 The stubs the agent's tools call serve every run, a `@BeforeEach` runs once per experiment, and state that a tool writes to an entity is still there in the next run.
-A stub or an evaluator must not depend on state an attempt writes, or a side effect of run 1 reads as a failure of every later run.
+A stub or an evaluator must not depend on state an attempt writes, or a side effect of run 1 fails every later run.
 The wall clock time and the model spend grow with the number of runs, and the calls of a judge are not part of the spend line.
 
 == See also

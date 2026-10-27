@@ -142,7 +142,7 @@ public class OrderAgentEvalIntegrationTest extends TestKitSupport {
     var result = report.results().getFirst();
     assertThat(result.describe()).contains("FAIL " + ExperimentRunner.TARGET); // <1>
     assertThat(result.evidence().failed()).isTrue(); // <2>
-    assertThat(result.evidence().toolCalls().getFirst().name()).isEqualTo("getOrder");
+    assertThat(result.evidence().toolCalls().getFirst().name()).isEqualTo(OrderAgent.GET_ORDER);
     assertThat(result.describe()).contains("PASS order-lookup"); // <3>
   }
   // end::target-failure[]

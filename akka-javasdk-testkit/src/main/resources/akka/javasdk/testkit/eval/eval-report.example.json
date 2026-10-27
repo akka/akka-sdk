@@ -15,7 +15,7 @@
     "failedCases" : 1,
     "inconsistentCases" : 0,
     "inconclusiveCases" : 1,
-    "inconsistentRequirements" : 0,
+    "inconsistentEvaluators" : 0,
     "attempts" : 3,
     "passedAttempts" : 1,
     "failedAttempts" : 1,
@@ -54,7 +54,7 @@
     "passedRuns" : 1,
     "failedRuns" : 0,
     "inconclusiveRuns" : 0,
-    "requirements" : [ {
+    "verdicts" : [ {
       "evaluator" : "quality",
       "outcome" : "PASSED",
       "passedIn" : [ 1 ],
@@ -75,7 +75,7 @@
     "passedRuns" : 0,
     "failedRuns" : 1,
     "inconclusiveRuns" : 0,
-    "requirements" : [ {
+    "verdicts" : [ {
       "evaluator" : "quality",
       "outcome" : "FAILED",
       "passedIn" : [ ],
@@ -96,7 +96,7 @@
     "passedRuns" : 0,
     "failedRuns" : 0,
     "inconclusiveRuns" : 1,
-    "requirements" : [ {
+    "verdicts" : [ {
       "evaluator" : "quality",
       "outcome" : "PASSED",
       "passedIn" : [ 1 ],

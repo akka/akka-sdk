@@ -53,8 +53,8 @@ import org.slf4j.LoggerFactory;
  * Experiment#evaluationTimeout} sets how long an attempt waits for the verdicts.
  *
  * <p>{@link Experiment#repeat} runs every case several times. One execution of one case is an
- * attempt, and the gate, the rates and the spend count attempts. The report names the requirements
- * that passed in some runs and failed in others.
+ * attempt, and the gate, the rates and the spend count attempts. The report names the evaluators
+ * that passed in some runs and failed in others of the same case.
  *
  * <p>{@link Experiment#run} writes the report as JSON to {@code target/eval-reports/<name>-<start
  * time>.json}, see {@link EvalReport#reportFile}.
@@ -612,21 +612,24 @@ public final class ExperimentRunner {
     return decision.name() + what + (decision.reportOnly() ? " (report only)" : "") + explanation;
   }
 
-  /** The outcome of a case over all its runs, or of a requirement over its conclusive runs. */
+  /**
+   * The outcome of a case over all its runs, or of an evaluator over the runs where it reached a
+   * verdict.
+   */
   public enum Outcome {
-    /** Every run passed; for a requirement, every conclusive run. */
+    /** Every run passed; for an evaluator, every run where it reached a verdict. */
     PASSED,
-    /** Every run failed; for a requirement, every conclusive run. */
+    /** Every run failed; for an evaluator, every run where it reached a verdict. */
     FAILED,
-    /** The runs did not agree; for a requirement, it passed in some runs and failed in others. */
+    /** The runs did not agree; for an evaluator, it passed in some runs and failed in others. */
     INCONSISTENT,
-    /** Every run was inconclusive; for a requirement, it was conclusive in no run. */
+    /** Every run was inconclusive; for an evaluator, it reached a verdict in no run. */
     INCONCLUSIVE
   }
 
   /**
-   * One requirement of a case over all runs: one evaluator over the results of the case's attempts.
-   * The runner's {@link #TARGET} result is a requirement too, with no run passed.
+   * The verdicts of one evaluator over all runs of a case. The runner's {@link #TARGET} result
+   * counts as an evaluator, with no run passed.
    *
    * @param caseId the case
    * @param evaluator the evaluator component id, or {@link #TARGET}
@@ -635,7 +638,7 @@ public final class ExperimentRunner {
    * @param inconclusiveIn the runs with the verdict INCONCLUSIVE, ascending
    * @param notApplicableIn the runs with the verdict NOT_APPLICABLE, ascending
    */
-  public record RequirementSummary(
+  public record EvaluatorVerdicts(
       String caseId,
       String evaluator,
       List<Integer> passedIn,
@@ -643,14 +646,14 @@ public final class ExperimentRunner {
       List<Integer> inconclusiveIn,
       List<Integer> notApplicableIn) {
 
-    public RequirementSummary {
+    public EvaluatorVerdicts {
       passedIn = List.copyOf(passedIn);
       failedIn = List.copyOf(failedIn);
       inconclusiveIn = List.copyOf(inconclusiveIn);
       notApplicableIn = List.copyOf(notApplicableIn);
     }
 
-    /** The outcome over the runs where the requirement was conclusive. */
+    /** The outcome over the runs where the evaluator reached a verdict. */
     public Outcome outcome() {
       if (passedIn.isEmpty() && failedIn.isEmpty()) return Outcome.INCONCLUSIVE;
       if (failedIn.isEmpty()) return Outcome.PASSED;
@@ -658,8 +661,11 @@ public final class ExperimentRunner {
       return Outcome.INCONSISTENT;
     }
 
-    /** The requirements of one case, in the order their results first appear in its attempts. */
-    static List<RequirementSummary> of(List<CaseResult> attempts) {
+    /**
+     * The verdicts of each evaluator of one case, in the order their results first appear in its
+     * attempts.
+     */
+    static List<EvaluatorVerdicts> of(List<CaseResult> attempts) {
       var byEvaluator = new LinkedHashMap<String, Map<EvalResult.Verdict, List<Integer>>>();
       for (var attempt : attempts) {
         for (var result : attempt.evalResults()) {
@@ -673,7 +679,7 @@ public final class ExperimentRunner {
       return byEvaluator.entrySet().stream()
           .map(
               e ->
-                  new RequirementSummary(
+                  new EvaluatorVerdicts(
                       caseId,
                       e.getKey(),
                       e.getValue().getOrDefault(EvalResult.Verdict.PASS, List.of()),
@@ -736,20 +742,20 @@ public final class ExperimentRunner {
       return (int) attempts.stream().filter(CaseResult::inconclusive).count();
     }
 
-    /** The case's requirements over all runs, see {@link RequirementSummary}. */
-    public List<RequirementSummary> requirements() {
-      return RequirementSummary.of(attempts);
+    /** The verdicts of each evaluator of the case over all runs, see {@link EvaluatorVerdicts}. */
+    public List<EvaluatorVerdicts> verdicts() {
+      return EvaluatorVerdicts.of(attempts);
     }
 
-    // One line per requirement that passed in some runs and failed in others, and one per target
+    // One line per evaluator that passed in some runs and failed in others, and one per target
     // failure when the case itself is inconsistent.
     private List<String> renderInconsistencies() {
       var lines = new ArrayList<String>();
-      for (var requirement : requirements()) {
-        var runnerResult = requirement.evaluator().equals(TARGET);
-        if (requirement.outcome() == Outcome.INCONSISTENT
+      for (var verdicts : verdicts()) {
+        var runnerResult = verdicts.evaluator().equals(TARGET);
+        if (verdicts.outcome() == Outcome.INCONSISTENT
             || (runnerResult && outcome() == Outcome.INCONSISTENT)) {
-          lines.add(requirement.render());
+          lines.add(verdicts.render());
         }
       }
       return lines;
@@ -811,8 +817,8 @@ public final class ExperimentRunner {
 
     /**
      * The run as text: the gate verdict, rates per evaluator, decisions per guardrail, the
-     * requirements that passed in some runs and failed in others, and the attempts that did not
-     * pass with their evidence.
+     * evaluators that passed in some runs and failed in others of the same case, and the attempts
+     * that did not pass with their evidence.
      */
     String render();
   }

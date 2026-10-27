@@ -39,7 +39,7 @@ import java.util.List;
  * @param spend model responses, tokens and latency summed over the attempts with a recorded
  *     interaction
  * @param cases one entry per case, in the order the cases were given, with its outcome over all
- *     runs and its requirements
+ *     runs and the verdicts of its evaluators
  * @param attempts one entry per attempt: every case in the order the cases were given, its runs
  *     ascending
  */
@@ -84,8 +84,8 @@ public record ReportDocument(
    * @param failedCases cases with the outcome FAILED
    * @param inconsistentCases cases with the outcome INCONSISTENT; zero with one run
    * @param inconclusiveCases cases with the outcome INCONCLUSIVE
-   * @param inconsistentRequirements requirements that passed in some runs and failed in others,
-   *     over all cases; zero with one run
+   * @param inconsistentEvaluators evaluators that passed in some runs and failed in others of the
+   *     same case, over all cases; zero with one run
    * @param attempts {@code cases} times {@code runs}
    * @param passedAttempts attempts with the verdict PASS
    * @param failedAttempts attempts with the verdict FAIL
@@ -98,7 +98,7 @@ public record ReportDocument(
       int failedCases,
       int inconsistentCases,
       int inconclusiveCases,
-      int inconsistentRequirements,
+      int inconsistentEvaluators,
       int attempts,
       int passedAttempts,
       int failedAttempts,
@@ -149,9 +149,8 @@ public record ReportDocument(
    * @param passedRuns runs with the verdict PASS
    * @param failedRuns runs with the verdict FAIL
    * @param inconclusiveRuns runs with the verdict INCONCLUSIVE
-   * @param requirements one entry per evaluator at one position in the results of the case's
-   *     attempts, in the order the results first appear; the runner's target result is a
-   *     requirement too
+   * @param verdicts the verdicts of each evaluator of the case, in the order the results first
+   *     appear in its attempts; the runner's target result counts as an evaluator
    */
   public record Case(
       String id,
@@ -159,21 +158,21 @@ public record ReportDocument(
       int passedRuns,
       int failedRuns,
       int inconclusiveRuns,
-      List<Requirement> requirements) {}
+      List<EvaluatorVerdicts> verdicts) {}
 
   /**
-   * One requirement of a case over all runs.
+   * The verdicts of one evaluator over all runs of a case.
    *
    * @param evaluator the evaluator component id, or {@link ExperimentRunner#TARGET}
-   * @param outcome over the runs where the requirement was conclusive: PASSED, FAILED, INCONSISTENT
-   *     when it passed in some runs and failed in others, or INCONCLUSIVE when it was conclusive in
-   *     no run
+   * @param outcome over the runs where the evaluator reached a verdict: PASSED, FAILED,
+   *     INCONSISTENT when it passed in some runs and failed in others, or INCONCLUSIVE when it was
+   *     conclusive in no run
    * @param passedIn the runs with the verdict PASS, ascending
    * @param failedIn the runs with the verdict FAIL, ascending
    * @param inconclusiveIn the runs with the verdict INCONCLUSIVE, ascending
    * @param notApplicableIn the runs with the verdict NOT_APPLICABLE, ascending
    */
-  public record Requirement(
+  public record EvaluatorVerdicts(
       String evaluator,
       Outcome outcome,
       List<Integer> passedIn,

@@ -10,10 +10,10 @@ import akka.javasdk.ledger.ModelResponse;
 import akka.javasdk.ledger.ToolCall;
 import akka.javasdk.testkit.eval.ExperimentRunner.CaseResult;
 import akka.javasdk.testkit.eval.ExperimentRunner.CaseSummary;
+import akka.javasdk.testkit.eval.ExperimentRunner.EvaluatorVerdicts;
 import akka.javasdk.testkit.eval.ExperimentRunner.Outcome;
 import akka.javasdk.testkit.eval.ExperimentRunner.Rate;
 import akka.javasdk.testkit.eval.ExperimentRunner.Report;
-import akka.javasdk.testkit.eval.ExperimentRunner.RequirementSummary;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Map;
@@ -53,7 +53,7 @@ final class EvalReportJson {
             count(cases, Outcome.INCONCLUSIVE),
             (int)
                 cases.stream()
-                    .flatMap(c -> c.requirements().stream())
+                    .flatMap(c -> c.verdicts().stream())
                     .filter(r -> r.outcome() == Outcome.INCONSISTENT)
                     .count(),
             report.results().size(),
@@ -105,17 +105,17 @@ final class EvalReportJson {
         summary.passedRuns(),
         summary.failedRuns(),
         summary.inconclusiveRuns(),
-        summary.requirements().stream().map(EvalReportJson::requirement).toList());
+        summary.verdicts().stream().map(EvalReportJson::evaluatorVerdicts).toList());
   }
 
-  private static ReportDocument.Requirement requirement(RequirementSummary requirement) {
-    return new ReportDocument.Requirement(
-        requirement.evaluator(),
-        requirement.outcome(),
-        requirement.passedIn(),
-        requirement.failedIn(),
-        requirement.inconclusiveIn(),
-        requirement.notApplicableIn());
+  private static ReportDocument.EvaluatorVerdicts evaluatorVerdicts(EvaluatorVerdicts verdicts) {
+    return new ReportDocument.EvaluatorVerdicts(
+        verdicts.evaluator(),
+        verdicts.outcome(),
+        verdicts.passedIn(),
+        verdicts.failedIn(),
+        verdicts.inconclusiveIn(),
+        verdicts.notApplicableIn());
   }
 
   private static ReportDocument.Attempt attempt(CaseResult result) {
