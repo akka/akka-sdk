@@ -4,15 +4,13 @@ include::ROOT:partial$include.adoc[]
 
 Stateful components like Event Sourced Entities, Key Value Entities or Workflows can be replicated to other regions, for resilience across locations and clouds, for serving requests close to the user, and for spreading load. Each instance has a primary region that handles all its write requests, and read requests can be served from any region. Replication is asynchronous. See xref:concepts:multi-region.adoc[] for primary selection modes and replication guarantees.
 
-Read requests are defined by declaring the command handler method with `ReadOnlyEffect` as return type. A read-only handler cannot update the state, and that is enforced at compile time.
+Handlers declared with `ReadOnlyEffect` can serve reads from the local region's replicated state. Handlers declared with `Effect` are routed to the primary region, even if the original call with the component client was made from another region and the handler does not change state.
 
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[ShoppingCartEntity.java]
 ----
 include::example$shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tag=read-only]
 ----
-
-Write requests are defined by declaring the command handler method with `Effect` as return type, instead of `ReadOnlyEffect`. Write requests are routed to the primary region and handled by the stateful component instance in that region even if the original call to the instance with the component client was made from another region.
 
 State changes (Workflow, Key Value Entity) or events (Event Sourced Entity) persisted by the instance in the primary region are replicated to the other regions and processed by the corresponding instance there.
 

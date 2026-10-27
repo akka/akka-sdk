@@ -504,12 +504,6 @@ Several agents can collaborate to achieve a common goal, and they can be orchest
 
 The latest Akka CLI versions run the local console for development without using Docker. It spins up quickly and requires almost no resources.
 
-**New Akka SDK learning path in Akkademy**
-
-A new course is now available in Akkademy: https://akkademy.akka.io/learn/courses/51/introduction-to-the-akka-sdk[Introduction to the Akka SDK].
-
-This short, self-paced course introduces the foundational concepts of the Akka SDK. It is organized into brief lessons with coding exercises that run directly in the browser, requiring no installation. The course is ideal for developers who are new to the Akka SDK and want a structured, guided approach to building services.
-
 ****
 
 * Akka CLI 3.0.23

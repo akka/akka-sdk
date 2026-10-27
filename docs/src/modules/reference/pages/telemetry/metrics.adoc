@@ -334,6 +334,7 @@ OpenTelemetry semantic convention attributes::
 |===
 
 
+
 == gRPC Endpoints
 
 
@@ -509,6 +510,7 @@ OpenTelemetry semantic convention attributes::
 |===
 
 
+
 == MCP Endpoints
 
 
@@ -589,6 +591,7 @@ OpenTelemetry semantic convention attributes::
 | The gRPC status code for the MCP transport.
 
 |===
+
 
 
 == Agents
@@ -1057,6 +1060,3283 @@ OpenTelemetry semantic convention attributes::
 | The type of token being counted.
 
 |===
+
+
+
+== Autonomous Agents
+
+
+=== Autonomous agent activation duration
+
+Duration of an autonomous agent activation cycle.
+
+Metric:: `akka.autonomous_agent.activation.duration`
+Type:: histogram
+Unit:: `s`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+Autonomous Agent Recovery attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.autonomous_agent.recovered`
+| boolean
+| Conditionally required: when true
+| Whether the scope was opened as part of post-recovery resumption rather than normal flow.
+
+|===
+
+OpenTelemetry semantic convention attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `error.type`
+| string
+| Conditionally required: if the operation ended in an error
+| Describes the error condition.
+
+|===
+
+
+=== Autonomous agent activation iteration count
+
+Number of iterations consumed per autonomous agent activation cycle.
+
+Metric:: `akka.autonomous_agent.activation.iterations`
+Type:: histogram
+Unit:: `\{iteration}`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+Autonomous Agent Recovery attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.autonomous_agent.recovered`
+| boolean
+| Conditionally required: when true
+| Whether the scope was opened as part of post-recovery resumption rather than normal flow.
+
+|===
+
+
+=== Active autonomous agents
+
+Number of currently active autonomous agent instances.
+
+Metric:: `akka.autonomous_agent.active`
+Type:: up-down counter
+Unit:: `\{agent}`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+
+=== Autonomous agent backlog access granted
+
+Number of times an autonomous agent was granted access to a backlog.
+
+Metric:: `akka.autonomous_agent.backlog.access_granted`
+Type:: counter
+Unit:: `\{grant}`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+
+=== Autonomous agent backlogs assigned
+
+Number of backlogs assigned to an autonomous agent for management.
+
+Metric:: `akka.autonomous_agent.backlog.assigned`
+Type:: counter
+Unit:: `\{backlog}`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+
+=== Autonomous agent backlog task claims
+
+Number of tasks claimed by an autonomous agent from a backlog.
+
+Metric:: `akka.autonomous_agent.backlog.task_claims`
+Type:: counter
+Unit:: `\{claim}`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+
+=== Autonomous agent capability command duration
+
+Duration of an autonomous agent capability command, from receipt to completion or failure.
+
+Metric:: `akka.autonomous_agent.capability_command.duration`
+Type:: histogram
+Unit:: `s`
+
+
+
+Autonomous Agent Capability attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.autonomous_agent.capability`
+| enum
+| Yes
+| The autonomous agent capability handling a scope.
+
+|===
+
+Autonomous Agent Capability Command attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.autonomous_agent.capability.command.name`
+| string
+| Yes
+| The class name of a capability command delivered to the autonomous agent.
+
+| `akka.autonomous_agent.capability.command.origin`
+| enum
+| Yes
+| The origin of a capability command delivered to the autonomous agent.
+
+|===
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+OpenTelemetry semantic convention attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `error.type`
+| string
+| Conditionally required: if the operation ended in an error
+| Describes the error condition.
+
+|===
+
+
+=== Autonomous agent capability dispatch duration
+
+Duration of an internal capability-to-capability dispatch within an autonomous agent.
+
+Metric:: `akka.autonomous_agent.capability_dispatch.duration`
+Type:: histogram
+Unit:: `s`
+
+
+
+Autonomous Agent Capability attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.autonomous_agent.capability`
+| enum
+| Yes
+| The autonomous agent capability handling a scope.
+
+|===
+
+Autonomous Agent Capability Dispatch attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.autonomous_agent.capability.dispatch.command.name`
+| string
+| Yes
+| The class name of an internally dispatched capability command.
+
+| `akka.autonomous_agent.capability.dispatch.target`
+| string
+| Yes
+| The target capability of an internal dispatch within an autonomous agent.
+
+|===
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+OpenTelemetry semantic convention attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `error.type`
+| string
+| Conditionally required: if the operation ended in an error
+| Describes the error condition.
+
+|===
+
+
+=== Autonomous agent capability tool duration
+
+Duration of an autonomous agent capability tool call.
+
+Metric:: `akka.autonomous_agent.capability_tool.duration`
+Type:: histogram
+Unit:: `s`
+
+
+
+Autonomous Agent Capability attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.autonomous_agent.capability`
+| enum
+| Yes
+| The autonomous agent capability handling a scope.
+
+|===
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+Autonomous Agent Suspension attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.autonomous_agent.suspended`
+| boolean
+| Conditionally required: when true
+| Whether the scope was closed because the agent was passivated mid-flight rather than completing normally.
+
+|===
+
+OpenTelemetry semantic convention attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `error.type`
+| string
+| Conditionally required: if the operation ended in an error
+| Describes the error condition.
+
+| `gen_ai.tool.name`
+| string
+| Recommended
+| Name of the tool utilized by the agent.
+
+|===
+
+
+=== Autonomous agent conversation duration
+
+Duration of an autonomous agent moderation conversation, from start to completion.
+
+Metric:: `akka.autonomous_agent.conversation.duration`
+Type:: histogram
+Unit:: `s`
+
+
+
+Autonomous Agent Conversation attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.autonomous_agent.conversation.pattern`
+| enum
+| Yes
+| The pattern of an autonomous agent conversation.
+
+|===
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+
+=== Autonomous agent conversations started
+
+Number of autonomous agent moderation conversations started.
+
+Metric:: `akka.autonomous_agent.conversation.started`
+Type:: counter
+Unit:: `\{conversation}`
+
+
+
+Autonomous Agent Conversation attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.autonomous_agent.conversation.pattern`
+| enum
+| Yes
+| The pattern of an autonomous agent conversation.
+
+|===
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+
+=== Autonomous agent conversation turns
+
+Number of turns in an autonomous agent moderation conversation, partitioned by speaker.
+
+Metric:: `akka.autonomous_agent.conversation.turns`
+Type:: counter
+Unit:: `\{turn}`
+
+
+
+Autonomous Agent Conversation attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.autonomous_agent.conversation.turn.speaker`
+| enum
+| Yes
+| Who spoke a conversation turn.
+
+|===
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+
+=== Autonomous agent delegation duration
+
+Duration of an autonomous agent delegation, from start to terminal outcome.
+
+Metric:: `akka.autonomous_agent.delegation.duration`
+Type:: histogram
+Unit:: `s`
+
+
+
+Autonomous Agent Delegation attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.autonomous_agent.delegation.outcome`
+| enum
+| Yes
+| How an autonomous agent delegation ended.
+
+| `akka.autonomous_agent.delegation.target.kind`
+| enum
+| Yes
+| Kind of delegation target.
+
+|===
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+OpenTelemetry semantic convention attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `error.type`
+| string
+| Conditionally required: if the operation ended in an error
+| Describes the error condition.
+
+|===
+
+
+=== Autonomous agent delegation rejections
+
+Number of autonomous agent delegations rejected before starting (e.g. group parallelism limit reached).
+
+Metric:: `akka.autonomous_agent.delegation.rejections`
+Type:: counter
+Unit:: `\{rejection}`
+
+
+
+Autonomous Agent Delegation attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.autonomous_agent.delegation.rejection.reason`
+| enum
+| Yes
+| Why an autonomous agent delegation was rejected before starting.
+
+| `akka.autonomous_agent.delegation.target.kind`
+| enum
+| Yes
+| Kind of delegation target.
+
+|===
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+
+=== Autonomous agent delegations started
+
+Number of autonomous agent delegations that started, partitioned by target kind.
+
+Metric:: `akka.autonomous_agent.delegation.started`
+Type:: counter
+Unit:: `\{delegation}`
+
+
+
+Autonomous Agent Delegation attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.autonomous_agent.delegation.target.kind`
+| enum
+| Yes
+| Kind of delegation target.
+
+|===
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+
+=== Autonomous agent iteration duration
+
+Duration of an autonomous agent iteration.
+
+Metric:: `akka.autonomous_agent.iteration.duration`
+Type:: histogram
+Unit:: `s`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+Autonomous Agent Recovery attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.autonomous_agent.recovered`
+| boolean
+| Conditionally required: when true
+| Whether the scope was opened as part of post-recovery resumption rather than normal flow.
+
+|===
+
+Autonomous Agent Suspension attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.autonomous_agent.suspended`
+| boolean
+| Conditionally required: when true
+| Whether the scope was closed because the agent was passivated mid-flight rather than completing normally.
+
+|===
+
+OpenTelemetry semantic convention attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `error.type`
+| string
+| Conditionally required: if the operation ended in an error
+| Describes the error condition.
+
+|===
+
+
+=== Autonomous agent lifecycle command duration
+
+Duration of an autonomous agent lifecycle command (auto-stop, stop, suspend, resume).
+
+Metric:: `akka.autonomous_agent.lifecycle_command.duration`
+Type:: histogram
+Unit:: `s`
+
+
+
+Autonomous Agent Lifecycle attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.autonomous_agent.lifecycle.command.name`
+| string
+| Yes
+| The name of a lifecycle command delivered to the autonomous agent.
+
+|===
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+OpenTelemetry semantic convention attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `error.type`
+| string
+| Conditionally required: if the operation ended in an error
+| Describes the error condition.
+
+|===
+
+
+=== Autonomous agent lifetime duration
+
+Duration of an autonomous agent lifetime, from start (created/reloaded/resumed) to end (stopped/suspended/passivated/failed).
+
+Metric:: `akka.autonomous_agent.lifetime.duration`
+Type:: histogram
+Unit:: `s`
+
+
+
+Autonomous Agent Lifetime attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.autonomous_agent.lifetime.end`
+| enum
+| Recommended: if available
+| How the autonomous agent lifetime span ended.
+
+| `akka.autonomous_agent.lifetime.start`
+| enum
+| Yes
+| How the autonomous agent lifetime span was initiated.
+
+|===
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+OpenTelemetry semantic convention attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `error.type`
+| string
+| Conditionally required: if the operation ended in an error
+| Describes the error condition.
+
+|===
+
+
+=== Autonomous agent loaded size
+
+Size in bytes of loaded autonomous agent data (events, snapshots) during recovery. Each record represents one loaded item.
+
+Metric:: `akka.autonomous_agent.loaded.size`
+Type:: histogram
+Unit:: `By`
+
+
+
+Autonomous Agent Persistence attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.autonomous_agent.persistence.type`
+| enum
+| Yes
+| The type of autonomous agent persistence operation.
+
+|===
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+
+=== Autonomous agent messaging messages received
+
+Number of messages received by an autonomous agent from peers.
+
+Metric:: `akka.autonomous_agent.messaging.messages`
+Type:: counter
+Unit:: `\{message}`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+
+=== Autonomous agent persisted size
+
+Size in bytes of persisted autonomous agent data (events, snapshots). Each record represents one persisted item.
+
+Metric:: `akka.autonomous_agent.persisted.size`
+Type:: histogram
+Unit:: `By`
+
+
+
+Autonomous Agent Persistence attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.autonomous_agent.persistence.type`
+| enum
+| Yes
+| The type of autonomous agent persistence operation.
+
+|===
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+
+=== Autonomous agent recovery duration
+
+Duration of autonomous agent recovery.
+
+Metric:: `akka.autonomous_agent.recovery.duration`
+Type:: histogram
+Unit:: `s`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+OpenTelemetry semantic convention attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `error.type`
+| string
+| Conditionally required: if the operation ended in an error
+| Describes the error condition.
+
+|===
+
+
+=== Autonomous agent recovery events loaded
+
+Number of autonomous agent recoveries that loaded from events (not snapshot-only).
+
+Metric:: `akka.autonomous_agent.recovery.events_loaded`
+Type:: counter
+Unit:: `\{recovery}`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+
+=== Autonomous agent task assignments
+
+Number of autonomous agent task assignment outcomes (accepted or rejected during validation).
+
+Metric:: `akka.autonomous_agent.task.assignments`
+Type:: counter
+Unit:: `\{assignment}`
+
+
+
+Autonomous Agent Task attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.autonomous_agent.task.assignment.outcome`
+| enum
+| Yes
+| Outcome of an autonomous agent task assignment.
+
+|===
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+
+=== Autonomous agent task dependencies resolved
+
+Number of autonomous agent task dependency resolutions, partitioned by outcome.
+
+Metric:: `akka.autonomous_agent.task.dependencies.resolved`
+Type:: counter
+Unit:: `\{dependency}`
+
+
+
+Autonomous Agent Task attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.autonomous_agent.task.dependency.outcome`
+| enum
+| Yes
+| How a watched task dependency was resolved.
+
+|===
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+
+=== Autonomous agent task dependencies watched
+
+Number of autonomous agent task dependency watches started while a task waits for its dependencies to resolve.
+
+Metric:: `akka.autonomous_agent.task.dependencies.watched`
+Type:: counter
+Unit:: `\{dependency}`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+
+=== Autonomous agent task duration
+
+Duration of an autonomous agent task, from start to terminal outcome.
+
+Metric:: `akka.autonomous_agent.task.duration`
+Type:: histogram
+Unit:: `s`
+
+
+
+Autonomous Agent Task attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.autonomous_agent.task.outcome`
+| enum
+| Yes
+| How an autonomous agent task ended.
+
+|===
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+OpenTelemetry semantic convention attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `error.type`
+| string
+| Conditionally required: if the operation ended in an error
+| Describes the error condition.
+
+|===
+
+
+=== Autonomous agent task iteration count
+
+Number of iterations consumed by an autonomous agent task.
+
+Metric:: `akka.autonomous_agent.task.iterations`
+Type:: histogram
+Unit:: `\{iteration}`
+
+
+
+Autonomous Agent Task attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.autonomous_agent.task.outcome`
+| enum
+| Yes
+| How an autonomous agent task ended.
+
+|===
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+OpenTelemetry semantic convention attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `error.type`
+| string
+| Conditionally required: if the operation ended in an error
+| Describes the error condition.
+
+|===
+
+
+=== Autonomous agent task result rejections
+
+Number of autonomous agent task results rejected by a validation rule (the task remains in flight for retry).
+
+Metric:: `akka.autonomous_agent.task.result_rejections`
+Type:: counter
+Unit:: `\{rejection}`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+
+=== Autonomous agent tasks started
+
+Number of autonomous agent tasks that started processing.
+
+Metric:: `akka.autonomous_agent.task.started`
+Type:: counter
+Unit:: `\{task}`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+
+=== Autonomous agent teams created
+
+Number of autonomous agent teams created.
+
+Metric:: `akka.autonomous_agent.team.created`
+Type:: counter
+Unit:: `\{team}`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+
+=== Autonomous agent team duration
+
+Duration of an autonomous agent team, from creation to disband.
+
+Metric:: `akka.autonomous_agent.team.duration`
+Type:: histogram
+Unit:: `s`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+
+=== Autonomous agent team member setup outcomes
+
+Number of autonomous agent team member setup outcomes (completed or failed).
+
+Metric:: `akka.autonomous_agent.team.members.setup`
+Type:: counter
+Unit:: `\{member}`
+
+
+
+Autonomous Agent Team attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.autonomous_agent.team.member.setup.outcome`
+| enum
+| Yes
+| Outcome of an autonomous agent team member setup.
+
+|===
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+OpenTelemetry semantic convention attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `error.type`
+| string
+| Conditionally required: if the operation ended in an error
+| Describes the error condition.
+
+|===
+
+
+
+== Evaluations
+
+
+=== Evaluation result
+
+Number of recorded evaluation results. A result recorded again after a redelivered trigger or a retried record step is counted again.
+
+Metric:: `akka.evaluation.result`
+Type:: counter
+Unit:: `\{result}`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+Evaluation attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.evaluation.evaluator.kind`
+| enum
+| Yes
+| The kind of evaluator that runs the evaluation.
+
+| `akka.evaluation.subject.component.id`
+| string
+| Yes
+| The id of the component that produced the evaluated subject.
+
+| `akka.evaluation.trigger`
+| enum
+| Conditionally required: if an evaluator binding started the evaluation
+| What started the evaluation.
+
+|===
+
+Evaluation Result attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.evaluation.outcome`
+| enum
+| Yes
+| The outcome of an evaluation.
+
+|===
+
+
+=== Evaluation score
+
+Distribution of the scores that evaluators return.
+
+Metric:: `akka.evaluation.score`
+Type:: histogram
+Unit:: `1`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+Evaluation attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.evaluation.evaluator.kind`
+| enum
+| Yes
+| The kind of evaluator that runs the evaluation.
+
+| `akka.evaluation.subject.component.id`
+| string
+| Yes
+| The id of the component that produced the evaluated subject.
+
+| `akka.evaluation.trigger`
+| enum
+| Conditionally required: if an evaluator binding started the evaluation
+| What started the evaluation.
+
+|===
+
+Evaluation Result attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.evaluation.outcome`
+| enum
+| Yes
+| The outcome of an evaluation.
+
+|===
+
+
+=== Evaluation triggers
+
+Number of trigger decisions for evaluator bindings, by result.
+
+Metric:: `akka.evaluation.triggers`
+Type:: counter
+Unit:: `\{trigger}`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+Evaluation attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.evaluation.evaluator.kind`
+| enum
+| Yes
+| The kind of evaluator that runs the evaluation.
+
+| `akka.evaluation.subject.component.id`
+| string
+| Yes
+| The id of the component that produced the evaluated subject.
+
+| `akka.evaluation.trigger`
+| enum
+| Conditionally required: if an evaluator binding started the evaluation
+| What started the evaluation.
+
+|===
+
+Evaluation Triggering attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.evaluation.trigger_result`
+| enum
+| Yes
+| What happened to a trigger for an evaluator binding.
+
+|===
+
+
+
+== Entities
+
+
+=== Active entities
+
+Number of currently active entity instances.
+
+Metric:: `akka.entity.active`
+Type:: up-down counter
+Unit:: `\{entity}`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+
+=== Entity active duration
+
+Duration that an entity instance was active (from activation to passivation or failure).
+
+Metric:: `akka.entity.active.duration`
+Type:: histogram
+Unit:: `s`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+OpenTelemetry semantic convention attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `error.type`
+| string
+| Conditionally required: if the operation ended in an error
+| Describes the error condition.
+
+|===
+
+
+=== Entity command duration
+
+Total duration of entity command handling (from received to completed, including stash wait, processing, and persist).
+
+Metric:: `akka.entity.command.duration`
+Type:: histogram
+Unit:: `s`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+Entity Command attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.entity.command.name`
+| string
+| Yes
+| The name of the entity command.
+
+|===
+
+OpenTelemetry semantic convention attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `error.type`
+| string
+| Conditionally required: if the operation ended in an error
+| Describes the error condition.
+
+|===
+
+
+=== Entity command processing duration
+
+Duration of entity command processing (user function execution time only).
+
+Metric:: `akka.entity.command.processing.duration`
+Type:: histogram
+Unit:: `s`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+Entity Command attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.entity.command.name`
+| string
+| Yes
+| The name of the entity command.
+
+|===
+
+OpenTelemetry semantic convention attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `error.type`
+| string
+| Conditionally required: if the operation ended in an error
+| Describes the error condition.
+
+|===
+
+
+=== Entity conflicts detected
+
+Number of entity replication conflicts detected.
+
+Metric:: `akka.entity.conflicts_detected`
+Type:: counter
+Unit:: `\{conflict}`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+
+=== Entity conflicts resolved
+
+Number of entity replication conflicts resolved.
+
+Metric:: `akka.entity.conflicts_resolved`
+Type:: counter
+Unit:: `\{conflict}`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+
+=== Entity delete failures
+
+Number of entity deletion failures.
+
+Metric:: `akka.entity.delete.failures`
+Type:: counter
+Unit:: `\{error}`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+OpenTelemetry semantic convention attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `error.type`
+| string
+| Conditionally required: if the operation ended in an error
+| Describes the error condition.
+
+|===
+
+
+=== Entity delete events duration
+
+Duration of entity event deletion operations.
+
+Metric:: `akka.entity.delete_events.duration`
+Type:: histogram
+Unit:: `s`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+OpenTelemetry semantic convention attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `error.type`
+| string
+| Conditionally required: if the operation ended in an error
+| Describes the error condition.
+
+|===
+
+
+=== Deleted entities
+
+Number of entities deleted.
+
+Metric:: `akka.entity.deleted`
+Type:: counter
+Unit:: `\{entity}`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+
+=== Deleted entity events
+
+Number of entity events deleted.
+
+Metric:: `akka.entity.deleted_events`
+Type:: counter
+Unit:: `\{event}`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+
+=== Entity loaded size
+
+Size in bytes of loaded entity data (events, snapshots) during recovery. Each record represents one loaded item.
+
+Metric:: `akka.entity.loaded.size`
+Type:: histogram
+Unit:: `By`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+Entity Persistence attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.entity.persistence.type`
+| enum
+| Yes
+| The type of entity persistence operation.
+
+|===
+
+
+=== Entity persist duration
+
+Duration of entity persistence operations.
+
+Metric:: `akka.entity.persist.duration`
+Type:: histogram
+Unit:: `s`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+OpenTelemetry semantic convention attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `error.type`
+| string
+| Conditionally required: if the operation ended in an error
+| Describes the error condition.
+
+|===
+
+
+=== Entity persisted size
+
+Size in bytes of persisted entity data (events, snapshots, replicated events/states). Each record represents one persisted item.
+
+Metric:: `akka.entity.persisted.size`
+Type:: histogram
+Unit:: `By`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+Entity Persistence attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.entity.persistence.type`
+| enum
+| Yes
+| The type of entity persistence operation.
+
+|===
+
+
+=== Entity recovery duration
+
+Duration of entity recovery.
+
+Metric:: `akka.entity.recovery.duration`
+Type:: histogram
+Unit:: `s`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+OpenTelemetry semantic convention attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `error.type`
+| string
+| Conditionally required: if the operation ended in an error
+| Describes the error condition.
+
+|===
+
+
+=== Entity recovery events loaded
+
+Number of entity recoveries that loaded from events (not snapshot-only).
+
+Metric:: `akka.entity.recovery.events_loaded`
+Type:: counter
+Unit:: `\{recovery}`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+
+=== Entities registered for deletion
+
+Number of entities registered for deletion.
+
+Metric:: `akka.entity.registered_for_deletion`
+Type:: counter
+Unit:: `\{entity}`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+
+=== Entity switch primary duration
+
+Duration of entity primary region switch operations.
+
+Metric:: `akka.entity.switch_primary.duration`
+Type:: histogram
+Unit:: `s`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+OpenTelemetry semantic convention attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `error.type`
+| string
+| Conditionally required: if the operation ended in an error
+| Describes the error condition.
+
+|===
+
 
 
 == Workflows
@@ -1804,6 +5084,114 @@ OpenTelemetry semantic convention attributes::
 |===
 
 
+=== Workflow steps
+
+Distribution of the number of step executions (including retries) per workflow instance, recorded when a workflow completes.
+
+Metric:: `akka.workflow.steps`
+Type:: histogram
+Unit:: `\{step}`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+
+=== Workflow steps reached
+
+Number of workflow instances that have reached a given step-count threshold (a survival curve for detecting workflows with excessive steps).
+
+Metric:: `akka.workflow.steps.reached`
+Type:: counter
+Unit:: `\{workflow}`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+Workflow Metric Steps Reached attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.workflow.step.threshold`
+| int
+| Yes
+| The step-count threshold bucket that was reached.
+
+|===
+
+
 === Workflow transition duration
 
 Total duration of workflow transition handling (from started to completed).
@@ -1910,6 +5298,7 @@ OpenTelemetry semantic convention attributes::
 | Describes the error condition.
 
 |===
+
 
 
 == Views
@@ -2845,6 +6234,7 @@ View Update attributes::
 |===
 
 
+
 == Consumers
 
 
@@ -2914,6 +6304,515 @@ OpenTelemetry semantic convention attributes::
 |===
 
 
+
+== Projections
+
+
+=== Active projections
+
+Number of currently active projection instances.
+
+Metric:: `akka.projection.active`
+Type:: up-down counter
+Unit:: `\{projection}`
+
+
+
+Projection attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.projection.key`
+| string
+| Yes
+| The projection key (shard range).
+
+| `akka.projection.name`
+| string
+| Yes
+| The projection name.
+
+| `akka.projection.type`
+| enum
+| Yes
+| The type of projection.
+
+|===
+
+
+=== Projection backlog lag
+
+Time in seconds the projection is lagging behind the latest event.
+
+Metric:: `akka.projection.backlog.lag`
+Type:: gauge
+Unit:: `s`
+
+
+
+Projection attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.projection.key`
+| string
+| Yes
+| The projection key (shard range).
+
+| `akka.projection.name`
+| string
+| Yes
+| The projection name.
+
+| `akka.projection.type`
+| enum
+| Yes
+| The type of projection.
+
+|===
+
+
+=== Projection consumer lag
+
+Consumer lag, duration from when the envelope was created to when processing completed, in seconds.
+
+Metric:: `akka.projection.consumer.lag`
+Type:: histogram
+Unit:: `s`
+
+
+
+Projection attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.projection.key`
+| string
+| Yes
+| The projection key (shard range).
+
+| `akka.projection.name`
+| string
+| Yes
+| The projection name.
+
+| `akka.projection.type`
+| enum
+| Yes
+| The type of projection.
+
+|===
+
+Projection Processing attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.projection.envelope.source`
+| string
+| Conditionally required: when the envelope has a source
+| The source of the projection envelope.
+
+|===
+
+
+=== Projection failures
+
+Number of projection instances that have failed.
+
+Metric:: `akka.projection.failed`
+Type:: counter
+Unit:: `\{projection}`
+
+
+
+Projection attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.projection.key`
+| string
+| Yes
+| The projection key (shard range).
+
+| `akka.projection.name`
+| string
+| Yes
+| The projection name.
+
+| `akka.projection.type`
+| enum
+| Yes
+| The type of projection.
+
+|===
+
+
+=== Projection process duration
+
+Duration of projection envelope processing.
+
+Metric:: `akka.projection.processing.duration`
+Type:: histogram
+Unit:: `s`
+
+
+
+Projection attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.projection.key`
+| string
+| Yes
+| The projection key (shard range).
+
+| `akka.projection.name`
+| string
+| Yes
+| The projection name.
+
+| `akka.projection.type`
+| enum
+| Yes
+| The type of projection.
+
+|===
+
+Projection Processing attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.projection.envelope.source`
+| string
+| Conditionally required: when the envelope has a source
+| The source of the projection envelope.
+
+|===
+
+
+=== Projection envelopes received
+
+Total envelopes received for processing (before de-duplication, includes retries).
+
+Metric:: `akka.projection.received`
+Type:: counter
+Unit:: `\{envelope}`
+
+
+
+Projection attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.projection.key`
+| string
+| Yes
+| The projection key (shard range).
+
+| `akka.projection.name`
+| string
+| Yes
+| The projection name.
+
+| `akka.projection.type`
+| enum
+| Yes
+| The type of projection.
+
+|===
+
+Projection Processing attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.projection.envelope.source`
+| string
+| Conditionally required: when the envelope has a source
+| The source of the projection envelope.
+
+|===
+
+
+
+== Eventing
+
+
+=== Eventing broker used
+
+Total message broker connections established.
+
+Metric:: `akka.eventing.broker.used`
+Type:: counter
+Unit:: `\{connection}`
+
+
+
+Eventing Broker attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.eventing.broker.type`
+| enum
+| Yes
+| The type of message broker.
+
+|===
+
+
+=== Events handled
+
+Total events processed by an eventing consumer.
+
+Metric:: `akka.eventing.event.handled`
+Type:: counter
+Unit:: `\{event}`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+Eventing attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.eventing.source`
+| enum
+| Yes
+| The type of source the event comes from.
+
+| `akka.eventing.source.id`
+| string
+| Yes
+| The identifier of the event source.
+
+|===
+
+
+=== Service-to-service consumers
+
+Total service-to-service stream consumers created.
+
+Metric:: `akka.eventing.service_to_service.consumer`
+Type:: counter
+Unit:: `\{consumer}`
+
+
+=== Service-to-service producers
+
+Total service-to-service stream producers created.
+
+Metric:: `akka.eventing.service_to_service.producer`
+Type:: counter
+Unit:: `\{producer}`
+
+
+=== Eventing source streams started
+
+Total event source streams that have started.
+
+Metric:: `akka.eventing.source.stream.started`
+Type:: counter
+Unit:: `\{stream}`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+Eventing attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.eventing.source`
+| enum
+| Yes
+| The type of source the event comes from.
+
+| `akka.eventing.source.id`
+| string
+| Yes
+| The identifier of the event source.
+
+|===
+
+
+=== Eventing stream failures
+
+Total event streams that have failed.
+
+Metric:: `akka.eventing.stream.failed`
+Type:: counter
+Unit:: `\{stream}`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+Eventing attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.eventing.source`
+| enum
+| Yes
+| The type of source the event comes from.
+
+| `akka.eventing.source.id`
+| string
+| Yes
+| The identifier of the event source.
+
+|===
+
+
+
 == Timers
 
 
@@ -2981,8 +6880,6 @@ Type:: histogram
 Unit:: `By`
 
 
-
-
 === Registered timers
 
 Number of currently registered timer calls per worker.
@@ -3003,6 +6900,7 @@ Timer Worker attributes::
 | Identifier of the timer worker actor (shard).
 
 |===
+
 
 
 == Timed Actions
@@ -3049,3 +6947,398 @@ Component attributes::
 
 |===
 
+
+
+== Notifications
+
+
+=== Notifications sent
+
+Total notifications sent.
+
+Metric:: `akka.notification.sent`
+Type:: counter
+Unit:: `\{notification}`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+
+=== Notification sent size
+
+Total notification bytes sent.
+
+Metric:: `akka.notification.sent.size`
+Type:: histogram
+Unit:: `By`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+
+=== Notification stream activations
+
+Total notification streams activated.
+
+Metric:: `akka.notification.stream.activations`
+Type:: counter
+Unit:: `\{stream}`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+
+=== Notification stream failures
+
+Total notification streams failed.
+
+Metric:: `akka.notification.stream.failures`
+Type:: counter
+Unit:: `\{stream}`
+
+
+
+Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.description`
+| string
+| Recommended: if available
+| User-defined description of the component.
+
+| `akka.component.id`
+| string
+| Yes
+| Unique identifier for the component instance.
+
+| `akka.component.implementation.name`
+| string
+| Recommended: if available
+| Fully qualified class name of the component implementation.
+
+| `akka.component.name`
+| string
+| Recommended: if available
+| User-defined name of the component.
+
+| `akka.component.spiffe_id`
+| string
+| Recommended: if available
+| The SPIFFE ID assigned to the component, when it is available.
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+
+
+== Object Storage
+
+
+=== Object storage operation duration
+
+Duration of object storage operations.
+
+Metric:: `akka.object_storage.operation.duration`
+Type:: histogram
+Unit:: `s`
+
+
+
+Object Storage attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.object_storage.bucket`
+| string
+| Yes
+| The name of the object storage bucket.
+
+| `akka.object_storage.operation`
+| enum
+| Yes
+| The type of object storage operation.
+
+|===
+
+OpenTelemetry semantic convention attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `error.type`
+| string
+| Conditionally required: if the operation ended in an error
+| Describes the error condition.
+
+|===
+
+
+=== Object storage operation size
+
+Size in bytes of object storage operation payloads.
+
+Metric:: `akka.object_storage.operation.size`
+Type:: histogram
+Unit:: `By`
+
+
+
+Object Storage attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.object_storage.bucket`
+| string
+| Yes
+| The name of the object storage bucket.
+
+| `akka.object_storage.operation`
+| enum
+| Yes
+| The type of object storage operation.
+
+|===
+
+
+
+== Replication Health
+
+
+=== Replication health check local check failures
+
+Total ticks where the local region could not complete a replication health check.
+
+Metric:: `akka.replication_health.local_check_failures`
+Type:: counter
+Unit:: `\{failure}`
+
+
+=== Replication health check misses
+
+Total per-region replies not received within the configured deadline.
+
+Metric:: `akka.replication_health.misses`
+Type:: counter
+Unit:: `\{miss}`
+
+
+
+Replication Health attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.replication_health.region`
+| string
+| Yes
+| The region whose replication health is being reported (the region that responded, or was expected to respond).
+
+|===
+
+
+=== Replication round-trip duration
+
+Duration of a successful end-to-end replication round-trip to a region.
+
+Metric:: `akka.replication_health.roundtrip.duration`
+Type:: histogram
+Unit:: `s`
+
+
+
+Replication Health attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.replication_health.region`
+| string
+| Yes
+| The region whose replication health is being reported (the region that responded, or was expected to respond).
+
+|===
+
+
+
+== Runtime
+
+
+=== Component deployed
+
+Total number of components deployed by type.
+
+Metric:: `akka.component.deployed`
+Type:: counter
+Unit:: `\{component}`
+
+
+
+Runtime Component attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.component.type`
+| enum
+| Yes
+| The type of Akka component.
+
+|===
+
+
+=== Runtime info
+
+Runtime and SDK version information.
+
+Metric:: `akka.runtime.info`
+Type:: up-down counter
+Unit:: `\{info}`
+
+
+
+Runtime attributes::
++
+|===
+| Attribute | Type | Required | Description
+
+| `akka.runtime.version`
+| string
+| Yes
+| The version of the Akka runtime.
+
+| `akka.sdk.name`
+| string
+| Yes
+| The name of the SDK.
+
+| `akka.sdk.version`
+| string
+| Yes
+| The version of the SDK.
+
+|===
+
+
+=== Service revision
+
+The current revision of the deployed user service.
+
+Metric:: `akka.service.revision`
+Type:: gauge
+Unit:: `\{revision}`

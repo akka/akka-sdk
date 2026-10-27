@@ -227,7 +227,7 @@ private[javasdk] object ComponentLocator {
    * processor marked, so a stale descriptor from main or test classes stays with the service. When no descriptor is
    * marked, the service descriptors are the ones with the descriptor file name of `project`. Fails on service
    * descriptors from more than one artifact. Fails on no service descriptor unless library components are listed in
-   * config.
+   * config, only SDK-provided descriptors are found, or `project` is defined and library descriptors are found.
    */
   private[impl] def classifyDescriptors(
       descriptors: Seq[Descriptor],
@@ -252,20 +252,28 @@ private[javasdk] object ComponentLocator {
             project.map(_.artifactId).getOrElse(""))
         ClassifiedDescriptors(service, sdkProvided, library)
       case 0 if libraryComponentsListed => ClassifiedDescriptors(Seq.empty, sdkProvided, library)
+      case 0 if library.isEmpty && sdkProvided.nonEmpty =>
+        logger.info(
+          "Found no component descriptor for the service, loading only the SDK components from [{}]. If you have " +
+          "components, run `mvn clean compile`.",
+          sdkProvided.map(_.url).mkString(", "))
+        ClassifiedDescriptors(Seq.empty, sdkProvided, library)
       case 0 if library.isEmpty =>
         throw new IllegalStateException(
           "Found no component descriptor for the service. If you have components, it looks like your project needs " +
           "to be recompiled. Run `mvn clean compile` and try again.")
+      case 0 if project.isDefined =>
+        logger.info(
+          "Project [{}:{}] has no component descriptor, loading only the SDK components. If you have components, " +
+          "run `mvn clean compile`.",
+          project.map(_.groupId).getOrElse(""),
+          project.map(_.artifactId).getOrElse(""))
+        ClassifiedDescriptors(Seq.empty, sdkProvided, library)
       case 0 =>
-        val libraryTestNote =
-          if (project.isDefined)
-            " If this is a test of a component library, list the components it uses from other libraries in " +
-            s"config [$LibraryComponentsConfigPath]."
-          else ""
         throw new IllegalStateException(
           s"Found no component descriptor for the service, only descriptors without the service marker " +
           s"[${library.map(_.url).mkString(", ")}]. If one of them belongs to this service, the build output is from " +
-          "an earlier SDK version. Run `mvn clean compile`." + libraryTestNote)
+          "an earlier SDK version. Run `mvn clean compile`.")
       case _ =>
         throw new IllegalStateException(
           s"Found service component descriptors from more than one artifact [${service.map(_.url).mkString(", ")}]. " +
