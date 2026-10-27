@@ -15,6 +15,7 @@ import akka.actor.typed.scaladsl.adapter._
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.impl.AnySupport.BytesPrimitive
 import akka.javasdk.impl.ComponentDescriptor
+import akka.javasdk.impl.ErrorHandling
 import akka.javasdk.impl.MethodInvoker
 import akka.javasdk.impl.UnhandledExceptionReporting
 import akka.javasdk.impl.serialization.Serializer
@@ -98,14 +99,21 @@ class ConsumerImplSpec
     "turn thrown command handler exceptions into failure responses" in {
       val service = create()
 
+      var loggedCorrelationId: Option[String] = None
       val reply =
         LoggingTestKit
-          .error("Failure during handling message")
+          .custom { event =>
+            val matches = event.message.startsWith("Failure during handling message")
+            if (matches) loggedCorrelationId = event.mdc.get(ErrorHandling.CorrelationIdMdcKey)
+            matches
+          }
           .expect {
             service.handleMessage(throwingMessage).futureValue.asInstanceOf[SpiConsumer.ErrorEffect]
           }
 
       reply.error.description should startWith("Unexpected error")
+      loggedCorrelationId should not be empty
+      reply.error.correlationId shouldBe loggedCorrelationId
     }
 
     "turn a null Effect from the handler into a failure response with a clear message" in {

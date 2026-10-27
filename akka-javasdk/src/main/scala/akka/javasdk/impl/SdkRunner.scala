@@ -113,6 +113,7 @@ import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
 import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
+import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.impl.telemetry.TraceInstrumentation
 import akka.javasdk.impl.timedaction.TimedActionImpl
 import akka.javasdk.impl.timer.TimerSchedulerImpl
@@ -211,6 +212,28 @@ object SdkRunner {
   val userServiceLog: Logger = LoggerFactory.getLogger("akka.javasdk.ServiceLog")
 
   val FutureDone: Future[Done] = Future.successful(Done)
+
+  def logReportedError(err: UserFunctionError): Unit = {
+    val severityString = err.severity match {
+      case Level.ERROR => "Error"
+      case Level.WARN  => "Warning"
+      case Level.INFO  => "Info"
+      case Level.DEBUG => "Debug"
+      case Level.TRACE => "Trace"
+      case other       => other.name()
+    }
+    val message = s"$severityString reported from Akka runtime: ${err.code} ${err.message}"
+    val detail = if (err.detail.isEmpty) Nil else List(err.detail)
+    val seeDocs = DocLinks.forErrorCode(err.code).map(link => s"See documentation: $link").toList
+    val messages = message :: detail ::: seeDocs
+    val logMessage = messages.mkString("\n")
+
+    Telemetry.withCurrentContext(Option(err.telemetryContext)) {
+      ErrorHandling.withMdcCorrelationId(err.correlationId) {
+        userServiceLog.atLevel(err.severity).log(logMessage)
+      }
+    }
+  }
 
   @nowarn("msg=deprecated")
   def extractSpiSettings(applicationConf: Config): SpiSettings = {
@@ -1544,22 +1567,7 @@ private final class Sdk(
     }
 
     val reportError = { err: UserFunctionError =>
-      val severityString = err.severity match {
-        case Level.ERROR => "Error"
-        case Level.WARN  => "Warning"
-        case Level.INFO  => "Info"
-        case Level.DEBUG => "Debug"
-        case Level.TRACE => "Trace"
-        case other       => other.name()
-      }
-      val message = s"$severityString reported from Akka runtime: ${err.code} ${err.message}"
-      val detail = if (err.detail.isEmpty) Nil else List(err.detail)
-      val seeDocs = DocLinks.forErrorCode(err.code).map(link => s"See documentation: $link").toList
-      val messages = message :: detail ::: seeDocs
-      val logMessage = messages.mkString("\n")
-
-      SdkRunner.userServiceLog.atLevel(err.severity).log(logMessage)
-
+      SdkRunner.logReportedError(err)
       SdkRunner.FutureDone
     }
 
