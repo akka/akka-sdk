@@ -179,6 +179,23 @@ public class ProtobufViewIntegrationTest extends TestKitSupport {
         .method(ProtobufCustomerKvEntity::createFromProtobuf)
         .invoke(SimpleMessage.newBuilder().setText("Presence Bare").build());
 
+    // wait until both entities are in the view, so that the "not contains" checks below cannot pass
+    // only because an entity is not indexed yet
+    for (var name : List.of("Presence Full", "Presence Bare")) {
+      Awaitility.await()
+          .ignoreExceptions()
+          .atMost(20, TimeUnit.of(SECONDS))
+          .untilAsserted(
+              () -> {
+                var result =
+                    componentClient
+                        .forView()
+                        .method(ProtobufCustomerStateView::getCustomerByName)
+                        .invoke(SimpleMessage.newBuilder().setText(name).build());
+                assertThat(result.getName()).isEqualTo(name);
+              });
+    }
+
     Awaitility.await()
         .ignoreExceptions()
         .atMost(20, TimeUnit.of(SECONDS))
