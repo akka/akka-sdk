@@ -135,6 +135,15 @@ message CustomerState {
   google.protobuf.Timestamp created_at = 6;
   optional string nickname = 7;
   optional google.protobuf.Timestamp review_date = 8;
+  ContactInfo contact = 9;
+  oneof preferred_contact {
+    string preferred_email = 10;
+    string preferred_phone = 11;
+  }
+}
+
+message ContactInfo {
+  string phone = 1;
 }
 
 // Query parameter message exercising google.protobuf.Timestamp as a view query input

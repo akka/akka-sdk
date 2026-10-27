@@ -35,4 +35,8 @@ message OptionalFields {
   string id = 1;
   optional string nickname = 2;
   optional google.protobuf.Timestamp review_date = 3;
+  oneof contact {
+    string email = 4;
+    string phone = 5;
+  }
 }

@@ -6,6 +6,7 @@ package akkajavasdk.components.keyvalueentities.protobuf;
 
 import akka.javasdk.annotations.Component;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
+import akkajavasdk.protocol.SerializationTestProtos.ContactInfo;
 import akkajavasdk.protocol.SerializationTestProtos.CustomerState;
 import akkajavasdk.protocol.SerializationTestProtos.SimpleMessage;
 import akkajavasdk.protocol.SerializationTestProtos.Status;
@@ -38,6 +39,21 @@ public class ProtobufCustomerKvEntity extends KeyValueEntity<CustomerState> {
             .setCreatedAt(Timestamps.now())
             .build();
     return effects().updateState(newState).thenReply("Customer created");
+  }
+
+  public Effect<String> createWithPresenceFields(CreateWithPresenceFieldsCommand command) {
+    var builder =
+        CustomerState.newBuilder()
+            .setCustomerId(commandContext().entityId())
+            .setName(command.name())
+            .setStatus(Status.ACTIVE)
+            .setNickname(command.nickname())
+            .setReviewDate(Timestamps.now())
+            .setContact(ContactInfo.newBuilder().setPhone("123").build())
+            .setPreferredEmail(command.preferredEmail());
+    return effects()
+        .updateState(builder.build())
+        .thenReply("Customer created with presence fields");
   }
 
   public Effect<String> changeName(ChangeNameCommand command) {
@@ -117,6 +133,9 @@ public class ProtobufCustomerKvEntity extends KeyValueEntity<CustomerState> {
 
   // Command records
   public record CreateCommand(String name, String email) {}
+
+  public record CreateWithPresenceFieldsCommand(
+      String name, String nickname, String preferredEmail) {}
 
   public record ChangeNameCommand(String newName) {}
 

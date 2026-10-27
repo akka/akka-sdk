@@ -14,10 +14,12 @@ import akkajavasdk.components.eventsourcedentities.protobuf.ProtobufCustomerEnti
 import akkajavasdk.components.keyvalueentities.protobuf.ProtobufCustomerKvEntity;
 import akkajavasdk.components.views.protobuf.ProtobufCustomerStateView;
 import akkajavasdk.components.views.protobuf.ProtobufCustomersByNameView;
+import akkajavasdk.protocol.SerializationTestProtos.CustomerStateList;
 import akkajavasdk.protocol.SerializationTestProtos.CustomersByCreationTimeQuery;
 import akkajavasdk.protocol.SerializationTestProtos.SimpleMessage;
 import akkajavasdk.protocol.SerializationTestProtos.Status;
 import com.google.protobuf.util.Timestamps;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
@@ -162,6 +164,86 @@ public class ProtobufViewIntegrationTest extends TestKitSupport {
               assertThat(result.hasNickname()).isFalse();
               assertThat(result.hasReviewDate()).isFalse();
             });
+  }
+
+  @Test
+  public void shouldQueryViewOnPresenceFields() {
+    var withFields = "view-proto-presence-full";
+    var withoutFields = "view-proto-presence-bare";
+    componentClient
+        .forKeyValueEntity(withFields)
+        .method(ProtobufCustomerKvEntity::createWithPresenceFields)
+        .invoke(
+            new ProtobufCustomerKvEntity.CreateWithPresenceFieldsCommand(
+                "Presence Full", "presence-nick", "presence@example.com"));
+    // no optional, nested message or oneof fields set
+    componentClient
+        .forKeyValueEntity(withoutFields)
+        .method(ProtobufCustomerKvEntity::createFromProtobuf)
+        .invoke(SimpleMessage.newBuilder().setText("Presence Bare").build());
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(20, TimeUnit.of(SECONDS))
+        .untilAsserted(
+            () -> {
+              var view = componentClient.forView();
+
+              // optional message field
+              assertThat(
+                      ids(
+                          view.method(ProtobufCustomerStateView::getCustomersWithoutReviewDate)
+                              .invoke()))
+                  .contains(withoutFields)
+                  .doesNotContain(withFields);
+              assertThat(
+                      ids(
+                          view.method(ProtobufCustomerStateView::getCustomersWithReviewDate)
+                              .invoke()))
+                  .contains(withFields)
+                  .doesNotContain(withoutFields);
+
+              // optional scalar field
+              assertThat(
+                      ids(
+                          view.method(ProtobufCustomerStateView::getCustomersWithoutNickname)
+                              .invoke()))
+                  .contains(withoutFields)
+                  .doesNotContain(withFields);
+              assertThat(
+                      ids(
+                          view.method(ProtobufCustomerStateView::getCustomersByNickname)
+                              .invoke(SimpleMessage.newBuilder().setText("presence-nick").build())))
+                  .containsExactly(withFields);
+
+              // message field without the optional keyword
+              assertThat(
+                      ids(
+                          view.method(ProtobufCustomerStateView::getCustomersWithoutContact)
+                              .invoke()))
+                  .contains(withoutFields)
+                  .doesNotContain(withFields);
+
+              // oneof member
+              assertThat(
+                      ids(
+                          view.method(ProtobufCustomerStateView::getCustomersWithoutPreferredEmail)
+                              .invoke()))
+                  .contains(withoutFields)
+                  .doesNotContain(withFields);
+              assertThat(
+                      ids(
+                          view.method(ProtobufCustomerStateView::getCustomersByPreferredEmail)
+                              .invoke(
+                                  SimpleMessage.newBuilder()
+                                      .setText("presence@example.com")
+                                      .build())))
+                  .containsExactly(withFields);
+            });
+  }
+
+  private static List<String> ids(CustomerStateList list) {
+    return list.getCustomersList().stream().map(c -> c.getCustomerId()).toList();
   }
 
   @Test

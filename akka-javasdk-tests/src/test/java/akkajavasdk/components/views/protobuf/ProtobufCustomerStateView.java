@@ -30,6 +30,41 @@ public class ProtobufCustomerStateView extends View {
     return queryResult();
   }
 
+  @Query("SELECT * as customers FROM customers WHERE review_date IS NULL")
+  public QueryEffect<CustomerStateList> getCustomersWithoutReviewDate() {
+    return queryResult();
+  }
+
+  @Query("SELECT * as customers FROM customers WHERE review_date IS NOT NULL")
+  public QueryEffect<CustomerStateList> getCustomersWithReviewDate() {
+    return queryResult();
+  }
+
+  @Query("SELECT * as customers FROM customers WHERE nickname IS NULL")
+  public QueryEffect<CustomerStateList> getCustomersWithoutNickname() {
+    return queryResult();
+  }
+
+  @Query("SELECT * as customers FROM customers WHERE nickname = :text")
+  public QueryEffect<CustomerStateList> getCustomersByNickname(SimpleMessage params) {
+    return queryResult();
+  }
+
+  @Query("SELECT * as customers FROM customers WHERE contact IS NULL")
+  public QueryEffect<CustomerStateList> getCustomersWithoutContact() {
+    return queryResult();
+  }
+
+  @Query("SELECT * as customers FROM customers WHERE preferred_email IS NULL")
+  public QueryEffect<CustomerStateList> getCustomersWithoutPreferredEmail() {
+    return queryResult();
+  }
+
+  @Query("SELECT * as customers FROM customers WHERE preferred_email = :text")
+  public QueryEffect<CustomerStateList> getCustomersByPreferredEmail(SimpleMessage params) {
+    return queryResult();
+  }
+
   @Query("SELECT * as customers FROM customers WHERE created_at >= :created_after")
   public QueryEffect<CustomerStateList> getCustomersCreatedAfter(
       CustomersByCreationTimeQuery params) {

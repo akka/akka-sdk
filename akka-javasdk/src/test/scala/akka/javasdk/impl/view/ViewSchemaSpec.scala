@@ -80,6 +80,8 @@ class ViewSchemaSpec extends AnyWordSpec with Matchers {
       result.getField("id").get.fieldType shouldBe SpiString
       result.getField("nickname").get.fieldType shouldBe new SpiOptional(SpiString)
       result.getField("review_date").get.fieldType shouldBe new SpiOptional(SpiTimestamp)
+      result.getField("email").get.fieldType shouldBe new SpiOptional(SpiString)
+      result.getField("phone").get.fieldType shouldBe new SpiOptional(SpiString)
     }
 
     "handle self referencing type trees" in {
