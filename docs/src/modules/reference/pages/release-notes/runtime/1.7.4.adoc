@@ -1,0 +1,30 @@
+= Akka Runtime 1.7.4
+:page-summary: Runtime 1.7.4 adds the fail mode of a guardrail, the trace context and more identity headers on model requests, ledger listing filters, and fixes for workflows, Azure OpenAI and Vertex AI model calls, gRPC endpoints, and the backoffice.
+
+include::ROOT:partial$include.adoc[]
+
+Released 2026-10-26.
+
+== Changes
+
+* Guardrails: the `fail-mode` setting of a guardrail decides what the runtime does when the guardrail fails to decide. `fail-closed`, the default, aborts the interaction. `fail-open` lets it continue. See xref:sdk:agents/guardrails.adoc#_configuring_guardrails[Configuring guardrails].
+* Agents: when tracing is on, every model request carries the W3C trace context of the agent in the `traceparent` header, and in `tracestate` when the trace has state. A gateway in front of the model API can join each request with the trace of the agent that sent it.
+* Agents: with identity headers on, every model request carries `x-akka-interaction-id` with the id of its interaction, `x-akka-system-id` with the id of the AI system, and `x-akka-service-id` with the name of the service. See xref:sdk:model-provider-details.adoc#_identity_headers[Identity headers].
+* Agents: the runtime follows a redirect from Vertex AI, keeps the HTTP status in the message of a failed Vertex AI call, and recovers a failed pooled connection without using a model call retry.
+* Agents: a streamed Azure OpenAI reply no longer logs the error `No content to map due to end-of-input`. The runtime logs a retry of the Azure SDK as a warning instead of an error.
+* Autonomous agents: a participant of a moderated conversation notifies the moderator when the conversation ends, without one more activation.
+* Ledger: the ledger listing of the backoffice narrows records by outcome, enforcement, session, and flow, and lists the records of one interaction.
+* Workflows: a workflow that selects a step while the runtime passivates it runs the step after it starts again. The backoffice shows such a workflow as running.
+* Endpoints: on a gRPC endpoint, a method with `@Acl` and no `@JWT` applies the class-level `@JWT`. A request without a bearer token to such a method no longer passes.
+* Endpoints: JWT validation accepts an Akka access token with its `kxa_` prefix as a bearer token.
+* Backoffice: the view listing works for a service without views. The configuration, log level, and region operations require an authenticated caller. The Akka CLI is not affected. A tool that calls the backoffice port directly without the mesh identity fails.
+* Local development: listing the local object store by key prefix no longer walks the whole bucket.
+* Runtime logs: the warning about a newer SDK version waits for the notification date of that release.
+* Runtime image: the emSign ECC Root CA G3 certificate is removed from the trust store.
+
+== Noteworthy dependency updates
+
+* AWS SDK 2.55.14
+* Google GenAI 1.76.0
+* Guava 33.7.2
+* jose4j 0.9.7
