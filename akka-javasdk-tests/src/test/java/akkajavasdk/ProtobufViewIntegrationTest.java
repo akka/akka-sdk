@@ -134,6 +134,37 @@ public class ProtobufViewIntegrationTest extends TestKitSupport {
   }
 
   @Test
+  public void shouldStoreProtobufStateWithUnsetTimestampInView() {
+    var entityId = "view-proto-unset-ts-1";
+    var message =
+        SimpleMessage.newBuilder().setText("ProtoState Unset Timestamp").setNumber(1).build();
+
+    // this command creates a state without created_at
+    componentClient
+        .forKeyValueEntity(entityId)
+        .method(ProtobufCustomerKvEntity::createFromProtobuf)
+        .invoke(message);
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(20, TimeUnit.of(SECONDS))
+        .untilAsserted(
+            () -> {
+              var queryParam =
+                  SimpleMessage.newBuilder().setText("ProtoState Unset Timestamp").build();
+              var result =
+                  componentClient
+                      .forView()
+                      .method(ProtobufCustomerStateView::getCustomerByName)
+                      .invoke(queryParam);
+              assertThat(result.getCustomerId()).isEqualTo(entityId);
+              assertThat(result.hasCreatedAt()).isFalse();
+              assertThat(result.hasNickname()).isFalse();
+              assertThat(result.hasReviewDate()).isFalse();
+            });
+  }
+
+  @Test
   public void shouldQueryViewWithTimestampParameter() {
     var beforeAll = Timestamps.fromMillis(System.currentTimeMillis() - 1000);
 

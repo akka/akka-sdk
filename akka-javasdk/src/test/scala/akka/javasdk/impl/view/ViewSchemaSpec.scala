@@ -68,6 +68,20 @@ class ViewSchemaSpec extends AnyWordSpec with Matchers {
       ViewSchema(classOf[com.google.protobuf.Timestamp]) shouldBe SpiTimestamp
     }
 
+    "map protobuf fields with presence to SpiOptional" in {
+      val result = ViewSchema(classOf[com.google.protobuf.Api]).asInstanceOf[SpiClass]
+      result.getField("name").get.fieldType shouldBe SpiString
+      result.getField("methods").get.fieldType shouldBe a[SpiList]
+      result.getField("source_context").get.fieldType shouldBe a[SpiOptional]
+    }
+
+    "map protobuf optional fields to SpiOptional" in {
+      val result = ViewSchema(classOf[protoconsumer.EventsForConsumer.OptionalFields]).asInstanceOf[SpiClass]
+      result.getField("id").get.fieldType shouldBe SpiString
+      result.getField("nickname").get.fieldType shouldBe new SpiOptional(SpiString)
+      result.getField("review_date").get.fieldType shouldBe new SpiOptional(SpiTimestamp)
+    }
+
     "handle self referencing type trees" in {
       val result = ViewSchema(classOf[ViewTestModels.Recursive])
       result shouldBe a[SpiClass]
