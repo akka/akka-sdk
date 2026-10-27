@@ -169,7 +169,8 @@ private[impl] final class ConsumerImpl[C <: Consumer](
   }
 
   private def protocolFailure(correlationId: String): Effect = {
-    new SpiConsumer.ErrorEffect(error = new SpiConsumer.Error(s"Unexpected error [$correlationId]"))
+    new SpiConsumer.ErrorEffect(
+      error = new SpiConsumer.Error(s"Unexpected error [$correlationId]", correlationId = Some(correlationId)))
   }
 
 }
