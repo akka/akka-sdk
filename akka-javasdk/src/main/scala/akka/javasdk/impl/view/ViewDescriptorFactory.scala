@@ -197,7 +197,7 @@ private[impl] object ViewDescriptorFactory {
           QueryStreamEffect[_]]}")
 
     val inputType: Option[SpiSchema.QueryInput] =
-      method.getGenericParameterTypes.headOption.map(h => ViewSchema.apply(h)).map {
+      method.getGenericParameterTypes.headOption.map(h => ViewSchema.forQuery(h)).map {
         case validInput: SpiSchema.QueryInput => validInput
         case other                            =>
           // FIXME let's see if this flies
@@ -208,7 +208,7 @@ private[impl] object ViewDescriptorFactory {
             Seq(new SpiField(method.getParameters.head.getName, other)))
       }
 
-    val outputType = ViewSchema(actualQueryOutputClass) match {
+    val outputType = ViewSchema.forQuery(actualQueryOutputClass) match {
       case output: SpiClass =>
         if (streamingQuery) new SpiList(output)
         else output
