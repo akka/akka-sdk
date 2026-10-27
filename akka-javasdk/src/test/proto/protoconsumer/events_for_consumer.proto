@@ -27,3 +27,11 @@ message CircularChild {
   string name = 1;
   CircularParent parent = 2;
 }
+message SiblingParent {
+  SiblingChild first = 1;
+  SiblingChild second = 2;
+}
+
+message SiblingChild {
+  string name = 1;
+}
