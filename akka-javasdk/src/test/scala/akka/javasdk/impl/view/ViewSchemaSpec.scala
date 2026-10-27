@@ -70,6 +70,7 @@ class ViewSchemaSpec extends AnyWordSpec with Matchers {
 
     "map protobuf fields with explicit presence to SpiOptional" in {
       val result = ViewSchema(classOf[presence.PresenceProtos.PresenceFields]).asInstanceOf[SpiClass]
+      result.fields should have size 7
       val fieldTypes = result.fields.map(f => f.name -> f.fieldType).toMap
       fieldTypes("id") shouldBe SpiString
       fieldTypes("nested") shouldBe new SpiOptional(

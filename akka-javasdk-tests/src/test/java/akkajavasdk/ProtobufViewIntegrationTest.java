@@ -140,7 +140,8 @@ public class ProtobufViewIntegrationTest extends TestKitSupport {
     var entityId = "view-proto-unset-1";
     var message = SimpleMessage.newBuilder().setText("ProtoState Unset Fields").build();
 
-    // this command creates a state without created_at, nickname and review_date
+    // createFromProtobuf leaves created_at, nickname, review_date, contact and preferred_email
+    // unset
     componentClient
         .forKeyValueEntity(entityId)
         .method(ProtobufCustomerKvEntity::createFromProtobuf)
@@ -165,22 +166,23 @@ public class ProtobufViewIntegrationTest extends TestKitSupport {
 
   @Test
   public void shouldQueryViewOnPresenceFields() {
-    var withFields = "view-proto-presence-full";
-    var withoutFields = "view-proto-presence-bare";
+    var fullId = "view-proto-presence-full";
+    var bareId = "view-proto-presence-bare";
     componentClient
-        .forKeyValueEntity(withFields)
+        .forKeyValueEntity(fullId)
         .method(ProtobufCustomerKvEntity::createWithPresenceFields)
         .invoke(
             new ProtobufCustomerKvEntity.CreateWithPresenceFieldsCommand(
                 "Presence Full", "presence-nick", "presence@example.com"));
-    // no optional, nested message or oneof fields set
+    // createFromProtobuf leaves created_at, nickname, review_date, contact and preferred_email
+    // unset
     componentClient
-        .forKeyValueEntity(withoutFields)
+        .forKeyValueEntity(bareId)
         .method(ProtobufCustomerKvEntity::createFromProtobuf)
         .invoke(SimpleMessage.newBuilder().setText("Presence Bare").build());
 
-    // wait until both entities are in the view, so that the "not contains" checks below cannot pass
-    // only because an entity is not indexed yet
+    // Wait until both entities are in the view, so that the "doesNotContain" checks below cannot
+    // pass only because an entity is not indexed yet.
     for (var name : List.of("Presence Full", "Presence Bare")) {
       Awaitility.await()
           .ignoreExceptions()
@@ -196,68 +198,40 @@ public class ProtobufViewIntegrationTest extends TestKitSupport {
               });
     }
 
-    Awaitility.await()
-        .ignoreExceptions()
-        .atMost(20, TimeUnit.of(SECONDS))
-        .untilAsserted(
-            () -> {
-              var view = componentClient.forView();
+    var view = componentClient.forView();
+    var nicknameParam = SimpleMessage.newBuilder().setText("presence-nick").build();
+    var preferredEmailParam = SimpleMessage.newBuilder().setText("presence@example.com").build();
 
-              // optional message field
-              assertThat(
-                      ids(
-                          view.method(ProtobufCustomerStateView::getCustomersWithoutReviewDate)
-                              .invoke()))
-                  .contains(withoutFields)
-                  .doesNotContain(withFields);
-              assertThat(
-                      ids(
-                          view.method(ProtobufCustomerStateView::getCustomersWithReviewDate)
-                              .invoke()))
-                  .contains(withFields)
-                  .doesNotContain(withoutFields);
+    // Optional message field.
+    var withoutReviewDate =
+        ids(view.method(ProtobufCustomerStateView::getCustomersWithoutReviewDate).invoke());
+    assertThat(withoutReviewDate).contains(bareId).doesNotContain(fullId);
+    var withReviewDate =
+        ids(view.method(ProtobufCustomerStateView::getCustomersWithReviewDate).invoke());
+    assertThat(withReviewDate).contains(fullId).doesNotContain(bareId);
 
-              // optional scalar field
-              assertThat(
-                      ids(
-                          view.method(ProtobufCustomerStateView::getCustomersWithoutNickname)
-                              .invoke()))
-                  .contains(withoutFields)
-                  .doesNotContain(withFields);
-              assertThat(
-                      ids(
-                          view.method(ProtobufCustomerStateView::getCustomersByNickname)
-                              .invoke(SimpleMessage.newBuilder().setText("presence-nick").build())))
-                  .containsExactly(withFields);
+    // Optional scalar field.
+    var withoutNickname =
+        ids(view.method(ProtobufCustomerStateView::getCustomersWithoutNickname).invoke());
+    assertThat(withoutNickname).contains(bareId).doesNotContain(fullId);
+    var byNickname =
+        ids(view.method(ProtobufCustomerStateView::getCustomersByNickname).invoke(nicknameParam));
+    assertThat(byNickname).containsExactly(fullId);
 
-              // message field without the optional keyword
-              assertThat(
-                      ids(
-                          view.method(ProtobufCustomerStateView::getCustomersWithoutContact)
-                              .invoke()))
-                  .contains(withoutFields)
-                  .doesNotContain(withFields);
+    // Message field without the optional keyword.
+    var withoutContact =
+        ids(view.method(ProtobufCustomerStateView::getCustomersWithoutContact).invoke());
+    assertThat(withoutContact).contains(bareId).doesNotContain(fullId);
 
-              // oneof member
-              assertThat(
-                      ids(
-                          view.method(ProtobufCustomerStateView::getCustomersWithoutPreferredEmail)
-                              .invoke()))
-                  .contains(withoutFields)
-                  .doesNotContain(withFields);
-              assertThat(
-                      ids(
-                          view.method(ProtobufCustomerStateView::getCustomersByPreferredEmail)
-                              .invoke(
-                                  SimpleMessage.newBuilder()
-                                      .setText("presence@example.com")
-                                      .build())))
-                  .containsExactly(withFields);
-            });
-  }
-
-  private static List<String> ids(CustomerStateList list) {
-    return list.getCustomersList().stream().map(c -> c.getCustomerId()).toList();
+    // Oneof member.
+    var withoutPreferredEmail =
+        ids(view.method(ProtobufCustomerStateView::getCustomersWithoutPreferredEmail).invoke());
+    assertThat(withoutPreferredEmail).contains(bareId).doesNotContain(fullId);
+    var byPreferredEmail =
+        ids(
+            view.method(ProtobufCustomerStateView::getCustomersByPreferredEmail)
+                .invoke(preferredEmailParam));
+    assertThat(byPreferredEmail).containsExactly(fullId);
   }
 
   @Test
@@ -335,5 +309,9 @@ public class ProtobufViewIntegrationTest extends TestKitSupport {
     assertThat(emptyResult.getCustomersList())
         .extracting(c -> c.getName())
         .doesNotContain("TS Alice", "TS Bob");
+  }
+
+  private static List<String> ids(CustomerStateList list) {
+    return list.getCustomersList().stream().map(c -> c.getCustomerId()).toList();
   }
 }

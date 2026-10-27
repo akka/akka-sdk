@@ -8,7 +8,7 @@ import "google/protobuf/timestamp.proto";
 
 option java_outer_classname = "PresenceProtos";
 
-// one field of each kind, for view schema presence coverage
+// Fields with and without explicit presence, for view schema coverage
 message PresenceFields {
   string id = 1;
   Nested nested = 2;
