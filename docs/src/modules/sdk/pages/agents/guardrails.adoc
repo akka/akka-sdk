@@ -80,8 +80,10 @@ include::example$doc-snippets/src/main/java/com/example/guardrail/ProfanityRespo
 The reply also carries the model's thinking in `thinking()` and the values set by the model provider in `attributes()`.
 Both are empty when the model returns none.
 The keys and the value types of `attributes()` are provider-specific.
-On an autonomous agent, the runtime also evaluates the guardrail on the message of each call to the built-in `broadcast`, `direct`, and `submit_turn` tools.
-There, `text()` holds the message, and `thinking()` and `attributes()` come from the model reply that requested the tool call.
+
+On an autonomous agent, the runtime also evaluates the guardrail on each call to the built-in `broadcast`, `direct`, and `submit_turn` tools.
+For these tool calls, `text()` holds the message or response argument.
+`thinking()` and `attributes()` come from the model reply that requested the tool call.
 The runtime does not evaluate the guardrail on the other built-in tools, such as `provide_prompt` and `complete_task`.
 
 `decide` may block, because the runtime evaluates guardrails on virtual threads. To compose futures instead, override `decideAsync`. The default `decideAsync` delegates to `decide`.
