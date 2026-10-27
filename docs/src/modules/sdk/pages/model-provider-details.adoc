@@ -850,6 +850,7 @@ model API can attribute the request:
 | Header | Value
 
 | x-akka-system-id | The AI system the request is for. By default, the id of the project that the service belongs to
+| x-akka-service-id | The name of the service that made the request
 | x-akka-agent-id | The component id of the agent that made the request
 | x-akka-flow-id | The flow the request belongs to. When the request has no flow, the session id, or the instance id for an autonomous agent
 | x-akka-interaction-id | The id of the interaction the request belongs to
@@ -861,7 +862,9 @@ header value. The runtime still sends the request.
 
 Every model request of one interaction carries the same `x-akka-interaction-id`, including each tool
 round and each retry attempt. When the xref:sdk:evaluators.adoc#_the_ledger_client[ledger] records the
-interaction, the value is the id of its record.
+interaction, the value is the id of its record. Each service has its own ledger, so `x-akka-service-id`
+names the service whose ledger holds that record. In dev mode, `x-akka-service-id` is the value of
+`akka.javasdk.dev-mode.service-name`, which defaults to the artifact id of the Maven project.
 
 A request has a flow when the agent runs inside an autonomous-agent flow. For any other request, such as
 one from an agent that an endpoint or a workflow calls, `x-akka-flow-id` holds the session id or the
@@ -883,7 +886,7 @@ A provider section, a provider environment variable or a provider built in code 
 xref:model-provider-details.adoc#_additional_model_request_headers[replaces the global list], so set the
 header there too.
 
-Do not set `x-akka-agent-id`, `x-akka-flow-id` or `x-akka-interaction-id` as an
+Do not set `x-akka-service-id`, `x-akka-agent-id`, `x-akka-flow-id` or `x-akka-interaction-id` as an
 xref:model-provider-details.adoc#_additional_model_request_headers[additional model request header] while
 the identity headers are on. Depending on the provider, the request then carries both values or only the
 value from the runtime.
