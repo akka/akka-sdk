@@ -81,6 +81,15 @@ class ViewSchemaSpec extends AnyWordSpec with Matchers {
       fieldTypes("phone") shouldBe new SpiOptional(SpiString)
     }
 
+    "not wrap protobuf fields in SpiOptional for query types" in {
+      val result = ViewSchema.forQuery(classOf[presence.PresenceProtos.PresenceFields]).asInstanceOf[SpiClass]
+      val fieldTypes = result.fields.map(f => f.name -> f.fieldType).toMap
+      fieldTypes("nested") shouldBe a[SpiClass]
+      fieldTypes("nickname") shouldBe SpiString
+      fieldTypes("review_date") shouldBe SpiTimestamp
+      fieldTypes("tags") shouldBe new SpiList(SpiString)
+    }
+
     "handle self referencing type trees" in {
       val result = ViewSchema(classOf[ViewTestModels.Recursive])
       result shouldBe a[SpiClass]

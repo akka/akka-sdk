@@ -68,7 +68,16 @@ private[view] object ViewSchema {
   // Note: view row type field validation (unsupported type combinations like Optional<Collection>,
   // nested collections, Map, unsupported time types etc.) is handled by ViewValidations which runs
   // both at compile time (annotation processor) and at runtime (SdkRunner startup).
-  def apply(rootType: Type): SpiType = {
+  /** Schema for a table row type. Protobuf fields with explicit presence are optional. */
+  def apply(rootType: Type): SpiType = schemaFor(rootType, protobufPresence = true)
+
+  /**
+   * Schema for a query input or output type. The runtime projects a query result into a class or list of classes, so
+   * protobuf fields are not wrapped in `SpiOptional` here.
+   */
+  def forQuery(rootType: Type): SpiType = schemaFor(rootType, protobufPresence = false)
+
+  private def schemaFor(rootType: Type, protobufPresence: Boolean): SpiType = {
     // Note: not tail recursive but trees should not ever be deep enough that it is a problem
     def loop(currentType: Type, seenClasses: Set[Class[_]]): SpiType =
       typeNameMap.get(currentType.getTypeName) match {
@@ -95,7 +104,7 @@ private[view] object ViewSchema {
                     case p: ParameterizedType if classOf[java.util.Collection[_]].isAssignableFrom(clazz) =>
                       new SpiList(loop(p.getActualTypeArguments.head, seenClasses).asInstanceOf[SpiNestableType])
                     case _: Class[_] if classOf[GeneratedMessageV3].isAssignableFrom(clazz) =>
-                      protobufSchema(clazz.asInstanceOf[Class[_ <: GeneratedMessageV3]])
+                      protobufSchema(clazz.asInstanceOf[Class[_ <: GeneratedMessageV3]], protobufPresence)
                     case _: Class[_] =>
                       val seenIncludingThis = seenClasses + clazz
                       new SpiClass(
@@ -114,13 +123,13 @@ private[view] object ViewSchema {
 
   private val ProtobufTimestampFullName = "google.protobuf.Timestamp"
 
-  private def protobufSchema(clazz: Class[_ <: GeneratedMessageV3]): SpiType = {
+  private def protobufSchema(clazz: Class[_ <: GeneratedMessageV3], protobufPresence: Boolean): SpiType = {
     val descriptor = Reflect.protoDescriptorFor(clazz)
     if (descriptor.getFullName == ProtobufTimestampFullName) SpiTimestamp
-    else protobufSchemaFromDescriptor(descriptor)
+    else protobufSchemaFromDescriptor(descriptor, protobufPresence)
   }
 
-  private def protobufFieldToSpiType(field: Descriptors.FieldDescriptor): SpiNestableType = {
+  private def protobufFieldToSpiType(field: Descriptors.FieldDescriptor, protobufPresence: Boolean): SpiNestableType = {
     import Descriptors.FieldDescriptor.JavaType
     field.getJavaType match {
       case JavaType.STRING      => SpiString
@@ -134,17 +143,17 @@ private[view] object ViewSchema {
       case JavaType.MESSAGE =>
         val msgType = field.getMessageType
         if (msgType.getFullName == ProtobufTimestampFullName) SpiTimestamp
-        else protobufSchemaFromDescriptor(msgType)
+        else protobufSchemaFromDescriptor(msgType, protobufPresence)
     }
   }
 
-  private def protobufSchemaFromDescriptor(descriptor: Descriptors.Descriptor): SpiClass = {
+  private def protobufSchemaFromDescriptor(descriptor: Descriptors.Descriptor, protobufPresence: Boolean): SpiClass = {
     val fields = descriptor.getFields.asScala.map { field =>
-      val baseType = protobufFieldToSpiType(field)
+      val baseType = protobufFieldToSpiType(field, protobufPresence)
       // fields with explicit presence (message, oneof, optional) are left out of the JSON when unset
       val spiType =
         if (field.isRepeated) new SpiList(baseType)
-        else if (field.hasPresence) new SpiOptional(baseType)
+        else if (protobufPresence && field.hasPresence) new SpiOptional(baseType)
         else baseType
       new SpiField(field.getName, spiType)
     }.toSeq

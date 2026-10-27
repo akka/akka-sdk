@@ -10,8 +10,10 @@ import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
 import akka.javasdk.view.View;
 import akkajavasdk.components.keyvalueentities.protobuf.ProtobufCustomerKvEntity;
+import akkajavasdk.protocol.SerializationTestProtos.CustomerContactResult;
 import akkajavasdk.protocol.SerializationTestProtos.CustomerState;
 import akkajavasdk.protocol.SerializationTestProtos.CustomerStateList;
+import akkajavasdk.protocol.SerializationTestProtos.CustomerStateResult;
 import akkajavasdk.protocol.SerializationTestProtos.CustomersByCreationTimeQuery;
 import akkajavasdk.protocol.SerializationTestProtos.SimpleMessage;
 
@@ -62,6 +64,16 @@ public class ProtobufCustomerStateView extends View {
 
   @Query("SELECT * as customers FROM customers WHERE preferred_email = :text")
   public QueryEffect<CustomerStateList> getCustomersByPreferredEmail(SimpleMessage params) {
+    return queryResult();
+  }
+
+  @Query("SELECT * AS customer FROM customers WHERE name = :text")
+  public QueryEffect<CustomerStateResult> getCustomerAsNestedMessage(SimpleMessage params) {
+    return queryResult();
+  }
+
+  @Query("SELECT (name, email) AS contact FROM customers WHERE name = :text")
+  public QueryEffect<CustomerContactResult> getCustomerContact(SimpleMessage params) {
     return queryResult();
   }
 

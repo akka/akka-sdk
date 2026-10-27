@@ -156,6 +156,22 @@ message CustomerStateList {
   repeated CustomerState customers = 1;
 }
 
+// Singular nested message used as the return type of a view query, constructed from SELECT * AS customer
+message CustomerStateResult {
+  CustomerState customer = 1;
+}
+
+// Contact fields projected by a view query
+message CustomerContact {
+  string name = 1;
+  string email = 2;
+}
+
+// Singular nested message used as the return type of a view query, constructed from SELECT (name, email) AS contact
+message CustomerContactResult {
+  CustomerContact contact = 1;
+}
+
 // ======================================
 // Workflow state and step input messages
 // ======================================

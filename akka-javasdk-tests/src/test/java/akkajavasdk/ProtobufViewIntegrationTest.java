@@ -244,6 +244,36 @@ public class ProtobufViewIntegrationTest extends TestKitSupport {
   }
 
   @Test
+  public void shouldConstructNestedProtobufMessageInQueryResult() {
+    var entityId = "view-proto-construct-1";
+    var message = SimpleMessage.newBuilder().setText("Construct Alice").build();
+    componentClient
+        .forKeyValueEntity(entityId)
+        .method(ProtobufCustomerKvEntity::createFromProtobuf)
+        .invoke(message);
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(20, TimeUnit.of(SECONDS))
+        .untilAsserted(
+            () -> {
+              var view = componentClient.forView();
+
+              // SELECT * AS customer
+              var customer =
+                  view.method(ProtobufCustomerStateView::getCustomerAsNestedMessage)
+                      .invoke(message);
+              assertThat(customer.getCustomer().getCustomerId()).isEqualTo(entityId);
+
+              // SELECT (name, email) AS contact
+              var contact =
+                  view.method(ProtobufCustomerStateView::getCustomerContact).invoke(message);
+              assertThat(contact.getContact().getName()).isEqualTo("Construct Alice");
+              assertThat(contact.getContact().getEmail()).isEqualTo("from-protobuf@test.com");
+            });
+  }
+
+  @Test
   public void shouldQueryViewWithTimestampParameter() {
     var beforeAll = Timestamps.fromMillis(System.currentTimeMillis() - 1000);
 
