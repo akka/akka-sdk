@@ -111,6 +111,48 @@ class ViewSchemaSpec extends AnyWordSpec with Matchers {
         .get
         .fieldType shouldBe new SpiClassRef(classOf[ViewTestModels.TwoStepRecursive].getName)
     }
+
+    "handle recursive protobuf messages" in {
+      val result = ViewSchema(classOf[protoconsumer.EventsForConsumer.CircularParent])
+      result shouldBe a[SpiClass]
+      result
+        .asInstanceOf[SpiClass]
+        .getField("child")
+        .get
+        .fieldType
+        .asInstanceOf[SpiOptional]
+        .valueType
+        .asInstanceOf[SpiClass]
+        .getField("parent")
+        .get
+        .fieldType shouldBe new SpiOptional(new SpiClassRef("protoconsumer.CircularParent"))
+    }
+
+    "expand sibling fields of the same non-recursive protobuf message type" in {
+      val result = ViewSchema(classOf[protoconsumer.EventsForConsumer.SiblingParent]).asInstanceOf[SpiClass]
+      val expectedChild =
+        new SpiOptional(new SpiClass("protoconsumer.SiblingChild", Seq(new SpiField("name", SpiString))))
+      result.getField("first").get.fieldType shouldBe expectedChild
+      result.getField("second").get.fieldType shouldBe expectedChild
+    }
+
+    "handle indirectly recursive protobuf messages such as google.protobuf.Struct" in {
+      val result = ViewSchema(classOf[com.google.protobuf.Struct])
+      result shouldBe a[SpiClass]
+
+      val fieldsType = result.asInstanceOf[SpiClass].getField("fields").get.fieldType
+      fieldsType shouldBe a[SpiList]
+      val fieldsEntry = fieldsType.asInstanceOf[SpiList].valueType.asInstanceOf[SpiClass]
+      fieldsEntry.name shouldBe "google.protobuf.Struct.FieldsEntry"
+
+      val value = fieldsEntry.getField("value").get.fieldType.asInstanceOf[SpiOptional].valueType.asInstanceOf[SpiClass]
+      value.name shouldBe "google.protobuf.Value"
+      value.getField("struct_value").get.fieldType shouldBe new SpiOptional(new SpiClassRef("google.protobuf.Struct"))
+
+      val listValue =
+        value.getField("list_value").get.fieldType.asInstanceOf[SpiOptional].valueType.asInstanceOf[SpiClass]
+      listValue.getField("values").get.fieldType shouldBe new SpiList(new SpiClassRef("google.protobuf.Value"))
+    }
   }
 
 }
