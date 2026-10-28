@@ -8,7 +8,6 @@ import static akkajavasdk.components.decision.TriageEndpoint.ROUTE;
 import static akkajavasdk.components.decision.TriageEndpoint.SEVERITY;
 import static akkajavasdk.components.decision.TriageEndpoint.URGENT;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import akka.javasdk.testkit.TestDecisionModelProvider;
 import akka.javasdk.testkit.TestKit;
@@ -60,13 +59,14 @@ public class DecisionModelClientIntegrationTest extends TestKitSupport {
   public void failTheCallWhenTheModelGivesNoAnswer() {
     testDecisionModel.whenState(new Ticket("other", "other")).yesNo(URGENT, 0.1);
 
-    assertThatThrownBy(
-            () ->
-                httpClient
-                    .POST("/triage")
-                    .withRequestBody(new Ticket("Refund", "Charged twice"))
-                    .responseBodyAs(TriageResult.class)
-                    .invoke())
-        .isInstanceOf(RuntimeException.class);
+    var failureClass =
+        httpClient
+            .POST("/triage/failure-class")
+            .withRequestBody(new Ticket("Refund", "Charged twice"))
+            .responseBodyAs(String.class)
+            .invoke()
+            .body();
+
+    assertThat(failureClass).isEqualTo("MissingDecisionResponseException");
   }
 }

@@ -7,7 +7,6 @@ package akka.javasdk.decision;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 /**
  * Builder stages for choice and yes or no questions. Start with {@link Question#choice(String)} or
@@ -28,7 +27,7 @@ public final class ChoiceBuilder {
     /**
      * Add the first option.
      *
-     * @param key the key returned in {@link ChoiceAnswer#selected()} when the model picks this
+     * @param key the key returned in {@link Answer.Choice#selected()} when the model picks this
      *     option
      * @param description what the option covers
      */
@@ -50,7 +49,7 @@ public final class ChoiceBuilder {
     /**
      * Add the second option.
      *
-     * @param key the key returned in {@link ChoiceAnswer#selected()} when the model picks this
+     * @param key the key returned in {@link Answer.Choice#selected()} when the model picks this
      *     option
      * @param description what the option covers
      */
@@ -72,7 +71,7 @@ public final class ChoiceBuilder {
     /**
      * Add another option.
      *
-     * @param key the key returned in {@link ChoiceAnswer#selected()} when the model picks this
+     * @param key the key returned in {@link Answer.Choice#selected()} when the model picks this
      *     option
      * @param description what the option covers
      */
@@ -83,16 +82,8 @@ public final class ChoiceBuilder {
     }
 
     /**
-     * Build the question with a random key.
-     *
-     * @throws IllegalArgumentException when two options have the same key
-     */
-    public Question.Choice build() {
-      return build(UUID.randomUUID().toString());
-    }
-
-    /**
-     * Build the question with the given key.
+     * Build the question with the given key. The key identifies the question and its answer, so it
+     * must be the same everywhere the question is built, also across restarts and services.
      *
      * @throws IllegalArgumentException when two options have the same key
      */
@@ -123,12 +114,10 @@ public final class ChoiceBuilder {
       return new YesNo(instructions, whenYes, Optional.of(description));
     }
 
-    /** Build the question with a random key. */
-    public Question.YesNo build() {
-      return build(UUID.randomUUID().toString());
-    }
-
-    /** Build the question with the given key. */
+    /**
+     * Build the question with the given key. The key identifies the question and its answer, so it
+     * must be the same everywhere the question is built, also across restarts and services.
+     */
     public Question.YesNo build(String key) {
       return new Question.YesNo(key, instructions, whenYes, whenNo);
     }

@@ -7,33 +7,32 @@ package akka.javasdk.testkit;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import akka.javasdk.decision.ChoiceAnswer;
+import akka.javasdk.decision.Answer;
 import akka.javasdk.decision.DecisionModelProvider;
 import akka.javasdk.decision.Question;
-import akka.javasdk.decision.ScoreAnswer;
-import akka.javasdk.decision.YesNoAnswer;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 public class TestDecisionModelProviderTest {
 
-  private static final Question<ChoiceAnswer> ROUTE =
+  private static final Question<Answer.Choice> ROUTE =
       Question.choice("Which team?")
           .option("billing", "Payments")
           .option("technical", "Bugs")
           .option("sales", "New business")
           .build("route");
 
-  private static final Question<ScoreAnswer> SEVERITY =
+  private static final Question<Answer.Score> SEVERITY =
       Question.score("How severe?").levels("low", "medium", "high").build("severity");
 
-  private static final Question<YesNoAnswer> URGENT = Question.yesNo("Urgent?").build("urgent");
+  private static final Question<Answer.YesNo> URGENT = Question.yesNo("Urgent?").build("urgent");
 
   private final TestDecisionModelProvider provider = new TestDecisionModelProvider();
 
-  private static DecisionModelProvider.Request request(Object state, Question<?>... questions) {
-    return new DecisionModelProvider.Request(state, List.of(questions));
+  private static DecisionModelProvider.DecisionRequest request(
+      Object state, Question<?>... questions) {
+    return new DecisionModelProvider.DecisionRequest(state, List.of(questions));
   }
 
   @Test
@@ -55,6 +54,7 @@ public class TestDecisionModelProviderTest {
     var severity = decision.answer(SEVERITY);
     assertThat(severity.value()).isEqualTo(1.25);
     assertThat(severity.probabilities()).containsExactly(0.0, 0.75, 0.25);
+    assertThat(severity.confidence()).isEqualTo(0.75);
     assertThat(decision.answer(URGENT).probability()).isEqualTo(0.9);
   }
 
@@ -86,7 +86,8 @@ public class TestDecisionModelProviderTest {
 
     assertThatThrownBy(() -> provider.decide(request("other", URGENT)))
         .isInstanceOf(TestDecisionModelProvider.MissingDecisionResponseException.class)
-        .hasMessageContaining("[urgent]");
+        .hasMessageContaining("[urgent]")
+        .hasMessageContaining("whenState(state) or always()");
   }
 
   @Test

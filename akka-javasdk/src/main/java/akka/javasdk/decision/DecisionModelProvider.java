@@ -32,6 +32,14 @@ public sealed interface DecisionModelProvider
    * The provider defined at a configuration path. A name without dots resolves under {@code
    * akka.javasdk.decision}, so {@code fromConfig("system-one")} reads {@code
    * akka.javasdk.decision.system-one}.
+   *
+   * <p>The configuration section must define every key of a provider section. Inherit the defaults
+   * instead of repeating them:
+   *
+   * <pre>{@code
+   * escalation-model = ${akka.javasdk.decision.system-one}
+   * escalation-model.model-name = "jev-1.14.0"
+   * }</pre>
    */
   static FromConfig fromConfig(String configPath) {
     return new FromConfig(configPath);
@@ -42,10 +50,27 @@ public sealed interface DecisionModelProvider
    *
    * @param configPath the configuration path, empty for {@code
    *     akka.javasdk.decision.model-provider}
+   * @param additionalModelRequestHeaders extra HTTP headers, added to the headers of the provider
+   *     that {@code configPath} resolves to
    */
-  record FromConfig(String configPath) implements DecisionModelProvider {
+  record FromConfig(String configPath, List<HttpHeader> additionalModelRequestHeaders)
+      implements DecisionModelProvider {
+
     public FromConfig {
       Objects.requireNonNull(configPath, "configPath");
+      additionalModelRequestHeaders =
+          List.copyOf(
+              Objects.requireNonNull(
+                  additionalModelRequestHeaders, "additionalModelRequestHeaders"));
+    }
+
+    public FromConfig(String configPath) {
+      this(configPath, List.of());
+    }
+
+    public FromConfig withAdditionalModelRequestHeaders(
+        List<HttpHeader> additionalModelRequestHeaders) {
+      return new FromConfig(configPath, additionalModelRequestHeaders);
     }
   }
 
@@ -68,13 +93,16 @@ public sealed interface DecisionModelProvider
    * A model that implements the SystemOne API. The request goes to {@code /v1/systemone} under the
    * base URL.
    *
-   * @param apiKey the API key, sent as a bearer token
-   * @param modelName the model version. Pin a version once you have tuned your thresholds, because
-   *     an alias such as {@code jev-latest} can move to a new version.
+   * @param apiKey the API key, sent as a bearer token. A call without an API key fails.
+   * @param modelName the model name, for example {@code jev-latest}. Pin a model version once you
+   *     have tuned your thresholds, because an alias such as {@code jev-latest} can move to a new
+   *     version.
    * @param baseUrl the base URL of the API
    * @param connectionTimeout fail the request when connecting takes longer than this
-   * @param responseTimeout fail the request when the answer takes longer than this
-   * @param maxRetries retry this many times on rate limit (429) and overload (529) responses
+   * @param responseTimeout fail the request when the answer takes longer than this. The timeout
+   *     applies to each attempt.
+   * @param maxRetries if the request fails with a rate limit, a server error, a timeout or a
+   *     connection failure, retry this many times
    * @param additionalModelRequestHeaders HTTP headers added to each request
    */
   record SystemOne(
@@ -200,10 +228,16 @@ public sealed interface DecisionModelProvider
   non-sealed interface Custom extends DecisionModelProvider {
 
     /**
-     * Answer the request. The returned decision must have an answer of the matching type for every
-     * question, otherwise the client fails the request.
+     * Answer the request. The returned decision must answer every question with an answer that
+     * matches the type, options and levels of the question. The client checks the answers and fails
+     * the call with {@link akka.javasdk.agent.ModelException} when one is missing or does not
+     * match. Answers for questions that the request did not ask are dropped.
+     *
+     * <p>The client calls this method on the SDK executor and waits for the result, so it may
+     * block. The client applies no timeout, retries or tracing to the call. An exception thrown
+     * here fails the request with that exception, unchanged.
      */
-    Decision decide(Request request);
+    Decision decide(DecisionRequest request);
   }
 
   /**
@@ -212,8 +246,8 @@ public sealed interface DecisionModelProvider
    * @param state the state as passed to {@link DecisionModelClient#state(Object)}
    * @param questions the questions in request order
    */
-  record Request(Object state, List<Question<?>> questions) {
-    public Request {
+  record DecisionRequest(Object state, List<Question<?>> questions) {
+    public DecisionRequest {
       Objects.requireNonNull(state, "state");
       questions = List.copyOf(Objects.requireNonNull(questions, "questions"));
     }

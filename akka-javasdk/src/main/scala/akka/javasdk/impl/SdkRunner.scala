@@ -66,6 +66,7 @@ import akka.javasdk.annotations.http.HttpEndpoint
 import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.consumer.Consumer
+import akka.javasdk.decision.DecisionModelClient
 import akka.javasdk.evaluation.DurableEvaluator
 import akka.javasdk.evaluation.Evaluator
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
@@ -98,6 +99,8 @@ import akka.javasdk.impl.backoffice.BackofficeAccessTokenCache
 import akka.javasdk.impl.client.ComponentClientImpl
 import akka.javasdk.impl.consumer.ConsumerImpl
 import akka.javasdk.impl.consumer.MessageContextImpl
+import akka.javasdk.impl.decision.DecisionModelClientImpl
+import akka.javasdk.impl.decision.OverrideDecisionModelProvider
 import akka.javasdk.impl.evaluation.DurableEvaluatorImpl
 import akka.javasdk.impl.evaluation.EvaluatorImpl
 import akka.javasdk.impl.evaluation.EvaluatorSettings
@@ -106,8 +109,6 @@ import akka.javasdk.impl.grpc.GrpcClientProviderImpl
 import akka.javasdk.impl.http.HttpClientProviderImpl
 import akka.javasdk.impl.http.HttpRequestContextImpl
 import akka.javasdk.impl.http.JwtClaimsImpl
-import akka.javasdk.impl.decision.DecisionModelClientImpl
-import akka.javasdk.impl.decision.OverrideDecisionModelProvider
 import akka.javasdk.impl.keyvalueentity.KeyValueEntityImpl
 import akka.javasdk.impl.ledger.LedgerClientImpl
 import akka.javasdk.impl.objectstorage.ObjectStorageProviderImpl
@@ -121,7 +122,6 @@ import akka.javasdk.impl.timer.TimerSchedulerImpl
 import akka.javasdk.impl.view.ViewDescriptorFactory
 import akka.javasdk.impl.workflow.WorkflowContextImpl
 import akka.javasdk.impl.workflow.WorkflowImpl
-import akka.javasdk.decision.DecisionModelClient
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.keyvalueentity.KeyValueEntityContext
 import akka.javasdk.ledger.LedgerClient
@@ -1826,7 +1826,7 @@ private final class Sdk(
 
   private lazy val decisionModelClient: DecisionModelClientImpl =
     new DecisionModelClientImpl(
-      runtimeComponentClients.judgmentClient,
+      runtimeComponentClients.decisionModelClient,
       serializer.json,
       applicationConfig,
       overrideDecisionModelProvider,

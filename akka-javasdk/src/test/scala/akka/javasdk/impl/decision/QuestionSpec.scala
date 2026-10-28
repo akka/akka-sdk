@@ -9,11 +9,9 @@ import java.util.Optional
 import scala.jdk.CollectionConverters._
 
 import akka.javasdk.decision.Answer
-import akka.javasdk.decision.ChoiceAnswer
 import akka.javasdk.decision.Decision
 import akka.javasdk.decision.Question
-import akka.javasdk.decision.ScoreAnswer
-import akka.javasdk.decision.YesNoAnswer
+import akka.javasdk.impl.serialization.JsonSerializer
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -48,20 +46,13 @@ class QuestionSpec extends AnyWordSpec with Matchers {
     }
 
     "accept more than two options" in {
-      val q = Question.choice("Pick").option("a", "A").option("b", "B").option("c", "C").build()
+      val q = Question.choice("Pick").option("a", "A").option("b", "B").option("c", "C").build("pick")
       q.options.asScala.map(_.key) shouldBe Seq("a", "b", "c")
-    }
-
-    "generate a key when none is given" in {
-      val q1 = Question.choice("Pick").option("a", "A").option("b", "B").build()
-      val q2 = Question.choice("Pick").option("a", "A").option("b", "B").build()
-      q1.key should not be empty
-      q1.key should not be q2.key
     }
 
     "reject duplicate option keys" in {
       val e = intercept[IllegalArgumentException] {
-        Question.choice("Pick").option("a", "A").option("a", "Another A").build()
+        Question.choice("Pick").option("a", "A").option("a", "Another A").build("pick")
       }
       e.getMessage should include("Duplicate option key [a]")
     }
@@ -87,6 +78,12 @@ class QuestionSpec extends AnyWordSpec with Matchers {
       // the original is unchanged
       route.options.size shouldBe 2
     }
+
+    "reject a template of another question type" in {
+      val raw: Question[Answer.Choice] = severity.asInstanceOf[Question[Answer.Choice]]
+      val e = intercept[IllegalArgumentException](Question.choice(raw))
+      e.getMessage should include("not a choice question")
+    }
   }
 
   "A score question" should {
@@ -95,11 +92,11 @@ class QuestionSpec extends AnyWordSpec with Matchers {
     }
 
     "accept two levels" in {
-      Question.score("Rate").levels("low", "high").build().levels.size shouldBe 2
+      Question.score("Rate").levels("low", "high").build("rate").levels.size shouldBe 2
     }
 
     "reject blank levels" in {
-      intercept[IllegalArgumentException](Question.score("Rate").levels("low", " ").build())
+      intercept[IllegalArgumentException](Question.score("Rate").levels("low", " ").build("rate"))
     }
 
     "start a new builder from an existing question" in {
@@ -116,7 +113,7 @@ class QuestionSpec extends AnyWordSpec with Matchers {
     }
 
     "not need criteria" in {
-      val q = Question.yesNo("Is it spam?").build()
+      val q = Question.yesNo("Is it spam?").build("spam")
       q.whenYes shouldBe Optional.empty()
       q.whenNo shouldBe Optional.empty()
     }
@@ -130,18 +127,18 @@ class QuestionSpec extends AnyWordSpec with Matchers {
 
   "A decision" should {
     val choice =
-      new ChoiceAnswer("billing", 0.9, Map[String, java.lang.Double]("billing" -> 0.95, "technical" -> 0.05).asJava)
-    val score = new ScoreAnswer(1.4, 0.7, List[java.lang.Double](0.1, 0.4, 0.5).asJava)
-    val yesNo = new YesNoAnswer(0.8)
+      new Answer.Choice("billing", 0.9, Map[String, java.lang.Double]("billing" -> 0.95, "technical" -> 0.05).asJava)
+    val score = new Answer.Score(1.4, 0.7, List[java.lang.Double](0.1, 0.4, 0.5).asJava)
+    val yesNo = new Answer.YesNo(0.8)
     val decision =
       new Decision("jev-1", Map[String, Answer]("route" -> choice, "severity" -> score, "urgent" -> yesNo).asJava)
 
     "return the typed answer for each question" in {
-      val routeAnswer: ChoiceAnswer = decision.answer(route)
+      val routeAnswer: Answer.Choice = decision.answer(route)
       routeAnswer.selected shouldBe "billing"
-      val severityAnswer: ScoreAnswer = decision.answer(severity)
+      val severityAnswer: Answer.Score = decision.answer(severity)
       severityAnswer.value shouldBe 1.4
-      val urgentAnswer: YesNoAnswer = decision.answer(urgent)
+      val urgentAnswer: Answer.YesNo = decision.answer(urgent)
       urgentAnswer.probability shouldBe 0.8
     }
 
@@ -149,12 +146,45 @@ class QuestionSpec extends AnyWordSpec with Matchers {
       val other = Question.yesNo("Other?").build("other")
       val e = intercept[IllegalArgumentException](decision.answer(other))
       e.getMessage should include("No answer for question [other]")
+      e.getMessage should include("route")
     }
 
     "fail when the answer has another type than the question" in {
       val sameKey = Question.yesNo("Route?").build("route")
       val e = intercept[IllegalArgumentException](decision.answer(sameKey))
-      e.getMessage should include("[ChoiceAnswer]")
+      e.getMessage should include("[Choice]")
+    }
+
+    "fail when the answer belongs to a question with other options" in {
+      val otherOptions =
+        Question.choice("Which region?").option("east", "East").option("west", "West").build("route")
+      val e = intercept[IllegalArgumentException](decision.answer(otherOptions))
+      e.getMessage should include("not an option of the question")
+
+      val oneOtherOption =
+        Question.choice("Which team?").option("billing", "Payments").option("sales", "New business").build("route")
+      val e2 = intercept[IllegalArgumentException](decision.answer(oneOtherOption))
+      e2.getMessage should include("not all options of the question")
+    }
+
+    "fail when the answer belongs to a question with other levels" in {
+      val otherLevels = Question.score("Rate").levels("low", "high").build("severity")
+      val e = intercept[IllegalArgumentException](decision.answer(otherLevels))
+      e.getMessage should include("levels")
+    }
+
+    "serialize and deserialize as JSON" in {
+      val serializer = new JsonSerializer
+      val json = serializer.toJsonString(decision)
+      json should include(""""type":"choice"""")
+      json should include(""""type":"score"""")
+      json should include(""""type":"yes-no"""")
+
+      val restored = serializer.fromJsonString(json, classOf[Decision])
+      restored shouldBe decision
+      restored.answer(route).selected shouldBe "billing"
+      restored.answer(severity).value shouldBe 1.4
+      restored.answer(urgent).probability shouldBe 0.8
     }
   }
 }

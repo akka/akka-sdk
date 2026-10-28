@@ -184,6 +184,8 @@ object GuardrailProviderSpec {
   private def agentResponseContext(response: String): SpiGuardrail.AgentResponseContext =
     new SpiGuardrail.AgentResponseContext(
       response = response,
+      thinking = None,
+      attributes = Map.empty,
       agentId = "model-agent",
       sessionId = "session-1",
       modelName = "test-model",

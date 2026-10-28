@@ -49,7 +49,8 @@ import java.lang.annotation.Target;
  * <ul>
  *   <li>{@link akka.javasdk.client.ComponentClient} - for calling other components
  *   <li>{@link akka.javasdk.http.HttpClientProvider} - for HTTP service calls
- *   <li>{@link akka.javasdk.decision.DecisionModelClient}
+ *   <li>{@link akka.javasdk.decision.DecisionModelClient} - for asking a decision model about a
+ *       state
  *   <li>{@link akka.javasdk.http.RequestContext} - for request context access
  *   <li>{@link akka.javasdk.timer.TimerScheduler}
  *   <li>{@link akka.stream.Materializer}

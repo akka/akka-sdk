@@ -5,12 +5,9 @@
 package akka.javasdk.testkit;
 
 import akka.javasdk.decision.Answer;
-import akka.javasdk.decision.ChoiceAnswer;
 import akka.javasdk.decision.Decision;
 import akka.javasdk.decision.DecisionModelProvider;
 import akka.javasdk.decision.Question;
-import akka.javasdk.decision.ScoreAnswer;
-import akka.javasdk.decision.YesNoAnswer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -53,15 +50,18 @@ public final class TestDecisionModelProvider implements DecisionModelProvider.Cu
   private final List<Rule> rules = new CopyOnWriteArrayList<>();
 
   @Override
-  public Decision decide(Request request) {
+  public Decision decide(DecisionRequest request) {
     for (var rule : rules) {
       if (rule.predicate.test(request)) return rule.answer(request);
     }
     throw new MissingDecisionResponseException(
-        "No decision configured for a request of type ["
+        "No decision rule matches the request. The state is ["
+            + request.state()
+            + "] of type ["
             + request.state().getClass().getName()
-            + "] with questions "
-            + request.questions().stream().map(Question::key).toList());
+            + "], the questions are "
+            + request.questions().stream().map(Question::key).toList()
+            + ". Add a rule with whenState(state) or always().");
   }
 
   /** A rule for requests about a state that equals the given state. */
@@ -76,7 +76,7 @@ public final class TestDecisionModelProvider implements DecisionModelProvider.Cu
   }
 
   /** A rule for requests that match the predicate. */
-  public Rule whenRequest(Predicate<Request> predicate) {
+  public Rule whenRequest(Predicate<DecisionRequest> predicate) {
     var rule = new Rule(predicate);
     rules.addFirst(rule);
     return rule;
@@ -92,21 +92,21 @@ public final class TestDecisionModelProvider implements DecisionModelProvider.Cu
    * questions that the request does not ask are left out of the decision.
    */
   public static final class Rule {
-    private final Predicate<Request> predicate;
+    private final Predicate<DecisionRequest> predicate;
     private final Map<String, Answer> answers = new ConcurrentHashMap<>();
     private volatile RuntimeException failure;
 
-    private Rule(Predicate<Request> predicate) {
+    private Rule(Predicate<DecisionRequest> predicate) {
       this.predicate = predicate;
     }
 
     /**
      * Answer the question with the given selected option. The selected option gets probability 1
-     * and the other options probability 0.
+     * and the other options probability 0, with confidence 1.
      *
      * @throws IllegalArgumentException when the question has no option with that key
      */
-    public Rule choice(Question<ChoiceAnswer> question, String selected) {
+    public Rule choice(Question<Answer.Choice> question, String selected) {
       var choice = (Question.Choice) question;
       var probabilities = new LinkedHashMap<String, Double>();
       choice.options().forEach(option -> probabilities.put(option.key(), 0.0));
@@ -114,16 +114,17 @@ public final class TestDecisionModelProvider implements DecisionModelProvider.Cu
         throw new IllegalArgumentException(
             "Question [" + question.key() + "] has no option [" + selected + "]");
       probabilities.put(selected, 1.0);
-      return answer(question, new ChoiceAnswer(selected, 1.0, probabilities));
+      return answer(question, new Answer.Choice(selected, 1.0, probabilities));
     }
 
     /**
      * Answer the question with the given position along the levels, counted from 0. A value between
-     * two levels splits the probability between them.
+     * two levels splits the probability between them, and the confidence is the highest level
+     * probability.
      *
      * @throws IllegalArgumentException when the value is outside the levels of the question
      */
-    public Rule score(Question<ScoreAnswer> question, double value) {
+    public Rule score(Question<Answer.Score> question, double value) {
       int levels = ((Question.Score) question).levels().size();
       if (value < 0 || value > levels - 1)
         throw new IllegalArgumentException(
@@ -138,7 +139,8 @@ public final class TestDecisionModelProvider implements DecisionModelProvider.Cu
       double fraction = value - lower;
       probabilities.set(lower, 1.0 - fraction);
       if (fraction > 0) probabilities.set(lower + 1, fraction);
-      return answer(question, new ScoreAnswer(value, 1.0, probabilities));
+      double confidence = Math.max(1.0 - fraction, fraction);
+      return answer(question, new Answer.Score(value, confidence, probabilities));
     }
 
     /**
@@ -146,10 +148,10 @@ public final class TestDecisionModelProvider implements DecisionModelProvider.Cu
      *
      * @throws IllegalArgumentException when the probability is outside 0 to 1
      */
-    public Rule yesNo(Question<YesNoAnswer> question, double probability) {
+    public Rule yesNo(Question<Answer.YesNo> question, double probability) {
       if (probability < 0 || probability > 1)
         throw new IllegalArgumentException("Probability [" + probability + "] is outside 0 to 1");
-      return answer(question, new YesNoAnswer(probability));
+      return answer(question, new Answer.YesNo(probability));
     }
 
     /** Answer the question with the given answer. */
@@ -159,11 +161,12 @@ public final class TestDecisionModelProvider implements DecisionModelProvider.Cu
     }
 
     /** Fail matching requests with this exception. */
-    public void failWith(RuntimeException error) {
+    public Rule failWith(RuntimeException error) {
       this.failure = Objects.requireNonNull(error, "error");
+      return this;
     }
 
-    private Decision answer(Request request) {
+    private Decision answer(DecisionRequest request) {
       if (failure != null) throw failure;
       var result = new LinkedHashMap<String, Answer>();
       var missing = new ArrayList<String>();
@@ -174,7 +177,9 @@ public final class TestDecisionModelProvider implements DecisionModelProvider.Cu
       }
       if (!missing.isEmpty())
         throw new MissingDecisionResponseException(
-            "The matching rule has no answer for questions " + missing);
+            "The matching rule has no answer for questions "
+                + missing
+                + ". Add the answers to the rule, for example with choice, score or yesNo.");
       return new Decision(MODEL_NAME, result);
     }
   }

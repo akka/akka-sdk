@@ -7,7 +7,6 @@ package akka.javasdk.decision;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Builder stages for score questions. Start with {@link Question#score(String)}. The stages only
@@ -51,12 +50,10 @@ public final class ScoreBuilder {
       this.levels = levels;
     }
 
-    /** Build the question with a random key. */
-    public Question.Score build() {
-      return build(UUID.randomUUID().toString());
-    }
-
-    /** Build the question with the given key. */
+    /**
+     * Build the question with the given key. The key identifies the question and its answer, so it
+     * must be the same everywhere the question is built, also across restarts and services.
+     */
     public Question.Score build(String key) {
       return new Question.Score(key, instructions, levels);
     }

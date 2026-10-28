@@ -93,7 +93,7 @@ class ComponentClientTest {
           }
 
           @Override
-          public SpiJudgmentClient judgmentClient() {
+          public SpiDecisionModelClient decisionModelClient() {
             return null;
           }
         };
