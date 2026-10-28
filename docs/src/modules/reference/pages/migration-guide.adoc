@@ -35,10 +35,26 @@ The evaluation runner of the TestKit no longer has its own evaluators and judges
 | Removed. `EvalCases.readJsonLines(path, commandType)` reads cases from a JSON Lines file.
 
 | `EvaluationResult` and the `ToxicityEvaluator`, `SummarizationEvaluator` and `HallucinationEvaluator` agents
-| Deprecated. Write an evaluator component.
+| Deprecated. A xref:sdk:evaluators.adoc#judging[judge evaluator] bound to the agent, with the check as its criterion, see xref:#migrating-from-the-built-in-evaluator-agents[below]
 |===
 
 An evaluator can end with `effects().notApplicable(reason)` when the interaction gave it nothing to evaluate, see xref:sdk:evaluators.adoc#outcomes[Outcomes of an evaluation]. The telemetry attribute `akka.evaluation.outcome` has the new value `not_applicable`.
+
+[#migrating-from-the-built-in-evaluator-agents]
+=== Migrating from the built-in evaluator agents
+
+`ToxicityEvaluator`, `SummarizationEvaluator` and `HallucinationEvaluator` are agents that a component of the service calls with the text to check, and they reply with an `EvaluationResult`. Replace the call with a xref:sdk:evaluators.adoc#judging[judge evaluator] bound to the agent whose replies it checks. The runtime triggers the judge evaluator after each interaction of that agent, without a call from the service, and records the verdict in the ledger. The check becomes the criterion of the binding:
+
+[source,conf,indent=0]
+----
+akka.javasdk.evaluation.evaluators.judge {
+  criterion = "The reply contains no toxic, offensive or harmful language."
+  threshold = 0.9
+  agents.activity-agent { trigger = interaction }
+}
+----
+
+For a summarization check, the criterion states that the reply keeps the facts of the source text. For a hallucination check, the criterion states that the reply claims nothing that the request and the tool results do not support. The xref:getting-started:planner-agent/eval.adoc[multi-agent tutorial] shows a judge evaluator with a fixed criterion and a typed verdict.
 
 == SDK 3.7.0
 

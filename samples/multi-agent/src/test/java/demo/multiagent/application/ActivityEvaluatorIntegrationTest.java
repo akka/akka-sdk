@@ -14,7 +14,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
-// tag::all[]
 public class ActivityEvaluatorIntegrationTest extends TestKitSupport {
 
   private final TestModelProvider coordinatorModel = new TestModelProvider();
@@ -31,11 +30,11 @@ public class ActivityEvaluatorIntegrationTest extends TestKitSupport {
       .withModelProvider(ActivityCoordinator.class, coordinatorModel)
       .withModelProvider(ActivityAgent.class, activitiesModel)
       .withModelProvider(WeatherAgent.class, weatherModel)
-      .withModelProvider(EvaluatorAgent.class, judgeModel); // <1>
+      .withModelProvider(EvaluatorAgent.class, judgeModel);
   }
 
   @Test
-  public void shouldJudgeTheAnswerOfACompletedTask() {
+  public void shouldJudgeTheAnswerOfACompletedTaskAgainstThePreferences() {
     CoordinatorModels.scriptStockholm(coordinatorModel, weatherModel, activitiesModel);
     judgeModel
       .whenMessage(msg -> {
@@ -49,7 +48,13 @@ public class ActivityEvaluatorIntegrationTest extends TestKitSupport {
           "explanation": "The suggestion is appropriate for the user."
         }
         """
-      ); // <2>
+      );
+
+    var preference = "I like outdoor activities.";
+    componentClient
+      .forEventSourcedEntity("alice")
+      .method(PreferencesEntity::addPreference)
+      .invoke(new PreferencesEntity.AddPreference(preference));
 
     var instructions =
       "User: alice\n\nI am in Stockholm. What should I do? Beware of the weather";
@@ -69,15 +74,16 @@ public class ActivityEvaluatorIntegrationTest extends TestKitSupport {
     Awaitility.await()
       .atMost(20, TimeUnit.SECONDS)
       .untilAsserted(() -> {
-        var interactions = ledger.getInteractions("activity-coordinator", coordinatorId); // <3>
+        var interactions = ledger.getInteractions("activity-coordinator", coordinatorId);
         var completing = interactions
           .stream()
           .filter(interaction -> !interaction.toolCalls("complete_task").isEmpty())
           .findFirst()
           .orElseThrow();
         var verdict = evaluationOf(completing);
-        assertThat(verdict.evaluation().passed()).isTrue(); // <4>
+        assertThat(verdict.evaluation().passed()).isTrue();
         assertThat(verdict.evaluation().label()).contains("Correct");
+        assertThat(verdict.evaluation().attributes()).containsEntry("taskId", taskId);
 
         var delegating = interactions
           .stream()
@@ -86,10 +92,11 @@ public class ActivityEvaluatorIntegrationTest extends TestKitSupport {
           .orElseThrow();
         assertThat(outcomeOf(delegating)).isInstanceOf(
           EvaluationRecord.Outcome.NotApplicable.class
-        ); // <5>
+        );
       });
 
-    assertThat(judgedRequest.get()).contains(instructions); // <6>
+    assertThat(judgedRequest.get()).contains(instructions);
+    assertThat(judgedRequest.get()).contains(preference);
     assertThat(judgedRequest.get()).contains(CoordinatorModels.ANSWER);
   }
 
@@ -104,4 +111,3 @@ public class ActivityEvaluatorIntegrationTest extends TestKitSupport {
     return (EvaluationRecord.Outcome.Verdict) outcomeOf(interaction);
   }
 }
-// end::all[]

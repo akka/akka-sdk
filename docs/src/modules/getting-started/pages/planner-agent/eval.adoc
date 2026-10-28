@@ -6,7 +6,7 @@ include::ROOT:partial$new-to-akka-start-here.adoc[]
 
 == Overview
 
-When a coordinator task completes, we want to know how well the answer holds up. We will add an xref:sdk:evaluators.adoc[evaluator] that the runtime triggers after each interaction of the coordinator. When the interaction completed the task, the evaluator asks an LLM judge whether the answer addresses the original request, including any user preferences carried in it, and records the verdict in the ledger.
+When a coordinator task completes, the answer should be checked. This part adds an xref:sdk:evaluators.adoc[evaluator] that the runtime triggers after each interaction of the coordinator. When the interaction completed the task, the evaluator asks a judge agent whether the answer addresses the original request and respects the user's preferences, and records the verdict in the ledger.
 
 In this part of the guide you will:
 
@@ -20,7 +20,7 @@ include::ROOT:partial$local-dev-prerequisites.adoc[]
 
 == Judge agent
 
-We will use a pattern called "LLM as judge", which uses an agent (AI model) to evaluate the result produced by other agents. The judge looks at the original request together with the produced answer and returns a typed verdict.
+The judge follows the pattern called "LLM as judge": an agent (AI model) evaluates the result produced by other agents. The judge looks at the original request, the user's preferences and the produced answer, and returns a typed verdict. The judge keeps no session memory, so each evaluation starts from a clean context.
 
 Add a new file `EvaluatorAgent.java` to `src/main/java/com/example/application/`
 
@@ -34,7 +34,7 @@ The judge is a request-based xref:sdk:agents.adoc[Agent], not an `AutonomousAgen
 
 == Evaluator
 
-An xref:sdk:evaluators.adoc[Evaluator] is a component that the runtime triggers for the interactions of the agents it is bound to. The coordinator records one interaction per model call, and the interaction that completes the task carries a `complete_task` tool call with the answer. The evaluator reads the interaction from the ledger, and when it completed the task, asks the judge.
+An xref:sdk:evaluators.adoc[Evaluator] is a component that the runtime triggers for the interactions of the agents it is bound to. The coordinator records one interaction per model call, and the interaction that completes the task carries a `complete_task` tool call. The evaluator reads the interaction from the ledger. When the interaction completed the task, the evaluator fetches the task result and the user's preferences, and asks the judge.
 
 Add a new file `ActivityEvaluator.java` to `src/main/java/com/example/application/`
 
@@ -46,10 +46,10 @@ include::sdk:example$multi-agent/src/main/java/demo/multiagent/application/Activ
 <1> An evaluator is a component with a `@Component` id. The id is how the configuration refers to it.
 <2> The interaction under evaluation, read from the ledger with the injected `LedgerClient`.
 <3> An interaction that did not complete the task, for example one that delegated to a worker, gives the evaluator nothing to judge. The evaluation ends as xref:sdk:evaluators.adoc#outcomes[not applicable].
-<4> The task snapshot, for the instructions that the endpoint built from the request and the user's preferences.
-<5> The answer is the argument of the `complete_task` call.
+<4> The task snapshot, for the instructions and the accepted result. A task that is not completed, for example because a task rule rejected the result, leaves the evaluation xref:sdk:evaluators.adoc#outcomes[inconclusive].
+<5> The user's preferences, read from the `PreferencesEntity` with the user id from the `User: <userId>` header of the instructions.
 <6> The judge runs in a session of its own, named after the evaluation.
-<7> The verdict of the judge becomes the recorded `Evaluation`, with the label the judge gave.
+<7> The label of the judge decides the recorded `Evaluation`. A label the evaluator does not know leaves the evaluation inconclusive.
 
 Bind the evaluator to the coordinator in `src/main/resources/application.conf`:
 
@@ -63,7 +63,7 @@ The runtime runs the evaluator in the background after each interaction of the c
 
 [NOTE]
 ====
-Do not bind the evaluator to the judge agent. The evaluator's call to the judge is an interaction of the judge, which would trigger the evaluator again.
+Do not bind the evaluator to the judge agent, and give the judge no `@AgentRole` that a `*` binding matches. The evaluator's call to the judge is an interaction of the judge, which would trigger the evaluator again, without end.
 ====
 
 == Running the service
@@ -103,7 +103,7 @@ curl -i localhost:9000/preferences/alice \
   }'
 ----
 
-Submit the same kind of request again (with a fresh session id). Because the endpoint includes the user's preferences in the task instructions, the coordinator now has the context it needs to produce a different answer. The evaluations of the coordinator's interactions are in the ledger, see xref:sdk:evaluators.adoc#_the_ledger_client[The ledger client].
+Submit the same request again. The `ActivityAgent` reads the preference, so the coordinator now produces a different answer. The evaluator reads the same preference and asks the judge whether the answer respects it. The evaluator logs each verdict, so the verdict shows up in the service log. The evaluations of the coordinator's interactions are also in the ledger, see xref:sdk:evaluators.adoc#_the_ledger_client[The ledger client].
 
 == Next steps
 
