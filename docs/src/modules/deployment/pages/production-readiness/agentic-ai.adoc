@@ -85,8 +85,8 @@ A bound evaluator runs after each interaction of an agent, in the background. It
 [discrete]
 ==== In production
 
-* [ ] Evaluators bound to the agents that need them in `application.conf`, with verdicts monitored through the `akka.agent.evaluation.result` metric. See xref:sdk:evaluators.adoc[]
-* [ ] Direct call to the judge agent where an agent or workflow must react to a verdict, such as retrying a step, because a bound evaluator cannot change the next step. See xref:sdk:agents/llm_eval.adoc[]
+* [ ] Evaluators bound to the agents that need them in `application.conf`, with verdicts monitored through the `akka.evaluation.result` metric. See xref:sdk:evaluators.adoc[]
+* [ ] Direct call to the judge agent where a workflow must react to a verdict, such as retrying a step, because a bound evaluator cannot change the next step. See xref:sdk:evaluators.adoc#_reacting_to_a_verdict_in_a_workflow[Reacting to a verdict in a workflow]
 =====
 
 == Guardrails and limits

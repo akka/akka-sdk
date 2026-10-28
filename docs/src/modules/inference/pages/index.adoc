@@ -64,7 +64,7 @@ include::partial$aao-inference-notice.adoc[]
 * xref:reference:cli/command-map.adoc[]
 * xref:sdk:model-provider-details.adoc[AI model provider configuration]
 * xref:sdk:integrations/ai-and-models.adoc[AI & models]
-* xref:sdk:agents/llm_eval.adoc[LLM evaluation]
+* xref:sdk:evaluators.adoc[Evaluators]
 
 == Captures and inference costs
 

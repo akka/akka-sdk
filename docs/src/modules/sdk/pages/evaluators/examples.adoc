@@ -1,0 +1,175 @@
+= Evaluator examples
+:page-summary: Example evaluators that ask a model to judge the reply of an agent for toxicity, summary quality, and hallucination.
+:page-when-to-use: When you need a starting point for an evaluator that asks a model for its verdict.
+:page-related: sdk:evaluators.adoc, sdk:agents.adoc, testing:evaluation/judges.adoc
+:page-prerequisites: An Akka project with at least one agent defined.
+:page-persona: developer, governance-compliance
+:page-banner: evaluations
+
+include::ROOT:partial$include.adoc[]
+
+== Overview
+
+Each xref:sdk:evaluators.adoc[evaluator] on this page fetches an agent interaction from the ledger, asks a judge agent to label it, and records the label as a pass or a fail.
+The examples are source code in the documentation samples, not components of the SDK.
+Copy them into your project and adapt the prompts to your agents.
+
+[cols="2,3,2"]
+|===
+| Evaluator | What the judge receives from the interaction | Labels (pass, fail)
+
+| `ToxicityJudgeEvaluator`
+| The reply.
+| `non-toxic`, `toxic`
+
+| `SummarizationJudgeEvaluator`
+| The input message as the document, and the reply as the summary.
+| `good`, `bad`
+
+| `HallucinationJudgeEvaluator`
+| The input message as the query, the tool results as the reference text, and the reply as the answer.
+| `factual`, `hallucinated`
+|===
+
+Each evaluation makes one model call.
+The runtime runs a limited number of evaluations at the same time, so when the agents have more interactions than the judge can assess, the evaluations fall behind.
+In a high-volume deployment, set a `sampling-ratio` on the binding to reduce both the cost and the number of judge calls, see xref:sdk:evaluators.adoc#_binding_evaluators_to_agents[Binding evaluators to agents].
+
+The summarization and hallucination examples send the whole input message or all tool results to the judge.
+A large text can exceed the context window of the judge model, and the judge call can then cost more than the evaluated interaction.
+The runtime also records the prompt in the ledger, as an interaction of the judge.
+When the inputs of your agent can be large, limit the length of the text that the evaluator sends to the judge.
+
+== The judge agent shared by the examples
+
+All examples call the same judge agent:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/evaluator/LabelJudge.java[LabelJudge.java]
+----
+include::example$doc-snippets/src/main/java/com/example/evaluator/LabelJudge.java[tag=all]
+----
+<1> The judge is an ordinary xref:sdk:agents.adoc[Agent]. It has no `@AgentRole`, so a binding under `agent-roles` does not bind it to an evaluator.
+<2> The evaluator passes the system message and the user message, so all examples use one judge agent.
+<3> The model replies with an explanation and a label.
+<4> `toEvaluation` maps the label to a passed or a failed `Evaluation` and records the label on it. For any other label it throws, and the runtime records the evaluation as failed.
+<5> The judge runs without session memory, so one verdict does not influence the next.
+
+The judge uses the default model of the service. To give the judge another model, set it with `.model(...)` in the `judge` method, see xref:sdk:agents.adoc#model[Configuring the model].
+
+== Evaluating replies for toxicity
+
+`ToxicityJudgeEvaluator` asks the judge whether the reply of the agent is toxic:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/evaluator/ToxicityJudgeEvaluator.java[ToxicityJudgeEvaluator.java]
+----
+include::example$doc-snippets/src/main/java/com/example/evaluator/ToxicityJudgeEvaluator.java[tags=all;!prompt]
+----
+<1> The evaluator reads the final reply of the agent. A failed interaction or an empty reply has nothing to evaluate, so the evaluator returns `inconclusive`.
+<2> The judge runs in a session derived from the evaluation id, separate from the session of the evaluated agent.
+<3> `non-toxic` passes and `toxic` fails.
+
+The evaluator sends this prompt to the judge:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/evaluator/ToxicityJudgeEvaluator.java[ToxicityJudgeEvaluator.java]
+----
+include::example$doc-snippets/src/main/java/com/example/evaluator/ToxicityJudgeEvaluator.java[tag=prompt]
+----
+
+== Evaluating summaries against the input document
+
+`SummarizationJudgeEvaluator` asks the judge whether the reply is a good summary of the input message.
+Bind it to an agent that receives the document to summarize as its input message.
+When the input message also contains instructions, the judge receives them as part of the document.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/evaluator/SummarizationJudgeEvaluator.java[SummarizationJudgeEvaluator.java]
+----
+include::example$doc-snippets/src/main/java/com/example/evaluator/SummarizationJudgeEvaluator.java[tags=all;!prompt]
+----
+<1> The text of the input message is the document.
+<2> The final reply of the agent is the summary.
+
+The evaluator sends this prompt to the judge:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/evaluator/SummarizationJudgeEvaluator.java[SummarizationJudgeEvaluator.java]
+----
+include::example$doc-snippets/src/main/java/com/example/evaluator/SummarizationJudgeEvaluator.java[tag=prompt]
+----
+
+== Evaluating answers against the tool results
+
+`HallucinationJudgeEvaluator` asks the judge whether the reply contains information that the tool results do not support.
+Bind it to an agent that answers from the results of its tools, for example an agent that retrieves documents with a xref:sdk:agents/extending.adoc[function tool].
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/evaluator/HallucinationJudgeEvaluator.java[HallucinationJudgeEvaluator.java]
+----
+include::example$doc-snippets/src/main/java/com/example/evaluator/HallucinationJudgeEvaluator.java[tags=all;!prompt]
+----
+<1> A tool call without a recorded result has an empty response, so the evaluator leaves it out.
+<2> Each line of the reference text holds the name of a tool and the result of its call.
+<3> Without a tool result, the judge has nothing to check the reply against, so the evaluator returns `inconclusive`.
+
+When the agent receives the reference text in its input message instead of from a tool, the input message holds both the query and the reference text.
+Send the input message once, and change the prompt so that the judge finds both in it.
+
+The evaluator sends this prompt to the judge:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/evaluator/HallucinationJudgeEvaluator.java[HallucinationJudgeEvaluator.java]
+----
+include::example$doc-snippets/src/main/java/com/example/evaluator/HallucinationJudgeEvaluator.java[tag=prompt]
+----
+
+== Binding the example evaluators to agents
+
+Bind each example to the agents whose interactions it judges:
+
+[source,conf,indent=0]
+.src/main/resources/application.conf
+----
+akka.javasdk.evaluation.evaluators {
+  toxicity-judge-evaluator {
+    agent-roles {
+      customer-facing { trigger = interaction, sampling-ratio = 0.1 } // <1>
+    }
+  }
+  summarization-judge-evaluator {
+    agents {
+      summarizer-agent { trigger = interaction }
+    }
+  }
+  hallucination-judge-evaluator {
+    agents {
+      support-agent { trigger = interaction }
+    }
+  }
+}
+----
+<1> Evaluate about a tenth of the interactions of every agent with the `customer-facing` role.
+
+See xref:sdk:evaluators.adoc#_binding_evaluators_to_agents[Binding evaluators to agents] for all binding settings.
+
+== Testing the example evaluators
+
+Test an example evaluator in the local runtime, as described in xref:sdk:evaluators.adoc#_integration_testing_with_the_runtime[Integration testing with the runtime].
+Bind the evaluator to an agent, and replace the models of both the agent and `LabelJudge` with a `TestModelProvider`:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/evaluator/ToxicityJudgeEvaluatorIntegrationTest.java[ToxicityJudgeEvaluatorIntegrationTest.java]
+----
+include::example$doc-snippets/src/test/java/com/example/evaluator/ToxicityJudgeEvaluatorIntegrationTest.java[tag=test]
+----
+<1> The judge model replies with a fixed explanation and label.
+<2> Check that the outcome is a verdict before reading the `Evaluation`. A failed or inconclusive evaluation has no `Evaluation`.
+<3> The evaluator records the label of the judge on the evaluation.
+
+== See also
+
+* xref:sdk:evaluators.adoc[]
+* xref:testing:evaluation/judges.adoc[] to judge replies in tests
+* xref:sdk:agents/guardrails.adoc[] to block a reply before it reaches the caller

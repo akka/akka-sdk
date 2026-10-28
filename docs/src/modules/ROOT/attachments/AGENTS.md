@@ -55,7 +55,6 @@ Access these documentation files for detailed patterns:
 - `akka-context/sdk/agents/streaming.html.md` - Streaming model responses with agents
 - `akka-context/sdk/agents/orchestrating.html.md` - Orchestrating multiple agents through Workflows
 - `akka-context/sdk/agents/guardrails.html.md` - Constraining and controlling agent behavior with guardrails
-- `akka-context/sdk/agents/llm_eval.html.md` - Evaluating and judging the responses from models
 - `akka-context/sdk/agents/testing.html.md` - Testing request-based agents
 
 **Autonomous Agents (durable model-driven processes with typed tasks and multi-agent coordination):**
@@ -79,6 +78,8 @@ Access these documentation files for detailed patterns:
 - `akka-context/sdk/grpc-endpoints.html.md` - Protocol buffer APIs
 - `akka-context/sdk/mcp-endpoints.html.md` - Exposing tools, resources, and prompts to MCP clients
 - `akka-context/sdk/timed-actions.html.md` - Scheduling and timers
+- `akka-context/sdk/evaluators.html.md` - Evaluators that judge agent interactions, bound to agents in configuration
+- `akka-context/sdk/evaluators/examples.html.md` - Example evaluators that ask a judge agent for a toxicity, summary, or hallucination verdict
 - `akka-context/sdk/setup-and-dependency-injection.html.md` - Service bootstrap and dependency injection
 
 **Cross-cutting concerns:**

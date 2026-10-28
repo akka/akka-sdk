@@ -149,4 +149,4 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 
 * xref:testing:evaluation/eval-cases.adoc#custom-evaluators[Writing a custom evaluator]
 * xref:testing:evaluation/gates-and-reports.adoc#gates[Choosing a gate]
-* xref:sdk:agents/llm_eval.adoc[] describes evaluator agents that run inside a deployed service.
+* xref:sdk:evaluators.adoc[] describes evaluators that assess the interactions of a deployed service.
