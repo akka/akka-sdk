@@ -133,6 +133,10 @@
 :url-ext-affinity-propagation-exemplars: https://scikit-learn.org/stable/modules/clustering.html#affinity-propagation
 :url-ext-hugging-face-tokens: https://huggingface.co/settings/tokens
 
+// -- typesafe jev decision models --
+:url-typesafe-jev: https://docs.typesafe.ai/introduction
+:url-typesafe-jev-api: https://docs.typesafe.ai
+
 // -- envoy ai gateway --
 :url-envoy-ai-gateway: https://aigateway.envoyproxy.io/
 
