@@ -455,7 +455,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                               aiMessage.toolCallRequests(),
                               aiMessage.thinking(),
                               Optional.of(aiMessage.tokenUsage()),
-                              aiMessage.attributes());
+                              keepStringValues(aiMessage.attributes()));
 
                       case ToolCallResponse toolCallResponse ->
                           new Event.ToolResponseMessageAdded(
@@ -482,6 +482,28 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                       default -> throw new IllegalArgumentException("Unsupported message: " + msg);
                     })
         .toList();
+  }
+
+  /** Returns the entries whose value is a {@code String} or a {@code List} of {@code String}. */
+  static Map<String, Object> keepStringValues(Map<String, Object> attributes) {
+    if (attributes == null) {
+      return Map.of();
+    }
+
+    var kept = new HashMap<String, Object>();
+    attributes.forEach(
+        (key, value) -> {
+          if (key != null && isStringOrStringList(value)) {
+            kept.put(key, value instanceof List<?> list ? List.copyOf(list) : value);
+          }
+        });
+
+    return Map.copyOf(kept);
+  }
+
+  private static boolean isStringOrStringList(Object value) {
+    return value instanceof String
+        || (value instanceof List<?> list && list.stream().allMatch(e -> e instanceof String));
   }
 
   public record GetHistoryCmd(Optional<Integer> lastNMessages, List<MemoryFilter> memoryFilters) {
@@ -602,7 +624,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
             Collections.emptyList(),
             cmd.aiMessage.thinking(),
             Optional.of(cmd.aiMessage.tokenUsage()),
-            cmd.aiMessage.attributes()));
+            keepStringValues(cmd.aiMessage.attributes())));
 
     if (commandContext().sequenceNumber() > cmd.sequenceNumber
         && !currentState().messages.isEmpty()) {
@@ -645,7 +667,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                               aiMessage.toolCallRequests(),
                               aiMessage.thinking(),
                               Optional.empty(),
-                              aiMessage.attributes()));
+                              keepStringValues(aiMessage.attributes())));
 
                   case MultimodalUserMessage multimodalUserMessage ->
                       events.add(
