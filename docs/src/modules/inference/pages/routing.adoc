@@ -465,35 +465,7 @@ To withdraw a manifest from use:
 akka optimize use-cases manifests delete 2026-08
 ----
 
-<<_getting_from_traffic_to_a_routing_policy,Getting from traffic to a routing policy>> covers the steps that produce a manifest, and <<_shifting_traffic_gradually,Shifting traffic gradually>> covers moving a use case onto a new backend without replacing the manifest.
-
-=== Shifting traffic gradually
-
-A routing policy states what serves a use case and in what share. To send a copy of the traffic to a second model without using its answers, or to move a fraction of real traffic onto it:
-
-[source, shell]
-----
-akka optimize routing-policies route finetune --usecase orders --shadow 10
-----
-
-[source, shell]
-----
-akka optimize routing-policies route finetune --usecase orders --canary 5
-----
-
-Setting a dial to `0` removes it. To return to the previous published policy:
-
-[source, shell]
-----
-akka optimize routing-policies rollback orders
-----
-
-To refuse any routing change to a use case until the refusal is lifted:
-
-[source, shell]
-----
-akka optimize routing-policies veto orders
-----
+<<_getting_from_traffic_to_a_routing_policy,Getting from traffic to a routing policy>> covers the steps that produce a manifest.
 
 include::partial$aao-inference-notice.adoc[]
 

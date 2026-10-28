@@ -65,10 +65,6 @@ A caller is the identifier that the request declared in the `x-optimize-caller` 
 
 Conversations are ranked by spend rather than divided, so the most expensive conversations of a period can be found. That ranking does not add up to the period total. Two periods can be compared, and a difference has a value only when both periods have one in the same currency.
 
-=== Incidents
-
-The incident feed collects what went wrong in the same traffic: anomalies, requests that were blocked, and failures to scrub data. It is read alongside spend when a figure changes unexpectedly.
-
 == Guarantees
 
 [cols="2,3,2", options="header"]

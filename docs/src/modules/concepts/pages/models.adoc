@@ -24,7 +24,7 @@ The agent decides what context to send and what tools are available. The model c
 
 Agents can use hosted providers or models served in an Akka region. A gateway can route requests by declared attributes or the task expressed by the request, independently of agent code.
 
-Captured traffic identifies repeated tasks and supplies examples for grading and training. A smaller model can be specialized for a narrow use case, compared with a baseline, and introduced through staged traffic. Frontier models can remain useful as fallbacks and as sources of training examples.
+Captured traffic identifies repeated tasks and supplies examples for grading and training. A smaller model can be specialized for a narrow use case, compared with a baseline, and made the destination for that use case. Frontier models can remain useful as fallbacks and as sources of training examples.
 
 The improvement policy states what may change and which quality and cost objectives apply. A lower token price is not enough: compare quality, total tokens, latency, and the capacity needed to serve the task.
 
@@ -51,11 +51,9 @@ Semantic routing handles requests not claimed by attribute rules. It matches the
 
 Rules are preferable when you can state the condition directly. Semantic routing is useful when the task expressed by the request determines the destination. A frozen manifest can become less representative as traffic changes.
 
-=== Introducing a new model
+=== Recording routing decisions
 
-A routing policy can send shadow traffic to a candidate without returning its answers, then send a share of real traffic as a canary, before making it the regular destination. Rollback restores the previous policy version. These decisions are separate from training or registering the candidate.
-
-Routing decisions are recorded against the version of the rules that made them, so a past decision can be examined later.
+The gateway router records each routing decision against the version of the rules that made it, so you can examine a past decision later.
 
 [#model-serving]
 == Model serving
@@ -78,7 +76,7 @@ Three resources connect hardware to callers:
 
 A project route makes an endpoint reachable on a hostname. The client selects a model with a served name in its request. Adapters can give one base model several specialized served names.
 
-Serving and routing are separate. Deploying a model makes it callable; changing a routing policy decides which traffic reaches it. A trainer endpoint is for testing models, whereas a model endpoint serves production requests.
+Serving and routing are separate. Deploying a model makes it callable; applying a ruleset or deploying a manifest decides which traffic reaches it. A trainer endpoint is for testing models, whereas a model endpoint serves production requests.
 
 === Limits and trade-offs
 
@@ -90,7 +88,7 @@ anchor:_served_names_and_endpoints[]
 == Next steps
 
 * xref:sdk:model-provider-details.adoc[] configures model providers.
-* xref:inference:routing.adoc[] configures rules, semantic routing, and staged traffic.
+* xref:inference:routing.adoc[] configures rules and semantic routing.
 * xref:reference:cli/routing.adoc[] and xref:reference:descriptors/routing-ruleset.adoc[] define routing commands and predicates.
 * xref:inference:serving/getting-started.adoc[] deploys a first model.
 * xref:inference:serving/allocating-hardware.adoc[] and xref:inference:serving/deploying-models.adoc[] configure devices, weights, and engines.
