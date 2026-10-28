@@ -130,7 +130,8 @@ class ViewSchemaSpec extends AnyWordSpec with Matchers {
 
     "expand sibling fields of the same non-recursive protobuf message type" in {
       val result = ViewSchema(classOf[protoconsumer.EventsForConsumer.SiblingParent]).asInstanceOf[SpiClass]
-      val expectedChild = new SpiClass("protoconsumer.SiblingChild", Seq(new SpiField("name", SpiString)))
+      val expectedChild =
+        new SpiOptional(new SpiClass("protoconsumer.SiblingChild", Seq(new SpiField("name", SpiString))))
       result.getField("first").get.fieldType shouldBe expectedChild
       result.getField("second").get.fieldType shouldBe expectedChild
     }
