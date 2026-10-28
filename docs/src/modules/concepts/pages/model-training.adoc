@@ -45,7 +45,7 @@ A training project groups the runs and models for a use case. Runs produce versi
 
 The improvement policy defines the quality and token-use objectives for a candidate. Evidence supporting promotion is kept in the ledger. A staged routing policy introduces the model through shadow traffic, then a canary, before directing the use case to it.
 
-Selecting a `champion` artifact, approving a model for production, deploying its weights, and routing traffic are separate operations. The artifact registry stores versions and aliases; the organization's model registry records sanction and conditions of use. A trainer endpoint tests a model; a model endpoint serves production requests.
+Selecting a `champion` artifact, deploying its weights, and routing traffic are separate operations. The artifact registry stores versions and aliases, and records whether each version is active, deprecated, or retired. A trainer endpoint tests a model; a model endpoint serves production requests.
 
 Grading continues after promotion. Drift prompts reassessment and retraining; insufficient quality requires restoring the previous model and routing policy. Evidence for one specialized use case does not establish suitability for another.
 
