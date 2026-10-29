@@ -106,6 +106,11 @@ public class TestEndpoints {
       return "ok";
     }
 
+    @Post("/instant-body-only")
+    public String instantBodyOnly(@Description("some body") java.time.Instant someBody) {
+      return "ok";
+    }
+
     @Post("/array-body-only")
     public String arrayBodyOnly(@Description("some body") List<Double> someBody) {
       return "ok";
