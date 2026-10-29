@@ -35,7 +35,7 @@ class SdkRunnerReportErrorSpec extends ScalaTestWithActorTestKit with LogCapturi
           "",
           Level.WARN,
           Some("correlation-1"),
-          telemetryContext)
+          Some(telemetryContext))
 
       // the predicate runs on the logging thread, so it sees the current span
       var currentSpanId: Option[String] = None
