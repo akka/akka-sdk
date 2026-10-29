@@ -180,9 +180,20 @@ public class TelemetryReader {
             .sorted(byStart())
             .toList();
 
+    var toolCallIds =
+        ofKind(children, TOOL_CALL_SPAN).map(SpanData::getSpanId).collect(Collectors.toSet());
+    var guardrailSpans =
+        spans()
+            .filter(span -> hasAttribute(span, SPAN_KIND, GUARDRAIL_SPAN))
+            .filter(
+                span ->
+                    commandIds.contains(span.getParentSpanId())
+                        || toolCallIds.contains(span.getParentSpanId()))
+            .sorted(byStart());
+
     var toolCalls = ofKind(children, TOOL_CALL_SPAN).map(TelemetryReader::toToolCall).toList();
     var modelCalls = ofKind(children, MODEL_CALL_SPAN).map(TelemetryReader::toModelCall).toList();
-    var guardrails = ofKind(children, GUARDRAIL_SPAN).map(TelemetryReader::toGuardrail).toList();
+    var guardrails = guardrailSpans.map(TelemetryReader::toGuardrail).toList();
     var started = commands.getFirst().getStartEpochNanos();
     var ended = commands.stream().mapToLong(SpanData::getEndEpochNanos).max().orElse(started);
     var finalText = modelCalls.isEmpty() ? "" : finalText(modelCalls.getLast().outputMessages());

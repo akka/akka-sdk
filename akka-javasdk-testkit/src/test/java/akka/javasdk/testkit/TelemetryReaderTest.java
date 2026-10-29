@@ -112,6 +112,52 @@ class TelemetryReaderTest {
   }
 
   @Test
+  void aGuardrailSpanUnderAToolCallIsRead() {
+    var spans = new Spans();
+    try (var tracerProvider =
+        SdkTracerProvider.builder().addSpanProcessor(SimpleSpanProcessor.create(spans)).build()) {
+      var tracer = tracerProvider.get("test");
+
+      var command =
+          tracer
+              .spanBuilder("Agent command")
+              .setAttribute("akka.span.kind", "agent.command")
+              .setAttribute("gen_ai.conversation.id", SESSION)
+              .startSpan();
+
+      var toolCall =
+          tracer
+              .spanBuilder("Tool call: deleteAccount")
+              .setParent(Context.root().with(command))
+              .setAttribute("akka.span.kind", "agent.tool.call")
+              .setAttribute("gen_ai.tool.name", "deleteAccount")
+              .startSpan();
+
+      var guardrail =
+          tracer
+              .spanBuilder("Guardrail tool policy evaluation: deny delete")
+              .setParent(Context.root().with(toolCall))
+              .setAttribute("akka.span.kind", "agent.guardrail")
+              .setAttribute("akka.agent.guardrail.name", "deny delete")
+              .setAttribute("akka.agent.guardrail.category", "tool_policy")
+              .setAttribute("akka.agent.guardrail.decision", "deny")
+              .startSpan();
+      guardrail.setStatus(StatusCode.ERROR, "deletion not allowed");
+      guardrail.end();
+
+      toolCall.end();
+      command.end();
+    }
+
+    var trace = new TelemetryReader(spans).getAgentTrace(SESSION);
+
+    assertThat(trace.guardrails())
+        .containsExactly(
+            new GuardrailResult(
+                "deny delete", "tool_policy", Decision.DENY, "deletion not allowed"));
+  }
+
+  @Test
   void aDenyingGuardrailSpanIsReadAsDeny() {
     var guardrail = readGuardrail("deny", StatusCode.ERROR, "prompt injection", StatusCode.ERROR);
 
