@@ -16,8 +16,8 @@ Versions change with each release, so see the xref:optimize:release-notes/index.
 |===
 | Component | Runs on | Role
 
-| Training service | Akka platform, as a system service | Coordinates Ray.
-| Artifact registry | Akka platform, as a system service | Stores datasets, bundles, and models.
+| Training service | Akka platform (platform service) | Coordinates Ray.
+| Artifact registry | Akka platform (platform service) | Stores datasets, bundles, and models.
 | Training runtime | Ray cluster | Runs training jobs and serves candidate models.
 | KubeRay | Kubernetes | Runs Ray clusters and Ray Serve applications on Kubernetes.
 | OpenTelemetry Collector contrib | Each Ray pod | Collects telemetry.
