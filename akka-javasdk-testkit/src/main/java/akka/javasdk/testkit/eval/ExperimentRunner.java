@@ -211,6 +211,7 @@ public final class ExperimentRunner {
       if (target == null) throw new IllegalArgumentException("target required");
       requireDistinctLabels();
       requireBindingsForRecordedTools();
+      if (kind == Kind.EVALUATION) requireNoBlockedEvaluator();
       return new Ready<>(
           kind,
           cases,
@@ -278,6 +279,27 @@ public final class ExperimentRunner {
               + "; bound: "
               + bindings.toolNames()
               + ". Bind each tool a recording names with bindings(ToolBindings)");
+    }
+
+    private void requireNoBlockedEvaluator() {
+      for (var evalCase : cases) {
+        if (holdsBlocked(evalCase.evaluators())) {
+          throw blockedInAnEvaluation("case " + evalCase.id());
+        }
+      }
+
+      if (holdsBlocked(evaluators)) throw blockedInAnEvaluation("an experiment evaluator");
+    }
+
+    private static boolean holdsBlocked(List<Evaluator> evaluators) {
+      return evaluators.stream().anyMatch(e -> e instanceof Evaluators.Blocked);
+    }
+
+    private static IllegalArgumentException blockedInAnEvaluation(String holder) {
+      return new IllegalArgumentException(
+          holder
+              + " expects a guardrail denial with shouldBeBlocked, but a guardrail denial fails"
+              + " every case built with cases(...). Build the experiment with attacks(...)");
     }
   }
 
