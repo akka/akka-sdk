@@ -40,6 +40,10 @@ abstract class AbstractViewValidationSpec(val validationMode: ValidationMode)
       assertValid("valid/ValidViewWithEmptyTableUpdaterWorkflow.java")
     }
 
+    "reject View with an invalid platform service name on a stream subscription" in {
+      assertInvalid("invalid/ViewWithInvalidPlatformService.java", "Invalid platform service name [svc]")
+    }
+
     "reject View that is not public" in {
       assertInvalid(
         "invalid/NotPublicView.java",

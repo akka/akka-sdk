@@ -22,8 +22,10 @@ import akka.http.scaladsl.settings.ClientConnectionSettings
 import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.javasdk.http.HttpClient
 import akka.javasdk.http.HttpClientProvider
+import akka.javasdk.impl.ServiceAddress
 import akka.javasdk.impl.Settings
 import akka.javasdk.impl.backoffice.BackofficeAccessTokenCache
+import akka.runtime.sdk.spi.DeploymentInfo
 import akka.runtime.sdk.spi.SpiSpiffeContext
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.context.{ Context => OtelContext }
@@ -38,11 +40,14 @@ private[akka] final class HttpClientProviderImpl(
     telemetryContext: Option[OtelContext],
     remoteIdentificationHeader: Option[RawHeader],
     settings: Settings,
+    deploymentInfo: DeploymentInfo,
     sdkExecutor: Executor,
     connectionPoolSettings: Option[ConnectionPoolSettings] = None,
     // Only populated by the testkit; production and dev-mode runners use the default no-op lookup.
     httpMockLookup: String => Option[java.util.function.Function[HttpRequest, HttpResponse]] = _ => None,
-    callerSpiffeHeader: Option[RawHeader] = None)
+    callerSpiffeHeader: Option[RawHeader] = None,
+    // Set by forPlatformService, service names are then resolved in that platform service
+    platformService: Option[String] = None)
     extends HttpClientProvider {
 
   private val log = LoggerFactory.getLogger(classOf[HttpClientProvider])
@@ -66,11 +71,15 @@ private[akka] final class HttpClientProviderImpl(
   private def isServiceName(name: String): Boolean =
     !name.contains('.') && !name.contains(':') && name != "localhost"
 
-  override def httpClientFor(name: String): HttpClient =
+  override def httpClientFor(name: String): HttpClient = {
+    if (platformService.isDefined && !isServiceName(name))
+      throw new IllegalArgumentException(
+        s"A provider for platform service [${platformService.get}] only accepts a bare service name, got [$name]")
     httpMockLookup(name) match {
       case Some(handler) => new MockHttpClientImpl(system, name, handler, sdkExecutor)
       case None          => realHttpClientFor(name)
     }
+  }
 
   private def realHttpClientFor(name: String): HttpClient = {
     val nameIsService = isServiceName(name)
@@ -78,7 +87,11 @@ private[akka] final class HttpClientProviderImpl(
       if (nameIsService) {
         settings.devModeSettings match {
           case Some(devModeSettings) =>
+            // Note: platform services do not exist in dev mode, a service that belongs to one is looked up by name only
             devModeSettings.backoffice.services.get(name) match {
+              case Some(_) if platformService.isDefined =>
+                throw new IllegalArgumentException(
+                  s"Service [$name] in platform service [${platformService.get}] cannot be reached through a backoffice mapping in dev mode")
               case Some(backofficeSettings) =>
                 (s"https://${backofficeSettings.backofficeProxyHost}", None)
               case None =>
@@ -117,7 +130,7 @@ private[akka] final class HttpClientProviderImpl(
             }
           case None =>
             // production, request to other service, service mesh manages TLS
-            (s"http://$name", None)
+            (s"http://${ServiceAddress.hostFor(name, deploymentInfo, platformService)}", None)
         }
       } else {
         // if it isn't a service, we expect it is arbitrary http or https server including the protocol part
@@ -133,7 +146,8 @@ private[akka] final class HttpClientProviderImpl(
     val defaultHeaders =
       if (nameIsService)
         // cross service request, include auth and caller identity
-        otelTraceHeaders ++ remoteIdentificationHeader ++ callerSpiffeHeader
+        // a platform service ignores the caller identity of a parent project caller, so it is left off
+        otelTraceHeaders ++ remoteIdentificationHeader ++ callerSpiffeHeader.filter(_ => platformService.isEmpty)
       else
         // arbitrary http request
         otelTraceHeaders
@@ -159,10 +173,12 @@ private[akka] final class HttpClientProviderImpl(
       Some(telemetryContext),
       remoteIdentificationHeader,
       settings,
+      deploymentInfo,
       sdkExecutor,
       connectionPoolSettings,
       httpMockLookup,
-      callerSpiffeHeader)
+      callerSpiffeHeader,
+      platformService)
 
   def withCallerSpiffeHeader(headerValue: String): HttpClientProviderImpl =
     new HttpClientProviderImpl(
@@ -170,9 +186,24 @@ private[akka] final class HttpClientProviderImpl(
       telemetryContext,
       remoteIdentificationHeader,
       settings,
+      deploymentInfo,
       sdkExecutor,
       connectionPoolSettings,
       httpMockLookup,
-      Some(RawHeader.create(SpiSpiffeContext.CallerSpiffeHeaderName, headerValue)))
+      Some(RawHeader.create(SpiSpiffeContext.CallerSpiffeHeaderName, headerValue)),
+      platformService)
+
+  override def forPlatformService(platformService: String): HttpClientProvider =
+    new HttpClientProviderImpl(
+      system,
+      telemetryContext,
+      remoteIdentificationHeader,
+      settings,
+      deploymentInfo,
+      sdkExecutor,
+      connectionPoolSettings,
+      httpMockLookup,
+      callerSpiffeHeader,
+      ServiceAddress.scopeFor(platformService, deploymentInfo))
 
 }

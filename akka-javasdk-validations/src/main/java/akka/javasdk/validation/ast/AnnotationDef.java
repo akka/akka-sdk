@@ -51,6 +51,14 @@ public interface AnnotationDef {
   Optional<TypeRefDef> getClassValue(String attributeName);
 
   /**
+   * Gets the constant name of an enum value from an annotation attribute.
+   *
+   * @param attributeName the name of the attribute
+   * @return the enum constant name, or empty if not found or not an enum value
+   */
+  Optional<String> getEnumValue(String attributeName);
+
+  /**
    * Gets an array of nested annotations from an annotation attribute.
    *
    * <p>For example, for {@code @Acl(allow = {@Acl.Matcher(...), @Acl.Matcher(...)})}, calling

@@ -782,6 +782,9 @@ public class TestKit {
      * threads), so blocking in the handler is safe. Calls for service names that are not mocked
      * continue to go through normal resolution.
      *
+     * <p>The mock also applies to a service with that name in a platform service, reached through
+     * {@code forPlatformService}.
+     *
      * <p>Handler invocations can overlap when the service under test issues concurrent requests, so
      * any state shared between the handler and the test class (captured fields, counters, queues)
      * must be thread-safe.
@@ -844,6 +847,9 @@ public class TestKit {
      * name and generated service client interface. The mock is a user-provided instance of the
      * generated Akka gRPC client interface. Calls for service-class/name combinations that are not
      * mocked continue to go through normal resolution.
+     *
+     * <p>The mock also applies to a service with that name in a platform service, reached through
+     * {@code forPlatformService}.
      *
      * <p>The mock instance is shared across calls and method invocations can overlap when the
      * service under test issues concurrent requests, so any state shared between the mock and the
@@ -1421,7 +1427,8 @@ public class TestKit {
   @SuppressWarnings("unchecked")
   public <T extends AkkaGrpcClient> T getGrpcEndpointClient(
       Class<T> grpcClientClass, Principal requestPrincipal) {
-    var client = grpcClientProvider.createNewClientFor(grpcClientClass, serviceName);
+    var client =
+        grpcClientProvider.createNewClientFor(grpcClientClass, serviceName, Option.empty());
     if (requestPrincipal == Principal.SELF) {
       // no need to use this method, but let's allow it
       return getGrpcEndpointClient(grpcClientClass);
@@ -1598,7 +1605,8 @@ public class TestKit {
   }
 
   /**
-   * Get incoming messages for Consume.ServiceStream.
+   * Get incoming messages for Consume.ServiceStream. The messages also reach a consumer of a stream
+   * with that service name and stream id in a platform service.
    *
    * @param service service name
    * @param streamId service stream id
