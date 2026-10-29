@@ -7,13 +7,16 @@ package akka.javasdk.testkit.eval;
 import akka.japi.function.Function2;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.testkit.AgentTrace;
+import akka.javasdk.testkit.GuardrailResult;
+import akka.javasdk.testkit.GuardrailResult.Decision;
 import akka.javasdk.testkit.TelemetryReader;
 import akka.javasdk.testkit.TestKit;
 import java.util.function.Function;
 
 /**
  * Calls the agent's command handler through the TestKit component client in the turn's session, and
- * reads the evidence from the trace recorded for that session, also when the call failed.
+ * reads the evidence from the trace recorded for that session, also when the call failed. A failed
+ * call that a guardrail denial stopped is a denied turn.
  *
  * @param <A> the agent
  * @param <C> the command handler's parameter type
@@ -53,8 +56,22 @@ final class AgentTarget<A extends Agent, C, R> implements EvalTarget<C> {
               replyText.apply(reply),
               telemetry.getAgentTrace(turn.sessionId())));
     } catch (RuntimeException e) {
-      return Outcome.failed(e, traceOrNone(turn));
+      return outcome(turn.commandText(), e, traceOrNone(turn));
     }
+  }
+
+  /**
+   * The outcome of a failed call: denied when the trace holds a guardrail denial and no guardrail
+   * error, failed otherwise.
+   */
+  static Outcome outcome(String input, RuntimeException failure, AgentTrace trace) {
+    var decisions = trace.guardrails().stream().map(GuardrailResult::decision).toList();
+
+    if (decisions.contains(Decision.DENY) && !decisions.contains(Decision.ERROR)) {
+      return Outcome.denied(new Interaction(input, trace));
+    }
+
+    return Outcome.failed(failure, trace);
   }
 
   // After a failure the trace may hold nothing for the session.

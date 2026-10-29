@@ -29,6 +29,8 @@ import java.util.Optional;
  *     removed
  * @param name the name given with {@link Experiment#name}, or the test method that ran the
  *     experiment
+ * @param kind {@code evaluation} for {@link ExperimentRunner#cases} or {@code attack} for {@link
+ *     ExperimentRunner#attacks}; null becomes {@code evaluation}
  * @param startedAt when the run started
  * @param finishedAt when the last attempt was evaluated
  * @param runs how many times every case ran
@@ -47,6 +49,7 @@ public record ReportDocument(
     String format,
     int formatVersion,
     String name,
+    String kind,
     Instant startedAt,
     Instant finishedAt,
     int runs,
@@ -59,6 +62,10 @@ public record ReportDocument(
 
   public static final String FORMAT = "akka-eval-report";
   public static final int FORMAT_VERSION = 2;
+
+  public ReportDocument {
+    if (kind == null) kind = "evaluation";
+  }
 
   /** Reads a report file written by {@link Experiment#run}. */
   public static ReportDocument read(Path file) {
@@ -106,8 +113,9 @@ public record ReportDocument(
 
   /**
    * @param evaluator the evaluator label; a custom evaluator carries the {@link
-   *     Evaluators#CUSTOM_PREFIX}, and {@link Evaluators#TARGET} and {@link Evaluators#SETUP} are
-   *     reported by the runner when an attempt did not reach evaluation
+   *     Evaluators#CUSTOM_PREFIX}, {@link Evaluators#TARGET} and {@link Evaluators#SETUP} are
+   *     reported by the runner when an attempt did not reach evaluation, and {@link
+   *     Evaluators#GUARDRAIL} when a guardrail denial stopped the turn
    * @param passed results with the verdict PASS
    * @param failed results with the verdict FAIL
    * @param inconclusive results with the verdict INCONCLUSIVE
@@ -140,8 +148,8 @@ public record ReportDocument(
    * @param failedRuns runs with the verdict FAIL
    * @param inconclusiveRuns runs with the verdict INCONCLUSIVE
    * @param requirements one entry per evaluator at one position in the results of the case's
-   *     attempts, in the order the results first appear; the runner's target and setup results are
-   *     requirements too
+   *     attempts, in the order the results first appear; the runner's target, setup and guardrail
+   *     results are requirements too
    */
   public record Case(
       String id,
@@ -192,13 +200,15 @@ public record ReportDocument(
    * @param input the command sent to the agent; a String command as is, any other command as JSON
    * @param userMessage the user message the agent sent the model; empty when the trace did not
    *     carry it
-   * @param reply the agent's reply as text; empty when the agent call failed
+   * @param reply the agent's reply as text; empty when the agent call failed or a guardrail denial
+   *     stopped the turn
    * @param finalModelText the text of the last model response, before the agent mapped it into the
    *     reply; empty when the trace did not carry it
    * @param latencyMs from the start of the agent command to its end
    * @param inputTokens summed over the model calls
    * @param outputTokens summed over the model calls
    * @param blocked whether a guardrail blocked the turn
+   * @param denied whether a guardrail denial stopped the turn
    * @param toolCalls in call order
    * @param modelCalls in call order
    * @param guardrails every guardrail evaluation, in order
@@ -212,6 +222,7 @@ public record ReportDocument(
       long inputTokens,
       long outputTokens,
       boolean blocked,
+      boolean denied,
       List<ToolCall> toolCalls,
       List<ModelCall> modelCalls,
       List<Guardrail> guardrails) {}

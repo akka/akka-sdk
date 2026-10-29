@@ -2,6 +2,7 @@
   "format": "akka-eval-report",
   "formatVersion": 2,
   "name": "support-agent-quality",
+  "kind": "evaluation",
   "startedAt": "2026-10-01T10:15:30.123Z",
   "finishedAt": "2026-10-01T10:16:02.456Z",
   "runs": 1,
@@ -74,6 +75,7 @@
         "inputTokens": 100,
         "outputTokens": 20,
         "blocked": false,
+        "denied": false,
         "toolCalls": [
           {
             "name": "getOrder",
@@ -116,6 +118,7 @@
         "inputTokens": 100,
         "outputTokens": 20,
         "blocked": false,
+        "denied": false,
         "toolCalls": [
           {
             "name": "getOrder",
@@ -162,6 +165,7 @@
         "inputTokens": 100,
         "outputTokens": 20,
         "blocked": false,
+        "denied": false,
         "toolCalls": [
           {
             "name": "getOrder",

@@ -7,6 +7,7 @@ package akka.javasdk.testkit.eval;
 import akka.japi.function.Function2;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.testkit.AgentTrace;
+import akka.javasdk.testkit.GuardrailResult;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.eval.Evaluator.EvalResult;
 import java.io.IOException;
@@ -86,26 +87,66 @@ public final class ExperimentRunner {
     this.testKit = null;
   }
 
+  /** The kind of an experiment. It sets the verdict of the {@link Evaluators#GUARDRAIL} result. */
+  public enum Kind {
+    /** Built with {@link ExperimentRunner#cases}: a guardrail denial is a failed result. */
+    EVALUATION,
+    /** Built with {@link ExperimentRunner#attacks}: a guardrail denial is a passed result. */
+    ATTACK
+  }
+
   /**
-   * The cases the experiment runs.
+   * The cases the experiment runs. A guardrail denial fails the attempt, see {@link
+   * Kind#EVALUATION}.
    *
    * @param first the first case
    * @param more further cases, with the same command type
    */
   @SafeVarargs
   public final <C> ExperimentCases<C> cases(EvalCase<C> first, EvalCase<C>... more) {
-    var all = new ArrayList<EvalCase<C>>();
-    all.add(first);
-    all.addAll(List.of(more));
-    return cases(all);
+    return cases(listOf(first, more));
   }
 
   /**
-   * The cases the experiment runs.
+   * The cases the experiment runs. A guardrail denial fails the attempt, see {@link
+   * Kind#EVALUATION}.
    *
    * @param cases at least one case
    */
   public <C> ExperimentCases<C> cases(List<EvalCase<C>> cases) {
+    return experimentCases(Kind.EVALUATION, cases);
+  }
+
+  /**
+   * The attacks the experiment runs. A guardrail denial passes the guardrail result, see {@link
+   * Kind#ATTACK}.
+   *
+   * @param first the first case
+   * @param more further cases, with the same command type
+   */
+  @SafeVarargs
+  public final <C> ExperimentCases<C> attacks(EvalCase<C> first, EvalCase<C>... more) {
+    return attacks(listOf(first, more));
+  }
+
+  /**
+   * The attacks the experiment runs. A guardrail denial passes the guardrail result, see {@link
+   * Kind#ATTACK}.
+   *
+   * @param cases at least one case
+   */
+  public <C> ExperimentCases<C> attacks(List<EvalCase<C>> cases) {
+    return experimentCases(Kind.ATTACK, cases);
+  }
+
+  private static <C> List<EvalCase<C>> listOf(EvalCase<C> first, EvalCase<C>[] more) {
+    var all = new ArrayList<EvalCase<C>>();
+    all.add(first);
+    all.addAll(List.of(more));
+    return all;
+  }
+
+  private <C> ExperimentCases<C> experimentCases(Kind kind, List<EvalCase<C>> cases) {
     if (cases == null || cases.isEmpty()) {
       throw new IllegalArgumentException("at least one case required");
     }
@@ -122,7 +163,7 @@ public final class ExperimentRunner {
                 + " one");
       }
     }
-    return new Cases<>(testKit, List.copyOf(cases), List.of(), ToolBindings.none());
+    return new Cases<>(testKit, kind, List.copyOf(cases), List.of(), ToolBindings.none());
   }
 
   // For the runner's own tests: the cases run against a scripted target instead of an agent, and
@@ -132,7 +173,11 @@ public final class ExperimentRunner {
   }
 
   private record Cases<C>(
-      TestKit testKit, List<EvalCase<C>> cases, List<Evaluator> evaluators, ToolBindings bindings)
+      TestKit testKit,
+      Kind kind,
+      List<EvalCase<C>> cases,
+      List<Evaluator> evaluators,
+      ToolBindings bindings)
       implements ExperimentCases<C> {
 
     @Override
@@ -142,13 +187,13 @@ public final class ExperimentRunner {
 
       var next = new ArrayList<>(evaluators);
       next.add(evaluator);
-      return new Cases<>(testKit, cases, List.copyOf(next), bindings);
+      return new Cases<>(testKit, kind, cases, List.copyOf(next), bindings);
     }
 
     @Override
     public ExperimentCases<C> bindings(ToolBindings bindings) {
       if (bindings == null) throw new IllegalArgumentException("bindings required");
-      return new Cases<>(testKit, cases, evaluators, bindings);
+      return new Cases<>(testKit, kind, cases, evaluators, bindings);
     }
 
     @Override
@@ -167,6 +212,7 @@ public final class ExperimentRunner {
       requireDistinctLabels();
       requireBindingsForRecordedTools();
       return new Ready<>(
+          kind,
           cases,
           evaluators,
           bindings,
@@ -236,6 +282,7 @@ public final class ExperimentRunner {
   }
 
   private record Ready<C>(
+      Kind kind,
       List<EvalCase<C>> cases,
       List<Evaluator> evaluators,
       ToolBindings bindings,
@@ -249,31 +296,35 @@ public final class ExperimentRunner {
     @Override
     public Experiment gate(Gate gate) {
       if (gate == null) throw new IllegalArgumentException("gate required");
-      return new Ready<>(cases, evaluators, bindings, target, gate, name, reportDirectory, runs);
+      return new Ready<>(
+          kind, cases, evaluators, bindings, target, gate, name, reportDirectory, runs);
     }
 
     @Override
     public Experiment name(String name) {
       requireFileName(name);
-      return new Ready<>(cases, evaluators, bindings, target, gate, name, reportDirectory, runs);
+      return new Ready<>(
+          kind, cases, evaluators, bindings, target, gate, name, reportDirectory, runs);
     }
 
     @Override
     public Experiment reportDirectory(Path directory) {
       if (directory == null) throw new IllegalArgumentException("directory required");
       return new Ready<>(
-          cases, evaluators, bindings, target, gate, name, Optional.of(directory), runs);
+          kind, cases, evaluators, bindings, target, gate, name, Optional.of(directory), runs);
     }
 
     @Override
     public Experiment withoutReportFile() {
-      return new Ready<>(cases, evaluators, bindings, target, gate, name, Optional.empty(), runs);
+      return new Ready<>(
+          kind, cases, evaluators, bindings, target, gate, name, Optional.empty(), runs);
     }
 
     @Override
     public Experiment repeat(int times) {
       if (times < 1) throw new IllegalArgumentException("repeat needs at least 1, was " + times);
-      return new Ready<>(cases, evaluators, bindings, target, gate, name, reportDirectory, times);
+      return new Ready<>(
+          kind, cases, evaluators, bindings, target, gate, name, reportDirectory, times);
     }
 
     // Run-major, every case once and then every case again, so the attempts of one case are spread
@@ -297,6 +348,7 @@ public final class ExperimentRunner {
       var report =
           new Report(
               reportName,
+              kind,
               startedAt,
               Instant.now(),
               runs,
@@ -383,18 +435,47 @@ public final class ExperimentRunner {
                 run,
                 new Interaction(evalCase.commandText(), "", failed.trace()),
                 List.of(EvalResult.fail(failed.reason()).attributedTo(Evaluators.TARGET)));
-        case EvalTarget.Outcome.Answered answered -> {
-          var interaction = answered.interaction();
+        case EvalTarget.Outcome.Denied denied -> {
+          var interaction = denied.interaction();
           var results = new ArrayList<EvalResult>();
-          for (var evaluator : evalCase.evaluators()) {
-            results.add(evaluate(evaluator, evalCase, interaction));
-          }
-          for (var evaluator : evaluators) {
-            results.add(evaluate(evaluator, evalCase, interaction));
-          }
+          results.add(guardrail(interaction));
+          results.addAll(runEvaluators(evalCase, interaction));
           yield new CaseResult(evalCase.id(), run, interaction, List.copyOf(results));
         }
+        case EvalTarget.Outcome.Answered answered -> {
+          var interaction = answered.interaction();
+          yield new CaseResult(
+              evalCase.id(), run, interaction, runEvaluators(evalCase, interaction));
+        }
       };
+    }
+
+    /** The guardrail result names every guardrail that denied. It passes only in an attack. */
+    private EvalResult guardrail(Interaction interaction) {
+      var detail =
+          interaction.guardrails().stream()
+              .filter(g -> g.decision() == GuardrailResult.Decision.DENY)
+              .map(g -> g.name() + " denied: " + g.explanation())
+              .collect(Collectors.joining(", "));
+
+      var result =
+          switch (kind) {
+            case ATTACK -> EvalResult.pass(detail);
+            case EVALUATION -> EvalResult.fail(detail);
+          };
+      return result.attributedTo(Evaluators.GUARDRAIL);
+    }
+
+    /** The case's evaluators, then the experiment's. */
+    private List<EvalResult> runEvaluators(EvalCase<C> evalCase, Interaction interaction) {
+      var results = new ArrayList<EvalResult>();
+      for (var evaluator : evalCase.evaluators()) {
+        results.add(evaluate(evaluator, evalCase, interaction));
+      }
+      for (var evaluator : evaluators) {
+        results.add(evaluate(evaluator, evalCase, interaction));
+      }
+      return List.copyOf(results);
     }
 
     // An evaluator that throws or returns nothing fails its own result, the other evaluators
@@ -593,7 +674,8 @@ public final class ExperimentRunner {
    * One requirement of a case over all runs: one evaluator at one position in the results of the
    * case's attempts. Two requirements of a case may carry the same label, for example two {@link
    * Evaluators#shouldCallToolWith} expectations. The runner's {@link Evaluators#TARGET} and {@link
-   * Evaluators#SETUP} results are requirements too, with no run passed.
+   * Evaluators#SETUP} results are requirements too, with no run passed. The runner's {@link
+   * Evaluators#GUARDRAIL} result is a requirement too.
    *
    * @param caseId the case
    * @param index the position of the result in the attempt, from 0
@@ -711,8 +793,8 @@ public final class ExperimentRunner {
       return RequirementSummary.of(attempts);
     }
 
-    // One line per requirement that passed in some runs and failed in others, and one per target or
-    // setup failure when the case itself is inconsistent.
+    // One line per requirement that passed in some runs and failed in others, and one per target,
+    // setup or guardrail result when the case itself is inconsistent.
     private List<String> renderInconsistencies() {
       var requirements = requirements();
       var labelCounts = new LinkedHashMap<String, Integer>();
@@ -722,7 +804,8 @@ public final class ExperimentRunner {
       for (var requirement : requirements) {
         var runnerResult =
             requirement.evaluator().equals(Evaluators.TARGET)
-                || requirement.evaluator().equals(Evaluators.SETUP);
+                || requirement.evaluator().equals(Evaluators.SETUP)
+                || requirement.evaluator().equals(Evaluators.GUARDRAIL);
         if (requirement.outcome() == Outcome.INCONSISTENT
             || (runnerResult && outcome() == Outcome.INCONSISTENT)) {
           lines.add(requirement.render(labelCounts.get(requirement.evaluator()) > 1));
@@ -751,6 +834,9 @@ public final class ExperimentRunner {
      * example {@code SupportAgentEvalTest.qualityGate}.
      */
     String name();
+
+    /** Whether the experiment ran evaluation cases or attacks. */
+    Kind kind();
 
     /** How many times every case ran, see {@link Experiment#repeat}. */
     int runs();
@@ -794,6 +880,7 @@ public final class ExperimentRunner {
 
   record Report(
       String name,
+      Kind kind,
       Instant startedAt,
       Instant finishedAt,
       int runs,
@@ -803,7 +890,7 @@ public final class ExperimentRunner {
       implements EvalReport {
 
     private Report withReportFile(Optional<Path> file) {
-      return new Report(name, startedAt, finishedAt, runs, cases, verdict, file);
+      return new Report(name, kind, startedAt, finishedAt, runs, cases, verdict, file);
     }
 
     @Override

@@ -30,7 +30,8 @@ import java.util.regex.Pattern;
  * <p>Each built-in is a public nested record carrying an {@link EvalLabel}. Pass its class to
  * {@link Gate#passRateShouldBeAtLeast(Class, double)}, for example {@code
  * Evaluators.ToolArgument.class}. {@link #TARGET} and {@link #SETUP} are reported by the runner
- * when a case did not reach evaluation.
+ * when a case did not reach evaluation. {@link #GUARDRAIL} is reported by the runner when a
+ * guardrail denial stopped the turn.
  */
 public final class Evaluators {
 
@@ -42,6 +43,12 @@ public final class Evaluators {
 
   /** Loading the case's recorded calls into the stubs threw, so the agent was never called. */
   public static final String SETUP = "setup";
+
+  /**
+   * A guardrail denial stopped the turn. The result passes in an attack and fails in an evaluation,
+   * see {@link ExperimentRunner.Kind}.
+   */
+  public static final String GUARDRAIL = "guardrail";
 
   private Evaluators() {}
 
