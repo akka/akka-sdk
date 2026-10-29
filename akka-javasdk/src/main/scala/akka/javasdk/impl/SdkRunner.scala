@@ -228,7 +228,7 @@ object SdkRunner {
     val messages = message :: detail ::: seeDocs
     val logMessage = messages.mkString("\n")
 
-    Telemetry.withCurrentContext(Option(err.telemetryContext)) {
+    Telemetry.withCurrentContext(err.telemetryContext) {
       ErrorHandling.withMdcCorrelationId(err.correlationId) {
         userServiceLog.atLevel(err.severity).log(logMessage)
       }
