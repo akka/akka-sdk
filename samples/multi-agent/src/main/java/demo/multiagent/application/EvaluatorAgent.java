@@ -3,47 +3,37 @@ package demo.multiagent.application;
 // tag::all[]
 
 import akka.javasdk.agent.Agent;
-import akka.javasdk.agent.EvaluationResult;
+import akka.javasdk.agent.MemoryProvider;
 import akka.javasdk.annotations.Component;
-import java.util.Locale;
+import java.util.List;
 
 @Component(
   id = "evaluator-agent",
   name = "Evaluator Agent",
   description = """
-  An agent that acts as an LLM judge to evaluate the quality of AI responses. \
+  An agent that acts as a judge of the quality of AI responses. \
   It assesses whether the final answer appropriately addresses the original request \
-  and respects any user preferences carried in the request.\
+  and respects the user's preferences.\
   """
 )
 public class EvaluatorAgent extends Agent {
 
-  public record EvaluationRequest(String originalRequest, String finalAnswer) {}
+  public record EvaluationRequest(
+    String originalRequest,
+    List<String> preferences,
+    String finalAnswer
+  ) {}
 
-  public record Result(String explanation, String label) implements EvaluationResult {
-    public boolean passed() {
-      if (label == null) throw new IllegalArgumentException(
-        "Model response must include label field"
-      );
-
-      return switch (label.toLowerCase(Locale.ROOT)) {
-        case "correct" -> true;
-        case "incorrect" -> false;
-        default -> throw new IllegalArgumentException(
-          "Unknown evaluation result [" + label + "]"
-        );
-      };
-    }
-  }
+  public record Result(String explanation, String label) {}
 
   private static final String SYSTEM_MESSAGE =
     """
-    You are an evaluator agent that acts as an LLM judge. Your job is to evaluate
+    You are an evaluator agent that acts as a judge. Your job is to evaluate
     the quality and appropriateness of AI-generated responses.
 
-    The original request may include user preferences. Your evaluation should focus on:
+    The request comes with the user's preferences. Your evaluation should focus on:
     1. Whether the final answer appropriately addresses the original question
-    2. Whether the answer respects and aligns with any stated user preferences
+    2. Whether the answer respects and aligns with the user's preferences
     3. The overall quality, relevance, and helpfulness of the response
 
     A response is "Incorrect" if it meets ANY of the following failure conditions:
@@ -64,19 +54,26 @@ public class EvaluatorAgent extends Agent {
     """.stripIndent();
 
   public Effect<Result> evaluate(EvaluationRequest request) {
+    var preferences = request.preferences().isEmpty()
+      ? "(none)"
+      : String.join("\n", request.preferences().stream().map(p -> "- " + p).toList());
     var prompt =
       """
       ORIGINAL REQUEST:
       %s
 
+      USER PREFERENCES:
+      %s
+
       FINAL ANSWER TO EVALUATE:
       %s
 
-      Please evaluate the final answer against the original request.
-      """.formatted(request.originalRequest(), request.finalAnswer());
+      Please evaluate the final answer against the original request and the preferences.
+      """.formatted(request.originalRequest(), preferences, request.finalAnswer());
 
     return effects()
       .systemMessage(SYSTEM_MESSAGE)
+      .memory(MemoryProvider.none())
       .userMessage(prompt)
       .responseConformsTo(Result.class)
       .thenReply();

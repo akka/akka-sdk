@@ -9,6 +9,7 @@ import java.net.JarURLConnection
 import java.net.URI
 import java.net.URL
 
+import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 import scala.reflect.ClassTag
 import scala.util.Failure
@@ -382,6 +383,7 @@ private[javasdk] object ComponentLocator {
     }
   }
 
+  @nowarn("msg=deprecated")
   val agentProvidedComponents: Seq[Class[_]] = Seq(
     classOf[SessionMemoryEntity],
     classOf[PromptTemplate],

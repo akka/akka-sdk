@@ -57,6 +57,22 @@ class EvaluatorImplSpec extends AnyWordSpec with Matchers {
       seen.map(_.getString("agent")) shouldBe Some("my-agent")
     }
 
+    "map a not applicable effect" in {
+      val impl = new EvaluatorImpl[Evaluator](
+        _ =>
+          new Evaluator {
+            override def evaluate(context: EvaluationContext): Evaluator.Effect =
+              effects().notApplicable("no tool call")
+          },
+        classOf[Evaluator],
+        _ => ConfigFactory.empty())
+
+      val effect =
+        Await.result(impl.evaluate(new SpiEvaluator.EvaluationContext(trigger, OtelContext.root())), 3.seconds)
+
+      effect.asInstanceOf[SpiEvaluator.NotApplicableEffect].reason shouldBe "no tool call"
+    }
+
     "fail the evaluation when the config cannot be resolved" in {
       val impl = new EvaluatorImpl[SomeEvaluator](
         _ => new SomeEvaluator,

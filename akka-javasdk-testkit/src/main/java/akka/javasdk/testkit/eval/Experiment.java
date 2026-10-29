@@ -7,6 +7,7 @@ package akka.javasdk.testkit.eval;
 import akka.annotation.DoNotInherit;
 import akka.javasdk.testkit.eval.ExperimentRunner.EvalReport;
 import java.nio.file.Path;
+import java.time.Duration;
 
 /**
  * Cases bound to the agent under test, ready to run. Obtained from {@link ExperimentCases#agent}.
@@ -39,10 +40,20 @@ public interface Experiment {
   Experiment withoutReportFile();
 
   /**
+   * How long an attempt waits for the ledger to hold its interaction and one evaluation per bound
+   * evaluator, {@link ExperimentRunner#DEFAULT_EVALUATION_TIMEOUT} unless set. An evaluator without
+   * an evaluation at the timeout is inconclusive on that attempt. Raise it for a judge that calls a
+   * real model or for a durable evaluator with slow steps.
+   *
+   * @param timeout positive
+   */
+  Experiment evaluationTimeout(Duration timeout);
+
+  /**
    * Runs every case this many times in total, each time in a fresh session. Once by default. The
    * gate, the rates and the spend count every attempt, so {@link Gate#allCasesShouldPass} passes
-   * only when every case passed in every run. The report names the requirements that passed in some
-   * runs and failed in others, see {@link EvalReport#cases}.
+   * only when every case passed in every run. The report names the evaluators that passed in some
+   * runs and failed in others of the same case, see {@link EvalReport#cases}.
    *
    * <p>A case that passes in every run is not shown to always pass: {@code times} runs cannot show
    * a failure rate below one in {@code times}. The stubs and the runtime are not reset between

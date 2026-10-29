@@ -2,6 +2,60 @@
 
 include::ROOT:partial$include.adoc[]
 
+== SDK 3.7.1
+
+[#migrating-from-the-evalkit-evaluators]
+=== Migrating from the EvalKit evaluators
+
+The evaluation runner of the TestKit no longer has its own evaluators and judges. The checks of an experiment are xref:sdk:evaluators.adoc[evaluator components], bound to the agent in the test configuration, and the runner reads their verdicts from the ledger. See xref:testing:evaluation/getting-started.adoc[Getting started with evaluation].
+
+[cols="1,1"]
+|===
+| SDK 3.7.0 | SDK 3.7.1
+
+| `Evaluators.replyShouldNotContain`, `shouldCallTool`, `shouldNotCallTools`, `replyShouldNotContainPaymentCard` and the other built-in evaluators
+| An `Evaluator` component in `src/test/java` that reads the interaction from the ledger, bound to the agent with `TestKit.Settings.withAdditionalConfig`
+
+| Evaluators given to `EvalCase.of(id, command, evaluators...)`
+| `EvalCase.of(id, command)`. The bound evaluators judge every case.
+
+| `Judge.modelBased(testKit)`, `JudgeAgent`, `ModelBasedJudge`
+| A judge agent and a judge evaluator written by the project, with the criterion and the threshold as xref:sdk:evaluators.adoc#judging[configuration properties of the evaluator]
+
+| `replyShouldMatch(pattern)` and `replyShouldNotMatch(pattern)` for a refusal
+| A judge criterion, gated on a pass rate
+
+| A custom evaluator that checks a stub for a side effect
+| A xref:sdk:agents/guardrails.adoc[`ToolCallGuardrail`] that denies the tool call, and `Gate.guardrailShouldDeny(name)` in the experiment
+
+| `Gate.passRateShouldBeAtLeast(Evaluators.ReplyLacks.class, rate)` with a built-in evaluator class
+| `Gate.passRateShouldBeAtLeast(MyEvaluator.class, rate)` with the class of the evaluator component
+
+| `EvalCaseParser`, `ToolBindings` and the replay of recorded interactions
+| Removed. `EvalCases.readJsonLines(path, commandType)` reads cases from a JSON Lines file.
+
+| `EvaluationResult` and the `ToxicityEvaluator`, `SummarizationEvaluator` and `HallucinationEvaluator` agents
+| Deprecated. A xref:sdk:evaluators.adoc#judging[judge evaluator] bound to the agent, with the check as its criterion, see xref:#migrating-from-the-built-in-evaluator-agents[below]
+|===
+
+An evaluator can end with `effects().notApplicable(reason)` when the interaction gave it nothing to evaluate, see xref:sdk:evaluators.adoc#outcomes[Outcomes of an evaluation]. The telemetry attribute `akka.evaluation.outcome` has the new value `not_applicable`.
+
+[#migrating-from-the-built-in-evaluator-agents]
+=== Migrating from the built-in evaluator agents
+
+`ToxicityEvaluator`, `SummarizationEvaluator` and `HallucinationEvaluator` are agents that a component of the service calls with the text to check, and they reply with an `EvaluationResult`. Replace the call with a xref:sdk:evaluators.adoc#judging[judge evaluator] bound to the agent whose replies it checks. The runtime triggers the judge evaluator after each interaction of that agent, without a call from the service, and records the verdict in the ledger. The check becomes the criterion of the binding:
+
+[source,conf,indent=0]
+----
+akka.javasdk.evaluation.evaluators.judge {
+  criterion = "The reply contains no toxic, offensive or harmful language."
+  threshold = 0.9
+  agents.activity-agent { trigger = interaction }
+}
+----
+
+For a summarization check, the criterion states that the reply keeps the facts of the source text. For a hallucination check, the criterion states that the reply claims nothing that the request and the tool results do not support. The xref:getting-started:planner-agent/eval.adoc[multi-agent tutorial] shows a judge evaluator with a fixed criterion and a typed verdict.
+
 == SDK 3.7.0
 
 [#migrating-from-text-guardrail]

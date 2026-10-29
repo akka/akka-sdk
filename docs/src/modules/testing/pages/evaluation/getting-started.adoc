@@ -1,8 +1,9 @@
 = Getting started with evaluation
-:page-summary: A first evaluation: an agent with two tools, a test class that mocks the model and the tool's backend, one case, then a gated batch.
+:page-aliases: testing:evaluation/eval-cases.adoc, testing:evaluation/replay.adoc
+:page-summary: A first evaluation: an agent with two tools, two evaluator components in the test sources, a test class that binds them, one case, a gated batch, and the same cases with a mocked model in every build.
 :page-when-to-use: Writing the first evaluation of an agent.
-:page-prerequisites: A Maven project on the Akka SDK with an agent. Familiarity with JUnit and with `TestKitSupport`.
-:page-related: testing:evaluation/eval-cases.adoc, testing:evaluation/gates-and-reports.adoc, sdk:agents/testing.adoc
+:page-prerequisites: A Maven project on the Akka SDK with an agent and a model API key. Familiarity with JUnit and with `TestKitSupport`.
+:page-related: testing:evaluation/gates-and-reports.adoc, testing:evaluation/adversarial.adoc, sdk:evaluators.adoc
 :page-persona: builder-developer, builder-ai-ml
 :page-banner: evaluations
 
@@ -11,30 +12,17 @@ include::ROOT:partial$include.adoc[]
 == Why an agent needs evaluation tests
 
 A unit test asserts that a call returns one expected value.
-An agent's reply cannot be asserted that way.
-The model decides which tools to call, with which arguments, and how to formulate a reply, and a real model might not make the same decisions twice.
-Asserting on the exact reply fails on a harmless rewording.
+An agent's reply cannot be asserted that way. The model decides which tools to call and how to word the reply, and a real model does not make the same decisions twice.
 
-An evaluation test sends the agent a fixed set of messages, the eval cases, and checks each turn with evaluators: which tools were called, in which order, with which arguments, what the reply must contain, and what a turn may cost.
-Criteria that have no exact answer, such as tone, go to a model judge that scores the reply.
-A real model does not give the same reply twice, so an evaluation does not require every case to pass.
-It counts the results over the whole set of cases and requires a minimum pass rate.
+An evaluation test sends the agent a fixed set of messages, the eval cases, and lets evaluator components judge each interaction: the tool calls, the reply, or a criterion scored by a judge.
+It counts the results over all cases and requires a minimum pass rate.
 
-The EvalKit is a set of utilities in the Akka TestKit for testing agents with an ordinary JUnit test.
-
-* The agent runs in the TestKit runtime with its tools, session memory and guardrails.
-* The evidence is the trace the runtime records for the turn. The test does not instrument the agent.
-* With the model mocked by `TestModelProvider`, the same cases are deterministic and run in every build. Without the mock, they run against the real model on demand, with a gate that requires a minimum pass rate.
-* Cases can be written in Java or derived from recorded production interactions.
-
-This page shows how to write an evaluation for the order agent of an online shop.
-It starts with the agent, then adds one eval case, then a batch of cases with a gate.
-The complete code is in the link:{sample-base-url}/doc-snippets/src/test/java/com/example/eval[doc-snippets sample, window="new"].
+This page writes an evaluation, as an integration test, for the order agent of an online shop. The test runs against the model the agent uses in production.
 
 == The agent under evaluation
 
 The `OrderAgent` answers questions about orders.
-It has two tools: one looks an order up, the other issues a refund.
+It has two tools: one looks for an order, the other issues a refund.
 Both delegate to an `OrderService`, which the agent receives through its constructor.
 
 [source,java,indent=0]
@@ -42,9 +30,9 @@ Both delegate to an `OrderService`, which the agent receives through its constru
 ----
 include::sdk:example$doc-snippets/src/main/java/com/example/eval/OrderAgent.java[tag=class]
 ----
-<1> The `OrderService` is injected. Production provides a client for the real service through a `DependencyProvider`; the evaluation provides a stub.
-<2> The command handler the evaluation calls. It takes the case's command, here a `String`, and replies with a `String`. A handler that takes its own type, such as a record.
-<3> The tools. Each tool sets an explicit `name`. Evaluators and recordings refer to tools by that name.
+<1> The `OrderService` is injected. Production provides a client for the real service through a `DependencyProvider`, the integration test provides a stub.
+<2> The command handler the evaluation calls. It takes the case's command, here a `String`, and replies with a `String`. A handler may take its own type instead, such as a record.
+<3> The tools. Each tool sets its `name` from a constant, and the evaluators look tool calls up by the same constant.
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/eval/OrderService.java[OrderService.java]
@@ -56,11 +44,41 @@ Under test, a stub takes the place of the real order system.
 The sample's `StubOrderService` keeps a map of orders that the test fills before the cases run, and throws for an unknown order id the way the real client would.
 The test registers the stub through a test specific `DependencyProvider`, as described in xref:sdk:setup-and-dependency-injection.adoc#_custom_dependency_injection_in_tests[Custom dependency injection in tests].
 
+[#evaluators]
+== The evaluators
+
+An xref:sdk:evaluators.adoc[evaluator] is a component that judges one interaction of an agent.
+Evaluators are part of the production code. You can also place an evaluator in the test sources and bind it to the agent in the test setup.
+The first one checks tools called by the agent. A message that names an order must lead to a `getOrder` call. A message without an order id must lead to no tool call at all.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderLookupEvaluator.java[OrderLookupEvaluator.java]
+----
+include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderLookupEvaluator.java[tag=all]
+----
+<1> The component id. The test binds the evaluator under this id, and the report names its results by it.
+<2> The ledger client is injected.
+<3> The interaction under evaluation, read from the ledger.
+<4> The evaluator is also bound for failed interactions. An interaction that failed before any tool call, for example because the model was unavailable, gives it nothing to judge, so the result is inconclusive rather than a failure of the agent.
+<5> The reason of a verdict is the detail the report prints.
+<6> A passed verdict.
+
+The second one checks that a refund goes to an order the agent looked up first. An interaction without a refund gives it nothing to check.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/eval/RefundPolicyEvaluator.java[RefundPolicyEvaluator.java]
+----
+include::sdk:example$doc-snippets/src/test/java/com/example/eval/RefundPolicyEvaluator.java[tag=all]
+----
+<1> A tool call in the ledger is the request the model made. A call that a guardrail denied has no response, so only a call with a response counts as a refund.
+<2> A xref:sdk:evaluators.adoc#outcomes[not applicable] result does not count against the case.
+
+The sample has two more evaluators, which the test below also binds: `ReplyGroundingEvaluator` compares the reply with the order the tool returned, and a xref:sdk:evaluators.adoc#judging[judge] scores the helpfulness of the reply.
+
 [#test-class]
 == The test class
 
-The evaluation is a `TestKitSupport` test.
-It registers the stub as the agent's `OrderService` and leaves the model as configured in `application.conf`, so the agent answers with the model it uses in production.
+The evaluation test registers the stub as the agent's `OrderService`, binds the evaluators to the agent, and leaves the model as configured in `application.conf`, so the agent and the judge answer with the model they use in production.
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[OrderAgentQualityIntegrationTest.java]
@@ -70,7 +88,23 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 <1> The class runs only when the build sets the `eval` system property. Without it JUnit skips the class.
 <2> The stub the agent's tools call.
 <3> The `DependencyProvider` that serves the stub. It replaces the one the service's `ServiceSetup` creates.
-<4> The orders the cases ask about. The stub is refilled before each test, so every test starts from the same orders.
+<4> The bindings. Each key is the component id of an evaluator, and `agents.order-agent` binds it to the agent. The `judge` entry also carries the criterion and the threshold the judge evaluator reads.
+<5> The orders the cases ask about. The stub is refilled before each test, so every test starts from the same orders.
+
+[#binding]
+The bindings are the entries xref:sdk:evaluators.adoc#_binding_evaluators_to_agents[Binding evaluators to agents] describes, and a binding in `application.conf` applies in the test as well.
+To keep a production evaluator out of the test, disable its binding in the test configuration with `enabled = false`, one entry per production evaluator.
+The bindings belong to the TestKit, so every experiment in the test class runs with the same evaluators.
+Put experiments that need a different set of evaluators in another test class with its own `testKitSettings()`.
+A gate can rate one evaluator of the set, see xref:testing:evaluation/gates-and-reports.adoc#judged-batch[Gating a judged batch].
+
+The runner reads the bindings of the agent from the configuration the TestKit runs with and waits for one evaluation per bound evaluator.
+At `agent(...)` it refuses a binding with a `sampling-ratio` below 1.0, because a sampled evaluator leaves cases without a verdict.
+It also refuses a binding to an evaluator id that no evaluator component of the service has.
+With `trigger-on-failure = true` the evaluator also judges an interaction that failed, for example when a tool threw. Without it, the runner does not expect the evaluator on a failed interaction.
+
+An evaluator that records no evaluation within the evaluation timeout, 10 seconds unless the experiment sets another with `evaluationTimeout(Duration)`, is inconclusive on that attempt.
+Raise the timeout for a judge that calls a real model, or for a durable evaluator with slow steps.
 
 Run it with the property set and the model's API key in the environment:
 
@@ -80,23 +114,21 @@ mvn verify -Deval=true
 ----
 
 `@EnabledIfSystemProperty` is one way to keep an expensive test out of the regular build.
-A JUnit `@Tag` with a Failsafe `groups` filter, a Maven profile, or a class name the plugin does not select work as well.
+Other options are a JUnit `@Tag` that the Failsafe `groups` filter selects, a Maven profile, or a class name outside the Failsafe include pattern.
 
 [#first-case]
 == The first case
 
 An `EvalCase` describes one turn with the agent.
-It carries the command the agent receives and the evaluators that check what the agent did with it.
-The first case asks where an order is and expects the agent to look the order up without refunding it.
+The bound evaluators state what the agent must do with the command. The case does not.
 
 [source,java,indent=0]
-.{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[OrderAgentQualityIntegrationTest.java]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderCases.java[OrderCases.java]
 ----
-include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[tag=status-case]
+include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderCases.java[tag=cases]
 ----
 <1> The id names the case in the report.
 <2> The command the agent receives.
-<3> The evaluators. The agent must call `getOrder` with the order id from the question, must not issue a refund, and the reply must carry the order's status.
 
 An experiment is a set of cases bound to an agent and a gate, run once for one report.
 
@@ -105,13 +137,13 @@ An experiment is a set of cases bound to an agent and a gate, run once for one r
 ----
 include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[tag=first-case]
 ----
-<1> The cases. One, several, or a list.
-<2> The agent's command handler. The runner calls it through the component client in a fresh session per case.
-<3> Runs the cases and returns an `EvalReport`.
+<1> The cases. One or several.
+<2> The agent's command handler. The runner calls it through the component client in a new session per case.
+<3> Runs the cases, waits for the verdicts of the bound evaluators, and returns an `EvalReport`.
 <4> Without a gate the report passes only when every case passes. The rendered report is the failure message, so a failed case prints its evidence.
 
 A single case against a real model is not a reliable check.
-The model may formulate the reply differently on another run, or call a tool it did not call before, and the case fails on that run.
+The model may word the reply differently on another run, or call a tool it did not call before, and the case fails on that run.
 The next step runs a set of cases and requires a minimum pass rate over all of them instead.
 xref:testing:evaluation/gates-and-reports.adoc#repeated-runs[Running every case several times] names the cases that do not hold on every run.
 
@@ -123,16 +155,10 @@ A `Gate` decides what the batch must satisfy over all case results.
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[OrderAgentQualityIntegrationTest.java]
 ----
-include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[tag=curated]
-----
-
-[source,java,indent=0]
-.{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[OrderAgentQualityIntegrationTest.java]
-----
 include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQualityIntegrationTest.java[tag=batch]
 ----
 <1> At least 90% of the cases must pass.
-<2> Every declared tool argument must arrive as declared, in every case that declares one. A wrong argument is a defect even when the reply reads well.
+<2> The `order-lookup` evaluator must pass in every case where it reached a verdict.
 <3> No case may fail in the agent call. An unavailable model fails the gate rather than lowering the pass rate.
 
 The gates are combined with `and`, so all three must hold.
@@ -142,26 +168,77 @@ A rendered report of this batch:
 [listing]
 ----
 3 cases, 1 run: 3/3 attempts passed (100%)
-gate: passed — pass rate 1.00 over 3 attempts (3 cases, 1 run), required 0.90; tool-arguments rate 1.00 over 2 judged attempts, required 1.00; no target failures
-  tools 1/1
-  tool-arguments 2/2
-  forbidden-tools 2/2
-  reply-contains 2/2
-  tool-order 1/1
-  reply-matches 1/1
-  tool-call-budget 1/1
-  model-call-budget 1/1
-spend: 6 model calls, 123 tokens in, 321 out, 550 ms in total, slowest order-status run 1 at 489 ms, over 3/3 attempts with evidence
+gate: passed — pass rate 1.00 over 3 attempts (3 cases, 1 run), required 0.90; order-lookup rate 1.00 over 3 judged attempts, required 1.00; no target failures
+  judge 3/3
+  order-lookup 3/3
+  refund-policy 1/1 (2 not applicable)
+  reply-grounding 2/2 (1 not applicable)
+spend: 7 model responses, 4310 tokens in, 212 out, 6120 ms in total, slowest full-refund run 1 at 2890 ms, over 3/3 attempts with a recorded interaction
 ----
 
 The second line is the gate's verdict, with the detail of each of the three gates.
-The indented lines are the pass counts per evaluator, over the cases that activated it.
+The indented lines are the pass counts per evaluator, with the attempts where the evaluator had nothing to check in brackets.
 The last line sums what the run spent.
 xref:testing:evaluation/gates-and-reports.adoc#reading-the-report[Reading the report] explains every line.
 
+[#cases-file]
+== Cases in a file
+
+link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/EvalCases.html[EvalCases] reads cases from a JSON Lines file: one JSON object per line, with the `id` and the `command` of one case.
+
+[source,json]
+.{sample-base-url}/doc-snippets/src/test/resources/eval/cases.jsonl[cases.jsonl]
+----
+include::sdk:example$doc-snippets/src/test/resources/eval/cases.jsonl[]
+----
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderAgentEvalIntegrationTest.java[OrderAgentEvalIntegrationTest.java]
+----
+include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentEvalIntegrationTest.java[tag=cases-file]
+----
+<1> `readJsonLinesResource(resource, commandType)` reads a classpath resource, `readJsonLines(path, commandType)` a file. The command type is `String.class` for a handler that takes the user message.
+
+For a handler that takes its own type, write `command` as the JSON of that type and read the file with that class.
+A line that is not a case stops the read with an `IllegalArgumentException` that names the source and the line.
+
+[#mocked]
+== Running the cases with a mocked model
+
+The same cases run without an API key when a `TestModelProvider` takes the place of the model, see xref:sdk:agents/testing.adoc[Testing agents].
+The replies are then deterministic, so such a run checks that the agent, the tools and the evaluators fit together, not how good the model is.
+Run it on every build, to catch a broken tool or evaluator before the real model is involved, and to test how the evaluators react to a known bad reply.
+The sample's `OrderAgentEvalIntegrationTest` is the mocked variant of `OrderAgentQualityIntegrationTest`, with the same bindings:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderAgentEvalIntegrationTest.java[OrderAgentEvalIntegrationTest.java]
+----
+include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentEvalIntegrationTest.java[tag=mocked]
+----
+<1> A `TestModelProvider` per agent. The judge agent gets its own, so the judge evaluator runs without a key too.
+<2> The scripts are loaded before each test, because a test can override a script to produce a known bad reply.
+
+The script of the order agent's model behaves like a competent model: it looks an order up when the message names one, refunds a delivered order when asked for a refund, and refuses a message that is not about an order.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/eval/MockedModels.java[MockedModels.java]
+----
+include::sdk:example$doc-snippets/src/test/java/com/example/eval/MockedModels.java[tag=order-model]
+----
+
+The judge's model answers with the JSON of the verdict record the judge agent returns, with a high score when the transcript shows a reply about an order:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/eval/MockedModels.java[MockedModels.java]
+----
+include::sdk:example$doc-snippets/src/test/java/com/example/eval/MockedModels.java[tag=judge-model]
+----
+
+The cases and the experiments are the ones of the real model variant.
+Without a gate every case must pass, which fits a scripted model.
+xref:testing:evaluation/gates-and-reports.adoc#reading-a-failed-case[Reading an attempt that did not pass] shows a test of this class that scripts a bad reply and reads the failed case.
+
 == See also
 
-* xref:testing:evaluation/eval-cases.adoc[] lists every built-in evaluator and when it is inconclusive.
-* xref:testing:evaluation/judges.adoc[] scores criteria that have no exact answer.
-* xref:testing:evaluation/replay.adoc[] turns recorded production traffic into cases.
+* xref:testing:evaluation/gates-and-reports.adoc[] describes the gates and the report.
 * xref:testing:evaluation/adversarial.adoc[] writes the cases as attacks.

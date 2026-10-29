@@ -6,23 +6,21 @@ include::ROOT:partial$new-to-akka-start-here.adoc[]
 
 == Overview
 
-When a coordinator task completes, we want to know how well the answer holds up. We will use a Consumer that listens for task-completion events from the runtime and runs two evaluators on each result: a custom LLM-as-judge that checks the answer against the original request (including any user preferences carried in it), and the built-in toxicity evaluator.
-
-The verdict from each evaluator is recorded in logs, metrics, and traces.
+When a coordinator task completes, the answer should be checked. This part adds an xref:sdk:evaluators.adoc[evaluator] that the runtime triggers after each interaction of the coordinator. When the interaction completed the task, the evaluator asks a judge agent whether the answer addresses the original request and respects the user's preferences, and records the verdict in the ledger.
 
 In this part of the guide you will:
 
-* Add a custom evaluator agent.
-* Add a Consumer that subscribes to task-entity events and runs both evaluators when a task completes.
+* Add a judge agent.
+* Add an evaluator component that calls the judge, and bind it to the coordinator.
 
 == Prerequisites
 
 include::ROOT:partial$local-dev-prerequisites.adoc[]
 * https://platform.openai.com/api-keys[OpenAI API key, window="new"]
 
-== Evaluator agent
+== Judge agent
 
-We will use a pattern called "LLM as judge", which uses an agent (AI model) to evaluate the result produced by other agents. The evaluator looks at the original request together with the produced answer and returns a typed verdict.
+The judge follows the pattern called "LLM as judge": an agent (AI model) evaluates the result produced by other agents. The judge looks at the original request, the user's preferences and the produced answer, and returns a typed verdict. The judge keeps no session memory, so each evaluation starts from a clean context.
 
 Add a new file `EvaluatorAgent.java` to `src/main/java/com/example/application/`
 
@@ -32,30 +30,40 @@ Add a new file `EvaluatorAgent.java` to `src/main/java/com/example/application/`
 include::sdk:example$multi-agent/src/main/java/demo/multiagent/application/EvaluatorAgent.java[tag=all]
 ----
 
-The evaluator is a request-based xref:sdk:agents.adoc[Agent], not an `AutonomousAgent`: it does a single model call per evaluation and returns a typed result. There is no iteration loop and no multi-agent coordination, so an ordinary agent is the lighter choice.
+The judge is a request-based xref:sdk:agents.adoc[Agent], not an `AutonomousAgent`: it does a single model call per evaluation and returns a typed result. There is no iteration loop and no multi-agent coordination, so an ordinary agent is the lighter choice.
 
-== Consumer of task events
+== Evaluator
 
-The runtime stores every coordinator task in a built-in event-sourced task entity (`akka.javasdk.agent.task.TaskEntity`). Subscribing to that entity's events gives a hook to run on every task transition. We react to `TaskEvent.TaskCompleted`, fetch the task snapshot to get both the original instructions and the produced answer, then run the evaluators.
+An xref:sdk:evaluators.adoc[Evaluator] is a component that the runtime triggers for the interactions of the agents it is bound to. The coordinator records one interaction per model call, and the interaction that completes the task carries a `complete_task` tool call. The evaluator reads the interaction from the ledger. When the interaction completed the task, the evaluator fetches the task result and the user's preferences, and asks the judge.
 
-Add a new file `EvaluationConsumer.java` to `src/main/java/com/example/application/`
+Add a new file `ActivityEvaluator.java` to `src/main/java/com/example/application/`
 
 [source,java,indent=0]
-.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/EvaluationConsumer.java[EvaluationConsumer.java]
+.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/ActivityEvaluator.java[ActivityEvaluator.java]
 ----
-include::sdk:example$multi-agent/src/main/java/demo/multiagent/application/EvaluationConsumer.java[tag=all]
+include::sdk:example$multi-agent/src/main/java/demo/multiagent/application/ActivityEvaluator.java[tag=all]
 ----
-<1> Consume events from the runtime's built-in task entity.
-<2> React only when a `SUGGEST_ACTIVITIES` task completes (the runtime also emits events for create, assign, fail, and cancel).
-<3> Fetch a typed snapshot of the task, which exposes the instructions sent to the coordinator and the typed result.
-<4> Run the custom LLM-as-judge against the original (preference-aware) request and the produced answer.
-<5> Run the built-in toxicity evaluator on the final answer.
+<1> An evaluator is a component with a `@Component` id. The id is how the configuration refers to it.
+<2> The interaction under evaluation, read from the ledger with the injected `LedgerClient`.
+<3> An interaction that did not complete the task, for example one that delegated to a worker, gives the evaluator nothing to judge. The evaluation ends as xref:sdk:evaluators.adoc#outcomes[not applicable].
+<4> The task snapshot, for the instructions and the accepted result. A task that is not completed, for example because a task rule rejected the result, leaves the evaluation xref:sdk:evaluators.adoc#outcomes[inconclusive].
+<5> The user's preferences, read from the `PreferencesEntity` with the user id from the `User: <userId>` header of the instructions.
+<6> The judge runs in a session of its own, named after the evaluation.
+<7> The label of the judge decides the recorded `Evaluation`. A label the evaluator does not know leaves the evaluation inconclusive.
 
-Both verdicts are logged. They also flow into the metrics and traces produced by the runtime, so dashboards and alerting can pick them up without any further wiring.
+Bind the evaluator to the coordinator in `src/main/resources/application.conf`:
+
+[source,conf,indent=0]
+.{sample-base-url}/multi-agent/src/main/resources/application.conf[application.conf]
+----
+include::sdk:example$multi-agent/src/main/resources/application.conf[tag=binding]
+----
+
+The runtime runs the evaluator in the background after each interaction of the coordinator, so it does not delay the answer. The verdicts are recorded in the ledger and flow into the metrics and traces produced by the runtime, so dashboards and alerting can pick them up without any further wiring.
 
 [NOTE]
 ====
-A single Consumer subscribes to every task in the service. The task `name` can be used to distinguish which kind of task that was changed.
+Do not bind the evaluator to the judge agent, and give the judge no `@AgentRole` that a `*` binding matches. The evaluator's call to the judge is an interaction of the judge, which would trigger the evaluator again, without end.
 ====
 
 == Running the service
@@ -95,13 +103,13 @@ curl -i localhost:9000/preferences/alice \
   }'
 ----
 
-Submit the same kind of request again (with a fresh session id). Because the endpoint includes the user's preferences in the task instructions, the coordinator now has the context it needs to produce a different answer. The verdict of the evaluator on the task result shows up in the service logs.
+Submit the same request again. The `ActivityAgent` reads the preference, so the coordinator now produces a different answer. The evaluator reads the same preference and asks the judge whether the answer respects it. The evaluator logs each verdict, so the verdict shows up in the service log. The evaluations of the coordinator's interactions are also in the ledger, see xref:sdk:evaluators.adoc#_the_ledger_client[The ledger client].
 
 == Next steps
 
 Congratulations, you have completed the tour of building a multi-agent system. Now you can take your Akka skills to the next level:
 
-* Learn more about the xref:sdk:consuming-producing.adoc[`Consumer` component].
+* Learn more about xref:sdk:evaluators.adoc[evaluators], and how to xref:testing:evaluation/getting-started.adoc[evaluate an agent in a test].
 * Explore the other xref:sdk:autonomous-agents/capabilities.adoc[coordination capabilities] (handoff, teams, moderation) and the xref:sdk:autonomous-agents/coordination.adoc[patterns] they implement.
 * xref:quick-deploy.adoc[]
 * *Expand on your own*: Learn more details of the xref:sdk:components/index.adoc[Akka components] to enhance your application with additional features.

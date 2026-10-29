@@ -1,5 +1,5 @@
 = Evaluation
-:page-summary: Evaluation measures what an agent does against what good means for its task, in tests before it ships, on batches of recorded traffic, by replaying recorded interactions, and continuously on live traffic.
+:page-summary: Evaluation measures what an agent does against what good means for its task, in tests before it ships, on batches of recorded traffic, and continuously on live traffic.
 :page-when-to-use: When you need to decide where to evaluate an agent, how a judge or a gate fits in, or how the results of each kind of evaluation relate to each other.
 :page-related: concepts:controls.adoc, testing:evaluation/index.adoc, sdk:evaluators.adoc
 :page-persona: builder-developer, builder-ai-ml, governance-compliance
@@ -10,7 +10,7 @@ Evaluation measures agent behavior against defined quality criteria. It checks w
 
 == Where to evaluate
 
-Use tests before release, replay to check a change against recorded interactions, batch experiments to assess recorded traffic, and live evaluators to monitor production. Adversarial cases exercise inputs intended to violate constraints.
+Use tests before release, batch experiments to assess recorded traffic, and live evaluators to monitor production. Adversarial cases exercise inputs intended to violate constraints.
 
 An evaluator checks a property. A model judge assesses a criterion that cannot be checked exactly. A gate turns several results into a build or release decision. Because model judgments vary, assess representative cases and repeated attempts rather than treating one reply as a stable measurement.
 
@@ -20,7 +20,7 @@ A live evaluator runs after an interaction and cannot undo it. Use an inline gua
 
 The APIs use different result types:
 
-* TestKit evaluators report pass, fail, or inconclusive. Setup and target failures identify attempts that could not run normally.
+* An evaluation in a test reports the verdict of each bound evaluator: pass, fail, inconclusive, or not applicable. A target failure identifies an attempt whose agent call failed.
 * Guardrails report allow, deny, or failure of the check. Their decisions control execution.
 * Runtime evaluators record verdicts on completed interactions.
 * Specification checks report exit-condition states and a conformance verdict.
@@ -30,8 +30,8 @@ Read each result in its own context. Missing evidence is not a successful check,
 
 == Next steps
 
-* xref:testing:evaluation/index.adoc[] and xref:testing:evaluation/eval-cases.adoc[] define test evaluation.
-* xref:testing:evaluation/judges.adoc[] and xref:testing:evaluation/gates-and-reports.adoc[] configure scoring and acceptance.
-* xref:testing:evaluation/replay.adoc[] and xref:testing:evaluation/adversarial.adoc[] test recorded traffic and attacks.
+* xref:testing:evaluation/index.adoc[] and xref:testing:evaluation/getting-started.adoc[] define test evaluation.
+* xref:testing:evaluation/gates-and-reports.adoc[] configures scoring and acceptance.
+* xref:testing:evaluation/adversarial.adoc[] tests attacks.
 * xref:sdk:evaluators.adoc[] evaluates live interactions.
 * xref:optimize:trainer/evaluation.adoc[] evaluates trained models.

@@ -5,12 +5,15 @@
 package akka.javasdk.testkit.eval;
 
 import akka.javasdk.JsonSupport;
+import akka.javasdk.ledger.InteractionRecord;
+import akka.javasdk.ledger.ModelResponse;
+import akka.javasdk.ledger.ToolCall;
 import akka.javasdk.testkit.eval.ExperimentRunner.CaseResult;
 import akka.javasdk.testkit.eval.ExperimentRunner.CaseSummary;
+import akka.javasdk.testkit.eval.ExperimentRunner.EvaluatorVerdicts;
 import akka.javasdk.testkit.eval.ExperimentRunner.Outcome;
 import akka.javasdk.testkit.eval.ExperimentRunner.Rate;
 import akka.javasdk.testkit.eval.ExperimentRunner.Report;
-import akka.javasdk.testkit.eval.ExperimentRunner.RequirementSummary;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +53,7 @@ final class EvalReportJson {
             count(cases, Outcome.INCONCLUSIVE),
             (int)
                 cases.stream()
-                    .flatMap(c -> c.requirements().stream())
+                    .flatMap(c -> c.verdicts().stream())
                     .filter(r -> r.outcome() == Outcome.INCONSISTENT)
                     .count(),
             report.results().size(),
@@ -59,9 +62,18 @@ final class EvalReportJson {
             (int) report.results().stream().filter(CaseResult::inconclusive).count(),
             report.passRate()),
         evaluatorCounts(Report.rates(report.results())),
+        Report.guardrailCounts(report.results()).entrySet().stream()
+            .map(
+                e ->
+                    new ReportDocument.GuardrailCounts(
+                        e.getKey(),
+                        e.getValue().allowed(),
+                        e.getValue().denied(),
+                        e.getValue().failed()))
+            .toList(),
         new ReportDocument.Spend(
             spend.attemptsWithEvidence(),
-            spend.modelCalls(),
+            spend.modelResponses(),
             spend.inputTokens(),
             spend.outputTokens(),
             spend.latencyMs()),
@@ -81,7 +93,8 @@ final class EvalReportJson {
                     e.getKey(),
                     e.getValue().passed(),
                     e.getValue().failed(),
-                    e.getValue().inconclusive()))
+                    e.getValue().inconclusive(),
+                    e.getValue().notApplicable()))
         .toList();
   }
 
@@ -92,17 +105,17 @@ final class EvalReportJson {
         summary.passedRuns(),
         summary.failedRuns(),
         summary.inconclusiveRuns(),
-        summary.requirements().stream().map(EvalReportJson::requirement).toList());
+        summary.verdicts().stream().map(EvalReportJson::evaluatorVerdicts).toList());
   }
 
-  private static ReportDocument.Requirement requirement(RequirementSummary requirement) {
-    return new ReportDocument.Requirement(
-        requirement.index(),
-        requirement.evaluator(),
-        requirement.outcome(),
-        requirement.passedIn(),
-        requirement.failedIn(),
-        requirement.inconclusiveIn());
+  private static ReportDocument.EvaluatorVerdicts evaluatorVerdicts(EvaluatorVerdicts verdicts) {
+    return new ReportDocument.EvaluatorVerdicts(
+        verdicts.evaluator(),
+        verdicts.outcome(),
+        verdicts.passedIn(),
+        verdicts.failedIn(),
+        verdicts.inconclusiveIn(),
+        verdicts.notApplicableIn());
   }
 
   private static ReportDocument.Attempt attempt(CaseResult result) {
@@ -110,43 +123,60 @@ final class EvalReportJson {
         result.caseId(),
         result.run(),
         result.verdict(),
-        interaction(result.interaction()),
+        evidence(result.evidence()),
         result.evalResults().stream()
             .map(r -> new ReportDocument.Result(r.evaluator(), r.verdict(), r.detail()))
             .toList());
   }
 
-  private static ReportDocument.Interaction interaction(Interaction interaction) {
-    return new ReportDocument.Interaction(
-        interaction.input(),
-        interaction.userMessage(),
-        interaction.reply(),
-        interaction.finalModelText(),
-        interaction.latency().toMillis(),
-        interaction.inputTokens(),
-        interaction.outputTokens(),
-        interaction.blocked(),
-        interaction.toolCalls().stream()
-            .map(c -> new ReportDocument.ToolCall(c.name(), c.arguments(), c.result(), c.error()))
+  private static ReportDocument.Evidence evidence(Evidence evidence) {
+    var interaction = evidence.interaction();
+    var modelConfig = interaction.map(record -> record.metadata().modelConfig());
+    return new ReportDocument.Evidence(
+        evidence.input(),
+        interaction.map(InteractionRecord::interactionId).orElse(""),
+        interaction.map(InteractionRecord::systemMessage).orElse(""),
+        interaction.map(InteractionRecord::inputText).orElse(""),
+        evidence.reply(),
+        evidence.returned().orElse(""),
+        evidence.failure().orElse(""),
+        new ReportDocument.Model(
+            modelConfig.map(config -> orEmpty(config.providerName())).orElse(""),
+            modelConfig.map(config -> orEmpty(config.modelName())).orElse("")),
+        interaction.map(record -> record.metadata().finishReason().name()).orElse(""),
+        evidence.latency().toMillis(),
+        evidence.inputTokens(),
+        evidence.outputTokens(),
+        evidence.modelResponses(),
+        interaction.map(InteractionRecord::modelResponses).orElse(List.of()).stream()
+            .map(EvalReportJson::response)
             .toList(),
-        interaction.modelCalls().stream()
-            .map(
-                c ->
-                    new ReportDocument.ModelCall(
-                        c.model(),
-                        c.provider(),
-                        c.finishReasons(),
-                        c.inputTokens(),
-                        c.outputTokens(),
-                        c.duration().toMillis(),
-                        c.inputMessages(),
-                        c.outputMessages()))
+        evidence.denied(),
+        evidence.toolCalls().stream()
+            .map(c -> new ReportDocument.ToolCall(c.name(), c.arguments(), c.response()))
             .toList(),
-        interaction.guardrails().stream()
+        evidence.guardrails().stream()
             .map(
                 g ->
                     new ReportDocument.Guardrail(
-                        g.name(), g.category(), g.passed(), g.explanation()))
+                        g.name(),
+                        g.category(),
+                        g.boundary().name(),
+                        g.decision().name(),
+                        g.reportOnly(),
+                        g.explanation()))
             .toList());
+  }
+
+  private static ReportDocument.Response response(ModelResponse response) {
+    return new ReportDocument.Response(
+        orEmpty(response.content()),
+        response.tokenUsage().totalInputTokens(),
+        response.outputTokenCount(),
+        response.toolCalls().stream().map(ToolCall::name).toList());
+  }
+
+  private static String orEmpty(String text) {
+    return text == null ? "" : text;
   }
 }

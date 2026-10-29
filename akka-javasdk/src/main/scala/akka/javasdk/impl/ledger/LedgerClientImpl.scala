@@ -22,6 +22,7 @@ import akka.javasdk.impl.ErrorHandling
 import akka.javasdk.impl.ForwardCompat.knownOr
 import akka.javasdk.ledger.EvaluationRecord
 import akka.javasdk.ledger.Failure
+import akka.javasdk.ledger.GuardrailDecisionRecord
 import akka.javasdk.ledger.InteractionMetadata
 import akka.javasdk.ledger.InteractionRecord
 import akka.javasdk.ledger.LedgerClient
@@ -71,8 +72,34 @@ private[javasdk] final class LedgerClientImpl(spiLedgerClient: SpiLedgerClient, 
 
   override def getEvaluationsAsync(interactionId: String): CompletionStage[util.List[EvaluationRecord]] =
     spiLedgerClient
-      .getEvaluations(interactionId, from = None, limit = LedgerClientImpl.EvaluationsLimit)
+      .getEvaluations(interactionId, from = None, limit = LedgerClientImpl.ListLimit)
       .map(_.map(LedgerClientImpl.toEvaluationRecord).asJava)
+      .asJava
+
+  override def getInteractions(agentComponentId: String, sessionId: String): util.List[InteractionRecord] =
+    try getInteractionsAsync(agentComponentId, sessionId).toCompletableFuture.join()
+    catch {
+      case e: CompletionException => throw ErrorHandling.unwrapCompletionException(e)
+    }
+
+  override def getInteractionsAsync(
+      agentComponentId: String,
+      sessionId: String): CompletionStage[util.List[InteractionRecord]] =
+    spiLedgerClient
+      .getInteractions(agentComponentId, sessionId, from = None, limit = LedgerClientImpl.ListLimit)
+      .map(_.map(LedgerClientImpl.toInteractionRecord).asJava)
+      .asJava
+
+  override def getGuardrailDecisions(interactionId: String): util.List[GuardrailDecisionRecord] =
+    try getGuardrailDecisionsAsync(interactionId).toCompletableFuture.join()
+    catch {
+      case e: CompletionException => throw ErrorHandling.unwrapCompletionException(e)
+    }
+
+  override def getGuardrailDecisionsAsync(interactionId: String): CompletionStage[util.List[GuardrailDecisionRecord]] =
+    spiLedgerClient
+      .getGuardrailDecisions(interactionId, from = None, limit = LedgerClientImpl.ListLimit)
+      .map(_.map(LedgerClientImpl.toGuardrailDecisionRecord).asJava)
       .asJava
 }
 
@@ -82,8 +109,8 @@ private[javasdk] final class LedgerClientImpl(spiLedgerClient: SpiLedgerClient, 
 @InternalApi
 private[ledger] object LedgerClientImpl {
 
-  /** Cap on the evaluations returned for one interaction, matching the ledger page size. */
-  private val EvaluationsLimit = 100
+  /** Cap on the records returned by one listing, matching the ledger page size. */
+  private val ListLimit = 100
 
   def toInteractionRecord(record: SpiLedger.InteractionRecord): InteractionRecord =
     new InteractionRecord(
@@ -115,6 +142,66 @@ private[ledger] object LedgerClientImpl {
       record.timestamp)
   }
 
+  def toGuardrailDecisionRecord(record: SpiLedger.GuardrailDecisionRecord): GuardrailDecisionRecord =
+    new GuardrailDecisionRecord(
+      record.recordId,
+      record.agentComponentId,
+      record.interactionId,
+      record.sessionId,
+      record.flowId.toJava,
+      record.name,
+      record.controlId.toJava,
+      record.category,
+      toGuardrailBoundary(record.boundary),
+      toGuardrailDecision(record.decision),
+      record.decision.explanation,
+      record.reportOnly,
+      toFailMode(record.failMode),
+      record.duration,
+      record.toolCall.map(toToolCall).toJava,
+      record.timestamp)
+
+  private def toGuardrailBoundary(boundary: SpiLedger.GuardrailBoundary): GuardrailDecisionRecord.Boundary =
+    knownOr(GuardrailDecisionRecord.Boundary.UNSPECIFIED) {
+      boundary match {
+        case SpiLedger.GuardrailBoundary.Unspecified         => GuardrailDecisionRecord.Boundary.UNSPECIFIED
+        case SpiLedger.GuardrailBoundary.BeforeModelCall     => GuardrailDecisionRecord.Boundary.BEFORE_MODEL_CALL
+        case SpiLedger.GuardrailBoundary.BeforeAgentResponse => GuardrailDecisionRecord.Boundary.BEFORE_AGENT_RESPONSE
+        case SpiLedger.GuardrailBoundary.BeforeToolCall      => GuardrailDecisionRecord.Boundary.BEFORE_TOOL_CALL
+      }
+    }
+
+  private def toGuardrailDecision(decision: SpiLedger.GuardrailDecision): GuardrailDecisionRecord.Decision =
+    knownOr(GuardrailDecisionRecord.Decision.UNSPECIFIED) {
+      decision match {
+        case _: SpiLedger.GuardrailDecision.Unspecified => GuardrailDecisionRecord.Decision.UNSPECIFIED
+        case _: SpiLedger.GuardrailDecision.Allow       => GuardrailDecisionRecord.Decision.ALLOW
+        case _: SpiLedger.GuardrailDecision.Deny        => GuardrailDecisionRecord.Decision.DENY
+        case _: SpiLedger.GuardrailDecision.Fail        => GuardrailDecisionRecord.Decision.FAIL
+      }
+    }
+
+  private def toFailMode(failMode: SpiLedger.GuardrailFailMode): GuardrailDecisionRecord.FailMode =
+    knownOr(GuardrailDecisionRecord.FailMode.UNSPECIFIED) {
+      failMode match {
+        case SpiLedger.GuardrailFailMode.Unspecified => GuardrailDecisionRecord.FailMode.UNSPECIFIED
+        case SpiLedger.GuardrailFailMode.FailClosed  => GuardrailDecisionRecord.FailMode.FAIL_CLOSED
+        case SpiLedger.GuardrailFailMode.FailOpen    => GuardrailDecisionRecord.FailMode.FAIL_OPEN
+      }
+    }
+
+  private def toToolCall(toolCall: SpiLedger.GuardrailToolCall): GuardrailDecisionRecord.ToolCall =
+    new GuardrailDecisionRecord.ToolCall(toolCall.toolCallId.toJava, toolCall.toolName, toToolOrigin(toolCall.origin))
+
+  private def toToolOrigin(origin: SpiLedger.ToolOrigin): GuardrailDecisionRecord.ToolOrigin =
+    knownOr[GuardrailDecisionRecord.ToolOrigin](new GuardrailDecisionRecord.ToolOrigin.Unspecified()) {
+      origin match {
+        case SpiLedger.ToolOrigin.Unspecified       => new GuardrailDecisionRecord.ToolOrigin.Unspecified()
+        case SpiLedger.ToolOrigin.FunctionTool      => new GuardrailDecisionRecord.ToolOrigin.FunctionTool()
+        case remote: SpiLedger.ToolOrigin.RemoteMcp => new GuardrailDecisionRecord.ToolOrigin.RemoteMcp(remote.endpoint)
+      }
+    }
+
   private def toEvaluationTrigger(trigger: SpiLedger.EvaluationTrigger): EvaluationRecord.Trigger =
     knownOr(EvaluationRecord.Trigger.UNSPECIFIED) {
       trigger match {
@@ -130,6 +217,8 @@ private[ledger] object LedgerClientImpl {
         new EvaluationRecord.Outcome.Verdict(toEvaluation(verdict.evaluation))
       case inconclusive: SpiLedger.EvaluationInconclusive =>
         new EvaluationRecord.Outcome.Inconclusive(inconclusive.reason)
+      case notApplicable: SpiLedger.EvaluationNotApplicable =>
+        new EvaluationRecord.Outcome.NotApplicable(notApplicable.reason)
       case failure: SpiLedger.EvaluationFailure =>
         new EvaluationRecord.Outcome.Failed(failure.reason)
     }

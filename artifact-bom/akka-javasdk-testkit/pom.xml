@@ -63,7 +63,7 @@
         <dependency>
             <groupId>com.azure</groupId>
             <artifactId>azure-core-amqp</artifactId>
-            <version>2.12.1</version>
+            <version>2.12.2</version>
         </dependency>
         <dependency>
             <groupId>com.azure</groupId>
@@ -83,27 +83,27 @@
         <dependency>
             <groupId>com.azure</groupId>
             <artifactId>azure-messaging-eventhubs</artifactId>
-            <version>5.21.6</version>
+            <version>5.21.7</version>
         </dependency>
         <dependency>
             <groupId>com.azure</groupId>
             <artifactId>azure-messaging-eventhubs-checkpointstore-blob</artifactId>
-            <version>1.21.8</version>
+            <version>1.21.9</version>
         </dependency>
         <dependency>
             <groupId>com.azure</groupId>
             <artifactId>azure-storage-blob</artifactId>
-            <version>12.35.1</version>
+            <version>12.35.2</version>
         </dependency>
         <dependency>
             <groupId>com.azure</groupId>
             <artifactId>azure-storage-common</artifactId>
-            <version>12.34.1</version>
+            <version>12.34.2</version>
         </dependency>
         <dependency>
             <groupId>com.azure</groupId>
             <artifactId>azure-storage-internal-avro</artifactId>
-            <version>12.20.1</version>
+            <version>12.20.2</version>
         </dependency>
         <dependency>
             <groupId>com.azure</groupId>
@@ -249,7 +249,7 @@
         <dependency>
             <groupId>com.google.genai</groupId>
             <artifactId>google-genai</artifactId>
-            <version>1.75.0</version>
+            <version>1.78.0</version>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
@@ -724,17 +724,17 @@
         <dependency>
             <groupId>io.akka</groupId>
             <artifactId>akka-runtime-core_2.13</artifactId>
-            <version>1.7.2-15-bf1be0f2-SNAPSHOT</version>
+            <version>1.7.4-5-a7901b19-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.akka</groupId>
             <artifactId>akka-runtime-dev_2.13</artifactId>
-            <version>1.7.2-15-bf1be0f2-SNAPSHOT</version>
+            <version>1.7.4-5-a7901b19-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.akka</groupId>
             <artifactId>akka-sdk-spi_2.13</artifactId>
-            <version>1.7.2-15-bf1be0f2-SNAPSHOT</version>
+            <version>1.7.4-5-a7901b19-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
@@ -1387,7 +1387,7 @@
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>annotations</artifactId>
-            <version>2.55.12</version>
+            <version>2.55.16</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
@@ -1397,17 +1397,17 @@
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>apache5-client</artifactId>
-            <version>2.55.12</version>
+            <version>2.55.16</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>auth</artifactId>
-            <version>2.55.12</version>
+            <version>2.55.16</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>aws-core</artifactId>
-            <version>2.55.12</version>
+            <version>2.55.16</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
@@ -1417,7 +1417,7 @@
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>aws-query-protocol</artifactId>
-            <version>2.55.12</version>
+            <version>2.55.16</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
@@ -1427,112 +1427,112 @@
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>checksums</artifactId>
-            <version>2.55.12</version>
+            <version>2.55.16</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>checksums-spi</artifactId>
-            <version>2.55.12</version>
+            <version>2.55.16</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>endpoints-spi</artifactId>
-            <version>2.55.12</version>
+            <version>2.55.16</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>http-auth</artifactId>
-            <version>2.55.12</version>
+            <version>2.55.16</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>http-auth-aws</artifactId>
-            <version>2.55.12</version>
+            <version>2.55.16</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>http-auth-aws-eventstream</artifactId>
-            <version>2.55.12</version>
+            <version>2.55.16</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>http-auth-spi</artifactId>
-            <version>2.55.12</version>
+            <version>2.55.16</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>http-client-spi</artifactId>
-            <version>2.55.12</version>
+            <version>2.55.16</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>identity-spi</artifactId>
-            <version>2.55.12</version>
+            <version>2.55.16</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>json-utils</artifactId>
-            <version>2.55.12</version>
+            <version>2.55.16</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>metrics-spi</artifactId>
-            <version>2.55.12</version>
+            <version>2.55.16</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>netty-nio-client</artifactId>
-            <version>2.55.12</version>
+            <version>2.55.16</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>profiles</artifactId>
-            <version>2.55.12</version>
+            <version>2.55.16</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>protocol-core</artifactId>
-            <version>2.55.12</version>
+            <version>2.55.16</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>regions</artifactId>
-            <version>2.55.12</version>
+            <version>2.55.16</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>retries</artifactId>
-            <version>2.55.12</version>
+            <version>2.55.16</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>retries-spi</artifactId>
-            <version>2.55.12</version>
+            <version>2.55.16</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>sdk-core</artifactId>
-            <version>2.55.12</version>
+            <version>2.55.16</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>sts</artifactId>
-            <version>2.55.12</version>
+            <version>2.55.16</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>third-party-jackson-core</artifactId>
-            <version>2.55.12</version>
+            <version>2.55.16</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>utils</artifactId>
-            <version>2.55.12</version>
+            <version>2.55.16</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>utils-lite</artifactId>
-            <version>2.55.12</version>
+            <version>2.55.16</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.eventstream</groupId>
