@@ -35,6 +35,11 @@ public interface ServiceSetup {
    * incidents, etc.). Therefore, one should carefully consider how to use this hook and its
    * implementation.
    *
+   * <p>The instance is not ready until this method returns. Until then, consumers, view updates and
+   * timers do not run on the instance, and calls through the service name are not routed to it. Do
+   * not wait for any of these in this method. There is no timeout. If this method throws an
+   * exception, the instance is stopped.
+   *
    * <p>This hook is called after {@link #createDependencyProvider()}.
    */
   default void onStartup() {}

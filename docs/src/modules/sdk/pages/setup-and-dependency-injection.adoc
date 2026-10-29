@@ -25,6 +25,23 @@ individually and independently, for example during a rolling upgrade. Each such 
 `onStartup` when starting up, even if other instances run it before. The same applies to `onShutdown`: it runs on each
 instance as it shuts down, not once for the service as a whole.
 
+The instance reports itself as not ready until `onStartup` returns. While it is not ready:
+
+* Consumers, view updates and timers do not run on the instance.
+* Calls to the service through its service name, for example with the `HttpClientProvider`, are not routed to the
+instance. Such a call can wait forever, or reach another instance that runs an older version of the service.
+
+When you run the service locally, calls through the service name do reach the instance before `onStartup` returns. A
+call that works locally can therefore still fail when the service is deployed.
+
+Do not wait in `onStartup` for any of these. To call components of the service itself, use the
+xref:component-and-service-calls.adoc#_component_client[Component Client]. Work that does not need to finish before the
+instance is ready can run asynchronously, without `onStartup` waiting for it.
+
+There is no timeout for `onStartup`. If it does not return within 30 seconds, the runtime logs a warning, but the
+instance stays not ready until it returns. If `onStartup` throws an exception, the runtime logs the error and stops the
+instance.
+
 `onShutdown` runs after the instance has stopped accepting requests and any in-flight requests have completed,
 which makes it a good place to release resources allocated in the `ServiceSetup` constructor or in `onStartup` —
 for example, closing a connection pool. Exceptions thrown from `onShutdown` are logged but do not block subsequent
