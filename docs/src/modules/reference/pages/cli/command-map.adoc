@@ -157,18 +157,9 @@ These commands train and evaluate models. They are an add-on to Akka Automated O
 | xref:reference:cli/akka-cli/akka_optimize_registry.adoc[`akka optimize registry`]
 | The artifact registry: named models, datasets, and bundles.
 | xref:optimize:trainer/datasets.adoc[]
-|===
 
-== Model governance commands
-
-[cols="2,4,3", options="header"]
-|===
-| Command group
-| Acts on
-| Tasks are in
-
-| xref:reference:cli/models.adoc#governance[`akka optimize models`]
-| The corporate model registry: which models an organization sanctions.
+| xref:reference:cli/models.adoc#directory[`akka optimize models`]
+| The model directory: the model versions in the artifact registry, with their training, serving, routing, and price. It also deprecates and retires a version.
 | Reference only
 |===
 
