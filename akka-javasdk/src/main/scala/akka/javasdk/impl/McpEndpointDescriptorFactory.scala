@@ -37,6 +37,7 @@ import akka.javasdk.impl.ErrorHandling.asScalaUnwrapped
 import akka.javasdk.impl.ErrorHandling.unwrapInvocationTargetExceptionCatcher
 import akka.javasdk.impl.JwtDescriptorFactory.deriveJWTOptions
 import akka.javasdk.impl.serialization.Serializer
+import akka.javasdk.impl.telemetry.Telemetry
 import akka.parboiled2.util.Base64
 import akka.runtime.sdk.spi.ComponentOptions
 import akka.runtime.sdk.spi.McpEndpointConstructionContext
@@ -71,6 +72,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.google.protobuf.GeneratedMessageV3
+import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.LoggerFactory
 
 /**
@@ -171,30 +173,31 @@ object McpEndpointDescriptorFactory {
           new ToolDescription(toolName, annotation.description(), inputSchema, toolAnnotations, toolOutput.outputSchema)
 
         val requiredParameterNames = inputSchema.required.toSet
-        def invokeTool(context: McpEndpointConstructionContext, params: Map[String, Any]): AnyRef = {
-          val endpointInstance = instanceFactory.apply(context)
-          try {
-            if (method.getParameterCount == 0) {
-              method.invoke(endpointInstance)
-            } else {
-              val parsedParams = method.getParameters.map { param =>
-                val required = requiredParameterNames(param.getName)
-                params.get(param.getName) match {
-                  case Some(unparsedValue) =>
-                    val paramValue = objectMapper.convertValue(unparsedValue, param.getType)
-                    if (required) paramValue
-                    else Optional.ofNullable(paramValue)
-                  case None =>
-                    if (required)
-                      throw new IllegalArgumentException(
-                        s"Missing required tool parameter [${param.getName}] for tool [$toolName]")
-                    else Optional.empty()
+        def invokeTool(context: McpEndpointConstructionContext, params: Map[String, Any]): AnyRef =
+          Telemetry.withCurrentContext(telemetryContextOf(context)) {
+            val endpointInstance = instanceFactory.apply(context)
+            try {
+              if (method.getParameterCount == 0) {
+                method.invoke(endpointInstance)
+              } else {
+                val parsedParams = method.getParameters.map { param =>
+                  val required = requiredParameterNames(param.getName)
+                  params.get(param.getName) match {
+                    case Some(unparsedValue) =>
+                      val paramValue = objectMapper.convertValue(unparsedValue, param.getType)
+                      if (required) paramValue
+                      else Optional.ofNullable(paramValue)
+                    case None =>
+                      if (required)
+                        throw new IllegalArgumentException(
+                          s"Missing required tool parameter [${param.getName}] for tool [$toolName]")
+                      else Optional.empty()
+                  }
                 }
+                method.invoke(endpointInstance, parsedParams: _*)
               }
-              method.invoke(endpointInstance, parsedParams: _*)
-            }
-          } catch unwrapInvocationTargetExceptionCatcher
-        }
+            } catch unwrapInvocationTargetExceptionCatcher
+          }
 
         def textResult(text: String) = new ToolCallResult(Seq(new TextContent(text)), None, isError = false)
         // empty content, the runtime adds the JSON of the structured content as text content
@@ -298,11 +301,12 @@ object McpEndpointDescriptorFactory {
               throw new IllegalArgumentException(
                 s"Resource template request was missing parameter [${parameter.getName}]")))
 
-          val instance = instanceFactory(context)
-          val result =
+          val result = Telemetry.withCurrentContext(telemetryContextOf(context)) {
+            val instance = instanceFactory(context)
             try {
               method.invoke(instance, params: _*)
             } catch unwrapInvocationTargetExceptionCatcher
+          }
           resourceResultToMcp(result, uri.toString(), resourceTemplate.mimeType)
         }
 
@@ -332,11 +336,12 @@ object McpEndpointDescriptorFactory {
 
         val callback = { (context: McpEndpointConstructionContext) =>
           try {
-            val endpointInstance = instanceFactory(context)
-            val result =
+            val result = Telemetry.withCurrentContext(telemetryContextOf(context)) {
+              val endpointInstance = instanceFactory(context)
               try {
                 method.invoke(endpointInstance)
               } catch unwrapInvocationTargetExceptionCatcher
+            }
             resourceResultToMcp(result, resourceDescription.uri, resourceDescription.mimeType)
           } catch {
             case NonFatal(ex) =>
@@ -381,15 +386,16 @@ object McpEndpointDescriptorFactory {
 
       val callback = { (context: McpEndpointConstructionContext, arguments: Map[String, String]) =>
         try {
-          val endpointInstance = instanceFactory(context)
           val paramsInOrder = method.getParameters.map { parameter =>
             if (parameter.getType != classOf[Optional[_]]) arguments(parameter.getName)
             else arguments.get(parameter.getName).toJava
           }
-          val result =
+          val result = Telemetry.withCurrentContext(telemetryContextOf(context)) {
+            val endpointInstance = instanceFactory(context)
             try {
               method.invoke(endpointInstance, paramsInOrder: _*).asInstanceOf[String]
             } catch unwrapInvocationTargetExceptionCatcher
+          }
           Future.successful(
             new PromptResult(
               description = None,
@@ -434,6 +440,9 @@ object McpEndpointDescriptorFactory {
         deriveJWTOptions(Option(mcpEndpointClass.getAnnotation(classOf[JWT])), mcpEndpointClass.getCanonicalName)),
       provided = false)
   }
+
+  private def telemetryContextOf(context: McpEndpointConstructionContext): Option[OtelContext] =
+    Option(context).flatMap(c => Option(c.telemetryContext))
 
   private def methodsWithAnnotation[T <: Annotation](clazz: Class[_])(implicit
       classTag: ClassTag[T]): Seq[(T, Method)] =

@@ -43,12 +43,10 @@ import akka.runtime.sdk.spi.SpiConsumer
 import akka.runtime.sdk.spi.SpiConsumer.Effect
 import akka.runtime.sdk.spi.SpiConsumer.Message
 import akka.runtime.sdk.spi.TimerClient
-import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.slf4j.MDC
 
 @InternalApi
 private[impl] final class ConsumerImpl[C <: Consumer](
@@ -99,11 +97,7 @@ private[impl] final class ConsumerImpl[C <: Consumer](
       }
     }
     val telemetryContext = Option(message.telemetryContext)
-    val traceId = telemetryContext.flatMap { context =>
-      Option(Span.fromContextOrNull(context)).map(_.getSpanContext.getTraceId)
-    }
-
-    traceId.foreach(id => MDC.put(Telemetry.TRACE_ID, id))
+    val traceScope = Telemetry.makeCurrent(telemetryContext)
     try {
       val messageContext =
         new MessageContextImpl(
@@ -125,7 +119,7 @@ private[impl] final class ConsumerImpl[C <: Consumer](
         // command handler threw an "unexpected" error, also covers HandlerNotFoundException
         Future.successful(handleUnexpectedException(message, ex))
     } finally {
-      if (traceId.isDefined) MDC.remove(Telemetry.TRACE_ID)
+      traceScope.close()
     }
   }
 

@@ -49,7 +49,6 @@ import akka.runtime.sdk.spi.TableDescriptor
 import akka.runtime.sdk.spi.ViewDescriptor
 import com.google.protobuf.GeneratedMessageV3
 import org.slf4j.LoggerFactory
-import org.slf4j.MDC
 
 /**
  * INTERNAL API
@@ -490,12 +489,7 @@ private[impl] object ViewDescriptorFactory {
       val existingState: Option[AnyRef] =
         input.existingTableRow.map(bytes => serializer.fromBytes(tableUpdaterRowClass, bytes).asInstanceOf[AnyRef])
       val metadata = MetadataImpl.of(input.metadata)
-      val addedToMDC = metadata.traceId match {
-        case Some(traceId) =>
-          MDC.put(Telemetry.TRACE_ID, traceId)
-          true
-        case None => false
-      }
+      val traceScope = Telemetry.makeCurrent(metadata.context)
       try {
 
         // FIXME choose method like for other consumers
@@ -557,7 +551,6 @@ private[impl] object ViewDescriptorFactory {
         effect match {
           case ViewEffectImpl.Update(newState) =>
             if (newState == null) {
-              // FIXME MDC trace id should stretch here as well
               userLog.error(
                 s"View updater tried to set row state to null, not allowed [$componentId] threw an exception")
               throw ViewException(componentId, "updateState with null state is not allowed.", None)
@@ -568,7 +561,7 @@ private[impl] object ViewDescriptorFactory {
           case ViewEffectImpl.Ignore => SpiTableUpdateHandler.IgnoreUpdate
         }
       } finally {
-        if (addedToMDC) MDC.remove(Telemetry.TRACE_ID)
+        traceScope.close()
       }
 
     }(userEc)
