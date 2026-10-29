@@ -8,6 +8,7 @@ import scala.jdk.CollectionConverters._
 
 import akka.javasdk.impl.SomeToolInput.ClassWithRecursiveFields
 import akka.javasdk.impl.SomeToolInput.CommonStdlibTypes
+import akka.javasdk.impl.SomeToolInput.ScalarTypes
 import akka.javasdk.impl.SomeToolInput.SomeEnum
 import akka.javasdk.impl.SomeToolInput.SomeToolInput1
 import akka.javasdk.impl.SomeToolInput.SomeToolInput2
@@ -187,6 +188,42 @@ class JsonSchemaSpec extends AnyWordSpec with Matchers {
         "character",
         "boxedCharacter")
 
+    }
+
+    "extract schema with the JSON type Jackson writes for scalar types" in {
+      val result = JsonSchema.jsonSchemaFor(classOf[ScalarTypes]).asInstanceOf[JsonSchemaObject]
+
+      result.properties shouldEqual Map(
+        "bytes" -> Schema.string(),
+        "chars" -> Schema.string(),
+        "byteBuffer" -> Schema.string(),
+        "uri" -> Schema.string(),
+        "url" -> Schema.string(),
+        "bigInteger" -> Schema.integer(),
+        "date" -> Schema.string(),
+        "zoneId" -> Schema.string(),
+        "locale" -> Schema.string(),
+        "currency" -> Schema.string(),
+        "yearMonth" -> Schema.string(),
+        "atomicBoolean" -> Schema.boolean(),
+        "optionalInt" -> Schema.integer(),
+        "optionalDouble" -> Schema.number())
+      result.required.toSet shouldEqual result.properties.keySet - "optionalInt" - "optionalDouble"
+
+      val mapper = JsonSerializer.internalObjectMapper
+      val json = mapper.readTree(mapper.writeValueAsString(ScalarTypes.example()))
+      result.properties.foreach { case (name, schema) =>
+        val node = json.get(name)
+        withClue(s"$name: $node") {
+          schema match {
+            case _: JsonSchemaString  => node.isTextual shouldBe true
+            case _: JsonSchemaInteger => node.isIntegralNumber shouldBe true
+            case _: JsonSchemaNumber  => node.isNumber shouldBe true
+            case _: JsonSchemaBoolean => node.isBoolean shouldBe true
+            case other                => fail(s"Unexpected schema $other")
+          }
+        }
+      }
     }
 
     "extract schema of primitive type" in {
