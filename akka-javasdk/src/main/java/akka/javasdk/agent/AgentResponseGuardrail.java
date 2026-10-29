@@ -10,8 +10,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
- * A guardrail that decides whether the agent's final reply may be returned. The runtime evaluates
- * it once per agent interaction.
+ * A guardrail that decides whether an agent reply may be returned. The runtime evaluates it on the
+ * final reply, once per agent interaction. On an autonomous agent, the runtime also evaluates it on
+ * the message of each {@code broadcast}, {@code direct}, and {@code submit_turn} tool call.
  *
  * <p>An implementation has a public constructor, optionally taking a {@link GuardrailContext}
  * parameter, which gives access to the guardrail's configured name and config section. The per-call
@@ -45,7 +46,10 @@ public non-sealed interface AgentResponseGuardrail extends Guardrail {
     /** The name of the model that produced the reply. */
     String modelName();
 
-    /** The final model reply. It carries no tool requests. */
+    /**
+     * The final model reply, or the message of a {@code broadcast}, {@code direct}, or {@code
+     * submit_turn} tool call. It carries no tool requests.
+     */
     Message.AiMessage reply();
 
     /**
