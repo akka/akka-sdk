@@ -1,6 +1,6 @@
 = Routing commands
 :page-aliases: reference:inference-cli/routing.adoc
-:page-summary: The akka optimize commands for attribute routing, classifiers, discovered use cases, and routing policies.
+:page-summary: The akka optimize commands for attribute routing, classifiers, and discovered use cases.
 :page-persona: builder-developer, builder-ai-ml, operator
 :page-banner: inference
 
@@ -208,31 +208,6 @@ The commands in this section govern the use cases a semantic router recognizes a
 | `akka optimize use-cases manifests delete TAG`
 | Tombstone a manifest.
 
-|===
-
-=== Routing policies
-
-`akka optimize routing-policies` states what serves a use case, and in what share. The aliases `routing-policy`, `policies`, and `policy` are accepted.
-
-[cols="2,3", options="header"]
-|===
-| Command
-| Description
-
-| `akka optimize routing-policies get USECASE`
-| The current policy and its history.
-
-| `akka optimize routing-policies apply USECASE -f FILE`
-| Publish a policy version.
-
-| `akka optimize routing-policies rollback USECASE`
-| Republish a previous version.
-
-| `akka optimize routing-policies veto USECASE`
-| Refuse routing changes until lifted.
-
-| `akka optimize routing-policies route MODEL --usecase X [--shadow N] [--canary N]`
-| Set the shadow and canary dials. `0` removes a dial.
 |===
 
 include::inference:partial$aao-inference-notice.adoc[]
