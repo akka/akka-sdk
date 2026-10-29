@@ -67,6 +67,16 @@ public class ProtobufCustomerStateView extends View {
     return queryResult();
   }
 
+  @Query("SELECT * as customers FROM customers WHERE display_name IS NULL")
+  public QueryEffect<CustomerStateList> getCustomersWithoutDisplayName() {
+    return queryResult();
+  }
+
+  @Query("SELECT * as customers FROM customers WHERE display_name = :text")
+  public QueryEffect<CustomerStateList> getCustomersByDisplayName(SimpleMessage params) {
+    return queryResult();
+  }
+
   @Query("SELECT * AS customer FROM customers WHERE name = :text")
   public QueryEffect<CustomerStateResult> getCustomerAsNestedMessage(SimpleMessage params) {
     return queryResult();

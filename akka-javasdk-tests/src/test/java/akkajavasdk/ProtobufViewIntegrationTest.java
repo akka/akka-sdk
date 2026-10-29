@@ -18,6 +18,7 @@ import akkajavasdk.protocol.SerializationTestProtos.CustomerStateList;
 import akkajavasdk.protocol.SerializationTestProtos.CustomersByCreationTimeQuery;
 import akkajavasdk.protocol.SerializationTestProtos.SimpleMessage;
 import akkajavasdk.protocol.SerializationTestProtos.Status;
+import com.google.protobuf.util.Durations;
 import com.google.protobuf.util.Timestamps;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -232,6 +233,18 @@ public class ProtobufViewIntegrationTest extends TestKitSupport {
             view.method(ProtobufCustomerStateView::getCustomersByPreferredEmail)
                 .invoke(preferredEmailParam));
     assertThat(byPreferredEmail).containsExactly(fullId);
+
+    // Wrapper type field, stored as a plain JSON value.
+    var withoutDisplayName =
+        ids(view.method(ProtobufCustomerStateView::getCustomersWithoutDisplayName).invoke());
+    assertThat(withoutDisplayName).contains(bareId).doesNotContain(fullId);
+    var byDisplayName =
+        view.method(ProtobufCustomerStateView::getCustomersByDisplayName)
+            .invoke(SimpleMessage.newBuilder().setText("presence-nick-display").build());
+    assertThat(ids(byDisplayName)).containsExactly(fullId);
+    var full = byDisplayName.getCustomers(0);
+    assertThat(full.getDisplayName().getValue()).isEqualTo("presence-nick-display");
+    assertThat(full.getSessionLength()).isEqualTo(Durations.fromSeconds(90));
   }
 
   @Test

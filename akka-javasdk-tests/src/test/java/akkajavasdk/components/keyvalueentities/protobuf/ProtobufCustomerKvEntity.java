@@ -10,6 +10,8 @@ import akkajavasdk.protocol.SerializationTestProtos.ContactInfo;
 import akkajavasdk.protocol.SerializationTestProtos.CustomerState;
 import akkajavasdk.protocol.SerializationTestProtos.SimpleMessage;
 import akkajavasdk.protocol.SerializationTestProtos.Status;
+import com.google.protobuf.StringValue;
+import com.google.protobuf.util.Durations;
 import com.google.protobuf.util.Timestamps;
 
 /**
@@ -54,6 +56,8 @@ public class ProtobufCustomerKvEntity extends KeyValueEntity<CustomerState> {
             .setReviewDate(Timestamps.now())
             .setContact(ContactInfo.newBuilder().setPhone("123").build())
             .setPreferredEmail(command.preferredEmail())
+            .setDisplayName(StringValue.of(command.nickname() + "-display"))
+            .setSessionLength(Durations.fromSeconds(90))
             .build();
     return effects().updateState(newState).thenReply("Customer created");
   }

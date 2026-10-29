@@ -91,6 +91,52 @@ class ViewSchemaSpec extends AnyWordSpec with Matchers {
       fieldTypes("tags") shouldBe new SpiList(SpiString)
     }
 
+    "map protobuf wrapper types to their primitive type" in {
+      val result = ViewSchema(classOf[wellknown.WellKnownProtos.WellKnownFields]).asInstanceOf[SpiClass]
+      val fieldTypes = result.fields.map(f => f.name -> f.fieldType).toMap
+      fieldTypes("double_value") shouldBe new SpiOptional(SpiDouble)
+      fieldTypes("float_value") shouldBe new SpiOptional(SpiFloat)
+      fieldTypes("int64_value") shouldBe new SpiOptional(SpiLong)
+      fieldTypes("uint64_value") shouldBe new SpiOptional(SpiLong)
+      fieldTypes("int32_value") shouldBe new SpiOptional(SpiInteger)
+      fieldTypes("uint32_value") shouldBe new SpiOptional(SpiInteger)
+      fieldTypes("bool_value") shouldBe new SpiOptional(SpiBoolean)
+      fieldTypes("string_value") shouldBe new SpiOptional(SpiString)
+      fieldTypes("bytes_value") shouldBe new SpiOptional(SpiByteString)
+      fieldTypes("string_values") shouldBe new SpiList(SpiString)
+    }
+
+    "map protobuf wrapper types to their primitive type for query types" in {
+      val result = ViewSchema.forQuery(classOf[wellknown.WellKnownProtos.WellKnownFields]).asInstanceOf[SpiClass]
+      val fieldTypes = result.fields.map(f => f.name -> f.fieldType).toMap
+      fieldTypes("string_value") shouldBe SpiString
+      fieldTypes("int64_value") shouldBe SpiLong
+    }
+
+    "map protobuf wrapper types used directly to their primitive type" in {
+      ViewSchema(classOf[com.google.protobuf.StringValue]) shouldBe SpiString
+      ViewSchema(classOf[com.google.protobuf.Int32Value]) shouldBe SpiInteger
+    }
+
+    "map google.protobuf.Duration and FieldMask to SpiString" in {
+      val result = ViewSchema(classOf[wellknown.WellKnownProtos.WellKnownFields]).asInstanceOf[SpiClass]
+      val fieldTypes = result.fields.map(f => f.name -> f.fieldType).toMap
+      fieldTypes("duration") shouldBe new SpiOptional(SpiString)
+      fieldTypes("field_mask") shouldBe new SpiOptional(SpiString)
+    }
+
+    "reject protobuf well-known types without a fixed schema" in {
+      Seq(
+        classOf[wellknown.WellKnownProtos.WithStruct] -> "google.protobuf.Struct",
+        classOf[wellknown.WellKnownProtos.WithValue] -> "google.protobuf.Value",
+        classOf[wellknown.WellKnownProtos.WithListValue] -> "google.protobuf.ListValue",
+        classOf[wellknown.WellKnownProtos.WithAny] -> "google.protobuf.Any").foreach { case (clazz, typeName) =>
+        val exception = intercept[IllegalArgumentException](ViewSchema(clazz))
+        exception.getMessage should include(typeName)
+      }
+      intercept[IllegalArgumentException](ViewSchema(classOf[com.google.protobuf.Struct]))
+    }
+
     "handle self referencing type trees" in {
       val result = ViewSchema(classOf[ViewTestModels.Recursive])
       result shouldBe a[SpiClass]
@@ -136,22 +182,23 @@ class ViewSchemaSpec extends AnyWordSpec with Matchers {
       result.getField("second").get.fieldType shouldBe expectedChild
     }
 
-    "handle indirectly recursive protobuf messages such as google.protobuf.Struct" in {
-      val result = ViewSchema(classOf[com.google.protobuf.Struct])
+    "handle indirectly recursive protobuf messages" in {
+      val result = ViewSchema(classOf[protoconsumer.EventsForConsumer.TreeNode])
       result shouldBe a[SpiClass]
 
-      val fieldsType = result.asInstanceOf[SpiClass].getField("fields").get.fieldType
-      fieldsType shouldBe a[SpiList]
-      val fieldsEntry = fieldsType.asInstanceOf[SpiList].valueType.asInstanceOf[SpiClass]
-      fieldsEntry.name shouldBe "google.protobuf.Struct.FieldsEntry"
+      val childrenType = result.asInstanceOf[SpiClass].getField("children").get.fieldType
+      childrenType shouldBe a[SpiList]
+      val childrenEntry = childrenType.asInstanceOf[SpiList].valueType.asInstanceOf[SpiClass]
+      childrenEntry.name shouldBe "protoconsumer.TreeNode.ChildrenEntry"
 
-      val value = fieldsEntry.getField("value").get.fieldType.asInstanceOf[SpiOptional].valueType.asInstanceOf[SpiClass]
-      value.name shouldBe "google.protobuf.Value"
-      value.getField("struct_value").get.fieldType shouldBe new SpiOptional(new SpiClassRef("google.protobuf.Struct"))
+      val value =
+        childrenEntry.getField("value").get.fieldType.asInstanceOf[SpiOptional].valueType.asInstanceOf[SpiClass]
+      value.name shouldBe "protoconsumer.TreeValue"
+      value.getField("node").get.fieldType shouldBe new SpiOptional(new SpiClassRef("protoconsumer.TreeNode"))
 
-      val listValue =
-        value.getField("list_value").get.fieldType.asInstanceOf[SpiOptional].valueType.asInstanceOf[SpiClass]
-      listValue.getField("values").get.fieldType shouldBe new SpiList(new SpiClassRef("google.protobuf.Value"))
+      val list =
+        value.getField("list").get.fieldType.asInstanceOf[SpiOptional].valueType.asInstanceOf[SpiClass]
+      list.getField("values").get.fieldType shouldBe new SpiList(new SpiClassRef("protoconsumer.TreeValue"))
     }
   }
 
