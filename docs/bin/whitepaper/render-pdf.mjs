@@ -29,6 +29,12 @@ const STRICT = process.env.WHITEPAPERS_STRICT === '1';
 const base = 'deployment/technical-overview';
 const HUB = `${base}.html`;
 const BYOC = `${base}/byoc.html`;
+const AWS = `${base}/byoc-aws.html`;
+const AZURE = `${base}/byoc-azure.html`;
+const GCP = `${base}/byoc-gcp.html`;
+const BYOK8S_AWS = `${base}/byok8s-aws.html`;
+const BYOK8S_AZURE = `${base}/byok8s-azure.html`;
+const BYOK8S_GCP = `${base}/byok8s-gcp.html`;
 const BYOK8S_REQ = `${base}/byok8s-requirements.html`;
 const DATA_FLOWS = `${base}/data-flows.html`;
 const DATA_FLOWS_GRID = `${base}/data-flows-grid.html`;
@@ -38,13 +44,6 @@ const OPTIMIZE_DEPENDENCIES = `${base}/optimize-dependencies.html`;
 const WIDE_PDF = 'aao-data-flows.pdf';
 const WIDE_TITLE = 'Data Flows';
 const EYEBROW = 'Akka Automated Operations';
-
-// The clouds of each deployment model. A new cloud page is one more entry here.
-const CLOUDS = [
-  { id: 'aws', name: 'AWS', byoc: `${base}/byoc-aws.html`, byok8s: `${base}/byok8s-aws.html`, specifics: '_aws_specifics' },
-  { id: 'azure', name: 'Azure', byoc: `${base}/byoc-azure.html`, byok8s: `${base}/byok8s-azure.html`, specifics: '_azure_specifics' },
-  { id: 'gcp', name: 'GCP', byoc: `${base}/byoc-gcp.html`, byok8s: `${base}/byok8s-gcp.html`, specifics: '_gcp_specifics' },
-];
 
 // Section ids of the shared BYOK8s requirements partial. Dropping these from a self-contained
 // BYOK8s cloud page leaves only that page's cloud-specific sections for the full PDF.
@@ -60,34 +59,62 @@ const DOWNLOADS = [
     out: 'aao-technical-overview-full.pdf',
     title: 'Technical Overview',
     subtitle: 'The complete overview: architecture, operations, and every deployment model and cloud.',
-    parts: [HUB, `${base}/serverless.html`, `${base}/dedicated.html`, `${base}/optimize.html`, BYOC, ...CLOUDS.map(c => c.byoc), BYOK8S_REQ,
-      ...CLOUDS.map(c => ({ rel: c.byok8s, keep: [c.specifics] })),
+    parts: [HUB, `${base}/serverless.html`, `${base}/dedicated.html`, `${base}/optimize.html`, BYOC, AWS, AZURE, GCP, BYOK8S_REQ,
+      { rel: BYOK8S_AWS, keep: ['_aws_specifics'] },
+      { rel: BYOK8S_AZURE, keep: ['_azure_specifics'] },
+      { rel: BYOK8S_GCP, keep: ['_gcp_specifics'] },
       ...dataFlowsParts, OPTIMIZE_DEPENDENCIES],
   },
   {
     out: 'aao-byoc.pdf',
     title: 'BYOC',
     subtitle: 'Bring Your Own Cloud: shared setup, AWS, Azure, GCP, and data flows.',
-    parts: [BYOC, ...CLOUDS.map(c => c.byoc), ...dataFlowsParts],
+    parts: [BYOC, AWS, AZURE, GCP, ...dataFlowsParts],
   },
   {
     out: 'aao-byok8s.pdf',
     title: 'BYOK8s',
     subtitle: 'Bring Your Own Kubernetes: shared requirements, AWS, Azure, GCP, and data flows.',
-    parts: [BYOK8S_REQ, ...CLOUDS.map(c => ({ rel: c.byok8s, keep: [c.specifics] })), ...dataFlowsParts],
+    parts: [BYOK8S_REQ, { rel: BYOK8S_AWS, keep: ['_aws_specifics'] },
+      { rel: BYOK8S_AZURE, keep: ['_azure_specifics'] },
+      { rel: BYOK8S_GCP, keep: ['_gcp_specifics'] }, ...dataFlowsParts],
   },
-  ...CLOUDS.map(c => ({
-    out: `aao-byoc-${c.id}.pdf`,
-    title: `BYOC on ${c.name}`,
-    subtitle: `Shared BYOC setup, ${c.name} specifics, and data flows.`,
-    parts: [BYOC, c.byoc, ...dataFlowsParts],
-  })),
-  ...CLOUDS.map(c => ({
-    out: `aao-byok8s-${c.id}.pdf`,
-    title: `BYOK8s on ${c.name}`,
-    subtitle: `Self-contained BYOK8s setup for ${c.name}, with data flows.`,
-    parts: [c.byok8s, ...dataFlowsParts],
-  })),
+  {
+    out: 'aao-byoc-aws.pdf',
+    title: 'BYOC on AWS',
+    subtitle: 'Shared BYOC setup, AWS specifics, and data flows.',
+    parts: [BYOC, AWS, ...dataFlowsParts],
+  },
+  {
+    out: 'aao-byoc-azure.pdf',
+    title: 'BYOC on Azure',
+    subtitle: 'Shared BYOC setup, Azure specifics, and data flows.',
+    parts: [BYOC, AZURE, ...dataFlowsParts],
+  },
+  {
+    out: 'aao-byoc-gcp.pdf',
+    title: 'BYOC on GCP',
+    subtitle: 'Shared BYOC setup, GCP specifics, and data flows.',
+    parts: [BYOC, GCP, ...dataFlowsParts],
+  },
+  {
+    out: 'aao-byok8s-aws.pdf',
+    title: 'BYOK8s on AWS',
+    subtitle: 'Self-contained BYOK8s setup for AWS, with data flows.',
+    parts: [BYOK8S_AWS, ...dataFlowsParts],
+  },
+  {
+    out: 'aao-byok8s-azure.pdf',
+    title: 'BYOK8s on Azure',
+    subtitle: 'Self-contained BYOK8s setup for Azure, with data flows.',
+    parts: [BYOK8S_AZURE, ...dataFlowsParts],
+  },
+  {
+    out: 'aao-byok8s-gcp.pdf',
+    title: 'BYOK8s on GCP',
+    subtitle: 'Self-contained BYOK8s setup for GCP, with data flows.',
+    parts: [BYOK8S_GCP, ...dataFlowsParts],
+  },
 ];
 
 // Technical overview pages that no PDF includes, on purpose.
