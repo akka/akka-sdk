@@ -118,15 +118,23 @@ class McpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers with Sc
       logger.addAppender(appender)
       try {
         call("note-with-null-title").structuredContent.get should ===(Map("extra" -> "x"))
+        call("note-with-null-title")
         call("notes-with-null-title")
+        call("note-list-with-null-title")
+        call("always-included-null-title")
       } finally logger.detachAppender(appender)
 
       val warnings = appender.list.asScala.filter(_.getLevel == Level.WARN).map(_.getFormattedMessage)
-      warnings should have size 3
+      warnings should have size 5
       warnings(0) should include("[note-with-null-title]")
       warnings(0) should include("without a value for [title]")
+      warnings(0) should include("Use Optional")
       warnings(1) should include("without a value for [notes[].title]")
       warnings(2) should include("without a value for [notes[]]")
+      warnings(2) should include("Keep null elements out of the list")
+      warnings(3) should include("without a value for [result[].title]")
+      warnings(4) should include("[always-included-null-title]")
+      warnings(4) should include("without a value for [title]")
     }
 
     "find required fields and null elements missing from structured content" in {
@@ -142,35 +150,16 @@ class McpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers with Sc
       def missing(content: AnyRef) =
         McpEndpointDescriptorFactory.missingValues(content, McpEndpointDescriptorFactory.valueCheckFor(schema).get, "")
 
-      val complete = java.util.Map.of[String, AnyRef](
-        "a",
-        "a",
-        "nested",
-        java.util.Map.of("b", "b"),
-        "items",
-        java.util.List.of(java.util.Map.of("b", "b")))
-      missing(complete) shouldBe empty
-
-      val incomplete = java.util.Map.of[String, AnyRef](
-        "nested",
-        java.util.Map.of(),
-        "items",
-        java.util.List.of(java.util.Map.of("b", "b"), java.util.Map.of(), java.util.Map.of()))
-      missing(incomplete) should ===(Seq("a", "nested.b", "items[].b"))
-
-      // nested values are Scala collections
-      missing(Map("a" -> "a", "nested" -> Map("b" -> "b"), "items" -> List(Map.empty, Map.empty))) should ===(
-        Seq("items[].b"))
+      missing(Map("a" -> "a", "nested" -> Map("b" -> "b"), "items" -> List(Map("b" -> "b")))) shouldBe empty
+      missing(Map("nested" -> Map.empty, "items" -> List(Map("b" -> "b"), Map.empty, Map.empty))) should ===(
+        Seq("a", "nested.b", "items[].b"))
+      // a field with a null value is missing
+      missing(Map("a" -> null, "nested" -> Map("b" -> "b"), "items" -> Nil)) should ===(Seq("a"))
 
       val itemsCheck = McpEndpointDescriptorFactory.valueCheckFor(new JsonSchemaArray(item, None)).get
-      McpEndpointDescriptorFactory.missingValues(
-        java.util.List.of(java.util.Map.of()),
-        itemsCheck,
-        "result") should ===(Seq("result[].b"))
-      McpEndpointDescriptorFactory.missingValues(
-        java.util.Arrays.asList(null, java.util.Map.of("b", "b")),
-        itemsCheck,
-        "result") should ===(Seq("result[]"))
+      McpEndpointDescriptorFactory.missingValues(List(Map.empty), itemsCheck, "result") should ===(Seq("result[].b"))
+      McpEndpointDescriptorFactory.missingValues(List(null, Map("b" -> "b")), itemsCheck, "result") should ===(
+        Seq("result[]"))
 
       // nothing can be missing without required fields or arrays
       McpEndpointDescriptorFactory.valueCheckFor(

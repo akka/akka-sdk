@@ -163,42 +163,29 @@ object McpEndpointDescriptorFactory {
       }
   }
 
-  // Paths of the values missing from the structured content, with `[]` for array elements. Nested values are
-  // Scala collections because the mapper has the Scala module.
+  // Paths of the values missing from the structured content, with `[]` for array elements. A field with a null
+  // value counts as missing. Values are Scala collections because the mapper has the Scala module.
   private[impl] def missingValues(value: Any, check: ValueCheck, rootPath: String): Seq[String] = {
     var missing: mutable.LinkedHashSet[String] = null
     def add(path: ValuePath): Unit = {
       if (missing == null) missing = mutable.LinkedHashSet.empty
       missing += path.toString
     }
-    def walk(value: Any, check: ValueCheck, path: ValuePath): Unit = check match {
-      case obj: ObjectCheck =>
-        value match {
-          case map: java.util.Map[_, _] =>
-            obj.required.foreach(name => if (!map.containsKey(name)) add(path.child(name)))
-            obj.nested.foreach { case (name, nestedCheck) =>
-              val nestedValue = map.get(name)
-              if (nestedValue != null) walk(nestedValue, nestedCheck, path.child(name))
-            }
-          case map: scala.collection.Map[_, _] =>
-            val fields = map.asInstanceOf[scala.collection.Map[String, Any]]
-            obj.required.foreach(name => if (!fields.contains(name)) add(path.child(name)))
-            obj.nested.foreach { case (name, nestedCheck) =>
-              val nestedValue = fields.getOrElse(name, null)
-              if (nestedValue != null) walk(nestedValue, nestedCheck, path.child(name))
-            }
-          case _ =>
+    def walk(value: Any, check: ValueCheck, path: ValuePath): Unit = (check, value) match {
+      case (obj: ObjectCheck, map: scala.collection.Map[_, _]) =>
+        val fields = map.asInstanceOf[scala.collection.Map[String, Any]]
+        obj.required.foreach(name => if (fields.getOrElse(name, null) == null) add(path.child(name)))
+        obj.nested.foreach { case (name, nestedCheck) =>
+          val nestedValue = fields.getOrElse(name, null)
+          if (nestedValue != null) walk(nestedValue, nestedCheck, path.child(name))
         }
-      case array: ArrayCheck =>
+      case (array: ArrayCheck, elements: scala.collection.Iterable[_]) =>
         val elementPath = path.element
-        def walkElement(element: Any): Unit =
+        elements.foreach { element =>
           if (element == null) add(elementPath)
           else array.items.foreach(walk(element, _, elementPath))
-        value match {
-          case list: java.util.List[_]           => list.forEach(walkElement(_))
-          case seq: scala.collection.Iterable[_] => seq.foreach(walkElement)
-          case _                                 =>
         }
+      case _ =>
     }
     walk(value, check, new ValuePath(null, rootPath))
     if (missing == null) Nil else missing.toSeq
@@ -293,13 +280,16 @@ object McpEndpointDescriptorFactory {
         def warnOnMissingValues(structured: AnyRef, rootPath: String): Unit =
           valueCheck.foreach { check =>
             missingValues(structured, check, rootPath).filter(warnedPaths.add).foreach { valuePath =>
+              val advice =
+                if (valuePath.endsWith("[]")) "Keep null elements out of the list."
+                else "Use Optional for a field that can be empty."
               logger.warn(
-                "Tool [{}] defined in [{}] returned structured content without a value for [{}], for example a " +
-                "null field or list element. The structured content does not match the output schema. Use " +
-                "Optional for a field that can be empty. This is logged once per tool and path.",
+                "Tool [{}] defined in [{}] returned structured content without a value for [{}]. The structured " +
+                "content does not match the output schema. {} This is logged once per tool and path.",
                 toolName,
                 methodLocation,
-                valuePath)
+                valuePath,
+                advice)
             }
           }
 
@@ -314,11 +304,11 @@ object McpEndpointDescriptorFactory {
             case JsonTextToolOutput => textResult(serialized(toolResultMapper.writeValueAsString(returnValue)))
             case ObjectToolOutput(_) =>
               val structured = serialized(toolResultMapper.convertValue(returnValue, JavaMapTypeRef))
-              warnOnMissingValues(structured, "")
+              warnOnMissingValues(structured.asScala, "")
               structuredResult(VectorMap.from(structured.asScala))
             case ArrayToolOutput(_) =>
               val structured = serialized(toolResultMapper.convertValue(returnValue, JavaListTypeRef))
-              warnOnMissingValues(structured, ArrayResultField)
+              warnOnMissingValues(structured.asScala, ArrayResultField)
               structuredResult(VectorMap(ArrayResultField -> structured))
           }
 
