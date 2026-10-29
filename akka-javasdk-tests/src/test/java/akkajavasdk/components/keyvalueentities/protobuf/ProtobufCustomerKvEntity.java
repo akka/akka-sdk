@@ -62,6 +62,22 @@ public class ProtobufCustomerKvEntity extends KeyValueEntity<CustomerState> {
     return effects().updateState(newState).thenReply("Customer created");
   }
 
+  public Effect<String> createWithNumbers(CreateWithNumbersCommand command) {
+    if (!currentState().getCustomerId().isEmpty()) {
+      return effects().error("Customer already exists");
+    }
+    var newState =
+        CustomerState.newBuilder()
+            .setCustomerId(commandContext().entityId())
+            .setName(command.name())
+            .setStatus(Status.ACTIVE)
+            .setLoyaltyPoints(command.loyaltyPoints())
+            .setVisitCount(command.visitCount())
+            .setLifetimeSpend(command.lifetimeSpend())
+            .build();
+    return effects().updateState(newState).thenReply("Customer created");
+  }
+
   public Effect<String> changeName(ChangeNameCommand command) {
     if (currentState().getCustomerId().isEmpty()) {
       return effects().error("Customer does not exist");
@@ -142,6 +158,9 @@ public class ProtobufCustomerKvEntity extends KeyValueEntity<CustomerState> {
 
   public record CreateWithPresenceFieldsCommand(
       String name, String nickname, String preferredEmail) {}
+
+  public record CreateWithNumbersCommand(
+      String name, long loyaltyPoints, int visitCount, long lifetimeSpend) {}
 
   public record ChangeNameCommand(String newName) {}
 

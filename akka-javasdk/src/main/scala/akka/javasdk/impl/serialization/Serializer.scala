@@ -65,6 +65,17 @@ final class Serializer(val objectMapper: ObjectMapper) {
   }
 
   /**
+   * Serialize a value to JSON bytes for a view row or view query parameters, even if it's a protobuf message.
+   */
+  def toBytesAsViewJson(value: Any): BytesPayload = {
+    value match {
+      case null                      => throw new NullPointerException("Null value handed to serialization")
+      case proto: GeneratedMessageV3 => ProtobufSerializer.toBytesAsViewJson(proto)
+      case _                         => jsonSerializer.toBytes(value)
+    }
+  }
+
+  /**
    * Deserialize bytes to the expected type. Automatically detects the content type and uses the appropriate
    * deserializer.
    */

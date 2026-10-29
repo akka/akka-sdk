@@ -15,6 +15,7 @@ import akkajavasdk.protocol.SerializationTestProtos.CustomerState;
 import akkajavasdk.protocol.SerializationTestProtos.CustomerStateList;
 import akkajavasdk.protocol.SerializationTestProtos.CustomerStateResult;
 import akkajavasdk.protocol.SerializationTestProtos.CustomersByCreationTimeQuery;
+import akkajavasdk.protocol.SerializationTestProtos.CustomersByNumbersQuery;
 import akkajavasdk.protocol.SerializationTestProtos.SimpleMessage;
 
 /**
@@ -74,6 +75,23 @@ public class ProtobufCustomerStateView extends View {
 
   @Query("SELECT * as customers FROM customers WHERE display_name = :text")
   public QueryEffect<CustomerStateList> getCustomersByDisplayName(SimpleMessage params) {
+    return queryResult();
+  }
+
+  @Query("SELECT * as customers FROM customers WHERE loyalty_points = :loyalty_points")
+  public QueryEffect<CustomerStateList> getCustomersByLoyaltyPoints(
+      CustomersByNumbersQuery params) {
+    return queryResult();
+  }
+
+  @Query("SELECT * as customers FROM customers WHERE visit_count = :visit_count")
+  public QueryEffect<CustomerStateList> getCustomersByVisitCount(CustomersByNumbersQuery params) {
+    return queryResult();
+  }
+
+  @Query("SELECT * as customers FROM customers WHERE lifetime_spend = :lifetime_spend")
+  public QueryEffect<CustomerStateList> getCustomersByLifetimeSpend(
+      CustomersByNumbersQuery params) {
     return queryResult();
   }
 

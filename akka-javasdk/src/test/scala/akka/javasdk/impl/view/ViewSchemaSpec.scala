@@ -99,7 +99,7 @@ class ViewSchemaSpec extends AnyWordSpec with Matchers {
       fieldTypes("int64_value") shouldBe new SpiOptional(SpiLong)
       fieldTypes("uint64_value") shouldBe new SpiOptional(SpiLong)
       fieldTypes("int32_value") shouldBe new SpiOptional(SpiInteger)
-      fieldTypes("uint32_value") shouldBe new SpiOptional(SpiInteger)
+      fieldTypes("uint32_value") shouldBe new SpiOptional(SpiLong)
       fieldTypes("bool_value") shouldBe new SpiOptional(SpiBoolean)
       fieldTypes("string_value") shouldBe new SpiOptional(SpiString)
       fieldTypes("bytes_value") shouldBe new SpiOptional(SpiByteString)
@@ -116,6 +116,24 @@ class ViewSchemaSpec extends AnyWordSpec with Matchers {
     "map protobuf wrapper types used directly to their primitive type" in {
       ViewSchema(classOf[com.google.protobuf.StringValue]) shouldBe SpiString
       ViewSchema(classOf[com.google.protobuf.Int32Value]) shouldBe SpiInteger
+    }
+
+    "map protobuf integer types to a type that holds their JSON value" in {
+      val result = ViewSchema(classOf[numbers.NumberProtos.NumberFields]).asInstanceOf[SpiClass]
+      val fieldTypes = result.fields.map(f => f.name -> f.fieldType).toMap
+      fieldTypes("int32_value") shouldBe SpiInteger
+      fieldTypes("sint32_value") shouldBe SpiInteger
+      fieldTypes("sfixed32_value") shouldBe SpiInteger
+      fieldTypes("uint32_value") shouldBe SpiLong
+      fieldTypes("fixed32_value") shouldBe SpiLong
+      fieldTypes("int64_value") shouldBe SpiLong
+      fieldTypes("sint64_value") shouldBe SpiLong
+      fieldTypes("sfixed64_value") shouldBe SpiLong
+      fieldTypes("uint64_value") shouldBe SpiLong
+      fieldTypes("fixed64_value") shouldBe SpiLong
+      fieldTypes("int64_wrapper") shouldBe new SpiOptional(SpiLong)
+      fieldTypes("uint64_wrapper") shouldBe new SpiOptional(SpiLong)
+      fieldTypes("uint32_wrapper") shouldBe new SpiOptional(SpiLong)
     }
 
     "map google.protobuf.Duration and FieldMask to SpiString" in {

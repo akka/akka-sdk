@@ -161,17 +161,20 @@ private[view] object ViewSchema {
       field: Descriptors.FieldDescriptor,
       protobufPresence: Boolean,
       seenMessages: Set[String]): SpiNestableType = {
-    import Descriptors.FieldDescriptor.JavaType
-    field.getJavaType match {
-      case JavaType.STRING      => SpiString
-      case JavaType.INT         => SpiInteger
-      case JavaType.LONG        => SpiLong
-      case JavaType.DOUBLE      => SpiDouble
-      case JavaType.FLOAT       => SpiFloat
-      case JavaType.BOOLEAN     => SpiBoolean
-      case JavaType.BYTE_STRING => SpiByteString
-      case JavaType.ENUM        => new SpiEnum(field.getEnumType.getFullName)
-      case JavaType.MESSAGE     => protobufMessageSchema(field.getMessageType, protobufPresence, seenMessages)
+    import Descriptors.FieldDescriptor.Type
+    // the view JSON holds unsigned values, uint32 needs a long, uint64 above Long.MaxValue is not supported
+    field.getType match {
+      case Type.STRING                              => SpiString
+      case Type.INT32 | Type.SINT32 | Type.SFIXED32 => SpiInteger
+      case Type.UINT32 | Type.FIXED32               => SpiLong
+      case Type.INT64 | Type.SINT64 | Type.SFIXED64 => SpiLong
+      case Type.UINT64 | Type.FIXED64               => SpiLong
+      case Type.DOUBLE                              => SpiDouble
+      case Type.FLOAT                               => SpiFloat
+      case Type.BOOL                                => SpiBoolean
+      case Type.BYTES                               => SpiByteString
+      case Type.ENUM                                => new SpiEnum(field.getEnumType.getFullName)
+      case Type.MESSAGE | Type.GROUP => protobufMessageSchema(field.getMessageType, protobufPresence, seenMessages)
     }
   }
 
