@@ -97,4 +97,4 @@ The API documentation is at link:{attachmentsdir}/testkit/akka/javasdk/testkit/e
 * xref:testing:evaluation/getting-started.adoc[]
 * xref:testing:evaluation/adversarial.adoc[]
 * xref:sdk:agents/testing.adoc[]
-* xref:sdk:agents/llm_eval.adoc[]
+* xref:sdk:evaluators.adoc[]

@@ -16,6 +16,8 @@ An evaluator checks a property. A model judge assesses a criterion that cannot b
 
 A live evaluator runs after an interaction and cannot undo it. Use an inline guardrail when a check must determine whether an action or reply proceeds. Sampling reduces evaluation cost but leaves some interactions without a verdict.
 
+An external evaluation tool can assess agent interactions from the traces that Akka exports. The agent spans carry OpenInference attributes, see xref:reference:telemetry/tracing.adoc#_agents_openinference[Agents (OpenInference)].
+
 == Reading results
 
 The APIs use different result types:
