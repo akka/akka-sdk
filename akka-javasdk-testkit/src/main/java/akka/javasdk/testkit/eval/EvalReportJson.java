@@ -13,6 +13,7 @@ import akka.javasdk.testkit.eval.ExperimentRunner.Report;
 import akka.javasdk.testkit.eval.ExperimentRunner.RequirementSummary;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /** Turns a {@link Report} into its {@link ReportDocument} and renders the document as JSON. */
@@ -146,7 +147,11 @@ final class EvalReportJson {
             .map(
                 g ->
                     new ReportDocument.Guardrail(
-                        g.name(), g.category(), g.passed(), g.explanation()))
+                        g.name(),
+                        g.category(),
+                        g.passed(),
+                        g.decision().name().toLowerCase(Locale.ROOT),
+                        g.explanation()))
             .toList());
   }
 }

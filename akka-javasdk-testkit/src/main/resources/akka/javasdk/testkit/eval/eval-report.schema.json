@@ -154,12 +154,13 @@
     },
     "guardrail": {
       "type": "object",
-      "required": ["name", "category", "passed", "explanation"],
+      "required": ["name", "category", "passed", "decision", "explanation"],
       "properties": {
         "name": { "type": "string" },
         "category": { "type": "string" },
         "passed": { "type": "boolean" },
-        "explanation": { "type": "string", "description": "Why it blocked. Empty when it passed." }
+        "decision": { "enum": ["allow", "deny", "error"], "description": "What the guardrail decided. A guardrail passed when it is allow." },
+        "explanation": { "type": "string", "description": "Why it denied or failed. Empty when it passed." }
       }
     },
     "result": {

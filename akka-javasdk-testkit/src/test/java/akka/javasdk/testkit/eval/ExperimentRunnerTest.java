@@ -9,6 +9,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import akka.javasdk.testkit.AgentTrace;
 import akka.javasdk.testkit.GuardrailResult;
+import akka.javasdk.testkit.GuardrailResult.Decision;
 import akka.javasdk.testkit.ModelCall;
 import akka.javasdk.testkit.ToolCall;
 import akka.javasdk.testkit.eval.Evaluator.EvalResult;
@@ -1081,7 +1082,7 @@ class ExperimentRunnerTest {
 
   @Test
   void aBlockedTurnKeepsTheGuardrailAndTheModelEvidence(@TempDir Path dir) {
-    var blocked = new GuardrailResult("jailbreak", "safety", false, "prompt injection");
+    var blocked = new GuardrailResult("jailbreak", "safety", Decision.DENY, "prompt injection");
     var modelCall =
         new ModelCall("gpt", "openai", List.of("STOP"), 100, 20, Duration.ofMillis(40), "", "");
     var trace =
@@ -1121,6 +1122,31 @@ class ExperimentRunnerTest {
     assertThat(interaction.get("latencyMs").asLong()).isEqualTo(60);
     assertThat(json.get("spend").get("attemptsWithEvidence").asInt()).isEqualTo(1);
     assertThat(json.get("spend").get("modelCalls").asInt()).isEqualTo(1);
+  }
+
+  @Test
+  void theJsonReportCarriesTheGuardrailDecision(@TempDir Path dir) {
+    var denied = new GuardrailResult("pii", "privacy", Decision.DENY, "card number");
+    EvalTarget<String> answering =
+        turn ->
+            EvalTarget.Outcome.answered(
+                new Interaction(
+                    turn.command(),
+                    turn.command(),
+                    "done",
+                    List.of(),
+                    List.of(),
+                    List.of(denied),
+                    Duration.ofMillis(10),
+                    "done"));
+
+    var json =
+        json(experiment(answering, EvalCase.of("c", "a question")).reportDirectory(dir).run());
+
+    var guardrail = json.get("attempts").get(0).get("interaction").get("guardrails").get(0);
+    assertThat(guardrail.get("decision").asText()).isEqualTo("deny");
+    assertThat(guardrail.get("passed").asBoolean()).isFalse();
+    assertThat(guardrail.get("explanation").asText()).isEqualTo("card number");
   }
 
   @Test

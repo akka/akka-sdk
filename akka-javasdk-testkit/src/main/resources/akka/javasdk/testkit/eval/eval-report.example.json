@@ -95,7 +95,7 @@
           }
         ],
         "guardrails": [
-          { "name": "pii", "category": "privacy", "passed": true, "explanation": "" }
+          { "name": "pii", "category": "privacy", "passed": true, "decision": "allow", "explanation": "" }
         ]
       },
       "results": [
@@ -137,7 +137,7 @@
           }
         ],
         "guardrails": [
-          { "name": "pii", "category": "privacy", "passed": true, "explanation": "" }
+          { "name": "pii", "category": "privacy", "passed": true, "decision": "allow", "explanation": "" }
         ]
       },
       "results": [
@@ -183,7 +183,7 @@
           }
         ],
         "guardrails": [
-          { "name": "pii", "category": "privacy", "passed": true, "explanation": "" }
+          { "name": "pii", "category": "privacy", "passed": true, "decision": "allow", "explanation": "" }
         ]
       },
       "results": [

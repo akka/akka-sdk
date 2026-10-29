@@ -7,6 +7,7 @@ package akka.javasdk.testkit;
 import akka.annotation.ApiMayChange;
 import akka.javasdk.JsonSupport;
 import akka.javasdk.annotations.Component;
+import akka.javasdk.testkit.GuardrailResult.Decision;
 import akka.javasdk.workflow.Workflow;
 import akka.runtime.sdk.spi.tracing.InMemorySpanExporter;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -72,6 +73,8 @@ public class TelemetryReader {
       AttributeKey.stringKey("akka.agent.guardrail.category");
   private static final AttributeKey<String> GUARDRAIL_RESULT =
       AttributeKey.stringKey("akka.agent.guardrail.result");
+  private static final AttributeKey<String> GUARDRAIL_DECISION =
+      AttributeKey.stringKey("akka.agent.guardrail.decision");
 
   // Values of SPAN_KIND
   private static final String AGENT_COMMAND_SPAN = "agent.command";
@@ -298,11 +301,22 @@ public class TelemetryReader {
   private static GuardrailResult toGuardrail(SpanData span) {
     var attributes = span.getAttributes();
     var blocked = span.getStatus().getStatusCode() == StatusCode.ERROR;
+    var failed = blocked || "fail".equals(attributes.get(GUARDRAIL_RESULT));
     return new GuardrailResult(
         attributes.get(GUARDRAIL_NAME),
         attributes.get(GUARDRAIL_CATEGORY),
-        !blocked && !"fail".equals(attributes.get(GUARDRAIL_RESULT)),
+        decision(attributes.get(GUARDRAIL_DECISION), failed),
         blocked ? span.getStatus().getDescription() : "");
+  }
+
+  // Without a known decision, a failed guardrail is an ERROR and any other guardrail an ALLOW.
+  private static Decision decision(String decision, boolean failed) {
+    return switch (Objects.requireNonNullElse(decision, "")) {
+      case "allow" -> Decision.ALLOW;
+      case "deny" -> Decision.DENY;
+      case "error" -> Decision.ERROR;
+      default -> failed ? Decision.ERROR : Decision.ALLOW;
+    };
   }
 
   // The rendered input messages are a JSON array of messages with parts. Returns the text parts

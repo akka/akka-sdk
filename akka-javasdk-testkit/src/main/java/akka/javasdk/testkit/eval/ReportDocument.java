@@ -252,9 +252,22 @@ public record ReportDocument(
    * @param name the configured name of the guardrail
    * @param category the configured category
    * @param passed whether the guardrail let the content through
-   * @param explanation why it blocked; empty when it passed
+   * @param decision {@code allow}, {@code deny} or {@code error}; null becomes {@code allow} when
+   *     the guardrail passed and {@code error} otherwise
+   * @param explanation why it denied or failed; empty when it passed
    */
-  public record Guardrail(String name, String category, boolean passed, String explanation) {}
+  public record Guardrail(
+      String name, String category, boolean passed, String decision, String explanation) {
+
+    public Guardrail {
+      if (decision == null) decision = passed ? "allow" : "error";
+    }
+
+    /** A guardrail with the decision {@code allow} when it passed and {@code error} otherwise. */
+    public Guardrail(String name, String category, boolean passed, String explanation) {
+      this(name, category, passed, null, explanation);
+    }
+  }
 
   /**
    * @param evaluator the evaluator label
