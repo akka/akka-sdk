@@ -6,6 +6,7 @@ package akka.javasdk.testkit.eval;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 
 import akka.javasdk.testkit.AgentTrace;
 import akka.javasdk.testkit.GuardrailResult;
@@ -1154,6 +1155,38 @@ class ExperimentRunnerTest {
     assertThat(guardrail.get("decision").asText()).isEqualTo("deny");
     assertThat(guardrail.get("passed").asBoolean()).isFalse();
     assertThat(guardrail.get("explanation").asText()).isEqualTo("card number");
+  }
+
+  @Test
+  void aReportFileWithoutTheGuardrailDecisionDerivesItFromPassed(@TempDir Path dir)
+      throws Exception {
+    var allowed = new GuardrailResult("pii", "privacy", Decision.ALLOW, "");
+    var denied = new GuardrailResult("jailbreak", "safety", Decision.DENY, "prompt injection");
+    EvalTarget<String> answering =
+        turn ->
+            EvalTarget.Outcome.answered(
+                new Interaction(
+                    turn.command(),
+                    turn.command(),
+                    "done",
+                    List.of(),
+                    List.of(),
+                    List.of(allowed, denied),
+                    Duration.ofMillis(10),
+                    "done"));
+    var report = experiment(answering, EvalCase.of("c", "a question")).reportDirectory(dir).run();
+    var file = report.reportFile().orElseThrow();
+    var json = (ObjectNode) new ObjectMapper().readTree(file.toFile());
+    for (var guardrail : json.get("attempts").get(0).get("interaction").get("guardrails")) {
+      ((ObjectNode) guardrail).remove("decision");
+    }
+    Files.writeString(file, json.toString());
+
+    var guardrails = ReportDocument.read(file).attempts().getFirst().interaction().guardrails();
+
+    assertThat(guardrails)
+        .extracting(ReportDocument.Guardrail::name, ReportDocument.Guardrail::decision)
+        .containsExactly(tuple("pii", "allow"), tuple("jailbreak", "error"));
   }
 
   @Test
