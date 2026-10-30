@@ -226,7 +226,7 @@ In an experiment built with `attacks(...)`, the runner records the turn as follo
 | The results of the evaluators.
 
 | A guardrail denial
-| `PASS guardrail`, then the results of the evaluators.
+| The results of the evaluators, then `PASS guardrail`.
 
 | A guardrail error
 | `FAIL target`. The evaluators do not run.

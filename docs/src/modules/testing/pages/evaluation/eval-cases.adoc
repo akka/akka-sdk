@@ -33,7 +33,7 @@ link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/EvalCase.html[EvalCase] 
 A case that throws while its recorded calls are loaded fails with a result labeled `setup`.
 The agent is not called.
 
-When a guardrail denial stops the turn, the runner records a result labeled `guardrail` before the results of the evaluators.
+When a guardrail denial stops the turn, the runner records a result labeled `guardrail` after the results of the evaluators.
 In an experiment built with `experimentRunner.cases(...)` the result fails, so the case fails.
 In one built with `experimentRunner.attacks(...)` it passes.
 The evaluators still run, on an empty reply and the trace up to the denial.

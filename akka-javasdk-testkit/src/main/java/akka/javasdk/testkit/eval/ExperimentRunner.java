@@ -459,9 +459,8 @@ public final class ExperimentRunner {
                 List.of(EvalResult.fail(failed.reason()).attributedTo(Evaluators.TARGET)));
         case EvalTarget.Outcome.Denied denied -> {
           var interaction = denied.interaction();
-          var results = new ArrayList<EvalResult>();
+          var results = new ArrayList<EvalResult>(runEvaluators(evalCase, interaction));
           results.add(guardrail(interaction));
-          results.addAll(runEvaluators(evalCase, interaction));
           yield new CaseResult(evalCase.id(), run, interaction, List.copyOf(results));
         }
         case EvalTarget.Outcome.Answered answered -> {

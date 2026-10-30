@@ -57,7 +57,7 @@ flowchart LR
 A case whose recorded calls fail to load fails with a result labeled `setup`.
 A case whose agent call throws fails with a result labeled `target`.
 It does not abort the batch.
-When a guardrail denial stopped the agent call, the runner records a result labeled `guardrail` instead and runs the evaluators, see xref:testing:evaluation/gates-and-reports.adoc#runner-results[Results the runner records].
+When a guardrail denial stopped the agent call, the runner runs the evaluators and then records a result labeled `guardrail` instead of `target`, see xref:testing:evaluation/gates-and-reports.adoc#runner-results[Results the runner records].
 
 == The parts of an evaluation
 

@@ -65,7 +65,7 @@ Next to the results of the evaluators, the runner records its own results under 
 
 | `guardrail` +
 `Evaluators.GUARDRAIL`
-| A guardrail denial stopped the turn. The result comes first, then the results of the evaluators over an empty reply. The result fails in an experiment built with `cases(...)` and passes in one built with `attacks(...)`.
+| A guardrail denial stopped the turn. The evaluators run over an empty reply, and the result comes after their results. The result fails in an experiment built with `cases(...)` and passes in one built with `attacks(...)`.
 |===
 
 The `guardrail` result names each guardrail that denied and its reason, for example `FAIL guardrail: jailbreak guard denied: prompt injection`.

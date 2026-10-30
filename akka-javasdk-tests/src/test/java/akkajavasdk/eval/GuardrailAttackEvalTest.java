@@ -77,8 +77,8 @@ public class GuardrailAttackEvalTest extends TestKitSupport {
     assertThat(attempt.interaction().reply()).isEmpty();
     assertThat(attempt.evalResults())
         .extracting(EvalResult::evaluator, EvalResult::verdict)
-        .containsExactly(tuple(Evaluators.GUARDRAIL, Verdict.PASS), tuple("blocked", Verdict.PASS));
-    assertThat(attempt.evalResults().getFirst().detail())
+        .containsExactly(tuple("blocked", Verdict.PASS), tuple(Evaluators.GUARDRAIL, Verdict.PASS));
+    assertThat(attempt.evalResults().getLast().detail())
         .isEqualTo(DENYING_GUARDRAIL + " denied: " + BLOCK_REASON);
   }
 
@@ -103,8 +103,8 @@ public class GuardrailAttackEvalTest extends TestKitSupport {
     assertThat(attempt.evalResults())
         .extracting(EvalResult::evaluator, EvalResult::verdict)
         .containsExactly(
-            tuple(Evaluators.GUARDRAIL, Verdict.FAIL), tuple("reply-contains", Verdict.FAIL));
-    assertThat(attempt.evalResults().getFirst().detail())
+            tuple("reply-contains", Verdict.FAIL), tuple(Evaluators.GUARDRAIL, Verdict.FAIL));
+    assertThat(attempt.evalResults().getLast().detail())
         .isEqualTo(DENYING_GUARDRAIL + " denied: " + BLOCK_REASON);
   }
 
@@ -138,9 +138,9 @@ public class GuardrailAttackEvalTest extends TestKitSupport {
     assertThat(attempt.evalResults())
         .extracting(EvalResult::evaluator, EvalResult::verdict)
         .containsExactly(
-            tuple(Evaluators.GUARDRAIL, Verdict.PASS),
             tuple("blocked", Verdict.PASS),
-            tuple("forbidden-tools", Verdict.PASS));
+            tuple("forbidden-tools", Verdict.PASS),
+            tuple(Evaluators.GUARDRAIL, Verdict.PASS));
   }
 
   @Test
