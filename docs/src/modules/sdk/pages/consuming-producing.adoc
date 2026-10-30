@@ -261,9 +261,16 @@ public class OrderNotifier extends Consumer {
 
 Events and state changes persisted before the start point are not delivered, also not for entities that persist new events later. The start point is supported for consumers of Event Sourced Entities, Key Value Entities, Workflows and service to service event streams. It is not supported for consumers of message broker topics.
 
-The start point is recorded when the consumer is first deployed.
+The start point is recorded when the consumer is first deployed and is permanent. The consumer never receives events from before it.
 
-WARNING: Changing or removing `@StartFrom` after the consumer has been deployed is not supported, the service refuses to start when the annotation does not match the recorded start point. To start over from a different point, give the consumer a new component id. That discards the processing progress of the consumer.
+* A consumer that is already deployed and gets `@StartFrom` skips the events from before the start point that it has not yet processed.
+* Clearing the offsets of the consumer makes it process everything since the start point again, not the whole history. A consumer that sends notifications sends them again for all events since the start point.
+* A consumer that is added again with an old component id reuses its recorded start point and stored offsets.
+* Changing a timestamp to `latest = true` is accepted and keeps the recorded timestamp. Changing `latest = true` to a timestamp is refused.
+
+WARNING: Removing `@StartFrom` or changing it to another timestamp after the consumer has been deployed is not supported, the service refuses to start. This also applies when you roll back to a version of the service without the annotation. To start over from a different point, give the consumer a new component id. That discards the processing progress of the consumer. To change a recorded start point, contact support.
+
+In development mode and in tests nothing is recorded. `latest = true` is then the time of each start of the service, and events that are written while the service is stopped are not delivered. Messages that a test publishes through the test kit do not go through the start point. A timestamp in the future delivers nothing until that time, and the service logs a warning.
 
 == Metadata
 

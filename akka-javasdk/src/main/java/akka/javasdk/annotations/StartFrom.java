@@ -21,9 +21,22 @@ import java.lang.annotation.Target;
  * <p>Supported for consumers of Event Sourced Entities, Key Value Entities, Workflows and service
  * to service event streams. Not supported for consumers of message broker topics.
  *
- * <p>The start point is recorded on the first deployment and must not be changed or removed after
- * that, the service refuses to start if it is. To start over from a different point, give the
- * consumer a new component id. That also discards its processing progress.
+ * <p>The start point is recorded on the first deployment and is permanent. The consumer never
+ * receives events from before it, also not when its stored offsets are cleared. A consumer that is
+ * already deployed and gets this annotation skips the events from before the start point that it
+ * has not yet processed.
+ *
+ * <p>The service refuses to start if the start point is removed or changed to another timestamp.
+ * Changing a timestamp to {@code latest} is accepted and keeps the recorded timestamp. Changing
+ * {@code latest} to a timestamp is refused. To start over from a different point, give the consumer
+ * a new component id. That also discards its processing progress. A consumer that is added again
+ * with an old component id reuses its recorded start point and stored offsets. To change a recorded
+ * start point, contact support.
+ *
+ * <p>In development mode and in tests nothing is recorded. {@code latest} is then the time of each
+ * start of the service, and events that are written while the service is stopped are not delivered.
+ * Messages that a test publishes through the test kit do not go through the start point. A
+ * timestamp in the future delivers nothing until that time.
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
