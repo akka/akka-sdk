@@ -8,8 +8,10 @@ import akka.javasdk.annotations.mcp.McpEndpoint;
 import akka.javasdk.annotations.mcp.McpPrompt;
 import akka.javasdk.annotations.mcp.McpResource;
 import akka.javasdk.annotations.mcp.McpTool;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.google.protobuf.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -149,6 +151,34 @@ public class TestMcpEndpoints {
     @McpTool(name = "note-without-extra", description = "returns a record with an empty optional")
     public Note noteWithoutExtra() {
       return new Note("t", Optional.empty());
+    }
+
+    @McpTool(
+        name = "note-with-null-title",
+        description = "returns a record with a null required field")
+    public Note noteWithNullTitle() {
+      return new Note(null, Optional.of("x"));
+    }
+
+    public record Notes(List<Note> notes) {}
+
+    @McpTool(name = "notes-with-null-title", description = "returns nested null values")
+    public Notes notesWithNullTitle() {
+      return new Notes(Arrays.asList(new Note(null, Optional.empty()), null));
+    }
+
+    @McpTool(name = "note-list-with-null-title", description = "returns a list with a null field")
+    public List<Note> noteListWithNullTitle() {
+      return List.of(new Note(null, Optional.empty()));
+    }
+
+    public record AlwaysIncluded(@JsonInclude(JsonInclude.Include.ALWAYS) String title) {}
+
+    @McpTool(
+        name = "always-included-null-title",
+        description = "returns a null field Jackson writes")
+    public AlwaysIncluded alwaysIncludedNullTitle() {
+      return new AlwaysIncluded(null);
     }
   }
 

@@ -83,9 +83,11 @@ text content.
 Structured content must be a JSON object. For a tool that returns an array or a collection, the output schema is an object with
 a single `result` field, and Akka sends the elements in that field.
 
-Akka leaves fields with an empty `Optional` or a `null` value out of the structured content. The output schema does not list
-`Optional` fields as required. A tool that returns a `Map` gives structured content with an object schema that has no
-properties.
+Akka leaves fields with an empty `Optional` or a `null` value out of the structured content. The output schema lists every
+field that is not an `Optional` as required. Use `Optional` for a field that can be empty. When a required field or a list
+element is `null`, the structured content does not match the output schema, and Akka logs a warning. An MCP client that
+checks structured content against the output schema rejects such a result. A tool that returns a `Map` gives structured
+content with an object schema that has no properties.
 
 A tool that returns `void` gives the client the text `SUCCESS`. For other return types, such as primitives, enums and dates,
 Akka sends the JSON of the value as text content. A tool must not return a protobuf message, or a type that contains one.
