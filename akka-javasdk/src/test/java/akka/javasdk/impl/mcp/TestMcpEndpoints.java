@@ -80,6 +80,8 @@ public class TestMcpEndpoints {
 
     public record Weather(String city, int tempC) {}
 
+    public record Page<T>(List<T> items, T first) {}
+
     public enum Unit {
       CELSIUS,
       FAHRENHEIT
@@ -98,6 +100,11 @@ public class TestMcpEndpoints {
     @McpTool(name = "null-async", description = "returns null instead of a CompletionStage")
     public CompletionStage<Weather> nullAsync() {
       return null;
+    }
+
+    @McpTool(name = "weather-page", description = "returns a generic record")
+    public Page<Weather> weatherPage() {
+      return new Page<>(List.of(new Weather("Leuven", 20)), new Weather("Leuven", 20));
     }
 
     @McpTool(name = "weather-list", description = "returns a list")
