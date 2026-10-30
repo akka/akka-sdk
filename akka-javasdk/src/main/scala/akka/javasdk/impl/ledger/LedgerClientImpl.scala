@@ -130,6 +130,9 @@ private[ledger] object LedgerClientImpl {
         new EvaluationRecord.Outcome.Verdict(toEvaluation(verdict.evaluation))
       case inconclusive: SpiLedger.EvaluationInconclusive =>
         new EvaluationRecord.Outcome.Inconclusive(inconclusive.reason)
+      // FIXME: map to a dedicated not-applicable outcome once the SDK adopts the evaluators migration (runtime #5943)
+      case notApplicable: SpiLedger.EvaluationNotApplicable =>
+        new EvaluationRecord.Outcome.Inconclusive(notApplicable.reason)
       case failure: SpiLedger.EvaluationFailure =>
         new EvaluationRecord.Outcome.Failed(failure.reason)
     }

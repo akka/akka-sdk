@@ -14,8 +14,9 @@ import java.util.List;
  * <p>{@link AgentTarget} is the implementation behind {@link ExperimentRunner#agent}. The runner's
  * own tests supply a lambda to run without a runtime.
  *
- * <p>A turn either answers with the reply and the evidence, or fails with a reason and the evidence
- * traced before the failure. A target that throws is treated as failed with no evidence.
+ * <p>A turn answers with the reply and the evidence, is denied by a guardrail with the evidence
+ * traced before the denial, or fails with a reason and the evidence traced before the failure. A
+ * target that throws is treated as failed with no evidence.
  *
  * @param <C> the command the target is called with
  */
@@ -47,6 +48,11 @@ interface EvalTarget<C> {
       return new Answered(interaction);
     }
 
+    /** A turn that a guardrail denial stopped. */
+    static Outcome denied(Interaction interaction) {
+      return new Denied(interaction);
+    }
+
     /** A failure with the tool calls made before it as the only evidence. */
     static Outcome failed(String reason, List<ToolCall> toolCalls) {
       return new Failed(reason, new AgentTrace(toolCalls, null, null, null, null, null));
@@ -64,6 +70,21 @@ interface EvalTarget<C> {
     record Answered(Interaction interaction) implements Outcome {
       public Answered {
         if (interaction == null) throw new IllegalArgumentException("interaction required");
+      }
+
+      @Override
+      public List<ToolCall> toolCalls() {
+        return interaction.toolCalls();
+      }
+    }
+
+    /**
+     * @param interaction the turn with an empty reply and what the runtime traced before the denial
+     */
+    record Denied(Interaction interaction) implements Outcome {
+      public Denied {
+        if (interaction == null) throw new IllegalArgumentException("interaction required");
+        if (!interaction.denied()) throw new IllegalArgumentException("interaction not denied");
       }
 
       @Override

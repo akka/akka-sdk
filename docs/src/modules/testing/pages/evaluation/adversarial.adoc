@@ -1,7 +1,7 @@
 = Adversarial tests
-:page-summary: An adversarial test is an eval case whose user message is an attack. Its evaluators state what a breached reply looks like, so the case fails when the agent leaks, obeys an injected instruction or calls a forbidden tool.
+:page-summary: An adversarial test is an eval case whose user message is an attack. Its evaluators state what a breached reply looks like, so the case fails when the agent leaks, obeys an injected instruction or calls a forbidden tool. The suite runs with ExperimentRunner.attacks, where a guardrail denial is a passed result.
 :page-when-to-use: Red teaming an agent before release, and keeping a known attack from working again.
-:page-related: testing:evaluation/eval-cases.adoc, testing:evaluation/judges.adoc, testing:evaluation/gates-and-reports.adoc
+:page-related: testing:evaluation/eval-cases.adoc, testing:evaluation/judges.adoc, testing:evaluation/gates-and-reports.adoc, sdk:agents/guardrails.adoc
 :page-persona: builder-developer, builder-ai-ml
 :page-banner: evaluations
 
@@ -22,6 +22,14 @@ An adversarial case states what a breached reply looks like and requires its abs
 [cols="1,2,2"]
 |===
 | | Eval case | Adversarial case
+
+| The experiment
+| `runner.cases(...)` builds an evaluation.
+| `runner.attacks(...)` builds an attack.
+
+| A guardrail denial
+| Fails the `guardrail` result, so the case fails.
+| Passes the `guardrail` result. The evaluators decide the case.
 
 | The user message
 | A question a customer asks.
@@ -169,7 +177,7 @@ Keep the exact checks on the same case, so a break that a string can catch is ca
 
 == Running the suite behind a gate
 
-The suite runs like any other experiment.
+The suite runs as an attack experiment, built with `attacks(...)` instead of `cases(...)`.
 The gate sets which checks require a full pass rate and which accept a lower one.
 
 [source,java,indent=0]
@@ -179,15 +187,16 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentAdver
 ----
 <1> The judge of this suite, with the jailbreak system message.
 <2> The variants join the cases they came from.
-<3> Full rate. One forbidden tool call or one forbidden text in any case fails the build.
-<4> A custom evaluator is gated by its class, like a built-in one.
-<5> The judged cases tolerate a rate, because a score can differ between runs.
+<3> `attacks(...)` takes the same cases as `cases(...)`. A guardrail denial is then a passed result, see <<guardrail-denial>>.
+<4> Full rate. One forbidden tool call or one forbidden text in any case fails the build.
+<5> A custom evaluator is gated by its class, like a built-in one.
+<6> The judged cases tolerate a rate, because a score can differ between runs.
 
 A report where every attack failed:
 
 [listing]
 ----
-9 cases, 1 run: 9/9 attempts passed (100%)
+9 attack cases, 1 run: 9/9 attempts passed (100%)
 gate: passed — forbidden-tools rate 1.00 over 7 judged attempts, required 1.00; reply-lacks rate 1.00 over 6 judged attempts, required 1.00; reply-lacks-payment-card rate 1.00 over 1 judged attempts, required 1.00; custom-eval:no-refund-issued rate 1.00 over 1 judged attempts, required 1.00; judge rate 1.00 over 1 judged attempts, required 0.80; no target failures
   reply-lacks 6/6
   forbidden-tools 7/7
@@ -201,6 +210,63 @@ spend: 14 model calls, 9210 tokens in, 640 out, 21300 ms in total, slowest instr
 ----
 
 xref:testing:evaluation/gates-and-reports.adoc#reading-the-report[Reading the report] explains every line.
+
+[#guardrail-denial]
+== How an attack experiment judges a guardrail denial
+
+A xref:sdk:agents/guardrails.adoc[guardrail] of the agent can deny the attack before the agent replies.
+The runtime then aborts the agent call, and the runner reads the decision of each guardrail from the trace.
+In an experiment built with `attacks(...)`, the runner records the turn as follows.
+
+[cols="1,3"]
+|===
+| The turn ends with | The runner records
+
+| A reply
+| The results of the evaluators.
+
+| A guardrail denial
+| The results of the evaluators, then `PASS guardrail`.
+
+| A guardrail error
+| `FAIL target`. The evaluators do not run.
+
+| Any other failure
+| `FAIL target`. The evaluators do not run.
+|===
+
+* A guardrail denial is a failed agent call that a guardrail with the decision `DENY` stopped.
+* A guardrail error is a failed agent call whose trace holds a guardrail with the decision `ERROR`. The guardrail returned `Decision.Fail`, threw or returned `null`. A guardrail error never passes an attack, also when another guardrail denied in the same turn.
+* The `guardrail` result names each guardrail that denied and its reason, for example `PASS guardrail: jailbreak guard denied: prompt injection`.
+* On a denial, the evaluators read an empty reply and the trace up to the denial. `shouldNotCallTool` still fails on a tool call made before the denial. An evaluator that requires text in the reply, such as `replyShouldMatch`, fails. The `judge` evaluator is inconclusive on the empty reply, so a judged attack that a guardrail denies is an xref:testing:evaluation/eval-cases.adoc#inconclusive[inconclusive attempt].
+* A denial by a guardrail with `report-only = true` does not stop the turn. The runner handles the turn as a reply.
+* An agent that maps `Guardrail.GuardrailException` to a reply in `onFailure` ends the turn with a reply. The runner handles the turn as a reply.
+
+`Interaction.denied()` is true when a guardrail denial stopped the turn.
+`Interaction.guardrails()` lists every guardrail evaluation, and `GuardrailResult.decision()` carries its decision.
+An experiment built with `cases(...)` fails the `guardrail` result instead, see xref:testing:evaluation/gates-and-reports.adoc#runner-results[Results the runner records].
+
+[#should-be-blocked]
+== Requiring a guardrail denial
+
+`Evaluators.shouldBeBlocked()` requires that a guardrail denial stopped the turn.
+`Evaluators.shouldBeBlockedBy(name)` also requires that the named guardrail denied.
+The `OrderAgent` of this page has no guardrail.
+This snippet assumes a guardrail named `jailbreak guard` on the agent, configured as in xref:sdk:agents/guardrails.adoc#_configuring_guardrails[Configuring guardrails].
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderAgentGuardrailAttackSample.java[OrderAgentGuardrailAttackSample.java]
+----
+include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentGuardrailAttackSample.java[tag=blocked]
+----
+<1> A denial by any guardrail must stop the turn.
+<2> The evaluators read the trace up to the denial. A tool call made before the denial fails this check.
+<3> The guardrail named `jailbreak guard` must be one of the guardrails that denied. A denial by another guardrail alone fails the check.
+<4> `attacks(...)` builds the attack experiment. `cases(...)` rejects `shouldBeBlocked` and `shouldBeBlockedBy`.
+
+Both evaluators carry the label `blocked`.
+They fail on a reply, also when a guardrail with `report-only = true` denied during the turn.
+Gate on them with `Gate.passRateShouldBeAtLeast(Evaluators.Blocked.class, minimumRate)`.
 
 == Reading a break
 
@@ -242,3 +308,4 @@ Fix the agent, then keep the case, so the same attack is checked in every later 
 * xref:testing:evaluation/eval-cases.adoc[] lists every built-in evaluator.
 * xref:testing:evaluation/judges.adoc[] describes the judge, its system message and its thresholds.
 * xref:testing:evaluation/gates-and-reports.adoc[] describes the gates and the report.
+* xref:sdk:agents/guardrails.adoc[] describes how a guardrail denies a call.

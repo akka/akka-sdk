@@ -7,6 +7,7 @@ package akka.javasdk.testkit;
 import akka.annotation.ApiMayChange;
 import akka.javasdk.JsonSupport;
 import akka.javasdk.annotations.Component;
+import akka.javasdk.testkit.GuardrailResult.Decision;
 import akka.javasdk.workflow.Workflow;
 import akka.runtime.sdk.spi.tracing.InMemorySpanExporter;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -72,6 +73,8 @@ public class TelemetryReader {
       AttributeKey.stringKey("akka.agent.guardrail.category");
   private static final AttributeKey<String> GUARDRAIL_RESULT =
       AttributeKey.stringKey("akka.agent.guardrail.result");
+  private static final AttributeKey<String> GUARDRAIL_DECISION =
+      AttributeKey.stringKey("akka.agent.guardrail.decision");
 
   // Values of SPAN_KIND
   private static final String AGENT_COMMAND_SPAN = "agent.command";
@@ -177,9 +180,33 @@ public class TelemetryReader {
             .sorted(byStart())
             .toList();
 
-    var toolCalls = ofKind(children, TOOL_CALL_SPAN).map(TelemetryReader::toToolCall).toList();
+    var toolCallIds =
+        ofKind(children, TOOL_CALL_SPAN).map(SpanData::getSpanId).collect(Collectors.toSet());
+    var guardrailSpans =
+        spans()
+            .filter(span -> hasAttribute(span, SPAN_KIND, GUARDRAIL_SPAN))
+            .filter(
+                span ->
+                    commandIds.contains(span.getParentSpanId())
+                        || toolCallIds.contains(span.getParentSpanId()))
+            .sorted(byStart())
+            .toList();
+
+    var failedToolCalls =
+        ofKind(children, TOOL_CALL_SPAN)
+            .filter(span -> span.getStatus().getStatusCode() == StatusCode.ERROR)
+            .collect(
+                Collectors.toMap(
+                    SpanData::getSpanId,
+                    span -> Objects.requireNonNullElse(span.getStatus().getDescription(), "")));
+    var deniedToolCalls = deniedToolCalls(guardrailSpans, failedToolCalls);
+
+    var toolCalls =
+        ofKind(children, TOOL_CALL_SPAN)
+            .map(span -> toToolCall(span, deniedToolCalls.get(span.getSpanId())))
+            .toList();
     var modelCalls = ofKind(children, MODEL_CALL_SPAN).map(TelemetryReader::toModelCall).toList();
-    var guardrails = ofKind(children, GUARDRAIL_SPAN).map(TelemetryReader::toGuardrail).toList();
+    var guardrails = guardrailSpans.stream().map(TelemetryReader::toGuardrail).toList();
     var started = commands.getFirst().getStartEpochNanos();
     var ended = commands.stream().mapToLong(SpanData::getEndEpochNanos).max().orElse(started);
     var finalText = modelCalls.isEmpty() ? "" : finalText(modelCalls.getLast().outputMessages());
@@ -260,7 +287,37 @@ public class TelemetryReader {
     }
   }
 
-  private static ToolCall toToolCall(SpanData span) {
+  /**
+   * The name of the guardrail whose denial stopped each tool call, by tool-call span id.
+   *
+   * @param failedToolCalls the error description of each failed tool call, by span id
+   */
+  private static Map<String, String> deniedToolCalls(
+      List<SpanData> guardrailSpans, Map<String, String> failedToolCalls) {
+    return guardrailSpans.stream()
+        .filter(span -> failedToolCalls.containsKey(span.getParentSpanId()))
+        .map(span -> Map.entry(span.getParentSpanId(), toGuardrail(span)))
+        .filter(entry -> entry.getValue().decision() == Decision.DENY)
+        .filter(entry -> stoppedTheCall(failedToolCalls.get(entry.getKey()), entry.getValue()))
+        .collect(
+            Collectors.toMap(
+                Map.Entry::getKey, entry -> entry.getValue().name(), (first, second) -> first));
+  }
+
+  // The runtime fails a tool call that a guardrail denied with the message
+  // "<boundary> guardrail blocked, category [<category>], name [<name>]: <reason>".
+  // An MCP response guardrail runs after the tool, so its denial did not stop the call.
+  private static boolean stoppedTheCall(String error, GuardrailResult guardrail) {
+    var label =
+        "guardrail blocked, category ["
+            + guardrail.category()
+            + "], name ["
+            + guardrail.name()
+            + "]: ";
+    return error.contains(label) && !error.contains("MCP response " + label);
+  }
+
+  private static ToolCall toToolCall(SpanData span, String deniedBy) {
     var attributes = span.getAttributes();
     var name =
         toolName(
@@ -275,7 +332,8 @@ public class TelemetryReader {
         name,
         parseArguments(attributes.get(TOOL_ARGUMENTS)),
         Optional.ofNullable(attributes.get(TOOL_RESULT)),
-        error);
+        error,
+        Optional.ofNullable(deniedBy));
   }
 
   private static ModelCall toModelCall(SpanData span) {
@@ -298,11 +356,22 @@ public class TelemetryReader {
   private static GuardrailResult toGuardrail(SpanData span) {
     var attributes = span.getAttributes();
     var blocked = span.getStatus().getStatusCode() == StatusCode.ERROR;
+    var failed = blocked || "fail".equals(attributes.get(GUARDRAIL_RESULT));
     return new GuardrailResult(
         attributes.get(GUARDRAIL_NAME),
         attributes.get(GUARDRAIL_CATEGORY),
-        !blocked && !"fail".equals(attributes.get(GUARDRAIL_RESULT)),
+        decision(attributes.get(GUARDRAIL_DECISION), failed),
         blocked ? span.getStatus().getDescription() : "");
+  }
+
+  // Without a known decision, a failed guardrail is an ERROR and any other guardrail an ALLOW.
+  private static Decision decision(String decision, boolean failed) {
+    return switch (Objects.requireNonNullElse(decision, "")) {
+      case "allow" -> Decision.ALLOW;
+      case "deny" -> Decision.DENY;
+      case "error" -> Decision.ERROR;
+      default -> failed ? Decision.ERROR : Decision.ALLOW;
+    };
   }
 
   // The rendered input messages are a JSON array of messages with parts. Returns the text parts

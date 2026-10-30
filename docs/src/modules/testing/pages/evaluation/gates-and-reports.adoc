@@ -29,7 +29,7 @@ A link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Gate.html[Gate] is wha
 | The share of the evaluator's results that passed is at least `minimumRate`. Inconclusive results are left out of the count. The gate fails when the evaluator has no result to count. The class is a built-in nested in `Evaluators`, for example `Evaluators.ToolArgument.class`, or your own evaluator class.
 
 | `Gate.targetShouldNotFail()`
-| No attempt failed while loading its recorded calls or in the agent call.
+| No attempt failed while loading its recorded calls or in the agent call, so no `setup` or `target` result failed. A guardrail error counts as a failed agent call. A `guardrail` result does not count.
 
 | `gate.and(other)`
 | Both gates hold. The verdict lists both details.
@@ -46,6 +46,35 @@ See <<repeated-runs>>.
 A failed gate does not throw.
 Assert on the report, and use the rendered report as the failure message.
 
+[#runner-results]
+== Results the runner records
+
+Next to the results of the evaluators, the runner records its own results under three labels in `Evaluators`.
+
+[cols="1,3"]
+|===
+| Label | The runner records it when
+
+| `setup` +
+`Evaluators.SETUP`
+| Loading the recorded calls of the case threw. The result fails. The agent is not called and the evaluators do not run.
+
+| `target` +
+`Evaluators.TARGET`
+| The agent call failed for a reason other than a guardrail denial. A guardrail error is such a reason, also when another guardrail denied in the same turn. The result fails and the evaluators do not run.
+
+| `guardrail` +
+`Evaluators.GUARDRAIL`
+| A guardrail denial stopped the turn. The evaluators run over an empty reply, and the result comes after their results. The result fails in an experiment built with `cases(...)` and passes in one built with `attacks(...)`.
+|===
+
+The `guardrail` result names each guardrail that denied and its reason, for example `FAIL guardrail: jailbreak guard denied: prompt injection`.
+In an evaluation, the `guardrail` result shows which guardrail stopped a case that expects a reply.
+xref:testing:evaluation/adversarial.adoc#guardrail-denial[How an attack experiment judges a guardrail denial] describes the attack experiment.
+
+The gates and the rates count the runner results like the results of an evaluator.
+`Gate.targetShouldNotFail()` counts `setup` and `target` only.
+
 [#reading-the-report]
 == Reading the report
 
@@ -57,6 +86,9 @@ Assert on the report, and use the rendered report as the failure message.
 
 | `name()`
 | The name given with `name(...)`, or the test method that ran the experiment, for example `SupportAgentEvalTest.qualityGate`.
+
+| `kind()`
+| `ExperimentRunner.Kind.EVALUATION` for an experiment built with `cases(...)`, `ExperimentRunner.Kind.ATTACK` for one built with `attacks(...)`.
 
 | `passed()`
 | Whether the gate passed.
@@ -83,11 +115,15 @@ Assert on the report, and use the rendered report as the failure message.
 | The JSON file `run()` wrote to `target/eval-reports/<name>-<start time>.json`, for example `SupportAgentEvalTest.qualityGate-20261001-101530-123.json`, holding `document()`. Every run keeps its own file. See the xref:sdk:attachment$eval-report.example.json[example report]. `ReportDocument.read(path)` reads it back. `reportDirectory(path)` on the experiment changes the directory, `withoutReportFile()` writes none. Empty when no file was written.
 |===
 
+The JSON report states the experiment kind as `kind`: `evaluation` or `attack`.
+Each interaction carries `denied`, true when a guardrail denial stopped the turn.
+Each guardrail evaluation carries its `decision`: `allow`, `deny` or `error`.
+
 A rendered report of a passing batch:
 
 [listing]
 ----
-3 cases, 1 run: 3/3 attempts passed (100%)
+3 evaluation cases, 1 run: 3/3 attempts passed (100%)
 gate: passed — pass rate 1.00 over 3 attempts (3 cases, 1 run), required 0.90; tool-arguments rate 1.00 over 2 judged attempts, required 1.00; no target failures
   tools 1/1
   tool-arguments 2/2
@@ -102,9 +138,9 @@ spend: 6 model calls, 123 tokens in, 321 out, 550 ms in total, slowest order-sta
 
 Line by line:
 
-. The cases, the runs, and the attempts that passed with their share. Inconclusive attempts follow when there are any: `3 cases, 1 run: 2/3 attempts passed (67%), 1 inconclusive`. An attempt is one case in one run, so without `repeat(n)` on the experiment the attempts are the cases.
+. The cases with the experiment kind, the runs, and the attempts that passed with their share. The kind is `evaluation` for an experiment built with `cases(...)` and `attack` for one built with `attacks(...)`. Inconclusive attempts follow when there are any: `3 evaluation cases, 1 run: 2/3 attempts passed (67%), 1 inconclusive`. An attempt is one case in one run, so without `repeat(n)` on the experiment the attempts are the cases.
 . The gate's verdict and its detail. A combined gate lists the detail of each part. The detail counts attempts and names the runs a case failed or was inconclusive in: `failed cases [order-status (run 2)], inconclusive cases [refund (run 1)]`.
-. One line per evaluator, under its xref:testing:evaluation/eval-cases.adoc#evaluator-labels[label]: the attempts it passed over the attempts it judged. An evaluator that was inconclusive on some attempts shows the count in brackets, for example `token-budget 0/0 (2 inconclusive)`.
+. One line per evaluator, under its xref:testing:evaluation/eval-cases.adoc#evaluator-labels[label]: the attempts it passed over the attempts it judged. An evaluator that was inconclusive on some attempts shows the count in brackets, for example `token-budget 0/0 (2 inconclusive)`. The <<runner-results,runner results>> get a line too, for example `guardrail 3/3` in an attack experiment.
 . The spend: model calls, tokens and latency summed over the attempts whose trace carried model calls, and the slowest attempt. The line is absent when no attempt carried model calls.
 . `inconsistent across runs`, only when a requirement passed in some runs and failed in others: one line per such requirement with the runs it passed, failed and was inconclusive in, for example `order-status tool-arguments: passed in runs 1, 3, failed in run 2`. A requirement that failed in every run is not listed here. See <<repeated-runs>>.
 . After these lines, every attempt that did not pass, failed or inconclusive, with its evidence, see <<reading-a-failed-case>>.
@@ -117,7 +153,7 @@ This report is from a case that asks where order o_42 is, with an evaluator that
 
 [listing]
 ----
-1 case, 1 run: 0/1 attempts passed (0%)
+1 evaluation case, 1 run: 0/1 attempts passed (0%)
 gate: FAILED — failed cases [wrong-order (run 1)]
   tool-arguments 0/1
 spend: 2 model calls, 123 tokens in, 321 out, 6 ms in total, slowest wrong-order run 1 at 6 ms, over 1/1 attempts with evidence
@@ -130,6 +166,8 @@ case wrong-order run 1 FAILED
 
 An attempt that did not pass is named by its case and its run, and prints the reply, the tool calls with their arguments, the model spend, and every result with its detail.
 When the agent mapped the model's text into the reply, a `model text:` line shows the model's own text as well.
+When the trace holds guardrail evaluations, a `guardrails:` line names each guardrail with its decision: `allow`, `deny` or `error`.
+A denial and an error carry their reason, for example `guardrails: pii allow, jailbreak deny: prompt injection`.
 The reply is cut to one line of at most 200 characters.
 
 [#repeated-runs]
@@ -165,3 +203,4 @@ The wall clock time and the model spend grow with the number of runs, and judge 
 * xref:testing:evaluation/getting-started.adoc[]
 * xref:testing:evaluation/judges.adoc[]
 * xref:testing:evaluation/replay.adoc[]
+* xref:testing:evaluation/adversarial.adoc[]

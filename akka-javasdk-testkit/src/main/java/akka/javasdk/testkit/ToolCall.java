@@ -17,10 +17,16 @@ import java.util.Optional;
  *
  * @param arguments by parameter name. A value is null when the model sent null
  * @param result the tool's result as the model saw it, when recorded
- * @param error the failure message when the tool threw
+ * @param error the failure message when the tool threw or a guardrail denied the call
+ * @param deniedBy the name of the tool-call guardrail that denied the call. The tool did not run.
+ *     Empty when only a report-only guardrail denied the call
  */
 public record ToolCall(
-    String name, Map<String, Object> arguments, Optional<String> result, Optional<String> error) {
+    String name,
+    Map<String, Object> arguments,
+    Optional<String> result,
+    Optional<String> error,
+    Optional<String> deniedBy) {
 
   public ToolCall {
     if (name == null || name.isBlank()) throw new IllegalArgumentException("tool name required");
@@ -29,6 +35,13 @@ public record ToolCall(
         arguments == null ? Map.of() : Collections.unmodifiableMap(new LinkedHashMap<>(arguments));
     result = result == null ? Optional.empty() : result;
     error = error == null ? Optional.empty() : error;
+    deniedBy = deniedBy == null ? Optional.empty() : deniedBy;
+  }
+
+  /** A call no guardrail denied. */
+  public ToolCall(
+      String name, Map<String, Object> arguments, Optional<String> result, Optional<String> error) {
+    this(name, arguments, result, error, Optional.empty());
   }
 
   /** A call with no recorded result. */
@@ -42,5 +55,10 @@ public record ToolCall(
 
   public boolean failed() {
     return error.isPresent();
+  }
+
+  /** Whether a tool-call guardrail denied the call. */
+  public boolean denied() {
+    return deniedBy.isPresent();
   }
 }

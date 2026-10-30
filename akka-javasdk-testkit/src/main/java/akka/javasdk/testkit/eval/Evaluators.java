@@ -4,6 +4,7 @@
 
 package akka.javasdk.testkit.eval;
 
+import akka.javasdk.testkit.GuardrailResult;
 import akka.javasdk.testkit.ToolCall;
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -15,6 +16,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -27,10 +29,15 @@ import java.util.regex.Pattern;
  * #shouldCallToolWith} is inconclusive. Give the evaluators to an {@link EvalCase}, next to a
  * {@link Judge} or a custom evaluator.
  *
+ * <p>The tool evaluators count a call only when the tool ran. A call that a tool-call guardrail
+ * denied, see {@link ToolCall#denied()}, fails {@link #shouldCallTools} and passes {@link
+ * #shouldNotCallTools}.
+ *
  * <p>Each built-in is a public nested record carrying an {@link EvalLabel}. Pass its class to
  * {@link Gate#passRateShouldBeAtLeast(Class, double)}, for example {@code
  * Evaluators.ToolArgument.class}. {@link #TARGET} and {@link #SETUP} are reported by the runner
- * when a case did not reach evaluation.
+ * when a case did not reach evaluation. {@link #GUARDRAIL} is reported by the runner when a
+ * guardrail denial stopped the turn.
  */
 public final class Evaluators {
 
@@ -42,6 +49,12 @@ public final class Evaluators {
 
   /** Loading the case's recorded calls into the stubs threw, so the agent was never called. */
   public static final String SETUP = "setup";
+
+  /**
+   * A guardrail denial stopped the turn. The result passes in an attack and fails in an evaluation,
+   * see {@link ExperimentRunner.Kind}.
+   */
+  public static final String GUARDRAIL = "guardrail";
 
   private Evaluators() {}
 
@@ -209,6 +222,24 @@ public final class Evaluators {
     return new ReplyLacksPaymentCard();
   }
 
+  /**
+   * A guardrail denial must stop the turn. A report-only denial does not stop it. Use it in {@link
+   * ExperimentRunner#attacks}. {@link ExperimentRunner#cases} rejects it.
+   */
+  public static Evaluator shouldBeBlocked() {
+    return new Blocked(Optional.empty());
+  }
+
+  /**
+   * A guardrail denial must stop the turn, and the named guardrail must be one of the guardrails
+   * that denied. A report-only denial does not stop the turn. Use it in {@link
+   * ExperimentRunner#attacks}. {@link ExperimentRunner#cases} rejects it.
+   */
+  public static Evaluator shouldBeBlockedBy(String guardrail) {
+    requireName(guardrail, "guardrail");
+    return new Blocked(Optional.of(guardrail));
+  }
+
   /** {@link #shouldCallTools} and {@link #shouldCallTool}. */
   @EvalLabel("tools")
   public record Tools(Set<String> expected) implements BuiltIn {
@@ -220,12 +251,11 @@ public final class Evaluators {
     @Override
     public EvalResult evaluate(EvalCase<?> evalCase, Interaction interaction) {
       var calls = interaction.toolCalls();
-      var called = names(calls);
+      var called = names(ran(calls));
       var missing = expected.stream().filter(t -> !called.contains(t)).toList();
       return missing.isEmpty()
           ? EvalResult.pass()
-          : EvalResult.fail(
-              "never called " + missing + "; called " + calledOrNothing(called) + CHECK_TOOL_NAME);
+          : EvalResult.fail(neverCalled("never called " + missing, missing, calls));
     }
   }
 
@@ -240,15 +270,15 @@ public final class Evaluators {
     @Override
     public EvalResult evaluate(EvalCase<?> evalCase, Interaction interaction) {
       var calls = interaction.toolCalls();
-      var called = names(calls);
+      var ran = ran(calls);
+      var called = names(ran);
       var missing = expected.stream().filter(t -> !called.contains(t)).toList();
       if (!missing.isEmpty()) {
-        return EvalResult.inconclusive(
-            "never called " + missing + "; called " + calledOrNothing(called) + CHECK_TOOL_NAME);
+        return EvalResult.inconclusive(neverCalled("never called " + missing, missing, calls));
       }
-      return isSubsequence(expected, calls)
+      return isSubsequence(expected, ran)
           ? EvalResult.pass()
-          : EvalResult.fail("expected " + expected + " in that order; called " + orderOf(calls));
+          : EvalResult.fail("expected " + expected + " in that order; called " + orderOf(ran));
     }
 
     /** The expected names must appear in order. Other calls in between are allowed. */
@@ -273,10 +303,10 @@ public final class Evaluators {
     @Override
     public EvalResult evaluate(EvalCase<?> evalCase, Interaction interaction) {
       var calls = interaction.toolCalls();
-      var toTheTool = calls.stream().filter(c -> c.name().equals(tool)).toList();
+      var toTheTool = ran(calls).stream().filter(c -> c.name().equals(tool)).toList();
       if (toTheTool.isEmpty()) {
         return EvalResult.inconclusive(
-            tool + " was never called; called " + calledOrNothing(names(calls)) + CHECK_TOOL_NAME);
+            neverCalled(tool + " was never called", List.of(tool), calls));
       }
       var carried = toTheTool.stream().anyMatch(c -> sameValue(value, c.arguments().get(argument)));
       return carried
@@ -318,10 +348,10 @@ public final class Evaluators {
     @Override
     public EvalResult evaluate(EvalCase<?> evalCase, Interaction interaction) {
       var calls = interaction.toolCalls();
-      var toTheTool = calls.stream().filter(c -> c.name().equals(tool)).toList();
+      var toTheTool = ran(calls).stream().filter(c -> c.name().equals(tool)).toList();
       if (toTheTool.isEmpty()) {
         return EvalResult.inconclusive(
-            tool + " was never called; called " + calledOrNothing(names(calls)) + CHECK_TOOL_NAME);
+            neverCalled(tool + " was never called", List.of(tool), calls));
       }
       var results = toTheTool.stream().flatMap(c -> c.result().stream()).toList();
       if (results.isEmpty()) {
@@ -344,8 +374,7 @@ public final class Evaluators {
 
     @Override
     public EvalResult evaluate(EvalCase<?> evalCase, Interaction interaction) {
-      var calls = interaction.toolCalls();
-      var called = names(calls);
+      var called = names(ran(interaction.toolCalls()));
       var violated = forbidden.stream().filter(called::contains).toList();
       return violated.isEmpty() ? EvalResult.pass() : EvalResult.fail("called " + violated);
     }
@@ -361,7 +390,7 @@ public final class Evaluators {
 
     @Override
     public EvalResult evaluate(EvalCase<?> evalCase, Interaction interaction) {
-      var calls = interaction.toolCalls();
+      var calls = ran(interaction.toolCalls());
       return calls.size() <= limit
           ? EvalResult.pass()
           : EvalResult.fail(
@@ -574,6 +603,35 @@ public final class Evaluators {
     }
   }
 
+  /** {@link #shouldBeBlocked} and {@link #shouldBeBlockedBy}. */
+  @EvalLabel("blocked")
+  public record Blocked(Optional<String> guardrail) implements BuiltIn {
+
+    public Blocked {
+      if (guardrail == null) throw new IllegalArgumentException("guardrail required");
+      guardrail.ifPresent(name -> requireName(name, "guardrail"));
+    }
+
+    @Override
+    public EvalResult evaluate(EvalCase<?> evalCase, Interaction interaction) {
+      var denials =
+          interaction.guardrails().stream()
+              .filter(g -> g.decision() == GuardrailResult.Decision.DENY)
+              .map(GuardrailResult::name)
+              .toList();
+
+      if (!interaction.denied() || denials.isEmpty()) {
+        return EvalResult.fail("no guardrail denial stopped the turn");
+      }
+
+      var deniedBy = "denied by " + String.join(", ", denials);
+      if (guardrail.isEmpty() || denials.contains(guardrail.get())) {
+        return EvalResult.pass(deniedBy);
+      }
+      return EvalResult.fail(deniedBy + ", not " + guardrail.get());
+    }
+  }
+
   /** {@link Judge#shouldScoreAtLeast} and {@link Judge#shouldSatisfy}. */
   @EvalLabel("judge")
   public record JudgeEvaluator(Judge judge, String criterion, double threshold) implements BuiltIn {
@@ -652,6 +710,25 @@ public final class Evaluators {
   private static final String CHECK_TOOL_NAME =
       "; make sure the evaluated name is the registered tool name, which is <Class>_<method>"
           + " unless @FunctionTool sets a name";
+
+  /** The calls whose tool ran, without the calls a guardrail denied. */
+  private static List<ToolCall> ran(List<ToolCall> calls) {
+    return calls.stream().filter(call -> !call.denied()).toList();
+  }
+
+  /** Names the missing tools, and the guardrail that denied each denied one. */
+  private static String neverCalled(String prefix, List<String> missing, List<ToolCall> calls) {
+    var denials =
+        calls.stream()
+            .filter(call -> call.denied() && missing.contains(call.name()))
+            .map(call -> call.name() + " was denied by " + call.deniedBy().orElseThrow())
+            .distinct()
+            .toList();
+    var detail = prefix + "; called " + calledOrNothing(names(ran(calls)));
+    return denials.isEmpty()
+        ? detail + CHECK_TOOL_NAME
+        : detail + "; " + String.join("; ", denials);
+  }
 
   private static LinkedHashSet<String> names(List<ToolCall> calls) {
     return calls.stream()

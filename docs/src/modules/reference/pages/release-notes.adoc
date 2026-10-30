@@ -23,10 +23,18 @@ The ledger records every agent interaction with its model calls, tool calls, tok
 
 ****
 
+// FIXME: name the SDK version, link its release tag and add its runtime version when it is released.
+* Akka SDK, next release
+- EvalKit runs attack experiments with `ExperimentRunner.attacks(...)`, see xref:testing:evaluation/adversarial.adoc#guardrail-denial[How an attack experiment judges a guardrail denial].
+- EvalKit records a turn that a guardrail denial stopped as a `guardrail` result, not as a `target` failure. The result passes in an attack and fails in an evaluation. The evaluators still run, and the result comes after their results. A guardrail error stays a `target` failure.
+- `Evaluators.shouldBeBlocked()` and `Evaluators.shouldBeBlockedBy(name)` require a guardrail denial in an attack.
+- The EvalKit report states the experiment kind and the decision of each guardrail.
+
 * xref:release-notes/runtime/1.7.4.adoc[Akka Runtime 1.7.4]
 - Fail mode of a guardrail.
 - Ledger listing filters
 - Fixes for workflows, Azure OpenAI and Vertex AI model calls, gRPC endpoints, and the backoffice.
+
 
 * Akka CLI 3.0.78
 - Workload identity support for data management 

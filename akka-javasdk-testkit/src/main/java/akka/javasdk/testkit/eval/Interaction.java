@@ -21,13 +21,14 @@ import java.util.List;
  * @param userMessage the user message the agent sent the model, which is what the model saw. The
  *     command handler builds it from the command, so it may differ from {@code input}. Empty when
  *     the trace did not carry it
- * @param reply the agent's reply
+ * @param reply the agent's reply; empty when a guardrail denial stopped the turn
  * @param toolCalls in call order
  * @param modelCalls in call order
  * @param guardrails every guardrail evaluation, in order
  * @param latency from the start of the agent command to its end
  * @param finalModelText the text of the last model response, before the agent mapped it into the
  *     reply; empty when the trace did not carry it
+ * @param denied whether a guardrail denial stopped the turn
  */
 public record Interaction(
     String input,
@@ -37,7 +38,8 @@ public record Interaction(
     List<ModelCall> modelCalls,
     List<GuardrailResult> guardrails,
     Duration latency,
-    String finalModelText) {
+    String finalModelText,
+    boolean denied) {
 
   public Interaction {
     if (input == null) throw new IllegalArgumentException("input required");
@@ -51,6 +53,28 @@ public record Interaction(
     toolCalls = List.copyOf(toolCalls);
     modelCalls = List.copyOf(modelCalls);
     guardrails = List.copyOf(guardrails);
+  }
+
+  /** A turn that ended with a reply. */
+  public Interaction(
+      String input,
+      String userMessage,
+      String reply,
+      List<ToolCall> toolCalls,
+      List<ModelCall> modelCalls,
+      List<GuardrailResult> guardrails,
+      Duration latency,
+      String finalModelText) {
+    this(
+        input,
+        userMessage,
+        reply,
+        toolCalls,
+        modelCalls,
+        guardrails,
+        latency,
+        finalModelText,
+        false);
   }
 
   /** A reply with tool calls only, and no user message in the evidence. */
@@ -79,6 +103,20 @@ public record Interaction(
   /** A reply with no evidence. */
   public static Interaction of(String input, String reply) {
     return new Interaction(input, reply, List.of());
+  }
+
+  /** A turn that a guardrail denial stopped, with an empty reply and the traced evidence. */
+  public static Interaction denied(String input, AgentTrace trace) {
+    return new Interaction(
+        input,
+        required(trace).userMessage(),
+        "",
+        trace.toolCalls(),
+        trace.modelCalls(),
+        trace.guardrails(),
+        trace.duration(),
+        trace.finalModelText(),
+        true);
   }
 
   /**

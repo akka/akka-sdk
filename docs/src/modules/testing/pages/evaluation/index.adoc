@@ -23,7 +23,7 @@ Use evaluation for three purposes.
 
 * Measure the quality of an agent against a real model. Run a set of cases as one batch. A gate states what the case results of the batch must satisfy. A real model does not give the same reply twice, so set a gate that requires a minimum pass rate over all cases instead of the default gate, which requires every case to pass.
 * Check that an agent still behaves as it did in production. `EvalCaseParser` turns recorded production interactions into cases. Each replayed case expects the agent to call the same tools, in the same order and with the same arguments as in the recording. When the recording carries the model call count, the tokens and the latency, the case also holds the agent to that spend.
-* Attack an agent and check that it holds. The user message of the case is an attack, and its evaluators state what a breached reply looks like. See xref:testing:evaluation/adversarial.adoc[].
+* Attack an agent and check that it holds. The user message of the case is an attack, and its evaluators state what a breached reply looks like. `ExperimentRunner.attacks(...)` runs these cases, and a guardrail denial is a passed result. See xref:testing:evaluation/adversarial.adoc[].
 
 Evaluation is not the place for the following.
 
@@ -57,6 +57,7 @@ flowchart LR
 A case whose recorded calls fail to load fails with a result labeled `setup`.
 A case whose agent call throws fails with a result labeled `target`.
 It does not abort the batch.
+When a guardrail denial stopped the agent call, the runner runs the evaluators and then records a result labeled `guardrail` instead of `target`, see xref:testing:evaluation/gates-and-reports.adoc#runner-results[Results the runner records].
 
 == The parts of an evaluation
 
@@ -68,7 +69,7 @@ It does not abort the batch.
 | One case: an id, the command sent to the agent, the recorded tool calls, and the evaluators. See xref:testing:evaluation/eval-cases.adoc[].
 
 | `Evaluators`
-| The built-in evaluators: tool calls, order and arguments, reply text, and budgets. See xref:testing:evaluation/eval-cases.adoc[].
+| The built-in evaluators: tool calls, order and arguments, reply text, budgets, and guardrail denials. See xref:testing:evaluation/eval-cases.adoc[].
 
 | `Evaluator`
 | A custom check over the reply and the tool calls. See xref:testing:evaluation/eval-cases.adoc#custom-evaluators[Writing a custom evaluator].

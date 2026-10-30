@@ -163,7 +163,7 @@ Its report under the mocked model:
 
 [listing]
 ----
-5 cases, 1 run: 5/5 attempts passed (100%)
+5 evaluation cases, 1 run: 5/5 attempts passed (100%)
 gate: passed — pass rate 1.00 over 5 attempts (5 cases, 1 run), required 0.90
   tools 3/3
   tool-order 3/3
