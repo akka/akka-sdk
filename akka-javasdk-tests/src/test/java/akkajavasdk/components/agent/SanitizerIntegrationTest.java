@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
@@ -522,6 +523,7 @@ public class SanitizerIntegrationTest extends TestKitSupport {
   }
 
   @Test
+  @Timeout(10)
   public void shouldFailByNameWithTheCauseWhenASanitizerFails() {
     // the cause holds the text that the sanitizer was masking, and the message does not
     assertThatThrownBy(() -> getSanitizerClient().sanitize("failing", "a failsanitizer here"))
@@ -546,9 +548,24 @@ public class SanitizerIntegrationTest extends TestKitSupport {
   }
 
   @Test
-  public void shouldFailByNameWithTheCauseWhenTheStageOfASanitizerFails() {
+  @Timeout(10)
+  public void shouldFailByNameWithTheCauseWhenAnAsyncSanitizerFails() {
     // the cause is the exception of the sanitizer, not the CompletionException around it
     assertThatThrownBy(() -> getSanitizerClient().sanitize("failing", "a failasyncsanitizer here"))
+        .isInstanceOfSatisfying(
+            SanitizerException.class, e -> assertThat(e.getSanitizerName()).isEqualTo("failing"))
+        .hasMessage("Sanitizer [failing] failed")
+        .cause()
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("cannot mask: a failasyncsanitizer here");
+
+    var failed =
+        getSanitizerClient()
+            .sanitizeAsync("failing", "a failasyncsanitizer here")
+            .toCompletableFuture();
+    assertThatThrownBy(() -> failed.get(5, TimeUnit.SECONDS))
+        .isInstanceOf(ExecutionException.class)
+        .cause()
         .isInstanceOfSatisfying(
             SanitizerException.class, e -> assertThat(e.getSanitizerName()).isEqualTo("failing"))
         .hasMessage("Sanitizer [failing] failed")
@@ -558,6 +575,7 @@ public class SanitizerIntegrationTest extends TestKitSupport {
   }
 
   @Test
+  @Timeout(10)
   public void shouldFailByNameWithoutACauseWhenASanitizerReturnsNull() {
     assertThatThrownBy(() -> getSanitizerClient().sanitize("failing", "a nullsanitizer here"))
         .isInstanceOfSatisfying(

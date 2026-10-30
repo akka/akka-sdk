@@ -11,12 +11,13 @@ package akka.javasdk;
  * not pass the text on. The function given to {@code onFailure} of the agent receives this
  * exception. The caller of the agent does not.
  *
- * <p>A call of {@link SanitizerClient} fails with this exception when the sanitizer is a class that
- * fails or returns {@code null}.
+ * <p>A call to {@link SanitizerClient} fails with this exception when the sanitizer is a {@link
+ * TextSanitizer} that fails or returns {@code null}.
  *
- * <p>The cause is the exception that the sanitizer failed with, or {@code null} when the masked
- * text is {@code null}. The message of the cause can hold the text that the sanitizer was masking.
- * Do not log the cause, and do not return its message to the caller.
+ * <p>The cause is the exception that the sanitizer failed with. The cause can be {@code null}, for
+ * example when the sanitizer returned {@code null}. The message of the cause can hold the text that
+ * the sanitizer was masking. Do not log the cause, and do not return its message to the caller of
+ * your component.
  */
 public final class SanitizerException extends RuntimeException {
 
