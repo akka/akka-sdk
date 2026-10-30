@@ -260,7 +260,7 @@ An evaluation that has completed cannot transition further.
 == Evaluating a workflow run
 
 An evaluator bound to an agent judges one interaction. A workflow that orchestrates several agents produces a result that no single interaction holds: the outcome of the whole run.
-To have that outcome judged, the workflow starts the evaluation itself, as a rule from its final step, with `ComponentClient.forEvaluator(evaluatorComponentId)`.
+To have that outcome judged, the workflow starts the evaluation itself, as a rule from its final step, with `ComponentClient.forEvaluator(evaluatorClass)`.
 The subject is then a `Subject.Workflow`, the workflow instance by its id and component id.
 The evaluation also carries attributes: pointers for the evaluator, such as the ids of the agent interactions of the run.
 

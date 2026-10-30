@@ -85,7 +85,9 @@ public interface ComponentClient {
    * Select an {@link akka.javasdk.evaluation.Evaluator} or {@link
    * akka.javasdk.evaluation.DurableEvaluator} for starting an evaluation on request.
    *
-   * @param evaluatorComponentId the component id of the evaluator
+   * @param evaluatorClass the evaluator class, annotated with {@link
+   *     akka.javasdk.annotations.Component}
+   * @throws IllegalArgumentException if the class is not an evaluator or has no component id
    */
-  EvaluatorClient forEvaluator(String evaluatorComponentId);
+  EvaluatorClient forEvaluator(Class<?> evaluatorClass);
 }

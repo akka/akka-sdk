@@ -39,7 +39,7 @@ public class EvaluatedWorkflow extends Workflow<EvaluatedWorkflow.State> {
   public StepEffect evaluate() {
     var evaluationId =
         componentClient
-            .forEvaluator("workflow-run-evaluator")
+            .forEvaluator(WorkflowRunEvaluator.class)
             .startEvaluation(
                 new Subject.Workflow(context.workflowId(), "evaluated-workflow"),
                 Map.of("question", currentState().question()));

@@ -67,7 +67,7 @@ public class WorkflowEvaluationIntegrationTest extends TestKitSupport {
   @Test
   public void startingTheSameEvaluationAgainReturnsTheSameId() {
     var run = new Subject.Workflow(UUID.randomUUID().toString(), "evaluated-workflow");
-    var client = componentClient.forEvaluator("workflow-run-evaluator");
+    var client = componentClient.forEvaluator(WorkflowRunEvaluator.class);
 
     var first = client.startEvaluation(run, Map.of("question", "again"));
     var second = client.startEvaluation(run, Map.of("question", "again"));
@@ -82,8 +82,11 @@ public class WorkflowEvaluationIntegrationTest extends TestKitSupport {
     var run = new Subject.Workflow(UUID.randomUUID().toString(), "evaluated-workflow");
 
     assertThatThrownBy(
-            () -> componentClient.forEvaluator("no-such-evaluator").startEvaluation(run, Map.of()))
+            () ->
+                componentClient
+                    .forEvaluator(UnregisteredEvaluator.class)
+                    .startEvaluation(run, Map.of()))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("no-such-evaluator");
+        .hasMessageContaining("unregistered-evaluator");
   }
 }

@@ -10,6 +10,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import akka.NotUsed;
 import akka.javasdk.Metadata;
+import akka.javasdk.evaluation.EvaluationContext;
+import akka.javasdk.evaluation.Evaluator;
 import akka.javasdk.impl.*;
 import akka.javasdk.impl.client.ComponentClientImpl;
 import akka.javasdk.impl.client.DeferredCallImpl;
@@ -181,8 +183,18 @@ class ComponentClientTest {
   }
 
   @Test
-  public void shouldRejectAMissingEvaluatorComponentId() {
+  public void shouldRejectAClassThatIsNotAnEvaluatorWithAComponentId() {
     assertThrows(NullPointerException.class, () -> componentClient.forEvaluator(null));
-    assertThrows(IllegalArgumentException.class, () -> componentClient.forEvaluator(""));
+    assertThrows(IllegalArgumentException.class, () -> componentClient.forEvaluator(Counter.class));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> componentClient.forEvaluator(EvaluatorWithoutComponentId.class));
+  }
+
+  static class EvaluatorWithoutComponentId extends Evaluator {
+    @Override
+    public Effect evaluate(EvaluationContext context) {
+      return effects().notApplicable("never started");
+    }
   }
 }

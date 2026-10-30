@@ -85,7 +85,7 @@ public class EvaluatedAgentTeamWorkflow extends Workflow<EvaluatedAgentTeamWorkf
 
   private StepEffect evaluate() { // <3>
     componentClient
-      .forEvaluator("agent-team-run-evaluator")
+      .forEvaluator(AgentTeamRunEvaluator.class)
       .startEvaluation(
         new Subject.Workflow(commandContext().workflowId(), "evaluated-agent-team"), // <4>
         Map.of("interactionIds", String.join(",", currentState().interactionIds())) // <5>

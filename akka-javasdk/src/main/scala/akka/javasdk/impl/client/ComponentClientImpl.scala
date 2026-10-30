@@ -21,6 +21,8 @@ import akka.javasdk.client.TaskClient
 import akka.javasdk.client.TimedActionClient
 import akka.javasdk.client.ViewClient
 import akka.javasdk.client.WorkflowClient
+import akka.javasdk.evaluation.DurableEvaluator
+import akka.javasdk.evaluation.Evaluator
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.agent.autonomous.CapabilityConverter
 import akka.javasdk.impl.reflection.Reflect
@@ -100,10 +102,17 @@ private[javasdk] final case class ComponentClientImpl(
     else
       new TaskClientImpl(taskId, runtimeComponentClients, serializer, callMetadata, Materializer.matFromSystem(system))
 
-  override def forEvaluator(evaluatorComponentId: String): EvaluatorClient =
-    if (evaluatorComponentId eq null) throw new NullPointerException("Evaluator component id is null")
-    else if (evaluatorComponentId.isEmpty)
-      throw new IllegalArgumentException("Empty evaluator component id not allowed")
-    else new EvaluatorClientImpl(evaluatorComponentId, evaluationClient)
+  override def forEvaluator(evaluatorClass: Class[_]): EvaluatorClient = {
+    if (evaluatorClass eq null) throw new NullPointerException("Evaluator class is null")
+    val isEvaluator =
+      classOf[Evaluator].isAssignableFrom(evaluatorClass) ||
+      classOf[DurableEvaluator[_]].isAssignableFrom(evaluatorClass)
+    if (!isEvaluator)
+      throw new IllegalArgumentException(s"Class [${evaluatorClass.getName}] is not an evaluator")
+    val evaluatorComponentId = Reflect.readComponentId(evaluatorClass)
+    if (evaluatorComponentId.isEmpty)
+      throw new IllegalArgumentException(s"Evaluator [${evaluatorClass.getName}] has no component id")
+    new EvaluatorClientImpl(evaluatorComponentId, evaluationClient)
+  }
 
 }
