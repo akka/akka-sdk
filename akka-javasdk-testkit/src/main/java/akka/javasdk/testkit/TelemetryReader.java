@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -189,11 +190,16 @@ public class TelemetryReader {
                 span ->
                     commandIds.contains(span.getParentSpanId())
                         || toolCallIds.contains(span.getParentSpanId()))
-            .sorted(byStart());
+            .sorted(byStart())
+            .toList();
+    var deniedToolCalls = deniedToolCalls(guardrailSpans, toolCallIds);
 
-    var toolCalls = ofKind(children, TOOL_CALL_SPAN).map(TelemetryReader::toToolCall).toList();
+    var toolCalls =
+        ofKind(children, TOOL_CALL_SPAN)
+            .map(span -> toToolCall(span, deniedToolCalls.get(span.getSpanId())))
+            .toList();
     var modelCalls = ofKind(children, MODEL_CALL_SPAN).map(TelemetryReader::toModelCall).toList();
-    var guardrails = guardrailSpans.map(TelemetryReader::toGuardrail).toList();
+    var guardrails = guardrailSpans.stream().map(TelemetryReader::toGuardrail).toList();
     var started = commands.getFirst().getStartEpochNanos();
     var ended = commands.stream().mapToLong(SpanData::getEndEpochNanos).max().orElse(started);
     var finalText = modelCalls.isEmpty() ? "" : finalText(modelCalls.getLast().outputMessages());
@@ -274,7 +280,20 @@ public class TelemetryReader {
     }
   }
 
-  private static ToolCall toToolCall(SpanData span) {
+  /** The name of the first guardrail that denied each tool call, by tool-call span id. */
+  private static Map<String, String> deniedToolCalls(
+      List<SpanData> guardrailSpans, Set<String> toolCallIds) {
+    return guardrailSpans.stream()
+        .filter(span -> toolCallIds.contains(span.getParentSpanId()))
+        .filter(span -> toGuardrail(span).decision() == Decision.DENY)
+        .collect(
+            Collectors.toMap(
+                SpanData::getParentSpanId,
+                span -> span.getAttributes().get(GUARDRAIL_NAME),
+                (first, second) -> first));
+  }
+
+  private static ToolCall toToolCall(SpanData span, String deniedBy) {
     var attributes = span.getAttributes();
     var name =
         toolName(
@@ -289,7 +308,8 @@ public class TelemetryReader {
         name,
         parseArguments(attributes.get(TOOL_ARGUMENTS)),
         Optional.ofNullable(attributes.get(TOOL_RESULT)),
-        error);
+        error,
+        Optional.ofNullable(deniedBy));
   }
 
   private static ModelCall toModelCall(SpanData span) {

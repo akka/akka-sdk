@@ -81,7 +81,8 @@
             "name": "getOrder",
             "arguments": { "orderId": "o_42" },
             "result": "{\"status\":\"shipped\"}",
-            "error": null
+            "error": null,
+            "deniedBy": null
           }
         ],
         "modelCalls": [
@@ -124,7 +125,8 @@
             "name": "getOrder",
             "arguments": { "orderId": "o_42" },
             "result": "{\"status\":\"shipped\"}",
-            "error": null
+            "error": null,
+            "deniedBy": null
           }
         ],
         "modelCalls": [
@@ -171,7 +173,8 @@
             "name": "getOrder",
             "arguments": { "orderId": "o_42" },
             "result": "{\"status\":\"shipped\"}",
-            "error": null
+            "error": null,
+            "deniedBy": null
           }
         ],
         "modelCalls": [

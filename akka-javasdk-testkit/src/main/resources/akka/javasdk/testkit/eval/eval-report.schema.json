@@ -132,12 +132,13 @@
     },
     "toolCall": {
       "type": "object",
-      "required": ["name", "arguments", "result", "error"],
+      "required": ["name", "arguments", "result", "error", "deniedBy"],
       "properties": {
         "name": { "type": "string", "description": "The plain tool name, without the agent class prefix." },
         "arguments": { "type": "object", "description": "By parameter name. A value is null when the model sent null." },
         "result": { "type": ["string", "null"], "description": "The tool's result as the model saw it. Null when not recorded." },
-        "error": { "type": ["string", "null"], "description": "The failure message when the tool threw. Null otherwise." }
+        "error": { "type": ["string", "null"], "description": "The failure message when the tool threw or a guardrail denied the call. Null otherwise." },
+        "deniedBy": { "type": ["string", "null"], "description": "The name of the tool-call guardrail that denied the call. The tool did not run. Null otherwise." }
       }
     },
     "modelCall": {

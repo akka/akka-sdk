@@ -651,7 +651,10 @@ public final class ExperimentRunner {
               call ->
                   call.name()
                       + call.arguments()
-                      + call.error().map(e -> " (failed: " + e + ")").orElse(""))
+                      + call.deniedBy()
+                          .map(guardrail -> " (denied by " + guardrail + ")")
+                          .or(() -> call.error().map(e -> " (failed: " + e + ")"))
+                          .orElse(""))
           .reduce((a, b) -> a + " → " + b)
           .orElse("");
     }

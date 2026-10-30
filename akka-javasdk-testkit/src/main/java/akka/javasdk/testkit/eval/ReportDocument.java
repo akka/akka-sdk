@@ -231,13 +231,29 @@ public record ReportDocument(
    * @param name the plain tool name, without the agent class prefix
    * @param arguments by parameter name; a value is null when the model sent null
    * @param result the tool's result as the model saw it, when recorded
-   * @param error the failure message when the tool threw
+   * @param error the failure message when the tool threw or a guardrail denied the call
+   * @param deniedBy the name of the tool-call guardrail that denied the call
    */
   public record ToolCall(
       String name,
       Map<String, Object> arguments,
       Optional<String> result,
-      Optional<String> error) {}
+      Optional<String> error,
+      Optional<String> deniedBy) {
+
+    public ToolCall {
+      deniedBy = deniedBy == null ? Optional.empty() : deniedBy;
+    }
+
+    /** A call no guardrail denied. */
+    public ToolCall(
+        String name,
+        Map<String, Object> arguments,
+        Optional<String> result,
+        Optional<String> error) {
+      this(name, arguments, result, error, Optional.empty());
+    }
+  }
 
   /**
    * @param model the model name, as sent in the request

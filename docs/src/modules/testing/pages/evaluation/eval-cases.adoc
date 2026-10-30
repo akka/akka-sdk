@@ -120,6 +120,10 @@ The built-in classes are nested in `Evaluators`, and the tables below list each 
 | None of the named tools was called.
 |===
 
+These evaluators count a tool call only when the tool ran.
+When a tool-call guardrail denies a call, the tool does not run.
+That call fails `shouldCallTool` and passes `shouldNotCallTool`, and the failure detail names the guardrail.
+
 === Built-in evaluators on the reply
 
 [cols="1,2,3"]

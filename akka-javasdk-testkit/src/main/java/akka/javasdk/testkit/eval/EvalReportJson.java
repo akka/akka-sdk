@@ -130,7 +130,10 @@ final class EvalReportJson {
         interaction.blocked(),
         interaction.denied(),
         interaction.toolCalls().stream()
-            .map(c -> new ReportDocument.ToolCall(c.name(), c.arguments(), c.result(), c.error()))
+            .map(
+                c ->
+                    new ReportDocument.ToolCall(
+                        c.name(), c.arguments(), c.result(), c.error(), c.deniedBy()))
             .toList(),
         interaction.modelCalls().stream()
             .map(

@@ -155,6 +155,13 @@ class TelemetryReaderTest {
         .containsExactly(
             new GuardrailResult(
                 "deny delete", "tool_policy", Decision.DENY, "deletion not allowed"));
+    assertThat(trace.toolCalls())
+        .singleElement()
+        .satisfies(
+            call -> {
+              assertThat(call.name()).isEqualTo("deleteAccount");
+              assertThat(call.deniedBy()).contains("deny delete");
+            });
   }
 
   @Test

@@ -10,9 +10,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import akka.javasdk.testkit.AgentTrace;
 import akka.javasdk.testkit.GuardrailResult;
 import akka.javasdk.testkit.GuardrailResult.Decision;
+import akka.javasdk.testkit.ToolCall;
 import akka.javasdk.testkit.eval.Evaluator.EvalResult.Verdict;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 /** What the built-in evaluators report over one interaction. */
@@ -88,5 +91,68 @@ class EvaluatorsTest {
     assertThatThrownBy(() -> Evaluators.shouldBeBlockedBy(null))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("guardrail name required");
+  }
+
+  /** A turn where the tool-call guardrail denied deleteAccount and getOrder ran. */
+  private static Interaction withADeniedToolCall() {
+    var denied =
+        new ToolCall(
+            "deleteAccount",
+            Map.of(),
+            Optional.empty(),
+            Optional.of("denied by policy"),
+            Optional.of("tool policy"));
+    var ran = new ToolCall("getOrder", Map.of(), Optional.of("o_42"), Optional.empty());
+    return new Interaction(
+        "Delete my account",
+        "Delete my account",
+        "",
+        List.of(denied, ran),
+        List.of(),
+        List.of(),
+        Duration.ofMillis(30),
+        "");
+  }
+
+  @Test
+  void aDeniedToolCallFailsShouldCallToolAndNamesTheGuardrail() {
+    var result = Evaluators.shouldCallTool("deleteAccount").evaluate(CASE, withADeniedToolCall());
+
+    assertThat(result.verdict()).isEqualTo(Verdict.FAIL);
+    assertThat(result.detail())
+        .isEqualTo(
+            "never called [deleteAccount]; called [getOrder]; deleteAccount was denied by tool"
+                + " policy");
+  }
+
+  @Test
+  void aDeniedToolCallPassesShouldNotCallTool() {
+    var result =
+        Evaluators.shouldNotCallTool("deleteAccount").evaluate(CASE, withADeniedToolCall());
+
+    assertThat(result.verdict()).isEqualTo(Verdict.PASS);
+  }
+
+  @Test
+  void aDeniedToolCallIsNotCountedByTheOtherToolEvaluators() {
+    var interaction = withADeniedToolCall();
+
+    assertThat(
+            Evaluators.shouldCallToolWith("deleteAccount", "id", "1")
+                .evaluate(CASE, interaction)
+                .verdict())
+        .isEqualTo(Verdict.INCONCLUSIVE);
+    assertThat(
+            Evaluators.toolResultShouldContain("deleteAccount", "deleted")
+                .evaluate(CASE, interaction)
+                .verdict())
+        .isEqualTo(Verdict.INCONCLUSIVE);
+    assertThat(
+            Evaluators.shouldCallToolsInOrder("deleteAccount", "getOrder")
+                .evaluate(CASE, interaction)
+                .verdict())
+        .isEqualTo(Verdict.INCONCLUSIVE);
+    assertThat(Evaluators.shouldMakeAtMostToolCalls(1).evaluate(CASE, interaction).verdict())
+        .isEqualTo(Verdict.PASS);
   }
 }
