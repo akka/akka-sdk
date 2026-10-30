@@ -61,17 +61,31 @@ final class AgentTarget<A extends Agent, C, R> implements EvalTarget<C> {
   }
 
   /**
-   * The outcome of a failed call: denied when the trace holds a guardrail denial and no guardrail
-   * error, failed otherwise.
+   * The outcome of a failed call: denied when the failure names a guardrail that denied and the
+   * trace holds no guardrail error, failed otherwise.
    */
   static Outcome outcome(String input, RuntimeException failure, AgentTrace trace) {
-    var decisions = trace.guardrails().stream().map(GuardrailResult::decision).toList();
+    var guardrails = trace.guardrails();
 
-    if (decisions.contains(Decision.DENY) && !decisions.contains(Decision.ERROR)) {
+    var errored = guardrails.stream().anyMatch(g -> g.decision() == Decision.ERROR);
+    var stoppedByDenial =
+        guardrails.stream().anyMatch(g -> g.decision() == Decision.DENY && blockedBy(failure, g));
+
+    if (stoppedByDenial && !errored) {
       return Outcome.denied(new Interaction(input, trace));
     }
 
     return Outcome.failed(failure, trace);
+  }
+
+  // The runtime fails a call that a guardrail denied with the message
+  // "<boundary> guardrail blocked, category [<category>], name [<name>]: <reason>".
+  private static boolean blockedBy(RuntimeException failure, GuardrailResult guardrail) {
+    var message = failure.getMessage();
+    if (message == null) return false;
+
+    var label = "category [" + guardrail.category() + "], name [" + guardrail.name() + "]";
+    return message.contains("guardrail blocked, " + label + ": ");
   }
 
   // After a failure the trace may hold nothing for the session.

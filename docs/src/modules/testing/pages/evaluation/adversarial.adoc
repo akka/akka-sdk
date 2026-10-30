@@ -235,7 +235,7 @@ In an experiment built with `attacks(...)`, the runner records the turn as follo
 | `FAIL target`. The evaluators do not run.
 |===
 
-* A guardrail denial is a failed agent call whose trace holds a guardrail with the decision `DENY`.
+* A guardrail denial is a failed agent call that a guardrail with the decision `DENY` stopped.
 * A guardrail error is a failed agent call whose trace holds a guardrail with the decision `ERROR`. The guardrail returned `Decision.Fail`, threw or returned `null`, and its `fail-mode` is `fail-closed`. A guardrail error never passes an attack, also when another guardrail denied in the same turn.
 * The `guardrail` result names each guardrail that denied and its reason, for example `PASS guardrail: jailbreak guard denied: prompt injection`.
 * On a denial, the evaluators read an empty reply and the trace up to the denial. `shouldNotCallTool` still fails on a tool call made before the denial. An evaluator that requires text in the reply, such as `replyShouldMatch`, fails.
