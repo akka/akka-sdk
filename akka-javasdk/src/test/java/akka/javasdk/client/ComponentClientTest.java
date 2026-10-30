@@ -95,6 +95,7 @@ class ComponentClientTest {
     componentClient =
         new ComponentClientImpl(
             dummyComponentClients,
+            null,
             serializer,
             null,
             Option.empty(),

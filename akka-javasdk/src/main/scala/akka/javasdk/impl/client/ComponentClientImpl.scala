@@ -14,6 +14,7 @@ import akka.javasdk.agent.autonomous.AutonomousAgent
 import akka.javasdk.client.AgentClient
 import akka.javasdk.client.AutonomousAgentClient
 import akka.javasdk.client.ComponentClient
+import akka.javasdk.client.EvaluatorClient
 import akka.javasdk.client.EventSourcedEntityClient
 import akka.javasdk.client.KeyValueEntityClient
 import akka.javasdk.client.TaskClient
@@ -24,6 +25,7 @@ import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.agent.autonomous.CapabilityConverter
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.Serializer
+import akka.runtime.sdk.spi.SpiEvaluationClient
 import akka.runtime.sdk.spi.{ ComponentClients => RuntimeComponentClients }
 import akka.stream.Materializer
 import io.opentelemetry.context.{ Context => OtelContext }
@@ -36,6 +38,7 @@ import io.opentelemetry.context.{ Context => OtelContext }
 @InternalApi
 private[javasdk] final case class ComponentClientImpl(
     runtimeComponentClients: RuntimeComponentClients,
+    evaluationClient: SpiEvaluationClient,
     serializer: Serializer,
     agentClassById: Map[String, Class[Agent]],
     agentCapabilityConverter: Option[CapabilityConverter],
@@ -96,5 +99,11 @@ private[javasdk] final case class ComponentClientImpl(
     if (taskId eq null) throw new NullPointerException("Task ID is null")
     else
       new TaskClientImpl(taskId, runtimeComponentClients, serializer, callMetadata, Materializer.matFromSystem(system))
+
+  override def forEvaluator(evaluatorComponentId: String): EvaluatorClient =
+    if (evaluatorComponentId eq null) throw new NullPointerException("Evaluator component id is null")
+    else if (evaluatorComponentId.isEmpty)
+      throw new IllegalArgumentException("Empty evaluator component id not allowed")
+    else new EvaluatorClientImpl(evaluatorComponentId, evaluationClient)
 
 }

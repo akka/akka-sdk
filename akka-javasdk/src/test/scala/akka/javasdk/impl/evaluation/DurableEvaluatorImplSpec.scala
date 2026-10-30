@@ -4,6 +4,8 @@
 
 package akka.javasdk.impl.evaluation
 
+import java.util
+
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -11,10 +13,12 @@ import scala.concurrent.duration.DurationInt
 
 import akka.Done
 import akka.javasdk.evaluation.ConfiguredDurableEvaluator
+import akka.javasdk.evaluation.Subject
 import akka.javasdk.evaluation.TranscriptQualityEvaluator
 import akka.javasdk.impl.evaluation.DurableEvaluatorImpl.RecordStepName
 import akka.javasdk.impl.evaluation.DurableEvaluatorProtocol.Outcome
 import akka.javasdk.impl.evaluation.DurableEvaluatorProtocol.StateEnvelope
+import akka.javasdk.impl.evaluation.DurableEvaluatorProtocol.SubjectData
 import akka.javasdk.impl.serialization.Serializer
 import akka.runtime.sdk.spi
 import akka.runtime.sdk.spi.BytesPayload
@@ -63,7 +67,7 @@ class DurableEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionValu
       ExecutionContext.global,
       _ => ConfigFactory.empty())
 
-  private def newConfiguredImpl(configFor: String => Config) =
+  private def newConfiguredImpl(configFor: Subject => Config) =
     new DurableEvaluatorImpl[ConfiguredDurableEvaluator.State, ConfiguredDurableEvaluator](
       evaluationId,
       classOf[ConfiguredDurableEvaluator],
@@ -99,8 +103,8 @@ class DurableEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionValu
       val transitional = effect.asInstanceOf[SpiWorkflow.CommandTransitionalEffect]
 
       val envelope = decodeEnvelope(transitional.persistence)
-      envelope.agentComponentId() shouldBe "my-agent"
-      envelope.interactionId() shouldBe "interaction-1"
+      envelope.subject() shouldBe new SubjectData.Interaction("interaction-1", "my-agent", null)
+      envelope.attributes() shouldBe util.Map.of()
       envelope.userState() shouldBe null // no state update in onEvaluation, subject still persisted
 
       transitional.transition shouldBe a[SpiWorkflow.StepTransition]
@@ -138,7 +142,11 @@ class DurableEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionValu
 
     "pass the config for the evaluated agent on the context at the start and in a step" in {
       val impl =
-        newConfiguredImpl(agentComponentId => ConfigFactory.parseString(s"""key = "$agentComponentId-config" """))
+        newConfiguredImpl {
+          case interaction: Subject.Interaction =>
+            ConfigFactory.parseString(s"""key = "${interaction.agentComponentId()}-config" """)
+          case _: Subject.Workflow => ConfigFactory.empty()
+        }
       val started = await(impl.handleEvaluationStart(None, trigger(), null))
         .asInstanceOf[SpiWorkflow.CommandTransitionalEffect]
       val startState = started.persistence.asInstanceOf[SpiWorkflow.UpdateState].newState
@@ -180,7 +188,7 @@ class DurableEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionValu
       val stepEffect = result.asInstanceOf[SpiWorkflow.StepTransitionalEffect]
 
       val envelope = decodeEnvelope(stepEffect.persistence)
-      envelope.interactionId() shouldBe "interaction-1"
+      envelope.subject() shouldBe new SubjectData.Interaction("interaction-1", "my-agent", null)
       envelope.userState() should not be null
 
       val transition = stepEffect.transition.asInstanceOf[SpiWorkflow.StepTransition]

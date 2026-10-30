@@ -40,6 +40,7 @@ import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.ComponentClients
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiEntity
+import akka.runtime.sdk.spi.SpiEvaluationClient
 import akka.runtime.sdk.spi.SpiMetadata
 import akka.runtime.sdk.spi.SpiWorkflow
 import akka.runtime.sdk.spi.SpiWorkflow.StepCallReply
@@ -68,6 +69,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
     tracerFactory: () => Tracer,
     regionInfo: RegionInfo,
     runtimeComponentClients: ComponentClients,
+    evaluationClient: SpiEvaluationClient,
     instanceFactory: Function[WorkflowContext, W])(implicit system: ActorSystem[_])
     extends SpiWorkflow {
 
@@ -80,7 +82,8 @@ class WorkflowImpl[S, W <: Workflow[S]](
       serializer,
       Reflect.workflowStateType(workflowClass).asInstanceOf[Class[S]],
       sdkExecutionContext,
-      runtimeComponentClients)
+      runtimeComponentClients,
+      evaluationClient)
 
   override def configuration: SpiWorkflow.WorkflowConfig = {
     val workflowContext = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, None, tracerFactory)

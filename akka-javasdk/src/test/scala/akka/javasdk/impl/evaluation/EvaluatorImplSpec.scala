@@ -9,6 +9,7 @@ import scala.concurrent.duration._
 
 import akka.javasdk.evaluation.EvaluationContext
 import akka.javasdk.evaluation.Evaluator
+import akka.javasdk.evaluation.Subject
 import akka.javasdk.testmodels.evaluation.EvaluatorTestModels.SomeEvaluator
 import akka.runtime.sdk.spi.SpiEvaluator
 import com.typesafe.config.Config
@@ -50,7 +51,11 @@ class EvaluatorImplSpec extends AnyWordSpec with Matchers {
             }
           },
         classOf[Evaluator],
-        agentComponentId => ConfigFactory.parseString(s"""agent = "$agentComponentId" """))
+        {
+          case interaction: Subject.Interaction =>
+            ConfigFactory.parseString(s"""agent = "${interaction.agentComponentId()}" """)
+          case _: Subject.Workflow => ConfigFactory.empty()
+        })
 
       Await.result(impl.evaluate(new SpiEvaluator.EvaluationContext(trigger, OtelContext.root())), 3.seconds)
 

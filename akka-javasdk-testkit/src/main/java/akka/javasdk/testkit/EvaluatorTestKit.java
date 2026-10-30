@@ -10,6 +10,7 @@ import akka.javasdk.testkit.impl.EvaluatorResultImpl;
 import akka.javasdk.testkit.impl.TestKitEvaluationContext;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import java.util.Map;
 import java.util.function.Supplier;
 
 /**
@@ -77,7 +78,7 @@ public class EvaluatorTestKit<E extends Evaluator> {
    * @return the result of the evaluation
    */
   public EvaluatorResult evaluate(Subject subject, String evaluationId) {
-    var context = new TestKitEvaluationContext(subject, evaluationId, config);
+    var context = new TestKitEvaluationContext(subject, evaluationId, Map.of(), config);
     var effect = evaluatorFactory.get().evaluate(context);
     return new EvaluatorResultImpl(effect);
   }

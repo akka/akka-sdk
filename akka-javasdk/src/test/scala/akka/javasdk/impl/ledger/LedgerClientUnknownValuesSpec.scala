@@ -137,7 +137,8 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
       trigger = trigger,
       subject = new SpiLedger.InteractionSubject("interaction-1", "support-agent"),
       outcome = new SpiLedger.EvaluationInconclusive("no verdict"),
-      timestamp = Instant.EPOCH)
+      timestamp = Instant.EPOCH,
+      attributes = Map.empty)
 
   private def spiGuardrailDecisionRecord(
       boundary: SpiLedger.GuardrailBoundary = SpiLedger.GuardrailBoundary.BeforeModelCall,
@@ -181,6 +182,13 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
 
       override def getEvaluations(
           interactionId: String,
+          from: Option[Instant],
+          limit: Int): Future[Seq[SpiLedger.EvaluationRecord]] =
+        Future.successful(evaluations)
+
+      override def getWorkflowEvaluations(
+          workflowComponentId: String,
+          workflowId: String,
           from: Option[Instant],
           limit: Int): Future[Seq[SpiLedger.EvaluationRecord]] =
         Future.successful(evaluations)
