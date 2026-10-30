@@ -56,4 +56,4 @@ Project secrets hold credentials. Workload identity can replace long-lived crede
 * xref:operations:projects/network-policies.adoc[] configures network access and its exceptions.
 * xref:operations:services/workload-identity.adoc[] configures identity for external services.
 * xref:operations:tls-certificates.adoc[] configures internet TLS and client certificates.
-* xref:operations:projects/secrets.adoc[] and xref:operations:projects/manage-project-access.adoc[] cover credentials and roles.
+* xref:operations:projects/secrets.adoc[] and xref:operations:security/index.adoc[] cover credentials and roles.

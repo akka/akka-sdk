@@ -423,21 +423,21 @@ akka roles add-binding --service my-service --service-project my-service-project
 
 If the target project has more than one region, specify which region the service is running in with `--service-region`. To grant the role to the service in every region belonging to the project's region group, use `--service-region-group` instead.
 
-For the full set of options, see xref:reference:cli/akka-cli/akka_roles_add-binding.adoc[akka roles add-binding] and xref:operations:projects/manage-project-access.adoc[Managing project users].
+For the full set of options, see xref:reference:cli/akka-cli/akka_roles_add-binding.adoc[akka roles add-binding] and xref:operations:security/project-role-bindings.adoc[Project role bindings].
 
 ==== Granting an organization role to a service
 
-Use the same `--service` flag on `akka organizations users add-binding`:
+Use the same `--service` flag on `akka organizations role-bindings add`:
 
 [source, command line]
 ----
-akka organizations users add-binding --organization my-organization \
+akka organizations role-bindings add --organization my-organization \
   --service my-service --role member
 ----
 
 The `--service-project`, `--service-region`, and `--service-region-group` flags work the same way as for `akka roles add-binding`, above.
 
-For the full set of options, see xref:reference:cli/akka-cli/akka_organizations_users_add-binding.adoc[akka organizations users add-binding] and xref:operations:organizations/manage-users.adoc[Managing organization users].
+For the full set of options, see xref:reference:cli/akka-cli/akka_organizations.adoc[akka organizations role-bindings add] and xref:operations:security/organization-role-bindings.adoc[Organization role bindings].
 
 == Authenticating with third-party and non-local cloud providers
 
@@ -471,5 +471,5 @@ Because the token is rotated automatically by Akka, always read it fresh from th
 == See also
 
 - xref:reference:descriptors/service-descriptor.adoc#WorkloadIdentity[WorkloadIdentity in the service descriptor reference]
-- xref:projects/manage-project-access.adoc[]
-- xref:organizations/manage-users.adoc[]
+- xref:operations:security/project-role-bindings.adoc[]
+- xref:operations:security/organization-role-bindings.adoc[]

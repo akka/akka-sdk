@@ -1,4 +1,5 @@
 = OpenID Connect Setup
+:page-aliases: reference:security/oidc-setup.adoc
 
 include::ROOT:partial$include.adoc[]
 
@@ -165,23 +166,23 @@ Choosing to “migrate your account” will redirect the existing user to the Op
 
 == Creating OIDC groups for Akka access
 
-Akka roles are defined at either the *organization or project level*. A group can have one or more roles and be applied to an organization and/or projects. It is important to note that only one role can be added to a group at a time via individual CLI commands.
+Akka roles are defined at either the *organization or project level*. A group can have one or more roles and be applied to an organization, to projects, or to both. A group can also be bound to a xref:operations:security/custom-roles.adoc[custom role] of the organization. It is important to note that only one role can be added to a group at a time via individual CLI commands.
 
 [#assigning_organization_level_roles]
 === Assigning an organization-level roles
 
-The available organizational roles are: `superuser`, `project-admin`, `billing-admin`, and `member`. See xref:operations:organizations/manage-users.adoc[].
+The available organizational roles are: `superuser`, `project-admin`, `billing-admin`, and `member`. See xref:operations:security/organization-role-bindings.adoc[].
 
 An example of creating an OIDC group called `akka-project-admins` with a role of project-admin:
 [source,command line]
 ----
-akka organization user add-binding --group akka-project-admins --role project-admin
+akka organizations role-bindings add --group akka-project-admins --role project-admin
 ----
 
 [#assigning_project_level_roles]
 === Assigning a project-level role
 
-The available project roles are: `admin`, `developer`, `viewer` and `backoffice`. A different command is used to create groups at the project level. See xref:operations:projects/manage-project-access.adoc[].
+The available project roles are: `admin`, `developer`, `viewer` and `backoffice`. A different command is used to create groups at the project level. See xref:operations:security/project-role-bindings.adoc[].
 
 An example of creating a group called `akka-dev-admin` with a role of `admin` that is then assigned to three different projects:
 [source,command line]
@@ -200,9 +201,11 @@ akka roles add-binding --group akka-dev-admin --role viewer --project project2
 
 == See also
 
-- xref:operations:organizations/manage-users.adoc[]
-- xref:operations:projects/manage-project-access.adoc[]
-- xref:reference:cli/akka-cli/akka_organizations_users.adoc#_see_also[`akka organization users` commands]
+- xref:operations:security/index.adoc[]
+- xref:operations:security/organization-role-bindings.adoc[]
+- xref:operations:security/project-role-bindings.adoc[]
+- xref:operations:security/custom-roles.adoc[]
+- xref:reference:cli/akka-cli/akka_organizations.adoc[`akka organizations` commands]
 - xref:reference:cli/akka-cli/akka_roles.adoc#_see_also[`akka roles` commands]
 - xref:reference:cli/akka-cli/akka_organizations_auth_add_openid.adoc[`akka organization auth add openid` command]
 - xref:reference:cli/akka-cli/akka_organizations_auth_test.adoc[`akka organizations auth test` command]

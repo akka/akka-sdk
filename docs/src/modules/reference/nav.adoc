@@ -10,6 +10,9 @@
 *** xref:descriptors/observability-descriptor.adoc[Observability descriptor]
 *** xref:descriptors/model-descriptor.adoc[Model descriptor]
 *** xref:descriptors/routing-ruleset.adoc[Routing ruleset]
+** xref:rbac/index.adoc[RBAC]
+*** xref:rbac/permissions.adoc[Permissions]
+*** xref:rbac/roles.adoc[Roles]
 ** xref:config/reference.adoc[Service configuration]
 ** xref:cli/akka-cli/index.adoc[CLI commands]
 *** xref:cli/conventions.adoc[]
@@ -145,7 +148,6 @@
 *** xref:telemetry/tracing.adoc[]
 
 ** xref:jwts.adoc[JSON Web Tokens (JWTs)]
-** xref:security/oidc-setup.adoc[OpenID connect]
 ** xref:migration-guide.adoc[Migration guide]
 ** xref:release-notes.adoc[Release notes]
 ** xref:security-announcements/index.adoc[Security announcements]

@@ -35,7 +35,7 @@ These commands manage an Akka Platform environment. Most of them need you to xre
 
 | xref:reference:cli/akka-cli/akka_roles.adoc[`akka roles`]
 | The user roles for an Akka project.
-| xref:operations:projects/manage-project-access.adoc[]
+| xref:operations:security/project-role-bindings.adoc[]
 
 | xref:reference:cli/akka-cli/akka_regions.adoc[`akka regions`]
 | Available regions.

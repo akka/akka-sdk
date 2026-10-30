@@ -12,6 +12,7 @@ Operating covers project setup and the tasks you perform to deploy and maintain 
 == Set up access and project resources
 
 * xref:operations:organizations/index.adoc[] manages organizations and user access.
+* xref:operations:security/index.adoc[] controls who can access organizations and projects, with built-in and custom roles.
 * xref:operations:projects/index.adoc[] configures projects, container registries, secrets, and network policies.
 * xref:operations:projects/message-brokers.adoc[] connects projects to message brokers.
 

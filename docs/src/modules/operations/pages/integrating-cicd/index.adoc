@@ -54,11 +54,11 @@ akka roles add-binding \
   --role developer
 ----
 
-To grant an organization role, use `akka organizations users add-binding`:
+To grant an organization role, use `akka organizations role-bindings add`:
 
 [source, command line]
 ----
-akka organizations users add-binding --organization <your-organization> \
+akka organizations role-bindings add --organization <your-organization> \
   --identity-provider <provider-id> \
   --identity-provider-org <your-organization> \
   --workload-identity-subject <subject-value> \
@@ -67,7 +67,7 @@ akka organizations users add-binding --organization <your-organization> \
 
 `--identity-provider-org` is only needed when the identity provider belongs to a different organization than the one the role binding is being added to. Use `--workload-identity-claim claim-name=claim-value` in place of `--workload-identity-subject` when you granted the role based on a mapped claim rather than the subject claim.
 
-For the full set of options, see xref:reference:cli/akka-cli/akka_roles_add-binding.adoc[akka roles add-binding], xref:reference:cli/akka-cli/akka_organizations_users_add-binding.adoc[akka organizations users add-binding], xref:projects/manage-project-access.adoc[Managing project users], and xref:organizations/manage-users.adoc[Managing organization users].
+For the full set of options, see xref:reference:cli/akka-cli/akka_roles_add-binding.adoc[akka roles add-binding], xref:reference:cli/akka-cli/akka_organizations.adoc[akka organizations role-bindings add], xref:operations:security/project-role-bindings.adoc[Project role bindings], and xref:operations:security/organization-role-bindings.adoc[Organization role bindings].
 
 === 3. Configure the Akka CLI
 

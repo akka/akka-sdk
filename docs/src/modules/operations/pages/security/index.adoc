@@ -1,0 +1,79 @@
+= Managing access to projects and organizations
+:page-aliases: operations:organizations/manage-users.adoc, operations:projects/manage-project-access.adoc
+:page-summary: Access to organizations and projects is controlled by binding roles to principals. Built-in roles apply to one organization or one project, and custom roles apply to selected projects of an organization.
+:page-when-to-use: When you decide who can do what in an organization or a project, or choose between built-in and custom roles.
+:page-related: operations:security/organization-role-bindings.adoc, operations:security/project-role-bindings.adoc, operations:security/custom-roles.adoc, operations:security/oidc-setup.adoc
+:page-persona: operator-platform
+
+include::ROOT:partial$include.adoc[]
+
+Akka controls access to organizations and projects with role-based access control (RBAC). A _permission_ allows one operation, such as `project.services.get`. A _role_ is a named group of permissions. A _role binding_ grants a role to a _principal_.
+
+A principal is one of the following:
+
+* A user.
+* A group of users from an xref:operations:security/oidc-setup.adoc[OpenID Connect] provider.
+* An Akka service, using xref:operations:services/workload-identity.adoc[workload identity].
+* A workload identity from an external identity provider.
+
+The xref:reference:rbac/permissions.adoc[Permissions] reference lists every permission. The xref:reference:rbac/roles.adoc[Roles] reference lists the built-in roles and the permissions they grant.
+
+== Built-in roles
+
+Akka provides built-in roles at two levels.
+
+Organization roles::
+`superuser`, `project-admin`, `billing-admin` and `member`. They grant permissions on the organization, for example to manage its role bindings, create projects or view billing.
+
+Project roles::
+`admin`, `developer`, `viewer` and `backoffice`. They grant permissions on the services, routes, secrets and other resources of one project.
+
+The `member` organization role allows project admins to add the user to their projects without sending an invitation to the organization.
+
+The xref:reference:rbac/roles.adoc[Roles] reference shows the project permissions that each organization role includes. A superuser can assign roles in the projects of the organization, including to themselves. When a user creates a project, Akka grants the user the `admin` role on that project.
+
+== Role bindings at the organization and project levels
+
+You create role bindings at two levels:
+
+* An xref:operations:security/organization-role-bindings.adoc[organization role binding] grants an organization role, or a custom role, in the whole organization.
+* A xref:operations:security/project-role-bindings.adoc[project role binding] grants a project role in one project.
+
+A project role binding only grants access to its project. Organization membership does not grant access to any project.
+
+== Custom roles
+
+The built-in roles may grant more or less than you want. A xref:operations:security/custom-roles.adoc[custom role] defines your own group of permissions.
+
+Custom roles are always defined in an organization, and you bind them with organization role bindings. You can not bind a custom role at the project level. A custom role limits where its permissions apply by naming the projects in its rules. For example, one custom role can grant deployment permissions on two projects and read-only access to all the others.
+
+The following table helps you choose.
+
+[cols="2,3,3"]
+|===
+| Need | Use | Where to bind
+
+| Give a user a standard level of access to one project
+| A built-in project role
+| xref:operations:security/project-role-bindings.adoc[Project role binding]
+
+| Give a user a standard level of access to the organization
+| A built-in organization role
+| xref:operations:security/organization-role-bindings.adoc[Organization role binding]
+
+| Give a user specific permissions, or different access to different projects
+| A xref:operations:security/custom-roles.adoc[custom role]
+| xref:operations:security/organization-role-bindings.adoc[Organization role binding]
+|===
+
+== Single sign-on
+
+Akka supports single sign-on through OpenID Connect. With OpenID Connect, you can bind roles to groups from your identity provider instead of to individual users. See xref:operations:security/oidc-setup.adoc[].
+
+== See also
+
+* xref:operations:security/organization-role-bindings.adoc[]
+* xref:operations:security/project-role-bindings.adoc[]
+* xref:operations:security/custom-roles.adoc[]
+* xref:operations:security/oidc-setup.adoc[]
+* xref:operations:services/workload-identity.adoc[]

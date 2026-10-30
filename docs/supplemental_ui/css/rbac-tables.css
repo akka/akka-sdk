@@ -1,0 +1,39 @@
+/* Search box and group rows of the RBAC permission and role tables (js/rbac-tables.js). */
+.rbac-search {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.rbac-search input {
+  flex: 0 1 24rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid rgba(128, 128, 128, 0.5);
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+}
+
+.rbac-count {
+  opacity: 0.7;
+}
+
+table.rbac-permissions tr[hidden],
+table.rbac-roles tr[hidden] {
+  display: none;
+}
+
+table.rbac-permissions tr.rbac-group th {
+  background: rgba(128, 128, 128, 0.12);
+  font-weight: 600;
+}
+
+table.rbac-permissions tr.rbac-group-resource th {
+  background: rgba(128, 128, 128, 0.06);
+}
+
+.rbac-group-description {
+  font-weight: normal;
+  opacity: 0.8;
+}

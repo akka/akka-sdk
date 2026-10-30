@@ -1,0 +1,193 @@
+= Custom roles
+:page-summary: A custom role is a group of permissions that you define in an organization, optionally limited to selected projects and regions, and bind to principals with organization role bindings.
+:page-when-to-use: When the built-in roles grant more or less than a principal needs, or when a principal needs different access to different projects.
+:page-related: operations:security/index.adoc, operations:security/organization-role-bindings.adoc, reference:rbac/permissions.adoc
+:page-persona: operator-platform
+
+include::ROOT:partial$include.adoc[]
+
+A custom role is a group of permissions that you define in an organization. You create it from a YAML descriptor with the `akka organizations roles` commands, and you grant it with an xref:operations:security/organization-role-bindings.adoc[organization role binding].
+
+Custom roles belong to an organization. You can not create them in a project, and you can not bind them with a project role binding. A custom role can still apply to specific projects, because each rule in the role lists the resources that it applies to.
+
+== The role descriptor
+
+A descriptor has an `id`, an optional `description` and a list of `rules`.
+
+[source,yaml]
+----
+id: project-deployer
+description: Can view and deploy to all projects
+rules:
+  - resources: ["projects/*"]
+    permissions: ["project.get", "project.services.*"]
+  - roles: ["roles/organization/member"]
+----
+
+`id`::
+Identifies the role in the organization. The id can have up to 63 characters. It can contain letters, digits, dots, underscores and hyphens. It must be unique among the custom roles of the organization.
+
+`description`::
+Describes the role. The description can have up to 1024 characters.
+
+`rules`::
+Grant permissions. A role has at least one rule and at most 50.
+
+The CLI rejects unknown fields, so a misspelled field name is an error. The descriptor has no `name` field, because the `id` identifies the role.
+
+=== Rules
+
+Each rule can have the following fields.
+
+`resources`::
+The resources that the rule applies to, up to 100. If the list is empty or missing, the rule applies to everything in the organization. The supported values are:
++
+[cols="2,3"]
+|===
+| Value | Resources
+
+| `projects/<project-id>`
+| The project with the given id.
+
+| `projects/*`
+| All projects of the organization.
+
+| `regions/<region-id>`
+| The region with the given id.
+
+| `regions/*`
+| All regions.
+
+| `*`
+| Everything.
+|===
++
+A wildcard replaces a whole segment only. Resources inside projects and regions, such as the secrets of a project, are not supported. A role can only grant access to the resources of the organization that it belongs to.
+
+`permissions`::
+The permissions that the rule grants, up to 100, for example `project.get`. See the xref:reference:rbac/permissions.adoc[Permissions] reference for the full list. System permissions can not be granted.
+
+`roles`::
+Built-in roles whose permissions the rule grants, up to 20. Name organization roles as `roles/organization/<role-id>` and project roles as `roles/project/<role-id>`, for example `roles/project/viewer`. A rule can not reference other custom roles.
+
+A role grants the combined permissions of all its rules.
+
+=== Permission wildcards
+
+A segment of a permission, between the dots, can be a wildcard.
+
+[cols="2,4"]
+|===
+| Permission | Matches
+
+| `*`
+| All permissions.
+
+| `project.*`
+| All permissions on projects, including the permissions on the resources inside them.
+
+| `project.secrets.*`
+| All permissions on the secrets of a project.
+
+| `project.*.get`
+| One segment in the middle, so all permissions to get things in a project, such as `project.services.get` and `project.routes.get`.
+|===
+
+A wildcard at the end of a permission matches everything below it. A wildcard in the middle matches exactly one segment.
+
+The *Granted on* column of the xref:reference:rbac/permissions.adoc[Permissions] reference shows the kind of resource that each permission is granted on. Use it to choose the `resources` values. For example, `organization.regions.assign` is granted on regions, so you scope it with `regions/<region-id>`.
+
+== Example with different access to different projects
+
+The following role gives a team deployment access to two projects and read-only access to all others.
+
+[source,yaml]
+----
+id: team-a-deployer
+description: Deploys to the team A projects, and views other projects
+rules:
+  - resources: ["projects/team-a-dev", "projects/team-a-test"]
+    roles: ["roles/project/developer"]
+  - resources: ["projects/*"]
+    roles: ["roles/project/viewer"]
+----
+
+== Create a custom role
+
+Save the descriptor in a file and create the role.
+
+[source,command window]
+----
+akka organizations roles create --organization <organization name> -f team-a-deployer.yaml
+----
+
+If you omit `-f`, the command reads the descriptor from standard input.
+
+The role now exists, but it has no effect until you bind it to a principal. See xref:operations:security/organization-role-bindings.adoc#bind-a-custom-role[Bind a custom role].
+
+== List and view custom roles
+
+List the custom roles of an organization. The list does not include the built-in roles.
+
+[source,command window]
+----
+akka organizations roles list --organization <organization name>
+----
+
+Example output:
+[source]
+----
+ID                RULES   DESCRIPTION
+team-a-deployer   2       Deploys to the team A projects, and views other projects
+----
+
+Show the rules of one role:
+
+[source,command window]
+----
+akka organizations roles get team-a-deployer --organization <organization name>
+----
+
+Use `-o json` to get the role as JSON.
+
+== Update a custom role
+
+Export the role as a descriptor, edit the file, and update the role.
+
+[source,command window]
+----
+akka organizations roles export team-a-deployer --organization <organization name> -f team-a-deployer.yaml
+akka organizations roles update --organization <organization name> -f team-a-deployer.yaml
+----
+
+The descriptor replaces the whole role. Partial updates are not supported.
+
+Changes to custom roles are eventually consistent. They can take some time to apply to the principals that are bound to the role.
+
+To create a copy of a role, export it, change the `id` and run `akka organizations roles create`.
+
+== Delete a custom role
+
+[source,command window]
+----
+akka organizations roles delete team-a-deployer --organization <organization name>
+----
+
+The command fails if principals are still bound to the role, or if invitations for the role are outstanding. To delete the role together with its role bindings, and cancel those invitations, add `--cascade-role-bindings`.
+
+[source,command window]
+----
+akka organizations roles delete team-a-deployer --organization <organization name> --cascade-role-bindings
+----
+
+== Required permissions
+
+The organization permissions `organization.roles.create`, `organization.roles.list`, `organization.roles.update` and `organization.roles.delete` control who can manage custom roles. The `superuser` role includes them.
+
+== See also
+
+* xref:operations:security/index.adoc[]
+* xref:operations:security/organization-role-bindings.adoc[]
+* xref:reference:rbac/permissions.adoc[]
+* xref:reference:rbac/roles.adoc[]
+* xref:reference:cli/akka-cli/akka_organizations.adoc[`akka organizations` commands]
