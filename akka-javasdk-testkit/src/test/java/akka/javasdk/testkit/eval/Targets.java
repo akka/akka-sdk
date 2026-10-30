@@ -171,8 +171,8 @@ final class Targets {
         evaluator,
         Optional.empty(),
         EvaluationRecord.Trigger.ON_INTERACTION,
-        interactionId,
-        AGENT,
+        new EvaluationRecord.Subject.Interaction(interactionId, AGENT),
+        Map.of(),
         outcome,
         STARTED.plusSeconds(1));
   }

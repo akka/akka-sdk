@@ -6,6 +6,7 @@ package akka.javasdk.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import akka.NotUsed;
 import akka.javasdk.Metadata;
@@ -177,5 +178,11 @@ class ComponentClientTest {
         componentClient.forView().method(UserByEmailWithGet::getUser);
 
     // not much to assert here
+  }
+
+  @Test
+  public void shouldRejectAMissingEvaluatorComponentId() {
+    assertThrows(NullPointerException.class, () -> componentClient.forEvaluator(null));
+    assertThrows(IllegalArgumentException.class, () -> componentClient.forEvaluator(""));
   }
 }

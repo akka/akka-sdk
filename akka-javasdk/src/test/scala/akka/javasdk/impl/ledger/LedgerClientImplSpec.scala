@@ -6,12 +6,18 @@ package akka.javasdk.impl.ledger
 
 import java.time.Duration
 import java.time.Instant
+import java.util
 import java.util.Optional
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.jdk.CollectionConverters._
 
 import akka.javasdk.ledger.EvaluationRecord
 import akka.javasdk.ledger.GuardrailDecisionRecord
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiLedger
+import akka.runtime.sdk.spi.{ LedgerClient => SpiLedgerClient }
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -27,6 +33,17 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
       outcome = new SpiLedger.EvaluationInconclusive("no verdict"),
       timestamp = Instant.EPOCH,
       attributes = Map.empty)
+
+  private val spiWorkflowEvaluationRecord: SpiLedger.EvaluationRecord =
+    new SpiLedger.EvaluationRecord(
+      evaluationId = "evaluation-2",
+      evaluatorComponentId = "order-evaluator",
+      controlId = None,
+      trigger = SpiLedger.EvaluationTrigger.Manual,
+      subject = new SpiLedger.WorkflowSubject("workflow-1", "order-workflow"),
+      outcome = new SpiLedger.EvaluationInconclusive("no verdict"),
+      timestamp = Instant.EPOCH,
+      attributes = Map("interactionIds" -> "i1,i2"))
 
   private def spiInteractionRecord(modelResponses: SpiLedger.ModelResponse*): SpiLedger.InteractionRecord =
     new SpiLedger.InteractionRecord(
@@ -105,6 +122,21 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
       record.controlId() shouldEqual Optional.empty()
     }
 
+    "map a workflow subject and the attributes" in {
+      val record = LedgerClientImpl.toEvaluationRecord(spiWorkflowEvaluationRecord)
+
+      record.trigger() shouldEqual EvaluationRecord.Trigger.MANUAL
+      record.subject() shouldEqual new EvaluationRecord.Subject.Workflow("workflow-1", "order-workflow")
+      record.attributes() shouldEqual util.Map.of("interactionIds", "i1,i2")
+    }
+
+    "map an interaction subject" in {
+      val record = LedgerClientImpl.toEvaluationRecord(spiEvaluationRecord(controlId = None))
+
+      record.subject() shouldEqual new EvaluationRecord.Subject.Interaction("interaction-1", "support-agent")
+      record.attributes() shouldEqual util.Map.of()
+    }
+
     "carry a not applicable outcome" in {
       val spiRecord = new SpiLedger.EvaluationRecord(
         evaluationId = "evaluation-1",
@@ -120,6 +152,57 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
 
       record.outcome() shouldEqual new EvaluationRecord.Outcome.NotApplicable("no tool call")
       record.evaluation() shouldEqual Optional.empty()
+    }
+  }
+
+  "Fetching the evaluations of a workflow run" should {
+
+    "read the newest records of the run through the SPI client" in {
+      var requested: Option[(String, String, Option[Instant], Int)] = None
+      val spiLedgerClient = new SpiLedgerClient {
+        override def getInteraction(interactionId: String): Future[SpiLedger.InteractionRecord] =
+          Future.failed(new NoSuchElementException(interactionId))
+
+        override def getEvaluation(evaluationId: String): Future[SpiLedger.EvaluationRecord] =
+          Future.failed(new NoSuchElementException(evaluationId))
+
+        override def getClassification(classificationId: String): Future[SpiLedger.ClassificationRecord] =
+          Future.failed(new NoSuchElementException(classificationId))
+
+        override def getEvaluations(
+            interactionId: String,
+            from: Option[Instant],
+            limit: Int): Future[Seq[SpiLedger.EvaluationRecord]] =
+          Future.successful(Seq.empty)
+
+        override def getWorkflowEvaluations(
+            workflowComponentId: String,
+            workflowId: String,
+            from: Option[Instant],
+            limit: Int): Future[Seq[SpiLedger.EvaluationRecord]] = {
+          requested = Some((workflowComponentId, workflowId, from, limit))
+          Future.successful(Seq(spiWorkflowEvaluationRecord))
+        }
+
+        override def getInteractions(
+            agentComponentId: String,
+            sessionId: String,
+            from: Option[Instant],
+            limit: Int): Future[Seq[SpiLedger.InteractionRecord]] =
+          Future.successful(Seq.empty)
+
+        override def getGuardrailDecisions(
+            interactionId: String,
+            from: Option[Instant],
+            limit: Int): Future[Seq[SpiLedger.GuardrailDecisionRecord]] =
+          Future.successful(Seq.empty)
+      }
+      val client = new LedgerClientImpl(spiLedgerClient, ExecutionContext.parasitic)
+
+      val records = client.getWorkflowEvaluations("order-workflow", "workflow-1")
+
+      records.asScala.map(_.evaluationId()) shouldEqual Seq("evaluation-2")
+      requested shouldBe Some(("order-workflow", "workflow-1", None, 100))
     }
   }
 
