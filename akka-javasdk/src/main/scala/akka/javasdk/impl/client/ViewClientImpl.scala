@@ -108,7 +108,7 @@ private[javasdk] object ViewClientImpl {
             arg.asInstanceOf[java.util.Collection[_]])
           new BytesPayload(bytes, Serializer.JsonContentTypePrefix + "object")
         } else {
-          serializer.toBytesAsJson(arg)
+          serializer.toBytesAsViewJson(arg)
         }
       case None =>
         BytesPayload.empty

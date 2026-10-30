@@ -123,31 +123,58 @@ private[view] object ViewSchema {
 
   private val ProtobufTimestampFullName = "google.protobuf.Timestamp"
 
-  private def protobufSchema(clazz: Class[_ <: GeneratedMessageV3], protobufPresence: Boolean): SpiType = {
-    val descriptor = Reflect.protoDescriptorFor(clazz)
-    if (descriptor.getFullName == ProtobufTimestampFullName) SpiTimestamp
-    else protobufSchemaFromDescriptor(descriptor, protobufPresence, Set.empty)
+  // well-known types that JsonFormat prints as a plain JSON value rather than an object
+  private val ProtobufWrapperTypeFullNames = Set(
+    "google.protobuf.DoubleValue",
+    "google.protobuf.FloatValue",
+    "google.protobuf.Int64Value",
+    "google.protobuf.UInt64Value",
+    "google.protobuf.Int32Value",
+    "google.protobuf.UInt32Value",
+    "google.protobuf.BoolValue",
+    "google.protobuf.StringValue",
+    "google.protobuf.BytesValue")
+  private val ProtobufStringJsonTypeFullNames = Set("google.protobuf.Duration", "google.protobuf.FieldMask")
+  private val ProtobufUnsupportedTypeFullNames =
+    Set("google.protobuf.Struct", "google.protobuf.Value", "google.protobuf.ListValue", "google.protobuf.Any")
+
+  private def protobufSchema(clazz: Class[_ <: GeneratedMessageV3], protobufPresence: Boolean): SpiNestableType =
+    protobufMessageSchema(Reflect.protoDescriptorFor(clazz), protobufPresence, Set.empty)
+
+  private def protobufMessageSchema(
+      descriptor: Descriptors.Descriptor,
+      protobufPresence: Boolean,
+      seenMessages: Set[String]): SpiNestableType = {
+    val fullName = descriptor.getFullName
+    if (fullName == ProtobufTimestampFullName) SpiTimestamp
+    else if (ProtobufWrapperTypeFullNames.contains(fullName))
+      protobufFieldToSpiType(descriptor.findFieldByName("value"), protobufPresence, seenMessages)
+    else if (ProtobufStringJsonTypeFullNames.contains(fullName)) SpiString
+    else if (ProtobufUnsupportedTypeFullNames.contains(fullName))
+      throw new IllegalArgumentException(
+        s"Protobuf type [$fullName] is not supported in views, it does not have a fixed schema")
+    else if (seenMessages.contains(fullName)) new SpiClassRef(fullName)
+    else protobufSchemaFromDescriptor(descriptor, protobufPresence, seenMessages)
   }
 
   private def protobufFieldToSpiType(
       field: Descriptors.FieldDescriptor,
       protobufPresence: Boolean,
       seenMessages: Set[String]): SpiNestableType = {
-    import Descriptors.FieldDescriptor.JavaType
-    field.getJavaType match {
-      case JavaType.STRING      => SpiString
-      case JavaType.INT         => SpiInteger
-      case JavaType.LONG        => SpiLong
-      case JavaType.DOUBLE      => SpiDouble
-      case JavaType.FLOAT       => SpiFloat
-      case JavaType.BOOLEAN     => SpiBoolean
-      case JavaType.BYTE_STRING => SpiByteString
-      case JavaType.ENUM        => new SpiEnum(field.getEnumType.getFullName)
-      case JavaType.MESSAGE =>
-        val msgType = field.getMessageType
-        if (msgType.getFullName == ProtobufTimestampFullName) SpiTimestamp
-        else if (seenMessages.contains(msgType.getFullName)) new SpiClassRef(msgType.getFullName)
-        else protobufSchemaFromDescriptor(msgType, protobufPresence, seenMessages)
+    import Descriptors.FieldDescriptor.Type
+    // the view JSON holds unsigned values, uint32 needs a long, uint64 above Long.MaxValue is not supported
+    field.getType match {
+      case Type.STRING                              => SpiString
+      case Type.INT32 | Type.SINT32 | Type.SFIXED32 => SpiInteger
+      case Type.UINT32 | Type.FIXED32               => SpiLong
+      case Type.INT64 | Type.SINT64 | Type.SFIXED64 => SpiLong
+      case Type.UINT64 | Type.FIXED64               => SpiLong
+      case Type.DOUBLE                              => SpiDouble
+      case Type.FLOAT                               => SpiFloat
+      case Type.BOOL                                => SpiBoolean
+      case Type.BYTES                               => SpiByteString
+      case Type.ENUM                                => new SpiEnum(field.getEnumType.getFullName)
+      case Type.MESSAGE | Type.GROUP => protobufMessageSchema(field.getMessageType, protobufPresence, seenMessages)
     }
   }
 

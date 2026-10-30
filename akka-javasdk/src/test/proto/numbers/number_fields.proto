@@ -1,0 +1,38 @@
+// Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
+
+syntax = "proto3";
+
+package numbers;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+
+option java_outer_classname = "NumberProtos";
+
+// Integer fields of every protobuf integer type, for view schema and view JSON coverage
+message NumberFields {
+  int32 int32_value = 1;
+  sint32 sint32_value = 2;
+  sfixed32 sfixed32_value = 3;
+  uint32 uint32_value = 4;
+  fixed32 fixed32_value = 5;
+  int64 int64_value = 6;
+  sint64 sint64_value = 7;
+  sfixed64 sfixed64_value = 8;
+  uint64 uint64_value = 9;
+  fixed64 fixed64_value = 10;
+  repeated int64 int64_values = 11;
+  map<string, int64> int64_map = 12;
+  google.protobuf.Int64Value int64_wrapper = 13;
+  google.protobuf.UInt64Value uint64_wrapper = 14;
+  google.protobuf.UInt32Value uint32_wrapper = 15;
+  NumberFields nested = 16;
+  repeated NumberFields nested_list = 17;
+  google.protobuf.Timestamp timestamp = 18;
+  string text = 19;
+}
+
+message NoLongFields {
+  string text = 1;
+  int32 count = 2;
+}

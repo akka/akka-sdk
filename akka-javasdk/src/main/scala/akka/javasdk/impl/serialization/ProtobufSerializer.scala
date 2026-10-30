@@ -6,11 +6,21 @@ package akka.javasdk.impl.serialization
 
 import java.util.concurrent.ConcurrentHashMap
 
+import scala.jdk.CollectionConverters._
+
 import akka.annotation.InternalApi
 import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.reflection.Reflect
 import akka.runtime.sdk.spi.BytesPayload
 import akka.util.ByteString
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ArrayNode
+import com.fasterxml.jackson.databind.node.BigIntegerNode
+import com.fasterxml.jackson.databind.node.LongNode
+import com.fasterxml.jackson.databind.node.ObjectNode
+import com.google.protobuf.Descriptors
+import com.google.protobuf.Descriptors.FieldDescriptor.JavaType
 import com.google.protobuf.GeneratedMessageV3
 import com.google.protobuf.util.JsonFormat
 
@@ -95,7 +105,7 @@ object ProtobufSerializer {
   }
 
   /**
-   * Serialize a protobuf message to JSON format. This is used for Views which store data as JSONB.
+   * Serialize a protobuf message to JSON format.
    */
   def toBytesAsJson(value: Any): BytesPayload = {
     if (value == null) throw new NullPointerException("Serialized value is null")
@@ -112,6 +122,95 @@ object ProtobufSerializer {
           s"ProtobufSerializer can only serialize protobuf messages to JSON, got: ${value.getClass.getName}")
     }
   }
+
+  /**
+   * Serialize a protobuf message to JSON for a view row or view query parameters. Unlike [[toBytesAsJson]], 64-bit
+   * integers are JSON numbers rather than strings, because views index them as numbers.
+   */
+  def toBytesAsViewJson(value: GeneratedMessageV3): BytesPayload = {
+    if (value == null) throw new NullPointerException("Serialized value is null")
+    val descriptor = value.getDescriptorForType
+    if (!has64BitIntegers(descriptor)) toBytesAsJson(value)
+    else {
+      val json = viewJsonMapper.readTree(protobufJsonPrinter.print(value))
+      new BytesPayload(
+        bytes = ByteString.fromArrayUnsafe(viewJsonMapper.writeValueAsBytes(longsAsNumbers(json, descriptor))),
+        contentType = JsonSerializer.JsonContentTypePrefix + descriptor.getFullName)
+    }
+  }
+
+  private val viewJsonMapper = new ObjectMapper()
+
+  private val has64BitIntegersCache = new ConcurrentHashMap[Descriptors.Descriptor, java.lang.Boolean]()
+
+  private def has64BitIntegers(descriptor: Descriptors.Descriptor): Boolean = {
+    def loop(current: Descriptors.Descriptor, seen: Set[Descriptors.Descriptor]): Boolean =
+      if (isWellKnownType(current)) is64BitWrapper(current)
+      else
+        current.getFields.asScala.exists { field =>
+          is64BitInteger(field) ||
+          (field.getJavaType == JavaType.MESSAGE && !seen.contains(field.getMessageType) &&
+          loop(field.getMessageType, seen + current))
+        }
+    has64BitIntegersCache.computeIfAbsent(descriptor, d => loop(d, Set.empty))
+  }
+
+  private def is64BitInteger(field: Descriptors.FieldDescriptor): Boolean =
+    field.getJavaType == JavaType.LONG
+
+  private def isWellKnownType(descriptor: Descriptors.Descriptor): Boolean =
+    descriptor.getFile.getPackage == "google.protobuf"
+
+  private def is64BitWrapper(descriptor: Descriptors.Descriptor): Boolean =
+    descriptor.getFullName == "google.protobuf.Int64Value" || descriptor.getFullName == "google.protobuf.UInt64Value"
+
+  private def longsAsNumbers(json: JsonNode, descriptor: Descriptors.Descriptor): JsonNode =
+    if (isWellKnownType(descriptor)) {
+      // well-known types have their own JSON form, of those only the 64-bit wrappers print a long
+      if (is64BitWrapper(descriptor)) longAsNumber(json, descriptor.findFieldByName("value"))
+      else json
+    } else
+      json match {
+        case obj: ObjectNode =>
+          descriptor.getFields.asScala.foreach { field =>
+            val fieldJson = obj.get(field.getName)
+            if (fieldJson != null) {
+              if (field.isMapField) {
+                val valueField = field.getMessageType.findFieldByName("value")
+                fieldJson match {
+                  case entries: ObjectNode =>
+                    entries
+                      .properties()
+                      .asScala
+                      .foreach(entry => entry.setValue(fieldValue(entry.getValue, valueField)))
+                  case _ =>
+                }
+              } else if (field.isRepeated) {
+                fieldJson match {
+                  case array: ArrayNode =>
+                    (0 until array.size()).foreach(i => array.set(i, fieldValue(array.get(i), field)))
+                  case _ =>
+                }
+              } else obj.set[JsonNode](field.getName, fieldValue(fieldJson, field))
+            }
+          }
+          obj
+        case other => other
+      }
+
+  private def fieldValue(json: JsonNode, field: Descriptors.FieldDescriptor): JsonNode =
+    if (is64BitInteger(field)) longAsNumber(json, field)
+    else if (field.getJavaType == JavaType.MESSAGE) longsAsNumbers(json, field.getMessageType)
+    else json
+
+  private def longAsNumber(json: JsonNode, field: Descriptors.FieldDescriptor): JsonNode =
+    if (!json.isTextual) json
+    else
+      field.getType match {
+        case Descriptors.FieldDescriptor.Type.UINT64 | Descriptors.FieldDescriptor.Type.FIXED64 =>
+          BigIntegerNode.valueOf(new java.math.BigInteger(json.asText))
+        case _ => LongNode.valueOf(json.asText.toLong)
+      }
 
   def fromBytes[T <: GeneratedMessageV3](expectedType: Class[T], bytesPayload: BytesPayload): T = {
     if (!isProtobuf(bytesPayload))
