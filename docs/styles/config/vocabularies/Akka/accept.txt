@@ -85,6 +85,7 @@ clientCertificate
 clientId
 Cline
 cloudName
+Cloudsmith
 codegen
 Codeium
 Codex
@@ -420,6 +421,7 @@ roleArn
 roleplay
 Rollout
 rollout
+rollouts
 rollup
 Roo
 (?i)RPC
@@ -511,6 +513,7 @@ tokenization
 tokenizer
 [Tt]okenizes
 tokenSecret
+tolerations
 toolCalling
 Toolchain
 [Tt]oolchain
