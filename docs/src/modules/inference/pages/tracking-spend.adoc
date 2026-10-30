@@ -1,13 +1,14 @@
 = Tracking inference spend
+:page-aliases: inference:erasing-caller-data.adoc
 :page-summary: Inference spend is the cost of the model traffic in a period and the tokens it consumed, computed from recorded exchanges and priced from a versioned pricing catalog.
 :page-persona: builder-ai-ml, operator
 :page-banner: inference
 
 include::ROOT:partial$include.adoc[]
 
-Inference spend is the cost of the model traffic in a period, together with the tokens that traffic consumed. An exchange is one request to a model and the response that the model returns. The gateway router records each exchange, and Akka computes spend from the recorded exchanges. The portfolio service prices each exchange once, when it stores the exchange, at the rate that the pricing catalog then holds for the instant the exchange was served.
+Inference spend is the cost of the model traffic in a period, together with the tokens that traffic consumed. An exchange is one request to a model and the response that the model returns. The gateway router records each exchange, and Akka computes spend from the recorded exchanges. The portfolio service prices each exchange when it stores the exchange, at the rate that the pricing catalog holds for the instant the exchange was served. If the served name has no price at that time, the service prices the exchange later, once a published price covers the instant it was served.
 
-Two command groups work together. `akka optimize pricing-catalog` publishes the prices, and `akka optimize spend` reads the figures computed from them. Each price belongs to a served name: the model name that the provider reports in the `model` field of its response, for example `claude-sonnet-5-5`. Publish a price for each served name before your services send traffic to that model. An exchange that has no price counts in the token totals and adds nothing to the spend. See <<unpriced>>.
+Two command groups work together. `akka optimize pricing-catalog` publishes the prices, and `akka optimize spend` reads the figures computed from them. Each price belongs to a served name: the model name that the provider reports in the `model` field of its response, for example `claude-sonnet-5-5`. Publish a price for each served name before your services send traffic to that model. An exchange that has no price counts in the token totals and adds nothing to the spend. When traffic is recorded before its served name has a price, the service prices it after you publish a price that takes effect at or before that traffic. See <<unpriced>>.
 
 == Before you begin
 
@@ -22,7 +23,7 @@ Spend has figures only for traffic that the gateway router recorded. Traffic tha
 
 The pricing catalog holds the price of each served name as rates per million tokens. A response without a `model` field is unpriced.
 
-The catalog is versioned. A published version is never edited, so a figure computed under a price stays the same when you read it again. To change a price, publish a new version that takes effect later.
+The catalog is versioned. A published version is never edited, so an exchange that a version priced keeps that price. To change a price, publish a new version that takes effect later. See <<change-price>>.
 
 === Write a catalog document
 
@@ -61,7 +62,7 @@ A catalog document is JSON:
 | Meaning
 
 | `effectiveAt`
-| Required. The ISO-8601 instant in UTC from which the prices apply. It must be later than the latest price of every served name that the document carries. It can be in the future or in the past. A price with a past `effectiveAt` does not reprice traffic that is already recorded.
+| Required. The ISO-8601 instant in UTC from which the prices apply. It must be later than the latest price of every served name that the document carries. It can be in the future or in the past. When the document holds the first price of a served name and `effectiveAt` is in the past, that price also prices the recorded traffic of the served name from that instant on. A later price with a past `effectiveAt` does not change traffic that an earlier price covered.
 
 | `source`
 | Optional. Free text that records where the prices came from.
@@ -85,7 +86,7 @@ A catalog document is JSON:
 | Optional. The rate per million tokens of these classes.
 |===
 
-An exchange is priced only when every token class that it used has a rate. A rate that you leave out means the class has no price, not that it costs nothing. If a model does not charge for a class, set its rate to `0`. If you leave out `cacheRead` for a model whose traffic uses cached input, that traffic is unpriced.
+An exchange is priced only when every token class that it used has a rate. A rate that you leave out means the class has no price, not that it costs nothing. If a model does not charge for a class, set its rate to `0`. If you leave out `cacheRead` for a model whose traffic uses cached input, that traffic is unpriced. An OpenAI model that charges for cache writes, GPT-5.6 and later, needs a `cacheWrite` rate, or its traffic that wrote to the cache is unpriced. The service ignores a field that the document does not define, so a misspelled rate counts as a rate that you left out.
 
 A version can price some served names and leave out others. The served names that it leaves out keep their earlier price.
 
@@ -169,7 +170,7 @@ The rates are the list prices that link:{url-ext-openai-pricing}[OpenAI API pric
 Change the example before you publish it:
 
 * Keep only the models that your traffic uses. Each `servedName` must be the string that your provider's responses report in their `model` field. OpenAI responses report the dated snapshot, such as `gpt-5.4-mini-2026-03-17`, also when the request names `gpt-5.4-mini`. To see the served names that your traffic reports, divide a recent period by `model`, as in <<read-spend>>. Add an entry for each served name in that division that has no price yet.
-* Set `effectiveAt` to the instant from which the prices apply, and `source` to where they came from.
+* Set `effectiveAt` to the instant from which the prices apply, and `source` to where they came from. To price traffic that is already recorded, set `effectiveAt` at or before its earliest exchange. Only the first price of a served name can take effect that early. See <<unpriced>>.
 * Where your organization has a negotiated rate, state that rate and set `assigned` to `true`.
 
 Check the document with `--dry-run` before you publish it.
@@ -198,7 +199,7 @@ A document that the service refuses is not published, and the error names what i
 
 === Read the catalog
 
-Read the version in force now:
+Read the prices in force now:
 
 [source,shell]
 ----
@@ -207,18 +208,18 @@ akka optimize pricing-catalog get
 
 [source,text]
 ----
-Version       1
-Effective at  2026-09-15T16:00:00Z
-Published at  2026-09-15T15:58:12.353062Z
-Source        list prices
-SERVED NAME     MODEL                CURRENCY  ASSIGNED  INPUT  CACHE-READ  CACHE-WRITE  OUTPUT  REASONING
-frontier-model  example/frontier/1   USD       no        5      —           —            25      —
-finetune-model  example/finetune/1   USD       yes       0.1    0.01        —            0.3     —
+Version       2
+Effective at  2026-10-01T00:00:00Z
+Published at  2026-09-30T09:12:40.118204Z
+Source        negotiated rate
+SERVED NAME     VERSION  MODEL               CURRENCY  ASSIGNED  INPUT  CACHE-READ  CACHE-WRITE  OUTPUT  REASONING
+frontier-model  2        example/frontier/1  USD       yes       4      —           —            20      —
+finetune-model  1        example/finetune/1  USD       yes       0.1    0.01        —            0.3     —
 ----
 
-A class with no price shows `—`. Pass `--at` with an ISO-8601 instant to read the version that was in force at that time.
+`get` lists every served name that has a price in force, each with the entry of the version that prices it. `VERSION` names that version. The top block names the version that most recently took effect. In this example, version 2 priced only `frontier-model`, so `finetune-model` keeps the price that version 1 set. A class with no price shows `—`. Pass `--at` with an ISO-8601 instant to read the prices in force at that time.
 
-`get` shows one version: the latest one in force at that instant. If that version priced only some served names, the prices that earlier versions set for the other names still apply, but `get` does not show them. List the versions to see them all:
+To see when each version took effect, list the versions:
 
 [source,shell]
 ----
@@ -226,6 +227,34 @@ akka optimize pricing-catalog versions list
 ----
 
 The list is newest first.
+
+[#change-price]
+=== Change a price
+
+`get -o json` writes a catalog document that `apply` takes. When you publish it, the service ignores the fields that the service sets: `version` and `publishedAt` at the top, and `version` on each entry. The service refuses the document if you publish it unchanged, because its `effectiveAt` is not later than the prices it carries.
+
+. Write the prices in force to a file:
++
+[source,shell]
+----
+akka optimize pricing-catalog get -o json > catalog.json
+----
+
+. Edit the rates in `catalog.json`.
+. Set `effectiveAt` to an instant later than every price in the file.
+. Check the document:
++
+[source,shell]
+----
+akka optimize pricing-catalog apply -f catalog.json --dry-run
+----
+
+. Publish it:
++
+[source,shell]
+----
+akka optimize pricing-catalog apply -f catalog.json
+----
 
 [#read-spend]
 == Read spend for a period
@@ -242,6 +271,8 @@ The answer gives the number of exchanges, the tokens, the spend, and what is unp
 * `complete`: every hour of the window has been reported on, and no exchange was lost.
 * `incomplete`: some hours have not been reported on yet, for example because the window includes the current hour, or some exchanges were lost.
 * `unknown`: no hour of the window has been reported on yet.
+
+An hour is reported on about a day after it ends, with or without traffic. Until then, a window that holds it is not complete.
 
 Money is reported with the digits that the service computed. A figure that has no value says why, and never reads as zero.
 
@@ -262,6 +293,8 @@ finetune-model  12         285+    0.0000615000000000 USD  0         0
 TOTAL           81         1860+   0.0256365000000000 USD  0         0
 ----
 
+A `+` after a token count marks a lower bound: some exchanges did not report every token class, so the true count can be higher. This is common, because providers do not report every class. For example, OpenAI responses report cache-write tokens only for the models that charge for them, GPT-5.6 and later, and Anthropic responses do not report reasoning tokens. The command prints a note that names the classes that were not reported.
+
 [cols="1,3", options="header"]
 |===
 | `--by`
@@ -271,25 +304,163 @@ TOTAL           81         1860+   0.0256365000000000 USD  0         0
 | Served name.
 
 | `useCase`
-| Use case that the gateway router assigned. See xref:inference:routing.adoc[Routing requests to models].
+| Use case that the gateway router assigned. A row shows the label of the use case, or its id when it has no label. See xref:inference:routing.adoc[Routing requests to models].
 
-| `model,useCase`
-| Combination of the two.
+| `system`
+| System id that the request named, and one row, `unidentified`, for traffic that named none. See <<systems>>.
 
-| `caller`
-| Caller, ranked, with one row for the remainder. `caller` cannot be combined with other divisions.
+| `route`
+| Route that the gateway router took to the destination of the exchange.
+
+| `tag:KEY`
+| Value that the tagging ruleset `KEY` gave the exchange, and one row for traffic that got no value. See <<tags>>.
+
+| A comma-separated list, such as `model,useCase` or `system,route`
+| Combination of the listed divisions.
 |===
 
-`--limit` sets how many rows a ranked division returns. The service sets the default.
+A route holds how the gateway router reached the destination of an exchange: the basis, the routing ruleset and its revision, the rule, and the destination. Each revision of a ruleset is a row of its own, so a period that spans a ruleset change shows the spend of each revision. See xref:inference:routing.adoc[Routing requests to models].
 
-A `+` after a token count marks a lower bound: some exchanges did not report every token class, so the true count can be higher. This is common, because providers do not report every class. For example, OpenAI responses do not report cache-write tokens, and Anthropic responses do not report reasoning tokens. The command prints a note that names the classes that were not reported.
+[source,shell]
+----
+akka optimize spend get --from 2026-09-15T00:00:00Z --to 2026-09-16T00:00:00Z --by useCase,route
+----
+
+[source,text]
+----
+USE-CASE         ROUTE                                 EXCHANGES  TOKENS  SPEND       UNPRICED  UNPRICED TOKENS
+support triage   rule optimize@7 summarise → frontier  2140       51200+  0.6400 USD  0         0
+—                none                                  310        7400+   0.0930 USD  0         0
+—                unknown                               120        2900+   0.0310 USD  0         0
+billing reports  manifest → finetune-billing           980        22100+  0.0210 USD  0         0
+support triage   rule optimize@8 summarise → finetune  610        14800+  0.0120 USD  0         0
+TOTAL                                                  4160       98400+  0.7970 USD  0         0
+----
+
+A route reads as its basis, then `ruleset@revision` and the rule where the route has them, then `→` and the destination where it has one. The basis is one of these:
+
+[cols="1,3", options="header"]
+|===
+| Basis
+| How the gateway router reached the destination
+
+| `rule`
+| A rule chose the destination, with or without a classifier.
+
+| `fallback`
+| The classifier of a rule failed, and the fallback of the rule chose the destination.
+
+| `default`
+| No rule in the ruleset matched, and the default destination of the ruleset applied.
+
+| `manifest`
+| No rule matched, and the use case manifest chose the destination.
+
+| `denied`
+| A rule refused the request. There is no destination.
+
+| `failed`
+| The ruleset could not run.
+
+| `none`
+| No routing ruleset ran.
+
+| `unknown`
+| The record of the exchange does not state the route.
+|===
+
+[#tags]
+==== Divide spend by a tag
+
+A tag is a value that a tagging ruleset gives an exchange, and `KEY` is the name of the tagging ruleset. See xref:inference:routing.adoc#tagging[Tagging traffic].
+
+[source,shell]
+----
+akka optimize spend get --from 2026-09-15T16:00:00Z --to 2026-09-15T17:00:00Z --by model,tag:team
+----
+
+[source,text]
+----
+MODEL           TEAM      EXCHANGES  TOKENS  SPEND                   UNPRICED  UNPRICED TOKENS
+frontier-model  payments  41         948+    0.0154000000000000 USD  0         0
+frontier-model  support   19         441+    0.0071750000000000 USD  0         0
+frontier-model  —         9          186+    0.0030000000000000 USD  0         0
+finetune-model  payments  12         285+    0.0000615000000000 USD  0         0
+TOTAL                     81         1860+   0.0256365000000000 USD  0         0
+----
+
+The row with no name holds the traffic that got no value for the key, so the rows still add up to the total. The gateway router sets the tag when it serves the exchange, so a ruleset that you change later does not move a figure.
+
+[#systems]
+=== Attribute spend to systems
+
+A system id names the AI system that a request was sent for. The request names it in the `x-akka-system-id` header. An agent of an Akka service sends this header with its identity headers. See xref:sdk:model-provider-details.adoc#_identity_headers[Identity headers]. Any other client sets the header itself. Traffic that names no system id is the row `unidentified`.
+
+Divide a period by system id:
+
+[source,shell]
+----
+akka optimize spend get --from 2026-09-15T00:00:00Z --to 2026-09-16T00:00:00Z --by system
+----
+
+[source,text]
+----
+SYSTEM ID     EXCHANGES  TOKENS   SPEND       UNPRICED  UNPRICED TOKENS
+svc-support   4210       98400+   1.2400 USD  0         0
+svc-search    2100       47600+   0.5900 USD  0         0
+svc-billing   980        22100+   0.2900 USD  0         0
+svc-triage    1200       23400+   0.2900 USD  0         0
+unidentified  120        2900+    0.0310 USD  0         0
+TOTAL         8610       194400+  2.4410 USD  0         0
+----
+
+The answer has a row for every system id with traffic in the period. Nothing is ranked or folded, so the rows add up to the total. `system` combines with the other divisions, for example `--by system,model` for what each system spent on each model.
+
+Pass `--system` to read the spend of one system id. It works on `spend get`, `spend compare` and `spend series`, with any division:
+
+[source,shell]
+----
+akka optimize spend get --from 2026-09-15T00:00:00Z --to 2026-09-16T00:00:00Z --by model --system svc-support
+----
+
+[source,text]
+----
+MODEL           EXCHANGES  TOKENS  SPEND       UNPRICED  UNPRICED TOKENS
+frontier-model  3890       91800+  1.2310 USD  0         0
+finetune-model  320        6600+   0.0090 USD  0         0
+TOTAL           4210       98400+  1.2400 USD  0         0
+----
+
+List every system id that the service has seen:
+
+[source,shell]
+----
+akka optimize spend system-ids
+----
+
+[source,text]
+----
+SYSTEM ID    CALLS  FIRST CALL HOUR       LAST CALL HOUR
+svc-billing  41200  2026-06-02T09:00:00Z  2026-09-15T23:00:00Z
+svc-search   88100  2026-08-30T14:00:00Z  2026-09-16T00:00:00Z
+svc-support  96400  2026-05-11T08:00:00Z  2026-09-16T00:00:00Z
+----
+
+Each row states how many exchanges named the system id, and the first and the last UTC hour in which one did. These are whole hours, not instants. To list the last exchanges of a system id, run `akka optimize spend recent --system ID`. See <<recent>>.
+
+Nothing vouches for a system id: a client sends the value it chooses, unless your deployment overwrites the header at its own edge. The service keeps every system id that it sees, and nothing deletes one. Use the name of a system as the system id, never personal data.
 
 [#unpriced]
 === Find unpriced traffic
 
-An exchange is unpriced when no price covers every token class that it used. It counts in the exchanges and tokens, and not in the spend. When a period has unpriced traffic, the answer states the cause: a served name with no price, or a token class with no rate. Divide by `model` to see which served names have unpriced traffic. Publish a catalog version that adds the price or the missing rate. The new price applies to traffic that is served after it takes effect and recorded after it is published. Traffic that was already recorded stays unpriced.
+An exchange is unpriced when no price covers every token class that it used. It counts in the exchanges and tokens, and not in the spend. When a period has unpriced traffic, the answer states the cause: a served name with no price, or a token class with no rate. Divide by `model` to see which served names have unpriced traffic. Publish a catalog version that adds the price or the missing rate.
 
-The rate that applies to an exchange is the one that the catalog holds, when the exchange is recorded, for the instant it was served. The service prices the exchange once and does not price it again. Traffic recorded soon after a publish can still be priced at the previous rate, or recorded as unpriced if the served name had no earlier price, and a new price cannot take effect earlier than the latest price for the same served name.
+Which unpriced traffic the new version prices depends on the cause:
+
+* A served name with no price. The service prices the recorded traffic of that served name that was served at or after the `effectiveAt` of the new price. To price traffic that is already recorded, set `effectiveAt` at or before its earliest exchange. Only the first price of a served name can do this, because each later price must take effect after the latest one. Once a served name has a price, traffic served before that price remains unpriced. The `effectiveAt` must also be later than the latest price of every other served name that the document carries, so leave out the served names that already have a later price. The service starts to price the recorded traffic shortly after the publish, and a long range takes longer. The service keeps the record of each exchange for at least 90 days. Older traffic keeps its figures and remains unpriced.
+* A token class with no rate. The exchange keeps the version that priced its served name, and that version has no rate for the class. The new rate applies only to traffic served after the new version takes effect and recorded after it is published. Traffic recorded before that remains unpriced.
+
+The spend of a period can rise after a publish, and its unpriced count fall, also when the period is `complete`.
 
 === When a price changes during a period
 
@@ -304,6 +475,57 @@ akka optimize spend compare --from 2026-09-15T16:00:00Z --to 2026-09-15T17:00:00
 ----
 
 The answer gives the tokens and spend for each period, and the difference between them. A difference has a value only when both periods have one in the same currency.
+
+=== Follow spend over time
+
+`spend series` divides a period into UTC hours or UTC days. It answers each of them as `spend get` answers that hour or day alone, completeness included.
+
+[source,shell]
+----
+akka optimize spend series --from 2026-09-13T00:00:00Z --to 2026-09-15T00:00:00Z --granularity day --by model
+----
+
+[source,text]
+----
+BUCKET                COMPLETENESS  PERMANENCE  MODEL           EXCHANGES  TOKENS  SPEND        UNPRICED  UNPRICED TOKENS
+2026-09-13T00:00:00Z  complete      reported    frontier-model  1204       29800+  12.4010 USD  0         0
+2026-09-13T00:00:00Z  complete      reported    finetune-model  610        14200+  0.0453 USD   0         0
+2026-09-13T00:00:00Z  complete      reported    TOTAL           1814       44000+  12.4463 USD  0         0
+2026-09-14T00:00:00Z  complete      reported    frontier-model  1188       29350+  12.2260 USD  0         0
+2026-09-14T00:00:00Z  complete      reported    finetune-model  645        15020+  0.0479 USD   0         0
+2026-09-14T00:00:00Z  complete      reported    TOTAL           1833       44370+  12.2739 USD  0         0
+----
+
+`--granularity` is `hour` or `day`, and has no default. A day series starts and ends at midnight UTC. For days in another time zone, ask for hours and add them up. `PERMANENCE` is `reported` when nothing more arrives for that hour or day, and `working` otherwise. A publish can still price the unpriced traffic of a reported hour or day. `--by` and `--system` work as they do for one period.
+
+[#recent]
+=== List the most recent exchanges
+
+`spend recent` lists the most recent exchanges, newest first. `--since` is required. It is an ISO-8601 instant, and it is inclusive. The service refuses a `--since` older than its oldest record of an exchange, and the refusal names the oldest instant that you can ask for.
+
+[source,shell]
+----
+akka optimize spend recent --since 2026-09-15T16:00:00Z --limit 3
+----
+
+[source,text]
+----
+SERVED AT                 EXCHANGE                    SYSTEM ID     TAGS           MODEL           PROVIDER  OUTCOME   TOKENS  SPEND
+2026-09-15T16:04:12.481Z  01K5AZ3V9JQ8M4T2X7C1D6E0RB  svc-support   team=payments  frontier-model  example   answered  212+    0.0003672000000000 USD
+2026-09-15T16:04:09.032Z  01K5AZ3RZ4P1N8W3Y6B0F2H9QK  svc-billing   —              —               —         refused   0+      — (no-price)
+2026-09-15T16:03:58.770Z  01K5AZ3E8C5V2R7T0M4X9D1GJS  unidentified  team=search    frontier-model  example   answered  65+     0.0001384500000000 USD
+----
+
+Each row is one exchange: when it was served, its exchange id, its system id, its tags, the model, the provider that the pricing catalog names for the model, its outcome, its tokens and its spend. `TAGS` holds every tag of the exchange, written `KEY=VALUE`, such as `team=payments`. `--limit` sets how many rows the command returns: 20 by default, and at most 100. `--system` lists the exchanges of one system id, and `--tag KEY:VALUE` lists the exchanges that carry that tag. With both flags, a row has to match both.
+
+`OUTCOME` is one of these:
+
+* `answered`: the upstream answered with a status from 200 to 299.
+* `refused`: a gateway policy answered, and the request reached no upstream.
+* `failed`: the upstream answered with an error status, or the exchange ended with no answer recorded. A refusal by the provider, such as a 429, is a failure.
+* `unknown`: nothing recorded an answer for the exchange.
+
+An exchange appears only after the service has read its capture, so the newest exchanges may not be in the list yet.
 
 === Find the most expensive conversations
 
@@ -322,4 +544,3 @@ include::partial$aao-inference-notice.adoc[]
 * xref:reference:cli/akka-cli/akka_optimize_spend.adoc[`akka optimize spend`]
 * xref:reference:cli/akka-cli/akka_optimize_pricing-catalog.adoc[`akka optimize pricing-catalog`]
 * xref:reference:cli/conventions.adoc#models-and-optimize[Model and optimize commands]
-* xref:inference:erasing-caller-data.adoc[]

@@ -5,7 +5,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-A routing ruleset is the JSON document applied by `akka optimize rulesets apply`. It declares the closed set of destinations the ruleset may emit, the destination for unclaimed traffic, the headers the gateway reports its decision in, and the rules themselves. See xref:inference:routing.adoc#request-attributes[Routing on request attributes] for the tasks these documents support.
+A routing ruleset is the JSON document applied by `akka optimize rulesets apply`. A ruleset either routes traffic to a destination or tags traffic with a value. See <<tagging-ruleset>>. It declares the closed set of destinations the ruleset may emit, the destination for unclaimed traffic, the headers the gateway reports its decision in, and the rules themselves. See xref:inference:routing.adoc#request-attributes[Routing on request attributes] for the tasks these documents support.
 
 A ruleset is a logical grouping of named rules. The ruleset is the unit of enforcement, not the individual rule. The evidence log emitted by the gateway records which rules were evaluated and their results, and rules cannot be enforced on requests outside a ruleset.
 
@@ -128,6 +128,9 @@ A rule states what it decides when it matches. Exactly one outcome form is prese
 |*byClassifier*
 |Defer the decision to a named classifier and map the classifier's answers onto destinations.
 
+|*byAttribute*
+|Map a value that the request carries, such as a header, onto a destination.
+
 |*deny*
 |Refuse the exchange. Matching traffic never reaches a backend. `status` is bounded to 4xx and `body` is operator text. Nothing derived from the request is interpolated into the body.
 |===
@@ -159,6 +162,27 @@ A `byClassifier` outcome hands the decision to a model. This is the one case whe
 
 Classifiers are registered separately from rulesets, and registration is immutable. See xref:reference:cli/routing.adoc#routing-classifiers[`akka optimize routing-classifiers`] for the commands that manage them.
 
+[#byattribute]
+=== byAttribute
+
+A `byAttribute` outcome maps a value that the request already carries onto a destination. The gateway router consults no classifier for it. The outcome works in a routing ruleset and in a tagging ruleset.
+
+[cols="1,2"]
+|===
+|Field |Value
+
+|*input*
+|The attribute whose value is mapped, such as `header.x-optimize-team`. It can be any attribute in <<attributes>>.
+
+|*values*
+|A map from the values of the attribute to destination labels. Several values can map to one destination. Every destination must be declared by the ruleset.
+
+|*onUnmapped*
+|The destination when the request does not carry the attribute, or carries a value that `values` does not hold. Blank leaves the decision to the rules after this one, and then to the ruleset default destination.
+|===
+
+The gateway router matches the keys of `values` trimmed and without regard to case.
+
 [#ruleset-document]
 == Ruleset documents
 
@@ -166,14 +190,17 @@ Classifiers are registered separately from rulesets, and registration is immutab
 |===
 |Field |Value
 
+|*kind*
+|`route` for a ruleset that routes traffic, or `tag` for a ruleset that tags it. Omitting the field reads as `route`.
+
 |*defaultDestination*
 |The destination for traffic that no rule claims. Must be one of the declared destinations.
 
 |*outputHeader*
-|The header the gateway reports the chosen destination label in.
+|The header the gateway reports the chosen destination label in. A tagging ruleset leaves it blank.
 
 |*reasonHeader*
-|The header the gateway reports the reason for the decision in.
+|The header the gateway reports the reason for the decision in. A tagging ruleset leaves it blank.
 
 |*destinations*
 |The closed set of labels this ruleset may emit, each with a description. Every outcome, including the default, must name one of these.
@@ -212,6 +239,56 @@ A ruleset's `name`, `revision`, and `retired` state are assigned by the service,
   ]
 }
 ----
+
+[#tagging-ruleset]
+=== A ruleset that tags traffic
+
+A ruleset of kind `tag` classifies traffic instead of routing it. The name that the ruleset is applied under is the tag key. Its declared destinations are the values that the key can take, and its default destination is the value for traffic that no rule claims. Applied under the name `team`, this ruleset gives each exchange a `team` tag:
+
+[source,json]
+----
+{
+  "kind": "tag",
+  "defaultDestination": "unknown",
+  "outputHeader": "",
+  "reasonHeader": "",
+  "destinations": [
+    { "label": "payments", "description": "the payments team" },
+    { "label": "search", "description": "the search team" },
+    { "label": "unknown", "description": "traffic no team claims" }
+  ],
+  "rules": [
+    {
+      "id": "by-header",
+      "priority": 100,
+      "match": { "attribute": "header.x-optimize-team", "exists": true },
+      "outcome": {
+        "byAttribute": {
+          "input": "header.x-optimize-team",
+          "values": {
+            "payments-api": "payments",
+            "payments-batch": "payments",
+            "search-api": "search"
+          }
+        }
+      }
+    }
+  ]
+}
+----
+
+A request that carries `x-optimize-team: payments-batch` gets the tag `team=payments`. A request without the header, or with a value that `values` does not hold, gets the default destination, `team=unknown`.
+
+A tagging ruleset states no `outputHeader` and no `reasonHeader`, and no rule of it may `deny` a request. The service refuses a write that breaks one of these restrictions:
+
+[cols="1,2"]
+|===
+|Refusal |Cause
+
+|`tag-writes-output-header` |The tagging ruleset states an `outputHeader`.
+|`tag-writes-reason-header` |The tagging ruleset states a `reasonHeader`.
+|`tag-denies` |A rule of the tagging ruleset has a `deny` outcome.
+|===
 
 === A rule that defers to a classifier
 
