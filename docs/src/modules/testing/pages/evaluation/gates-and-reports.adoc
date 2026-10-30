@@ -123,7 +123,7 @@ A rendered report of a passing batch:
 
 [listing]
 ----
-3 cases, 1 run: 3/3 attempts passed (100%)
+3 evaluation cases, 1 run: 3/3 attempts passed (100%)
 gate: passed — pass rate 1.00 over 3 attempts (3 cases, 1 run), required 0.90; tool-arguments rate 1.00 over 2 judged attempts, required 1.00; no target failures
   tools 1/1
   tool-arguments 2/2
@@ -138,7 +138,7 @@ spend: 6 model calls, 123 tokens in, 321 out, 550 ms in total, slowest order-sta
 
 Line by line:
 
-. The cases, the runs, and the attempts that passed with their share. Inconclusive attempts follow when there are any: `3 cases, 1 run: 2/3 attempts passed (67%), 1 inconclusive`. An attempt is one case in one run, so without `repeat(n)` on the experiment the attempts are the cases.
+. The cases with the experiment kind, the runs, and the attempts that passed with their share. The kind is `evaluation` for an experiment built with `cases(...)` and `attack` for one built with `attacks(...)`. Inconclusive attempts follow when there are any: `3 evaluation cases, 1 run: 2/3 attempts passed (67%), 1 inconclusive`. An attempt is one case in one run, so without `repeat(n)` on the experiment the attempts are the cases.
 . The gate's verdict and its detail. A combined gate lists the detail of each part. The detail counts attempts and names the runs a case failed or was inconclusive in: `failed cases [order-status (run 2)], inconclusive cases [refund (run 1)]`.
 . One line per evaluator, under its xref:testing:evaluation/eval-cases.adoc#evaluator-labels[label]: the attempts it passed over the attempts it judged. An evaluator that was inconclusive on some attempts shows the count in brackets, for example `token-budget 0/0 (2 inconclusive)`. The <<runner-results,runner results>> get a line too, for example `guardrail 3/3` in an attack experiment.
 . The spend: model calls, tokens and latency summed over the attempts whose trace carried model calls, and the slowest attempt. The line is absent when no attempt carried model calls.
@@ -153,7 +153,7 @@ This report is from a case that asks where order o_42 is, with an evaluator that
 
 [listing]
 ----
-1 case, 1 run: 0/1 attempts passed (0%)
+1 evaluation case, 1 run: 0/1 attempts passed (0%)
 gate: FAILED — failed cases [wrong-order (run 1)]
   tool-arguments 0/1
 spend: 2 model calls, 123 tokens in, 321 out, 6 ms in total, slowest wrong-order run 1 at 6 ms, over 1/1 attempts with evidence
@@ -166,7 +166,8 @@ case wrong-order run 1 FAILED
 
 An attempt that did not pass is named by its case and its run, and prints the reply, the tool calls with their arguments, the model spend, and every result with its detail.
 When the agent mapped the model's text into the reply, a `model text:` line shows the model's own text as well.
-When the trace holds guardrail evaluations, a `guardrails:` line names each guardrail, with the reason of each one that did not pass.
+When the trace holds guardrail evaluations, a `guardrails:` line names each guardrail with its decision: `allow`, `deny` or `error`.
+A denial and an error carry their reason, for example `guardrails: pii allow, jailbreak deny: prompt injection`.
 The reply is cut to one line of at most 200 characters.
 
 [#repeated-runs]

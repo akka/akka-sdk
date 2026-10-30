@@ -671,7 +671,12 @@ public final class ExperimentRunner {
 
     private String guardrailEvidence() {
       return interaction.guardrails().stream()
-          .map(g -> g.name() + (g.passed() ? " passed" : " blocked: " + g.explanation()))
+          .map(
+              g ->
+                  g.name()
+                      + " "
+                      + g.decision().name().toLowerCase(Locale.ROOT)
+                      + (g.explanation().isEmpty() ? "" : ": " + g.explanation()))
           .reduce((a, b) -> a + ", " + b)
           .orElse("");
     }
@@ -949,7 +954,7 @@ public final class ExperimentRunner {
           String.format(
               Locale.ROOT,
               "%s, %s: %d/%d attempts passed (%.0f%%)",
-              plural(cases.size(), "case"),
+              plural(cases.size(), kind.name().toLowerCase(Locale.ROOT) + " case"),
               plural(runs, "run"),
               passedAttempts,
               results.size(),

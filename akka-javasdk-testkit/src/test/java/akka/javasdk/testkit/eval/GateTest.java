@@ -142,7 +142,7 @@ class GateTest {
             .run();
 
     assertThat(report.passed()).isTrue();
-    assertThat(report.render()).contains("1 case, 1 run: 1/1 attempts passed (100%)");
+    assertThat(report.render()).contains("1 evaluation case, 1 run: 1/1 attempts passed (100%)");
   }
 
   /**

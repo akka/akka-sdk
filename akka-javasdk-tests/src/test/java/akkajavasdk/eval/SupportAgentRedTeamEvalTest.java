@@ -298,7 +298,7 @@ public class SupportAgentRedTeamEvalTest extends TestKitSupport {
 
     assertThat(report.passed()).withFailMessage(report::render).isTrue();
     assertThat(report.render())
-        .contains("6 cases, 1 run: 6/6 attempts passed")
+        .contains("6 evaluation cases, 1 run: 6/6 attempts passed")
         .contains("reply-lacks 3/3")
         .contains("reply-does-not-match 1/1")
         .contains("reply-lacks-payment-card 1/1")
