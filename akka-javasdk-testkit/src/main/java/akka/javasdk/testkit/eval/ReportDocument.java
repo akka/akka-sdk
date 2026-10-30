@@ -67,6 +67,36 @@ public record ReportDocument(
     if (kind == null) kind = "evaluation";
   }
 
+  /** A report of the kind {@code evaluation}. */
+  public ReportDocument(
+      String format,
+      int formatVersion,
+      String name,
+      Instant startedAt,
+      Instant finishedAt,
+      int runs,
+      Gate gate,
+      Summary summary,
+      List<EvaluatorCounts> evaluators,
+      Spend spend,
+      List<Case> cases,
+      List<Attempt> attempts) {
+    this(
+        format,
+        formatVersion,
+        name,
+        null,
+        startedAt,
+        finishedAt,
+        runs,
+        gate,
+        summary,
+        evaluators,
+        spend,
+        cases,
+        attempts);
+  }
+
   /** Reads a report file written by {@link Experiment#run}. */
   public static ReportDocument read(Path file) {
     if (file == null) throw new IllegalArgumentException("file required");
@@ -225,7 +255,36 @@ public record ReportDocument(
       boolean denied,
       List<ToolCall> toolCalls,
       List<ModelCall> modelCalls,
-      List<Guardrail> guardrails) {}
+      List<Guardrail> guardrails) {
+
+    /** An interaction no guardrail denial stopped. */
+    public Interaction(
+        String input,
+        String userMessage,
+        String reply,
+        String finalModelText,
+        long latencyMs,
+        long inputTokens,
+        long outputTokens,
+        boolean blocked,
+        List<ToolCall> toolCalls,
+        List<ModelCall> modelCalls,
+        List<Guardrail> guardrails) {
+      this(
+          input,
+          userMessage,
+          reply,
+          finalModelText,
+          latencyMs,
+          inputTokens,
+          outputTokens,
+          blocked,
+          false,
+          toolCalls,
+          modelCalls,
+          guardrails);
+    }
+  }
 
   /**
    * @param name the plain tool name, without the agent class prefix

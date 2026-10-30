@@ -1438,6 +1438,42 @@ class ExperimentRunnerTest {
   }
 
   @Test
+  void aDocumentBuiltWithoutTheKindAndTheDenialIsAnEvaluation() {
+    var interaction =
+        new ReportDocument.Interaction(
+            "a question",
+            "a question",
+            "done",
+            "done",
+            10,
+            0,
+            0,
+            false,
+            List.of(),
+            List.of(),
+            List.of());
+    var document =
+        new ReportDocument(
+            ReportDocument.FORMAT,
+            ReportDocument.FORMAT_VERSION,
+            "evaluation",
+            Instant.EPOCH,
+            Instant.EPOCH,
+            1,
+            new ReportDocument.Gate(true, "passed"),
+            new ReportDocument.Summary(1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1.0),
+            List.of(),
+            new ReportDocument.Spend(0, 0, 0, 0, 0),
+            List.of(),
+            List.of(
+                new ReportDocument.Attempt(
+                    "c", 1, EvalResult.Verdict.PASS, interaction, List.of())));
+
+    assertThat(document.kind()).isEqualTo("evaluation");
+    assertThat(document.attempts().getFirst().interaction().denied()).isFalse();
+  }
+
+  @Test
   void theJsonReportMarksADeniedInteraction(@TempDir Path dir) {
     var json =
         json(
@@ -1670,19 +1706,42 @@ class ExperimentRunnerTest {
         .hasMessageContaining("name required");
   }
 
-  @Test
-  void theJsonReportMatchesTheSchemaOnTheClasspath(@TempDir Path dir) throws Exception {
-    JsonNode schema;
+  /** The report schema on the testkit classpath. */
+  private static JsonNode reportSchema() throws Exception {
     try (var stream =
         ExperimentRunnerTest.class.getResourceAsStream(
             "/akka/javasdk/testkit/eval/eval-report.schema.json")) {
-      schema = new ObjectMapper().readTree(stream);
+      return new ObjectMapper().readTree(stream);
     }
+  }
+
+  @Test
+  void theJsonReportMatchesTheSchemaOnTheClasspath(@TempDir Path dir) throws Exception {
+    var schema = reportSchema();
     var json =
         json(
             experiment(fullyTracedThat("done"), EvalCase.of("c", "a question"))
                 .reportDirectory(dir)
                 .run());
+
+    assertRequiredPresent(schema, schema, json);
+  }
+
+  @Test
+  void aReportWithoutTheKindTheDenialAndTheDecisionMatchesTheSchema(@TempDir Path dir)
+      throws Exception {
+    var schema = reportSchema();
+    var json =
+        (ObjectNode)
+            json(
+                experiment(fullyTracedThat("done"), EvalCase.of("c", "a question"))
+                    .reportDirectory(dir)
+                    .run());
+    json.remove("kind");
+    var interaction = (ObjectNode) json.get("attempts").get(0).get("interaction");
+    interaction.remove("denied");
+    for (var toolCall : interaction.get("toolCalls")) ((ObjectNode) toolCall).remove("deniedBy");
+    for (var guardrail : interaction.get("guardrails")) ((ObjectNode) guardrail).remove("decision");
 
     assertRequiredPresent(schema, schema, json);
   }

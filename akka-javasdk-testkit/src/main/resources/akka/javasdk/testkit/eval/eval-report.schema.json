@@ -4,7 +4,7 @@
   "title": "Akka eval report",
   "description": "The outcome of one ExperimentRunner run: the gate verdict, the rates per evaluator, the spend, every case with its outcome over all runs, and every attempt with its evidence and results. An attempt is one case in one run; without repeated runs every case has one attempt. A reader ignores properties it does not know. formatVersion increments when a property changes meaning or is removed.",
   "type": "object",
-  "required": ["format", "formatVersion", "name", "kind", "startedAt", "finishedAt", "runs", "gate", "summary", "evaluators", "spend", "cases", "attempts"],
+  "required": ["format", "formatVersion", "name", "startedAt", "finishedAt", "runs", "gate", "summary", "evaluators", "spend", "cases", "attempts"],
   "properties": {
     "format": { "const": "akka-eval-report" },
     "formatVersion": { "const": 2 },
@@ -114,7 +114,7 @@
     },
     "interaction": {
       "type": "object",
-      "required": ["input", "userMessage", "reply", "finalModelText", "latencyMs", "inputTokens", "outputTokens", "blocked", "denied", "toolCalls", "modelCalls", "guardrails"],
+      "required": ["input", "userMessage", "reply", "finalModelText", "latencyMs", "inputTokens", "outputTokens", "blocked", "toolCalls", "modelCalls", "guardrails"],
       "properties": {
         "input": { "type": "string", "description": "The command sent to the agent. A String command as is, any other command as JSON." },
         "userMessage": { "type": "string", "description": "The user message the agent sent the model. Empty when the trace did not carry it." },
@@ -124,7 +124,7 @@
         "inputTokens": { "type": "integer", "minimum": 0, "description": "Summed over the model calls." },
         "outputTokens": { "type": "integer", "minimum": 0, "description": "Summed over the model calls." },
         "blocked": { "type": "boolean", "description": "Whether a guardrail blocked the turn." },
-        "denied": { "type": "boolean", "description": "Whether a guardrail denial stopped the turn." },
+        "denied": { "type": "boolean", "description": "Whether a guardrail denial stopped the turn. An interaction without it reads as false." },
         "toolCalls": { "type": "array", "description": "In call order.", "items": { "$ref": "#/$defs/toolCall" } },
         "modelCalls": { "type": "array", "description": "In call order.", "items": { "$ref": "#/$defs/modelCall" } },
         "guardrails": { "type": "array", "description": "Every guardrail evaluation, in order.", "items": { "$ref": "#/$defs/guardrail" } }
@@ -132,13 +132,13 @@
     },
     "toolCall": {
       "type": "object",
-      "required": ["name", "arguments", "result", "error", "deniedBy"],
+      "required": ["name", "arguments", "result", "error"],
       "properties": {
         "name": { "type": "string", "description": "The plain tool name, without the agent class prefix." },
         "arguments": { "type": "object", "description": "By parameter name. A value is null when the model sent null." },
         "result": { "type": ["string", "null"], "description": "The tool's result as the model saw it. Null when not recorded." },
         "error": { "type": ["string", "null"], "description": "The failure message when the tool threw or a guardrail denied the call. Null otherwise." },
-        "deniedBy": { "type": ["string", "null"], "description": "The name of the tool-call guardrail that denied the call. The tool did not run. Null otherwise, also when only a report-only guardrail denied the call." }
+        "deniedBy": { "type": ["string", "null"], "description": "The name of the tool-call guardrail that denied the call. The tool did not run. Null otherwise, also when only a report-only guardrail denied the call. A tool call without it reads as null." }
       }
     },
     "modelCall": {
@@ -157,12 +157,12 @@
     },
     "guardrail": {
       "type": "object",
-      "required": ["name", "category", "passed", "decision", "explanation"],
+      "required": ["name", "category", "passed", "explanation"],
       "properties": {
         "name": { "type": "string" },
         "category": { "type": "string" },
         "passed": { "type": "boolean" },
-        "decision": { "enum": ["allow", "deny", "error"], "description": "What the guardrail decided. A guardrail passed when it is allow." },
+        "decision": { "enum": ["allow", "deny", "error"], "description": "What the guardrail decided. A guardrail passed when it is allow. A guardrail without it reads as allow when passed is true and as error otherwise." },
         "explanation": { "type": "string", "description": "Why it denied or failed. Empty when it passed." }
       }
     },
