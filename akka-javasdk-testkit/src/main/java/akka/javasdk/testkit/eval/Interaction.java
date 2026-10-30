@@ -95,9 +95,19 @@ public record Interaction(
         trace.finalModelText());
   }
 
+  private static AgentTrace required(AgentTrace trace) {
+    if (trace == null) throw new IllegalArgumentException("trace required");
+    return trace;
+  }
+
+  /** A reply with no evidence. */
+  public static Interaction of(String input, String reply) {
+    return new Interaction(input, reply, List.of());
+  }
+
   /** A turn that a guardrail denial stopped, with an empty reply and the traced evidence. */
-  public Interaction(String input, AgentTrace trace) {
-    this(
+  public static Interaction denied(String input, AgentTrace trace) {
+    return new Interaction(
         input,
         required(trace).userMessage(),
         "",
@@ -107,16 +117,6 @@ public record Interaction(
         trace.duration(),
         trace.finalModelText(),
         true);
-  }
-
-  private static AgentTrace required(AgentTrace trace) {
-    if (trace == null) throw new IllegalArgumentException("trace required");
-    return trace;
-  }
-
-  /** A reply with no evidence. */
-  public static Interaction of(String input, String reply) {
-    return new Interaction(input, reply, List.of());
   }
 
   /**

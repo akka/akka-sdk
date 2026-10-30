@@ -1234,7 +1234,7 @@ class ExperimentRunnerTest {
   private static EvalTarget<String> deniedBy(List<GuardrailResult> guardrails, ToolCall... calls) {
     var trace =
         new AgentTrace(List.of(calls), List.of(), guardrails, Duration.ofMillis(30), "", "");
-    return turn -> EvalTarget.Outcome.denied(new Interaction(turn.command(), trace));
+    return turn -> EvalTarget.Outcome.denied(Interaction.denied(turn.command(), trace));
   }
 
   private static GuardrailResult denial(String name, String explanation) {

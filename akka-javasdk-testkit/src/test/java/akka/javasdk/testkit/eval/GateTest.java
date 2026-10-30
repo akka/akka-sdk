@@ -222,7 +222,7 @@ class GateTest {
     var denial = new GuardrailResult("jailbreak", "safety", Decision.DENY, "prompt injection");
     var trace = new AgentTrace(List.of(), List.of(), List.of(denial), Duration.ZERO, "", "");
     EvalTarget<String> denied =
-        turn -> EvalTarget.Outcome.denied(new Interaction(turn.command(), trace));
+        turn -> EvalTarget.Outcome.denied(Interaction.denied(turn.command(), trace));
 
     var report =
         ExperimentRunner.against(

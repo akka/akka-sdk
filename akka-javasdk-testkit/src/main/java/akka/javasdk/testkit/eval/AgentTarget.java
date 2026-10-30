@@ -72,7 +72,7 @@ final class AgentTarget<A extends Agent, C, R> implements EvalTarget<C> {
         guardrails.stream().anyMatch(g -> g.decision() == Decision.DENY && blockedBy(failure, g));
 
     if (stoppedByDenial && !errored) {
-      return Outcome.denied(new Interaction(input, trace));
+      return Outcome.denied(Interaction.denied(input, trace));
     }
 
     return Outcome.failed(failure, trace);
