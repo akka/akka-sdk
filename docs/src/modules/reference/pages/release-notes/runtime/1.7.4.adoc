@@ -1,0 +1,36 @@
+= Akka Runtime 1.7.4
+:page-summary: Runtime 1.7.4 adds the fail mode of a guardrail and ledger listing filters. It also fixes JWT validation on gRPC endpoints, stuck workflows, and model calls to Azure OpenAI and Vertex AI.
+
+include::ROOT:partial$include.adoc[]
+
+Released 2026-10-26.
+
+== Security changes
+
+* gRPC endpoints: a method with `@Acl` and no `@JWT` now uses the class-level `@JWT`. Clients of these methods must send a valid token.
+* Backoffice: the `GetConfig`, `ChangeLogLevel`, `GetLogLevels`, `DownRegion`, and `BringUpRegion` calls require authentication. The Akka CLI is not affected.
+* Runtime image: the JDK trust store no longer contains the `emSign ECC Root CA - G3` certificate, because of a private key leak at its issuer.
+
+== Other changes
+
+* Guardrails: the xref:sdk:agents/guardrails.adoc#_configuring_guardrails[`fail-mode` setting] controls what happens when a guardrail evaluation fails. Requires an SDK version later than 3.7.0.
+* Guardrails: guardrails receive the thinking and provider attributes of a model reply. Requires an SDK version later than 3.7.0.
+* Guardrails: a guardrail before a model call no longer decodes all images and PDFs in the history.
+* Ledger: the backoffice ledger listing can filter by outcome, enforcement, session, flow, and interaction.
+* Workflows: a paused workflow no longer stays stopped when its pause timeout fires during passivation. This defect affected versions from 1.7.0.
+* Workflows: the backoffice shows the status Running for a workflow that selects a step after a pause.
+* Azure OpenAI: a streamed reply no longer causes a `MismatchedInputException` error log.
+* Azure OpenAI: the runtime logs Azure SDK retry errors as warnings.
+* Vertex AI: the runtime follows redirects.
+* Vertex AI: an error message keeps the status when the error body is not JSON.
+* Vertex AI: a stale pooled connection no longer uses a `max-retries` retry.
+* Views: listing or dropping views in the backoffice no longer fails for a service without views.
+* Version check: the newer SDK warning links to the release notes and respects the notification date.
+* Object storage: in local development, listing a key prefix no longer reads the whole bucket.
+
+== Noteworthy dependency updates
+
+* AWS SDK 2.55.14
+* Google GenAI 1.76.0
+* Guava 33.7.2-jre
+* jose4j 0.9.7

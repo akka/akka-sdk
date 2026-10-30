@@ -23,6 +23,11 @@ The ledger records every agent interaction with its model calls, tool calls, tok
 
 ****
 
+* xref:release-notes/runtime/1.7.4.adoc[Akka Runtime 1.7.4]
+- Fail mode of a guardrail.
+- Ledger listing filters
+- Fixes for workflows, Azure OpenAI and Vertex AI model calls, gRPC endpoints, and the backoffice.
+
 * Akka CLI 3.0.78
 - Workload identity support for data management 
 - Akka Optimize 0.8
