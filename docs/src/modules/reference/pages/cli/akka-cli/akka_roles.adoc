@@ -6,7 +6,7 @@ Manage the user roles for an Akka project.
 
 The `akka roles` commands associate user roles (authorizations) with the current project.
 Different roles grant different levels of access to the project.
-For details on roles, see https://doc.akka.io/operations/projects/manage-project-access.html .
+For details on roles, see https://doc.akka.io/operations/security/project-role-bindings.html .
 
 == Options
 

@@ -1,0 +1,21 @@
+= Permissions
+:page-summary: The permissions that roles can grant, grouped by resource, with the built-in roles that include each one.
+
+include::ROOT:partial$include.adoc[]
+
+A permission allows one operation on one kind of resource. The name has the form `<type>.<resource>.<operation>`, for example `project.services.get`. Permissions that apply to the organization or project itself have the form `<type>.<operation>`.
+
+The *Granted on* column shows the kind of resource that you bind the permission to. The *Built-in roles* column lists the xref:rbac/roles.adoc[built-in roles] that include the permission.
+
+Use the search box to filter by any part of the permission name. The search ignores case.
+
+[.rbac-permissions, cols="3,5,2,3", options="header"]
+|===
+| Permission | Description | Granted on | Built-in roles
+
+| `project.services.get`
+| Grants permission to get the details of a service in the project.
+| `projects`
+| `roles/project/admin` +
+`roles/project/developer`
+|===

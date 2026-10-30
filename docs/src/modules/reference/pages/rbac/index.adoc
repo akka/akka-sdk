@@ -1,0 +1,10 @@
+= RBAC
+
+include::ROOT:partial$include.adoc[]
+
+Role-based access control (RBAC) decides which operations a user or other principal can perform on an organization and on the projects in it. A role is a named group of permissions. A role binding grants a role to a principal.
+
+* The xref:rbac/permissions.adoc[Permissions] page lists every permission, the resource it applies to, and the built-in roles that include it.
+* The xref:rbac/roles.adoc[Roles] page lists the built-in roles and the permissions each one grants.
+
+Both pages load their content from the Akka control plane, so they always match the current set of permissions and roles.

@@ -1,0 +1,18 @@
+= Roles
+:page-summary: The built-in roles and the permissions that each one grants.
+
+include::ROOT:partial$include.adoc[]
+
+A role is a named group of permissions. Grant a role to a principal with a role binding. The table lists the built-in roles. The xref:rbac/permissions.adoc[Permissions] page describes each permission.
+
+Use the search box to filter by any part of the role name. The search ignores case.
+
+[.rbac-roles, cols="3,5,4", options="header"]
+|===
+| Role | Description | Permissions
+
+| `roles/project/viewer`
+| Read-only access to a project and the configuration of its services and routes.
+| `project.get` +
+`project.services.get`
+|===
