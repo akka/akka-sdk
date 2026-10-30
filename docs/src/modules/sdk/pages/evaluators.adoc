@@ -14,7 +14,7 @@ include::ROOT:partial$include.adoc[]
 
 An link:{attachmentsdir}/api/akka/javasdk/evaluation/Evaluator.html[`Evaluator`] is a component that assesses agent interactions.
 You bind it to one or more agents in configuration, and the runtime then invokes it for the interactions of a bound agent.
-Each invocation receives one interaction to evaluate.
+Each invocation receives one subject to evaluate: an interaction of a bound agent, or a workflow run when the workflow starts the evaluation itself, see <<workflow-run>>.
 The evaluator returns a verdict, pass or fail, optionally with a score, a label, and attributes.
 The runtime records the verdict in the ledger and exposes it in metrics and traces. An evaluator implements the eval control type; see xref:concepts:controls.adoc#evals[Controls] and xref:concepts:evaluation.adoc[].
 
@@ -43,14 +43,14 @@ include::example$doc-snippets/src/main/java/com/example/evaluator/InteractionQua
 <1> An evaluator is a component and needs a `@Component` id. The id is how the evaluator is referred to in configuration.
 <2> Extend `Evaluator`.
 <3> A `LedgerClient` is injected to fetch the interaction under evaluation.
-<4> `EvaluationContext.subject().interactionId()` identifies the interaction; fetch its record from the ledger.
+<4> The subject of an evaluation triggered by a binding is a `Subject.Interaction`. Its `interactionId()` identifies the interaction; fetch its record from the ledger.
 <5> `inconclusive` reports that the evaluator ran but reached no verdict, which is distinct from a failing verdict.
 <6> `complete` with an `Evaluation` records the verdict.
 <7> An `Evaluation` can carry a score, a label, and arbitrary attributes for downstream analysis.
 
 The runtime creates a new evaluator instance for each evaluation, so the evaluator holds no state between interactions.
 
-The link:{attachmentsdir}/api/akka/javasdk/evaluation/Subject.html[`Subject`] in the link:{attachmentsdir}/api/akka/javasdk/evaluation/EvaluationContext.html[`EvaluationContext`] also carries `agentComponentId()`, useful when one evaluator is bound to several agents, and `flowId()` when the agent ran inside an autonomous-agent flow.
+The link:{attachmentsdir}/api/akka/javasdk/evaluation/Subject.html[`Subject`] in the link:{attachmentsdir}/api/akka/javasdk/evaluation/EvaluationContext.html[`EvaluationContext`] is a sealed interface with two kinds. `Subject.Interaction` also carries `agentComponentId()`, useful when one evaluator is bound to several agents, and `flowId()` when the agent ran inside an autonomous-agent flow. `Subject.Workflow` names a <<workflow-run,workflow run>>. An evaluator that handles both kinds switches over the subject.
 
 [#judging]
 === Judging with a model
@@ -256,6 +256,52 @@ The `Effect` of `onEvaluation` and of every step is one of:
 There is no other way to finish. When a step exhausts its retries or the evaluation timeout expires, the runtime records a failed evaluation and removes the instance.
 An evaluation that has completed cannot transition further.
 
+[#workflow-run]
+== Evaluating a workflow run
+
+An evaluator bound to an agent judges one interaction. A workflow that orchestrates several agents produces a result that no single interaction holds: the outcome of the whole run.
+To have that outcome judged, the workflow starts the evaluation itself, as a rule from its final step, with `ComponentClient.forEvaluator(evaluatorComponentId)`.
+The subject is then a `Subject.Workflow`, the workflow instance by its id and component id.
+The evaluation also carries attributes: pointers for the evaluator, such as the ids of the agent interactions of the run.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/evaluator/EvaluatedAgentTeamWorkflow.java[EvaluatedAgentTeamWorkflow.java]
+----
+include::example$doc-snippets/src/main/java/com/example/evaluator/EvaluatedAgentTeamWorkflow.java[tag=all]
+----
+<1> The state keeps the ids of the agent interactions of the run.
+<2> `withDetailedReply()` returns the reply together with the id of the interaction it came from.
+<3> The final step starts the evaluation. `startEvaluation` returns the evaluation id once the trigger is durably queued. The evaluation runs in the background.
+<4> The subject names this run: the workflow id and the component id of the workflow.
+<5> The attributes point the evaluator at the interactions to judge. An attribute value is a string, so a list of ids is one value with a separator. Pass ids, not content: the evaluator fetches the records from the ledger.
+
+The evaluation id is derived from the evaluator, the subject and the attributes. A retried step that calls `startEvaluation` again with the same arguments starts the evaluation once.
+
+The evaluator reads the subject and the attributes from the `EvaluationContext`:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/evaluator/AgentTeamRunEvaluator.java[AgentTeamRunEvaluator.java]
+----
+include::example$doc-snippets/src/main/java/com/example/evaluator/AgentTeamRunEvaluator.java[tag=all]
+----
+<1> The evaluator is bound to no agent. Its `@Component` id is what the workflow starts it by.
+<2> `Subject` is sealed. An evaluator that accepts one kind checks for it and reports any other kind as not applicable.
+<3> The attributes, as the workflow passed them.
+<4> The interactions of the run, fetched from the ledger by id. An evaluator can also read the state of the workflow through the `ComponentClient`, by the workflow id of the subject.
+<5> The answer of the run is the final response of its last agent call.
+<6> The verdict is recorded under the workflow run, together with the attributes.
+
+The `config()` of such an evaluation is the evaluator entry of the configuration, since no agent binding applies.
+The ledger lists the evaluations of a run by the workflow component id and the workflow id:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/evaluator/LedgerUsage.java[LedgerUsage.java]
+----
+include::example$doc-snippets/src/main/java/com/example/evaluator/LedgerUsage.java[tag=workflow-evaluations]
+----
+
+An endpoint can start an evaluation the same way, for example to evaluate a recorded interaction again after a prompt change. The subject is then a `Subject.Interaction`.
+
 [#_the_ledger_client]
 == The ledger client
 
@@ -280,6 +326,16 @@ Use link:{attachmentsdir}/testkit/akka/javasdk/testkit/EvaluatorTestKit.html[`Ev
 include::example$doc-snippets/src/test/java/com/example/evaluator/EvaluatorTestKitSample.java[tag=test]
 ----
 <1> `TestLedgerClient.create().seed(...)` builds an in-memory `LedgerClient` holding the given records, keyed by interaction id.
+
+For an evaluator of a <<workflow-run,workflow run>>, pass the subject and the attributes that the workflow would pass:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/evaluator/EvaluatorTestKitSample.java[EvaluatorTestKitSample.java]
+----
+include::example$doc-snippets/src/test/java/com/example/evaluator/EvaluatorTestKitSample.java[tag=workflow-run]
+----
+<1> The subject of a workflow run: the workflow id and the component id of the workflow.
+<2> The attributes the evaluator reads through `EvaluationContext.attributes()`.
 
 For an evaluator that reads `config()`, give the configuration with `withConfig`:
 
@@ -311,6 +367,6 @@ include::example$doc-snippets/src/test/java/com/example/evaluator/TranscriptJudg
 include::example$doc-snippets/src/test/java/com/example/evaluator/TranscriptJudgeDurableEvaluatorIntegrationTest.java[tag=test]
 ----
 <1> Call the agent with `withDetailedReply()` to get the interaction id.
-<2> The evaluation runs in the background, so poll `getLedgerClient().getEvaluations(interactionId)` until the record appears.
+<2> The evaluation runs in the background, so poll `getLedgerClient().getEvaluations(interactionId)` until the record appears. For a workflow run, poll `getWorkflowEvaluations(workflowComponentId, workflowId)`.
 <3> Check that the outcome is a verdict before reading the `Evaluation`. A failed, inconclusive or not applicable evaluation has no `Evaluation`.
 
