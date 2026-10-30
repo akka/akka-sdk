@@ -18,7 +18,8 @@ import java.util.Optional;
  * @param arguments by parameter name. A value is null when the model sent null
  * @param result the tool's result as the model saw it, when recorded
  * @param error the failure message when the tool threw or a guardrail denied the call
- * @param deniedBy the name of the tool-call guardrail that denied the call. The tool did not run
+ * @param deniedBy the name of the tool-call guardrail that denied the call. The tool did not run.
+ *     Empty when only a report-only guardrail denied the call
  */
 public record ToolCall(
     String name,

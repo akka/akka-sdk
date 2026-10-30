@@ -192,7 +192,13 @@ public class TelemetryReader {
                         || toolCallIds.contains(span.getParentSpanId()))
             .sorted(byStart())
             .toList();
-    var deniedToolCalls = deniedToolCalls(guardrailSpans, toolCallIds);
+
+    var failedToolCallIds =
+        ofKind(children, TOOL_CALL_SPAN)
+            .filter(span -> span.getStatus().getStatusCode() == StatusCode.ERROR)
+            .map(SpanData::getSpanId)
+            .collect(Collectors.toSet());
+    var deniedToolCalls = deniedToolCalls(guardrailSpans, failedToolCallIds);
 
     var toolCalls =
         ofKind(children, TOOL_CALL_SPAN)
@@ -280,16 +286,16 @@ public class TelemetryReader {
     }
   }
 
-  /** The name of the first guardrail that denied each tool call, by tool-call span id. */
+  /** The name of the first guardrail that denied each failed tool call, by tool-call span id. */
   private static Map<String, String> deniedToolCalls(
-      List<SpanData> guardrailSpans, Set<String> toolCallIds) {
+      List<SpanData> guardrailSpans, Set<String> failedToolCallIds) {
     return guardrailSpans.stream()
-        .filter(span -> toolCallIds.contains(span.getParentSpanId()))
+        .filter(span -> failedToolCallIds.contains(span.getParentSpanId()))
         .filter(span -> toGuardrail(span).decision() == Decision.DENY)
         .collect(
             Collectors.toMap(
                 SpanData::getParentSpanId,
-                span -> span.getAttributes().get(GUARDRAIL_NAME),
+                span -> toGuardrail(span).name(),
                 (first, second) -> first));
   }
 

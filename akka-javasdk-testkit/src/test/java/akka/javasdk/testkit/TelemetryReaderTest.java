@@ -111,8 +111,12 @@ class TelemetryReaderTest {
     return new TelemetryReader(spans).getAgentTrace(SESSION).guardrails().getFirst();
   }
 
-  @Test
-  void aGuardrailSpanUnderAToolCallIsRead() {
+  /**
+   * Traces one agent command with one tool call and a denying guardrail span under the tool call.
+   *
+   * @param enforced whether the denial stopped the tool call
+   */
+  private static AgentTrace traceToolCallDenial(boolean enforced) {
     var spans = new Spans();
     try (var tracerProvider =
         SdkTracerProvider.builder().addSpanProcessor(SimpleSpanProcessor.create(spans)).build()) {
@@ -145,11 +149,20 @@ class TelemetryReaderTest {
       guardrail.setStatus(StatusCode.ERROR, "deletion not allowed");
       guardrail.end();
 
+      if (enforced) {
+        toolCall.setStatus(StatusCode.ERROR, "deletion not allowed");
+      } else {
+        toolCall.setAttribute("gen_ai.tool.call.result", "deleted");
+      }
       toolCall.end();
       command.end();
     }
+    return new TelemetryReader(spans).getAgentTrace(SESSION);
+  }
 
-    var trace = new TelemetryReader(spans).getAgentTrace(SESSION);
+  @Test
+  void aGuardrailSpanUnderAToolCallIsRead() {
+    var trace = traceToolCallDenial(true);
 
     assertThat(trace.guardrails())
         .containsExactly(
@@ -161,6 +174,22 @@ class TelemetryReaderTest {
             call -> {
               assertThat(call.name()).isEqualTo("deleteAccount");
               assertThat(call.deniedBy()).contains("deny delete");
+            });
+  }
+
+  @Test
+  void aReportOnlyDenialUnderAToolCallLeavesTheCallNotDenied() {
+    var trace = traceToolCallDenial(false);
+
+    assertThat(trace.guardrails())
+        .singleElement()
+        .satisfies(guardrail -> assertThat(guardrail.decision()).isEqualTo(Decision.DENY));
+    assertThat(trace.toolCalls())
+        .singleElement()
+        .satisfies(
+            call -> {
+              assertThat(call.result()).contains("deleted");
+              assertThat(call.deniedBy()).isEmpty();
             });
   }
 

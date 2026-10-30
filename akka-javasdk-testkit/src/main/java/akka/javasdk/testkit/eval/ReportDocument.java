@@ -232,7 +232,8 @@ public record ReportDocument(
    * @param arguments by parameter name; a value is null when the model sent null
    * @param result the tool's result as the model saw it, when recorded
    * @param error the failure message when the tool threw or a guardrail denied the call
-   * @param deniedBy the name of the tool-call guardrail that denied the call
+   * @param deniedBy the name of the tool-call guardrail that denied the call; empty when only a
+   *     report-only guardrail denied it
    */
   public record ToolCall(
       String name,

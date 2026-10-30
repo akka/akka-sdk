@@ -123,6 +123,8 @@ The built-in classes are nested in `Evaluators`, and the tables below list each 
 These evaluators count a tool call only when the tool ran.
 When a tool-call guardrail denies a call, the tool does not run.
 That call fails `shouldCallTool` and passes `shouldNotCallTool`, and the failure detail names the guardrail.
+A denial by a guardrail with `report-only = true` does not stop the call.
+The tool runs, and the evaluators count the call.
 
 === Built-in evaluators on the reply
 
