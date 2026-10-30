@@ -5,6 +5,7 @@ import akka.javasdk.client.ComponentClient;
 import akka.javasdk.evaluation.Evaluation;
 import akka.javasdk.evaluation.EvaluationContext;
 import akka.javasdk.evaluation.Evaluator;
+import akka.javasdk.evaluation.Subject;
 import akka.javasdk.ledger.LedgerClient;
 
 // tag::all[]
@@ -28,7 +29,8 @@ public class JudgeEvaluator extends Evaluator {
     var criterion = context.config().getString("criterion"); // <1>
     var threshold = context.config().getDouble("threshold");
 
-    var interaction = ledger.getInteraction(context.subject().interactionId());
+    var subject = (Subject.Interaction) context.subject();
+    var interaction = ledger.getInteraction(subject.interactionId());
     if (interaction.failed()) {
       return effects().inconclusive("the interaction failed, there is no reply to judge");
     }

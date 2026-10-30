@@ -4,6 +4,7 @@ import akka.javasdk.annotations.Component;
 import akka.javasdk.evaluation.Evaluation;
 import akka.javasdk.evaluation.EvaluationContext;
 import akka.javasdk.evaluation.Evaluator;
+import akka.javasdk.evaluation.Subject;
 import akka.javasdk.ledger.LedgerClient;
 
 // tag::all[]
@@ -19,7 +20,8 @@ public class RefundPolicyEvaluator extends Evaluator {
 
   @Override
   public Effect evaluate(EvaluationContext context) {
-    var interaction = ledger.getInteraction(context.subject().interactionId());
+    var subject = (Subject.Interaction) context.subject();
+    var interaction = ledger.getInteraction(subject.interactionId());
     var issued = interaction
       .toolCalls(OrderAgent.ISSUE_REFUND)
       .stream()

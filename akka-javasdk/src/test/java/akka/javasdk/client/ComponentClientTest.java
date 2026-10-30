@@ -6,9 +6,12 @@ package akka.javasdk.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import akka.NotUsed;
 import akka.javasdk.Metadata;
+import akka.javasdk.evaluation.EvaluationContext;
+import akka.javasdk.evaluation.Evaluator;
 import akka.javasdk.impl.*;
 import akka.javasdk.impl.client.ComponentClientImpl;
 import akka.javasdk.impl.client.DeferredCallImpl;
@@ -95,6 +98,7 @@ class ComponentClientTest {
     componentClient =
         new ComponentClientImpl(
             dummyComponentClients,
+            null,
             serializer,
             null,
             Option.empty(),
@@ -176,5 +180,21 @@ class ComponentClientTest {
         componentClient.forView().method(UserByEmailWithGet::getUser);
 
     // not much to assert here
+  }
+
+  @Test
+  public void shouldRejectAClassThatIsNotAnEvaluatorWithAComponentId() {
+    assertThrows(NullPointerException.class, () -> componentClient.forEvaluator(null));
+    assertThrows(IllegalArgumentException.class, () -> componentClient.forEvaluator(Counter.class));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> componentClient.forEvaluator(EvaluatorWithoutComponentId.class));
+  }
+
+  static class EvaluatorWithoutComponentId extends Evaluator {
+    @Override
+    public Effect evaluate(EvaluationContext context) {
+      return effects().notApplicable("never started");
+    }
   }
 }

@@ -8,6 +8,7 @@ import akka.javasdk.annotations.Component;
 import akka.javasdk.evaluation.Evaluation;
 import akka.javasdk.evaluation.EvaluationContext;
 import akka.javasdk.evaluation.Evaluator;
+import akka.javasdk.evaluation.Subject;
 import akka.javasdk.ledger.InteractionRecord;
 import akka.javasdk.ledger.LedgerClient;
 import akka.javasdk.ledger.ToolCall;
@@ -36,7 +37,8 @@ public class ToolUseEvaluator extends Evaluator {
 
   @Override
   public Effect evaluate(EvaluationContext context) {
-    var interaction = ledger.getInteraction(context.subject().interactionId());
+    var subject = (Subject.Interaction) context.subject();
+    var interaction = ledger.getInteraction(subject.interactionId());
     var calls = interaction.toolCalls();
     var customerId = customerId(interaction);
     if (customerId.isEmpty()) {

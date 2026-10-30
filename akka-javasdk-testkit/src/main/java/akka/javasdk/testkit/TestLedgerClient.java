@@ -102,7 +102,10 @@ public final class TestLedgerClient implements LedgerClient {
   @Override
   public List<EvaluationRecord> getEvaluations(String interactionId) {
     return evaluations.values().stream()
-        .filter(record -> record.interactionId().equals(interactionId))
+        .filter(
+            record ->
+                record.subject() instanceof EvaluationRecord.Subject.Interaction interaction
+                    && interaction.interactionId().equals(interactionId))
         .sorted(Comparator.comparing(EvaluationRecord::timestamp).reversed())
         .toList();
   }
@@ -110,6 +113,26 @@ public final class TestLedgerClient implements LedgerClient {
   @Override
   public CompletionStage<List<EvaluationRecord>> getEvaluationsAsync(String interactionId) {
     return CompletableFuture.completedFuture(getEvaluations(interactionId));
+  }
+
+  @Override
+  public List<EvaluationRecord> getWorkflowEvaluations(
+      String workflowComponentId, String workflowId) {
+    return evaluations.values().stream()
+        .filter(
+            record ->
+                record.subject() instanceof EvaluationRecord.Subject.Workflow workflow
+                    && workflow.workflowComponentId().equals(workflowComponentId)
+                    && workflow.workflowId().equals(workflowId))
+        .sorted(Comparator.comparing(EvaluationRecord::timestamp).reversed())
+        .toList();
+  }
+
+  @Override
+  public CompletionStage<List<EvaluationRecord>> getWorkflowEvaluationsAsync(
+      String workflowComponentId, String workflowId) {
+    return CompletableFuture.completedFuture(
+        getWorkflowEvaluations(workflowComponentId, workflowId));
   }
 
   @Override

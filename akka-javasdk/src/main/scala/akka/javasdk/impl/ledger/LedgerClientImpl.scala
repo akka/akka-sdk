@@ -76,6 +76,20 @@ private[javasdk] final class LedgerClientImpl(spiLedgerClient: SpiLedgerClient, 
       .map(_.map(LedgerClientImpl.toEvaluationRecord).asJava)
       .asJava
 
+  override def getWorkflowEvaluations(workflowComponentId: String, workflowId: String): util.List[EvaluationRecord] =
+    try getWorkflowEvaluationsAsync(workflowComponentId, workflowId).toCompletableFuture.join()
+    catch {
+      case e: CompletionException => throw ErrorHandling.unwrapCompletionException(e)
+    }
+
+  override def getWorkflowEvaluationsAsync(
+      workflowComponentId: String,
+      workflowId: String): CompletionStage[util.List[EvaluationRecord]] =
+    spiLedgerClient
+      .getWorkflowEvaluations(workflowComponentId, workflowId, from = None, limit = LedgerClientImpl.ListLimit)
+      .map(_.map(LedgerClientImpl.toEvaluationRecord).asJava)
+      .asJava
+
   override def getInteractions(agentComponentId: String, sessionId: String): util.List[InteractionRecord] =
     try getInteractionsAsync(agentComponentId, sessionId).toCompletableFuture.join()
     catch {
@@ -127,20 +141,24 @@ private[ledger] object LedgerClientImpl {
       record.failure.map(toFailure).toJava,
       record.timestamp)
 
-  def toEvaluationRecord(record: SpiLedger.EvaluationRecord): EvaluationRecord = {
-    val subject = record.subject match {
-      case interaction: SpiLedger.InteractionSubject => interaction
-    }
+  def toEvaluationRecord(record: SpiLedger.EvaluationRecord): EvaluationRecord =
     new EvaluationRecord(
       record.evaluationId,
       record.evaluatorComponentId,
       record.controlId.toJava,
       toEvaluationTrigger(record.trigger),
-      subject.interactionId,
-      subject.agentComponentId,
+      toEvaluationSubject(record.subject),
+      record.attributes.asJava,
       toEvaluationOutcome(record.outcome),
       record.timestamp)
-  }
+
+  private def toEvaluationSubject(subject: SpiLedger.EvaluationSubject): EvaluationRecord.Subject =
+    subject match {
+      case interaction: SpiLedger.InteractionSubject =>
+        new EvaluationRecord.Subject.Interaction(interaction.interactionId, interaction.agentComponentId)
+      case workflow: SpiLedger.WorkflowSubject =>
+        new EvaluationRecord.Subject.Workflow(workflow.workflowId, workflow.workflowComponentId)
+    }
 
   def toGuardrailDecisionRecord(record: SpiLedger.GuardrailDecisionRecord): GuardrailDecisionRecord =
     new GuardrailDecisionRecord(
