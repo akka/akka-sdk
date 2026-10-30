@@ -1,5 +1,5 @@
 = Akka Runtime 1.7.4
-:page-summary: Runtime 1.7.4 adds the fail mode of a guardrail, identity and trace headers on model requests, and ledger listing filters. It also fixes JWT validation on gRPC endpoints, stuck workflows, and model calls to Azure OpenAI and Vertex AI.
+:page-summary: Runtime 1.7.4 adds the fail mode of a guardrail and ledger listing filters. It also fixes JWT validation on gRPC endpoints, stuck workflows, and model calls to Azure OpenAI and Vertex AI.
 
 include::ROOT:partial$include.adoc[]
 
