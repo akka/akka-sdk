@@ -20,6 +20,21 @@ An AI harness is the coding tool in which you work. The Akka Specify Plugin supp
 
 Compilation and tests check the implementation. Inspection exercises the running service through its endpoints, state, and user interface. Convergence identifies work still required by the specification. These checks complement each other: inspection does not replace acceptance conditions, and generating code does not establish conformance.
 
+=== Visualizing a feature
+
+The `/akka:visualize` command draws Mermaid diagrams for a feature from the artifacts the workflow has already written, so reviewers can check the design without reading every line of prose. Any Markdown viewer that supports Mermaid renders the result.
+
+[cols="1,1,2",options="header"]
+|===
+| Source | Output | Diagrams
+| `spec.md` | `spec-visualize.md` | A user journey map and an actor and goal overview. When the specification defines them, an entity relationship map and a status lifecycle.
+| `plan.md` | `plan-visualize.md` | Component dependencies, sequence diagrams of the main flows, and a state machine for each workflow.
+|===
+
+The two outputs are independent. The command writes each one whenever its source exists. Each file records a hash of its source files, so running the command again regenerates the diagrams for the changed sources. Pass `--force` to regenerate regardless.
+
+Diagrams show what the specification or plan states. A diagram is a view of those documents, not a separate source of truth. If a diagram looks wrong, correct the specification or plan and regenerate it.
+
 === Modernizing an existing system
 
 The same process can start from a system that already exists. The plugin recovers what a legacy system does, turns that behavior into checks that a replacement must pass, and shows that the replacement behaves the same.
