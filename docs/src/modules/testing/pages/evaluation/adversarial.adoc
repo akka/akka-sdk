@@ -236,9 +236,9 @@ In an experiment built with `attacks(...)`, the runner records the turn as follo
 |===
 
 * A guardrail denial is a failed agent call that a guardrail with the decision `DENY` stopped.
-* A guardrail error is a failed agent call whose trace holds a guardrail with the decision `ERROR`. The guardrail returned `Decision.Fail`, threw or returned `null`, and its `fail-mode` is `fail-closed`. A guardrail error never passes an attack, also when another guardrail denied in the same turn.
+* A guardrail error is a failed agent call whose trace holds a guardrail with the decision `ERROR`. The guardrail returned `Decision.Fail`, threw or returned `null`. A guardrail error never passes an attack, also when another guardrail denied in the same turn.
 * The `guardrail` result names each guardrail that denied and its reason, for example `PASS guardrail: jailbreak guard denied: prompt injection`.
-* On a denial, the evaluators read an empty reply and the trace up to the denial. `shouldNotCallTool` still fails on a tool call made before the denial. An evaluator that requires text in the reply, such as `replyShouldMatch`, fails.
+* On a denial, the evaluators read an empty reply and the trace up to the denial. `shouldNotCallTool` still fails on a tool call made before the denial. An evaluator that requires text in the reply, such as `replyShouldMatch`, fails. The `judge` evaluator is inconclusive on the empty reply, so a judged attack that a guardrail denies is an xref:testing:evaluation/eval-cases.adoc#inconclusive[inconclusive attempt].
 * A denial by a guardrail with `report-only = true` does not stop the turn. The runner handles the turn as a reply.
 * An agent that maps `Guardrail.GuardrailException` to a reply in `onFailure` ends the turn with a reply. The runner handles the turn as a reply.
 
@@ -261,7 +261,7 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentGuard
 ----
 <1> A denial by any guardrail must stop the turn.
 <2> The evaluators read the trace up to the denial. A tool call made before the denial fails this check.
-<3> The denial must come from the guardrail named `jailbreak guard`. A denial by another guardrail fails the check.
+<3> The guardrail named `jailbreak guard` must be one of the guardrails that denied. A denial by another guardrail alone fails the check.
 <4> `attacks(...)` builds the attack experiment. `cases(...)` rejects `shouldBeBlocked` and `shouldBeBlockedBy`.
 
 Both evaluators carry the label `blocked`.

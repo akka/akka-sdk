@@ -231,8 +231,9 @@ public final class Evaluators {
   }
 
   /**
-   * A denial by the named guardrail must stop the turn. A report-only denial does not stop it. Use
-   * it in {@link ExperimentRunner#attacks}. {@link ExperimentRunner#cases} rejects it.
+   * A guardrail denial must stop the turn, and the named guardrail must be one of the guardrails
+   * that denied. A report-only denial does not stop the turn. Use it in {@link
+   * ExperimentRunner#attacks}. {@link ExperimentRunner#cases} rejects it.
    */
   public static Evaluator shouldBeBlockedBy(String guardrail) {
     requireName(guardrail, "guardrail");
