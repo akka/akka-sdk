@@ -111,12 +111,16 @@ class TelemetryReaderTest {
     return new TelemetryReader(spans).getAgentTrace(SESSION).guardrails().getFirst();
   }
 
+  private static final String TOOL_CALL_DENIED =
+      "Before tool call guardrail blocked, category [tool_policy], name [deny delete]: deletion not"
+          + " allowed";
+
   /**
    * Traces one agent command with one tool call and a denying guardrail span under the tool call.
    *
-   * @param enforced whether the denial stopped the tool call
+   * @param toolError the error description of the tool call; null when the tool returned a result
    */
-  private static AgentTrace traceToolCallDenial(boolean enforced) {
+  private static AgentTrace traceToolCallDenial(String toolError) {
     var spans = new Spans();
     try (var tracerProvider =
         SdkTracerProvider.builder().addSpanProcessor(SimpleSpanProcessor.create(spans)).build()) {
@@ -149,8 +153,8 @@ class TelemetryReaderTest {
       guardrail.setStatus(StatusCode.ERROR, "deletion not allowed");
       guardrail.end();
 
-      if (enforced) {
-        toolCall.setStatus(StatusCode.ERROR, "deletion not allowed");
+      if (toolError != null) {
+        toolCall.setStatus(StatusCode.ERROR, toolError);
       } else {
         toolCall.setAttribute("gen_ai.tool.call.result", "deleted");
       }
@@ -162,7 +166,7 @@ class TelemetryReaderTest {
 
   @Test
   void aGuardrailSpanUnderAToolCallIsRead() {
-    var trace = traceToolCallDenial(true);
+    var trace = traceToolCallDenial(TOOL_CALL_DENIED);
 
     assertThat(trace.guardrails())
         .containsExactly(
@@ -179,7 +183,7 @@ class TelemetryReaderTest {
 
   @Test
   void aReportOnlyDenialUnderAToolCallLeavesTheCallNotDenied() {
-    var trace = traceToolCallDenial(false);
+    var trace = traceToolCallDenial(null);
 
     assertThat(trace.guardrails())
         .singleElement()
@@ -191,6 +195,31 @@ class TelemetryReaderTest {
               assertThat(call.result()).contains("deleted");
               assertThat(call.deniedBy()).isEmpty();
             });
+  }
+
+  @Test
+  void aToolThatThrowsAfterAReportOnlyDenialIsNotDenied() {
+    var trace = traceToolCallDenial("order o_42 not found");
+
+    assertThat(trace.toolCalls())
+        .singleElement()
+        .satisfies(
+            call -> {
+              assertThat(call.error()).contains("order o_42 not found");
+              assertThat(call.deniedBy()).isEmpty();
+            });
+  }
+
+  @Test
+  void anMcpResponseDenialIsNotADeniedCall() {
+    var trace =
+        traceToolCallDenial(
+            "MCP response guardrail blocked, category [tool_policy], name [deny delete]: deletion"
+                + " not allowed");
+
+    assertThat(trace.toolCalls())
+        .singleElement()
+        .satisfies(call -> assertThat(call.deniedBy()).isEmpty());
   }
 
   @Test

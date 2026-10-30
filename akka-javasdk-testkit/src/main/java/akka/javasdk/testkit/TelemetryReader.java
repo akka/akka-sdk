@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -193,12 +192,14 @@ public class TelemetryReader {
             .sorted(byStart())
             .toList();
 
-    var failedToolCallIds =
+    var failedToolCalls =
         ofKind(children, TOOL_CALL_SPAN)
             .filter(span -> span.getStatus().getStatusCode() == StatusCode.ERROR)
-            .map(SpanData::getSpanId)
-            .collect(Collectors.toSet());
-    var deniedToolCalls = deniedToolCalls(guardrailSpans, failedToolCallIds);
+            .collect(
+                Collectors.toMap(
+                    SpanData::getSpanId,
+                    span -> Objects.requireNonNullElse(span.getStatus().getDescription(), "")));
+    var deniedToolCalls = deniedToolCalls(guardrailSpans, failedToolCalls);
 
     var toolCalls =
         ofKind(children, TOOL_CALL_SPAN)
@@ -286,17 +287,34 @@ public class TelemetryReader {
     }
   }
 
-  /** The name of the first guardrail that denied each failed tool call, by tool-call span id. */
+  /**
+   * The name of the guardrail whose denial stopped each tool call, by tool-call span id.
+   *
+   * @param failedToolCalls the error description of each failed tool call, by span id
+   */
   private static Map<String, String> deniedToolCalls(
-      List<SpanData> guardrailSpans, Set<String> failedToolCallIds) {
+      List<SpanData> guardrailSpans, Map<String, String> failedToolCalls) {
     return guardrailSpans.stream()
-        .filter(span -> failedToolCallIds.contains(span.getParentSpanId()))
-        .filter(span -> toGuardrail(span).decision() == Decision.DENY)
+        .filter(span -> failedToolCalls.containsKey(span.getParentSpanId()))
+        .map(span -> Map.entry(span.getParentSpanId(), toGuardrail(span)))
+        .filter(entry -> entry.getValue().decision() == Decision.DENY)
+        .filter(entry -> stoppedTheCall(failedToolCalls.get(entry.getKey()), entry.getValue()))
         .collect(
             Collectors.toMap(
-                SpanData::getParentSpanId,
-                span -> toGuardrail(span).name(),
-                (first, second) -> first));
+                Map.Entry::getKey, entry -> entry.getValue().name(), (first, second) -> first));
+  }
+
+  // The runtime fails a tool call that a guardrail denied with the message
+  // "<boundary> guardrail blocked, category [<category>], name [<name>]: <reason>".
+  // An MCP response guardrail runs after the tool, so its denial did not stop the call.
+  private static boolean stoppedTheCall(String error, GuardrailResult guardrail) {
+    var label =
+        "guardrail blocked, category ["
+            + guardrail.category()
+            + "], name ["
+            + guardrail.name()
+            + "]: ";
+    return error.contains(label) && !error.contains("MCP response " + label);
   }
 
   private static ToolCall toToolCall(SpanData span, String deniedBy) {

@@ -1474,6 +1474,27 @@ class ExperimentRunnerTest {
   }
 
   @Test
+  void theReportsNameTheGuardrailThatDeniedAToolCall(@TempDir Path dir) {
+    var deniedCall =
+        new ToolCall(
+            "issueRefund",
+            Map.of(),
+            Optional.empty(),
+            Optional.of("refund denied"),
+            Optional.of("refund policy"));
+    var report =
+        attack(
+                deniedBy(List.of(denial("refund policy", "refund denied")), deniedCall),
+                EvalCase.of("c", "Refund me twice", Evaluators.replyShouldContain("refunded")))
+            .reportDirectory(dir)
+            .run();
+
+    var toolCall = json(report).get("attempts").get(0).get("interaction").get("toolCalls").get(0);
+    assertThat(toolCall.get("deniedBy").asText()).isEqualTo("refund policy");
+    assertThat(report.render()).contains("issueRefund{} (denied by refund policy)");
+  }
+
+  @Test
   void theJsonReportMarksADeniedInteraction(@TempDir Path dir) {
     var json =
         json(
