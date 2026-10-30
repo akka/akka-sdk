@@ -80,4 +80,12 @@ public interface ComponentClient {
    * @param taskId the task entity ID
    */
   TaskClient forTask(String taskId);
+
+  /**
+   * Select an {@link akka.javasdk.evaluation.Evaluator} or {@link
+   * akka.javasdk.evaluation.DurableEvaluator} for starting an evaluation on request.
+   *
+   * @param evaluatorComponentId the component id of the evaluator
+   */
+  EvaluatorClient forEvaluator(String evaluatorComponentId);
 }

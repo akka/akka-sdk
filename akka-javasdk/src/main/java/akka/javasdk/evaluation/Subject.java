@@ -13,20 +13,6 @@ import java.util.Optional;
 public sealed interface Subject {
 
   /**
-   * The stable id of the interaction being evaluated.
-   *
-   * @return the interaction id
-   */
-  String interactionId();
-
-  /**
-   * The component id of the agent that produced the interaction.
-   *
-   * @return the agent component id
-   */
-  String agentComponentId();
-
-  /**
    * One agent interaction, on its own or as part of a flow.
    *
    * @param interactionId the stable id of the interaction
@@ -35,4 +21,16 @@ public sealed interface Subject {
    */
   record Interaction(String interactionId, String agentComponentId, Optional<String> flowId)
       implements Subject {}
+
+  /**
+   * One run of a workflow, for a verdict about the outcome of the whole run rather than about one
+   * agent interaction. The interactions of the run that the evaluator judges are passed as the
+   * attributes of the {@link EvaluationContext} when the evaluation is started, or kept in the
+   * workflow state and read through the workflow by its id.
+   *
+   * @param workflowId the id of the workflow instance
+   * @param workflowComponentId the component id of the workflow, since a workflow id is unique per
+   *     workflow type only
+   */
+  record Workflow(String workflowId, String workflowComponentId) implements Subject {}
 }
