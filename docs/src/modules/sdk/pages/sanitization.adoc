@@ -55,13 +55,13 @@ You can also mask text programmatically where it makes sense for a specific busi
 
 A sanitizer scoped to an agent or to an application point masks the text you pass here as well. The name selects which sanitizer runs, and nothing else does. For a sanitizer that only application code uses, define `apply-at = ["client"]`, so that the runtime does not apply it anywhere on its own.
 
-When the class of the sanitizer fails or returns `null`, the call fails with an `akka.javasdk.SanitizerException` that has the name of the sanitizer. Its cause is the exception of the class, or `null` when the class returned `null`. The message of the cause can hold the text that the class was masking. Do not log the cause, and do not return its message to the caller of your component.
-
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/api/SanitizingEndpoint.java[SanitizingEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/api/SanitizingEndpoint.java[tag=ad-hoc-sanitization]
 ----
+
+When the sanitizer is a `TextSanitizer` that throws or returns `null`, `sanitize` throws an `akka.javasdk.SanitizerException`, and the stage of `sanitizeAsync` fails with one. The exception has the name of the sanitizer. Its cause is the exception that the `TextSanitizer` threw, and the cause can be `null`. The message of the cause can hold the text that the sanitizer was masking. Do not log the cause, and do not return its message to the caller of your component.
 
 
 == Configuring sanitizers
