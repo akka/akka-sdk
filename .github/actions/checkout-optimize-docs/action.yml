@@ -10,7 +10,7 @@ runs:
     - uses: actions/checkout@v6
       with:
         repository: akka/nexus
-        ref: v0.8.0
+        ref: v0.10.1
         path: nexus
         fetch-depth: 0
         sparse-checkout: |
