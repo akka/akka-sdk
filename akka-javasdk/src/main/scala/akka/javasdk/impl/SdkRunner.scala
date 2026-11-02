@@ -262,9 +262,14 @@ object SdkRunner {
 
     val spiDeployedEventingSettings = extractDeployedEventingSettings(applicationConf)
 
-    // FIXME: read the ledger settings from configuration
-    val ledgerSettings =
-      if (ledgerEnabled) SpiLedgerSettings.Enabled else SpiLedgerSettings.Disabled
+    val ledgerSettings = {
+      val records = applicationConf.getConfig("akka.javasdk.agent.ledger.records")
+      new SpiLedgerSettings(
+        enabled = ledgerEnabled,
+        toolCallIntent = records.getBoolean("tool-call-intent"),
+        guardrailAllow = records.getBoolean("guardrail-allow"),
+        sanitizerNoMasking = records.getBoolean("sanitizer-no-masking"))
+    }
 
     new SpiSettings(
       eventSourcedEntitySnapshotEvery,
