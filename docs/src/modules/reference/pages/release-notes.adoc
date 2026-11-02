@@ -10,6 +10,16 @@ Current versions
 * Akka CLI {akka-cli-version}
 * A glance of all Akka libraries and their current versions is presented at https://doc.akka.io/libraries/akka-dependencies/current[Akka library versions].
 
+== November 2026
+
+* [[sdk-3-7-1]]https://github.com/akka/akka-sdk/releases/tag/v3.7.1[Akka SDK 3.7.1,window="new"]
+- Runtime 1.7.4
+- Fail mode for a guardrail sets whether a guardrail that fails to decide blocks the call, see xref:sdk:agents/guardrails.adoc#_configuring_guardrails[Configuring guardrails]
+- `AiMessage` in a guardrail exposes the thinking of the model and the attributes from the model provider.
+- System id and service id headers in model requests, see xref:sdk:model-provider-details.adoc#_identity_headers[Identity headers]
+- `SanitizerClient` fails with a `SanitizerException` when a sanitizer class fails or returns `null`.
+- Views support optional and recursive protobuf message fields.
+
 == October 2026
 
 [sidebar]
