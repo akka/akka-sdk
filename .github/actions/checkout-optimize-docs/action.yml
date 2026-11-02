@@ -16,4 +16,5 @@ runs:
         sparse-checkout: |
           optimize-docs
           trainer/examples/spider-sql
+          trainer/runtime/chat_templates
         token: ${{ inputs.token }}

@@ -6,6 +6,7 @@ on:
     paths:
       - 'docs/**'
       - 'samples/**'
+      - '.github/actions/checkout-optimize-docs/**'
 
 #  push:
 #    branches:
