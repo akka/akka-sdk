@@ -8,4 +8,3 @@
 ** xref:inference:capture-and-grading.adoc[Capture and grading]
 ** xref:inference:spend.adoc[Understanding inference costs]
 ** xref:inference:tracking-spend.adoc[Tracking inference spend]
-** xref:inference:erasing-caller-data.adoc[Erasing caller data]

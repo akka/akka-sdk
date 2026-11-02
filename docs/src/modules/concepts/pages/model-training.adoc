@@ -18,7 +18,7 @@ A capture is the input and output of one exchange that passed through the model 
 
 A use case is a kind of task, such as classifying a support request. Routing, grading, training, and cost reporting use the same use case to describe that traffic. A use case can involve several tools; it is not the same thing as a tool.
 
-The gateway records requests and responses as capture artifacts. A derived capture gives downstream services a common representation of the model, use case, caller, conversation, and token usage. Grading measures output quality. Targeting combines quality checks, traffic volume, task similarity, and cost to identify training candidates.
+The gateway records requests and responses as capture artifacts. A derived capture gives downstream services a common representation of the model, use case, system id, conversation, and token usage. Grading measures output quality. Targeting combines quality checks, traffic volume, task similarity, and cost to identify training candidates.
 
 Captures and the ledger serve different purposes. Captures describe traffic through the gateway. The ledger records actions and control verdicts. Neither should be assumed to replace the other.
 
@@ -52,7 +52,7 @@ Grading continues after promotion. Drift prompts reassessment and retraining; in
 [#spend-and-budgets]
 == Spend and budgets
 
-Spend is the cost of recorded model traffic, calculated from token usage and a versioned pricing catalog. It connects model usage to the use cases and callers responsible for it.
+Spend is the cost of recorded model traffic, calculated from token usage and a versioned pricing catalog. It connects model usage to the use cases and systems responsible for it.
 
 === Cost and quality
 
