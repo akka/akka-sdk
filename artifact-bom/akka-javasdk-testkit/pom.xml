@@ -168,7 +168,7 @@
         <dependency>
             <groupId>com.github.luben</groupId>
             <artifactId>zstd-jni</artifactId>
-            <version>1.5.7-17</version>
+            <version>1.5.7-25</version>
         </dependency>
         <dependency>
             <groupId>com.google.android</groupId>
@@ -218,7 +218,7 @@
         <dependency>
             <groupId>com.google.genai</groupId>
             <artifactId>google-genai</artifactId>
-            <version>1.78.0</version>
+            <version>1.80.0</version>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
@@ -578,7 +578,7 @@
         <dependency>
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-stream-kafka_2.13</artifactId>
-            <version>8.1.0</version>
+            <version>8.1.1</version>
         </dependency>
         <dependency>
             <groupId>com.typesafe.akka</groupId>
@@ -688,17 +688,17 @@
         <dependency>
             <groupId>io.akka</groupId>
             <artifactId>akka-runtime-core_2.13</artifactId>
-            <version>1.7.5</version>
+            <version>1.7.5-21-782e56c1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.akka</groupId>
             <artifactId>akka-runtime-dev_2.13</artifactId>
-            <version>1.7.5</version>
+            <version>1.7.5-21-782e56c1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.akka</groupId>
             <artifactId>akka-sdk-spi_2.13</artifactId>
-            <version>1.7.5</version>
+            <version>1.7.5-21-782e56c1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
@@ -1166,7 +1166,7 @@
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
-            <version>4.3.1</version>
+            <version>4.3.2</version>
         </dependency>
         <dependency>
             <groupId>org.apache.opennlp</groupId>
@@ -1316,7 +1316,7 @@
         <dependency>
             <groupId>org.xerial.snappy</groupId>
             <artifactId>snappy-java</artifactId>
-            <version>1.1.10.7</version>
+            <version>1.1.10.11</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>

@@ -38,7 +38,7 @@ class SpiSettingsSpec extends AnyWordSpec with Matchers with OptionValues {
   private def ledgerRecords(settings: String): (Boolean, Boolean, Boolean) = {
     val records = SdkRunner
       .extractSpiSettings(ConfigFactory.parseString(settings).withFallback(ConfigFactory.load()))
-      .ledgerRecords
+      .ledgerSettings
     (records.toolCallIntent, records.guardrailAllow, records.sanitizerNoMasking)
   }
 
@@ -143,14 +143,14 @@ class SpiSettingsSpec extends AnyWordSpec with Matchers with OptionValues {
     }
 
     "enable the ledger by default" in {
-      SdkRunner.extractSpiSettings(ConfigFactory.load()).ledgerEnabled shouldBe true
+      SdkRunner.extractSpiSettings(ConfigFactory.load()).ledgerSettings.enabled shouldBe true
     }
 
     "disable the ledger with ledger.enabled = false" in {
       val config = ConfigFactory
         .parseString("akka.javasdk.agent.ledger.enabled = false")
         .withFallback(ConfigFactory.load())
-      SdkRunner.extractSpiSettings(config).ledgerEnabled shouldBe false
+      SdkRunner.extractSpiSettings(config).ledgerSettings.enabled shouldBe false
     }
 
     "keep every optional ledger record by default" in {
@@ -178,10 +178,10 @@ class SpiSettingsSpec extends AnyWordSpec with Matchers with OptionValues {
         """)
         .withFallback(ConfigFactory.load())
       val settings = SdkRunner.extractSpiSettings(config)
-      settings.ledgerEnabled shouldBe true
-      settings.ledgerRecords.guardrailAllow shouldBe false
-      settings.ledgerRecords.toolCallIntent shouldBe true
-      settings.ledgerRecords.sanitizerNoMasking shouldBe true
+      settings.ledgerSettings.enabled shouldBe true
+      settings.ledgerSettings.guardrailAllow shouldBe false
+      settings.ledgerSettings.toolCallIntent shouldBe true
+      settings.ledgerSettings.sanitizerNoMasking shouldBe true
     }
   }
 
