@@ -2,9 +2,9 @@
  * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.javasdk.agent;
+package akka.javasdk.impl.agent;
 
-import static akka.javasdk.agent.SessionMemoryEntity.keepStringValues;
+import static akka.javasdk.impl.agent.ModelAttributes.keepStringValues;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
-public class SessionMemoryEntityKeepStringValuesTest {
+public class ModelAttributesTest {
 
   @Test
   public void keepsStringAndStringListAttributes() {
