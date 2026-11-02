@@ -62,7 +62,7 @@ The attributes available to a rule are protocol agnostic, so one rule applies to
 |*text.lastUserMessage*
 |The most recent user turn. Read from the body.
 
-|*conversation*
+|[#attribute-conversation]*conversation*
 |The conversation the request belongs to. Absent when the caller opted out of being recognized across turns.
 
 |*conversation.source*
@@ -131,6 +131,9 @@ A rule states what it decides when it matches. Exactly one outcome form is prese
 |*byAttribute*
 |Map a value that the request carries, such as a header, onto a destination.
 
+|*canary*
+|Send a share of the matching conversations to a candidate destination and the rest to a baseline destination.
+
 |*deny*
 |Refuse the exchange. Matching traffic never reaches a backend. `status` is bounded to 4xx and `body` is operator text. Nothing derived from the request is interpolated into the body.
 |===
@@ -184,6 +187,27 @@ A `byAttribute` outcome maps a value that the request already carries onto a des
 The outcome applies only when the `match` of its rule holds. In the example of <<tagging-ruleset>>, the match requires the header, so a request without it never reaches `onUnmapped`.
 
 The gateway router matches the keys of `values` trimmed and without regard to case. A write with two keys that are the same after trimming and case folding is refused with `ambiguous-label-mapping`.
+
+[#canary]
+=== canary
+
+A `canary` outcome sends a share of the conversations the rule matches to a candidate destination and the rest to a baseline destination. See xref:inference:routing.adoc#_shifting_traffic_gradually[Shifting traffic gradually] for how to run a canary.
+
+[cols="1,2"]
+|===
+|Field |Value
+
+|*baseline*
+|The destination for the conversations outside the share. It must be a destination the ruleset declares.
+
+|*candidate*
+|The destination for the share of conversations. It must be a destination the ruleset declares.
+
+|*`candidatePercent`*
+|The share of conversations that go to the candidate, from 0 to 100 with up to two decimals.
+|===
+
+All three fields are required. The service refuses a write with `canary-same-destination` when `baseline` and `candidate` name one destination, and with `canary-percent-out-of-range` when `candidatePercent` is outside 0 to 100.
 
 [#ruleset-document]
 == Ruleset documents

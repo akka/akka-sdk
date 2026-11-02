@@ -12,7 +12,7 @@ It works as a loop. It observes the traffic your agents send to models and grade
 
 == Observing and grading traffic
 
-Every model call is captured and graded: with deterministic graders for structured output such as SQL or JSON, and with a model judge for open-ended output. Grades work for agents on Akka and for agents in third-party harnesses. They are saved to the ledger, become the reward signal for training, and decide whether a new model is promoted. A targeting step scores each agent on how narrow, frequent, checkable and costly its traffic is, and ranks opportunities for specialization by their measurable benefit.
+Every model call is captured and graded: with deterministic graders for structured output such as SQL or JSON, and with a model judge for open-ended output. Grades work for agents on Akka and for agents in third-party harnesses. They are saved to the ledger, become the reward signal for training, and show whether a new model should be promoted. A targeting step scores each agent on how narrow, frequent, checkable and costly its traffic is, and ranks opportunities for specialization by their measurable benefit.
 
 See xref:concepts:model-training.adoc#capture-and-grading[].
 
@@ -26,13 +26,13 @@ See xref:concepts:models.adoc#model-routing[], xref:inference:routing.adoc[] and
 
 The trainer specializes an open-weight base model on your data, with supervised fine-tuning and reinforcement learning. Training runs on GPUs in your environment, including air-gapped ones. The data pipeline scrubs personal data and secrets before training, and each run has checkpoints, a budget and a separate evaluation set.
 
-A new model is promoted only when its quality is at least the baseline and its token use drops by the target. It moves through shadow traffic, then a canary, then the fleet, and the comparison is saved to the ledger. After promotion it is still graded: it is retrained when it drifts and reverted when its quality falls below the required threshold.
+You promote a new model when its quality is at least the baseline and its token use drops by the target, and the comparison is saved to the ledger. To move traffic to the model, you write a xref:inference:routing.adoc#_shifting_traffic_gradually[canary rule] that sends a share of the conversations it matches to the model, and you raise the share by writing the rule again. After promotion the model is still graded, so you can retrain it or route traffic back to the previous model when its quality falls below the required threshold.
 
 See xref:concepts:model-training.adoc[], xref:optimize:index.adoc[Training] and xref:optimize:trainer/index.adoc[the trainer].
 
 == The improvement policy
 
-The improvement policy states what a system optimizes toward and how far it may tune itself. It is part of the specification, written by the people who govern the system. Akka Optimize routes traffic, trains models and promotes them only within the policy, and training uses its goals as the target that a new model must reach.
+The improvement policy states what a system optimizes toward and how far it may tune itself. It is part of the specification, written by the people who govern the system. Akka Optimize routes traffic and trains models within the policy, and training uses its goals as the target that a new model must reach.
 
 See xref:concepts:spec-driven-development.adoc#specification[].
 
