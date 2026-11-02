@@ -279,7 +279,7 @@ Money is reported with the digits that the service computed. A figure that has n
 
 === Divide the period
 
-Pass `--by` to divide the period into rows. The rows always add up to the total.
+Pass `--by` to divide the period into rows. The rows are ordered by spend, biggest first, and always add up to the total.
 
 [source,shell]
 ----
@@ -301,6 +301,9 @@ A `+` after a token count marks a lower bound: some exchanges did not report eve
 | `--by`
 | One row for each
 
+| `none`
+| No division. The answer is the period total, as when you leave out `--by`.
+
 | `model`
 | Served name.
 
@@ -317,8 +320,10 @@ A `+` after a token count marks a lower bound: some exchanges did not report eve
 | Value that the tagging ruleset `KEY` gave the exchange, and one row for traffic that got no value. See <<tags>>.
 
 | A comma-separated list, such as `model,useCase` or `system,route`
-| Combination of the listed divisions.
+| Combination of the listed divisions, at most eight in one read.
 |===
+
+A served name longer than 256 bytes of UTF-8 is held and shown as `sha256:` followed by the hex SHA-256 of those bytes.
 
 A route holds how the gateway router reached the destination of an exchange: the basis, the routing ruleset and its revision, the rule, and the destination. Each revision of a ruleset is a row of its own, so a period that spans a ruleset change shows the spend of each revision. See xref:inference:routing.adoc[Routing requests to models].
 
@@ -416,7 +421,7 @@ unidentified  120        2900+    0.0310000000000000 USD  0         0
 TOTAL         8610       194400+  2.4410000000000000 USD  0         0
 ----
 
-The answer has a row for every system id with traffic in the period. Nothing is ranked or folded, so the rows add up to the total. `system` combines with the other divisions, for example `--by system,model` for what each system spent on each model.
+The answer has a row for every system id with traffic in the period. No system id is left out or folded into another row, so the rows add up to the total. `system` combines with the other divisions, for example `--by system,model` for what each system spent on each model.
 
 Pass `--system` to read the spend of one system id. It works on `spend get`, `spend compare` and `spend series`, with any division:
 
@@ -432,6 +437,8 @@ frontier-model  3890       91800+  1.2387000000000000 USD  0         0
 finetune-model  320        6600+   0.0013000000000000 USD  0         0
 TOTAL           4210       98400+  1.2400000000000000 USD  0         0
 ----
+
+`--system` cannot select the traffic that named no system id: `--system unidentified` reads a system id named `unidentified`. A system id longer than 256 bytes of UTF-8 is held and shown as `sha256:` followed by the hex SHA-256 of those bytes, and `--system` takes either form.
 
 List every system id that the service has seen:
 
@@ -506,12 +513,12 @@ BUCKET                COMPLETENESS  PERMANENCE  MODEL           EXCHANGES  TOKEN
 2026-09-14T00:00:00Z  complete      reported    TOTAL           1833       44370+  0.4005560000000000 USD  0         0
 ----
 
-`--granularity` is `hour` or `day`, and has no default. A day series starts and ends at midnight UTC. For days in another time zone, ask for hours and add them up. `PERMANENCE` is `reported` when nothing more arrives for that hour or day, and `working` otherwise. A publish can still price the unpriced traffic of a reported hour or day. `--by` and `--system` work as they do for one period.
+`--granularity` is `hour` or `day`, and has no default. A day series starts and ends at midnight UTC. For days in another time zone, ask for hours and add them up. `PERMANENCE` is `reported` when the hour or day is complete and nothing more arrives for it, and `working` otherwise. A publish can still price the unpriced traffic of a reported hour or day. `--by` and `--system` work as they do for one period. A series holds at most 744 buckets by default, and the service refuses a longer one.
 
 [#recent]
 === List the most recent exchanges
 
-`spend recent` lists the most recent exchanges, newest first. `--since` is required. It is an ISO-8601 instant, and it is inclusive. The service refuses a `--since` older than its oldest record of an exchange, and the refusal names the oldest instant that you can ask for.
+`spend recent` lists the most recent exchanges, newest first. `--since` is required. It is an ISO-8601 instant, and it is inclusive. The service refuses a `--since` before the start of its record period, and the refusal names the oldest instant that you can ask for.
 
 [source,shell]
 ----
@@ -528,11 +535,13 @@ SERVED AT                 EXCHANGE                    SYSTEM ID     TAGS        
 
 Each row is one exchange: when it was served, its exchange id, its system id, its tags, the model, the provider that the pricing catalog names for the model, its outcome, its tokens and its spend. `TAGS` holds every tag of the exchange, written `KEY=VALUE`, such as `team=payments`. `--limit` sets how many rows the command returns: 20 by default, and at most 100. `--system` lists the exchanges of one system id, and `--tag KEY:VALUE` lists the exchanges that carry that tag. With both flags, a row has to match both.
 
+`SPEND` has no value when no price covers the exchange: `— (no-price)` when its served name has no price, and `— (class-not-priced)` when a token class it used has no rate. `PROVIDER` is `—` when its served name has no price.
+
 `OUTCOME` is one of these:
 
 * `answered`: the upstream answered with a status from 200 to 299.
 * `refused`: a gateway policy answered, and the request reached no upstream.
-* `failed`: the upstream answered with an error status, or the exchange ended with no answer recorded. A refusal by the provider, such as a 429, is a failure.
+* `failed`: the upstream answered with a status outside 200 to 299, or the exchange ended with no answer recorded. A refusal by the provider, such as a 429, is a failure.
 * `unknown`: nothing recorded an answer for the exchange.
 
 An exchange appears only after the service has read its capture, so the newest exchanges may not be in the list yet.
@@ -544,7 +553,7 @@ An exchange appears only after the service has read its capture, so the newest e
 akka optimize spend conversations list --from 2026-09-15T00:00:00Z --to 2026-09-16T00:00:00Z
 ----
 
-This is a ranking of conversations by spend, not a division: the rows do not add up to the period total.
+This is a ranking of conversations by spend, not a division: the rows do not add up to the period total. The service refuses a window longer than 24 hours by default, and the refusal names the longest window that you can ask for.
 
 include::partial$aao-inference-notice.adoc[]
 
