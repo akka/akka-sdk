@@ -33,7 +33,7 @@ The catalog is versioned, and a published version is never edited. Each version 
 The rate that applies to an exchange is the one that the catalog holds for its served name at the instant the exchange was served. The portfolio service prices the exchange when it stores it, from the catalog as it stands then:
 
 * When the served name has a price at that instant, the service prices the exchange, or leaves it unpriced if a token class it used has no rate. Either way the exchange keeps that catalog version. A later version does not change it, also when the later version takes effect from an instant in the past.
-* When the served name has no price at that instant, the service stores the exchange unpriced, with no catalog version. Once a published version prices that served name at that instant, the service prices the exchange. It prices the first such exchanges shortly after the publish, and a long range takes longer.
+* When the served name has no price at that instant, the service stores the exchange unpriced, with no catalog version. Once a published version prices that served name at that instant, the service gives the exchange that version. The exchange is then priced, or remains unpriced if a token class it used has no rate in that version. The service starts this shortly after the publish, and a long range takes longer.
 
 The service keeps the record of each exchange for a record period of at least 90 days, and pricing after the fact reaches back that far. Hours older than the record period keep their figures and their unpriced counts. It follows that:
 
@@ -43,7 +43,7 @@ The service keeps the record of each exchange for a record period of at least 90
 
 === Unpriced traffic and lower bounds
 
-An exchange is priced only when every token class it used has a rate. A rate left out means the class has no price, not that it costs nothing, so a free class is given a rate of zero. An unpriced exchange counts in the exchanges and tokens of a period and not in its spend. The cause is one of two: the served name has no price, or a token class it used has no rate. Dividing the period by model shows which served names have unpriced traffic.
+An exchange is priced only when every token class it used has a rate. A rate left out means the class has no price, not that it costs nothing, so a free class is given a rate of zero. An unpriced exchange counts in the exchanges and tokens of a period and not in its spend. The cause is one of two: the served name has no price, or a token class it used has no rate. An exchange whose response names no served name, such as a refused request, has no price. Dividing the period by model shows which served names have unpriced traffic.
 
 A token count marked with `+` is a lower bound. Some exchanges did not report every token class, so the true count can be higher. This is common, because providers do not report every class: OpenAI responses report cache-write tokens only for the models that charge for them, GPT-5.6 and later, and Anthropic responses do not report reasoning tokens. The command output names the classes that were not reported.
 

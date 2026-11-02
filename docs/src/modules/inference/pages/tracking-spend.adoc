@@ -454,14 +454,20 @@ Nothing vouches for a system id: a client sends the value it chooses, unless you
 [#unpriced]
 === Find unpriced traffic
 
-An exchange is unpriced when no price covers every token class that it used. It counts in the exchanges and tokens, and not in the spend. When a period has unpriced traffic, the answer states the cause: a served name with no price, or a token class with no rate. Divide by `model` to see which served names have unpriced traffic. Publish a catalog version that adds the price or the missing rate.
+An exchange is unpriced when no price covers every token class that it used. It counts in the exchanges and tokens, and not in the spend. When a period has unpriced traffic, the answer states the cause: a served name with no price, or a token class with no rate. An exchange whose response names no served name, such as a refused request or an error response, counts as a served name with no price, and no price can cover it. Divide by `model` to see which served names have unpriced traffic. Publish a catalog version that adds the price or the missing rate.
 
 Which unpriced traffic the new version prices depends on the cause:
 
-* A served name with no price. The service prices the recorded traffic of that served name that was served at or after the `effectiveAt` of the new price. To price traffic that is already recorded, set `effectiveAt` at or before its earliest exchange. Only the first price of a served name can do this, because each later price must take effect after the latest one. Once a served name has a price, traffic served before that price remains unpriced. The `effectiveAt` must also be later than the latest price of every other served name that the document carries, so leave out the served names that already have a later price. The service starts to price the recorded traffic shortly after the publish, and a long range takes longer. The service keeps the record of each exchange for at least 90 days. Older traffic keeps its figures and remains unpriced.
+* A served name with no price. The service prices the recorded traffic of that served name that was served at or after the `effectiveAt` of the new price.
 * A token class with no rate. The exchange keeps the version that priced its served name, and that version has no rate for the class. The new rate applies only to traffic served after the new version takes effect and recorded after it is published. Traffic recorded before that remains unpriced.
 
-The spend of a period can rise after a publish, and its unpriced count fall, also when the period is `complete`.
+To price the recorded traffic of a served name, publish the first price of that served name:
+
+* Set `effectiveAt` at or before the earliest exchange. Only the first price of a served name can take effect that early, because each later price must take effect after the latest one. Once a served name has a price, traffic served before that price remains unpriced.
+* Leave out the served names that have a price later than that `effectiveAt`. The `effectiveAt` must be later than the latest price of every served name that the document carries.
+* Give the price a rate for every token class that the recorded traffic used. The service gives that traffic the version of the first price whether or not every rate is there. Traffic that used a class with no rate keeps that version and remains unpriced.
+
+The service starts to price the recorded traffic shortly after the publish, and a long range takes longer. The service keeps the record of each exchange for at least 90 days. Older traffic keeps its figures and remains unpriced. The spend of a period can rise after a publish, and its unpriced count fall, also when the period is `complete`.
 
 === When a price changes during a period
 
