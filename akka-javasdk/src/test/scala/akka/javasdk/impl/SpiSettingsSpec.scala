@@ -133,6 +133,17 @@ class SpiSettingsSpec extends AnyWordSpec with Matchers with OptionValues {
       ex.getMessage should include("akka.javasdk.event-sourced-entity.cleanup-deleted-after")
       ex.getMessage should include("akka.javasdk.entity.cleanup-deleted-after")
     }
+
+    "enable the ledger by default" in {
+      SdkRunner.extractSpiSettings(ConfigFactory.load()).ledgerEnabled shouldBe true
+    }
+
+    "disable the ledger with ledger.enabled = false" in {
+      val config = ConfigFactory
+        .parseString("akka.javasdk.agent.ledger.enabled = false")
+        .withFallback(ConfigFactory.load())
+      SdkRunner.extractSpiSettings(config).ledgerEnabled shouldBe false
+    }
   }
 
 }
