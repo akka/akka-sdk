@@ -61,8 +61,8 @@ class ExperimentRunnerTest {
 
   /** The cases against a scripted target and the ledger, ready to run with a short timeout. */
   @SafeVarargs
-  private Experiment experiment(
-      EvalTarget<String> target, EvaluatorBindings agent, EvalCase<String>... cases) {
+  private <V> Experiment<V> experiment(
+      EvalTarget<String> target, EvaluatorBindings agent, EvalCase<String, ? extends V>... cases) {
     return ExperimentRunner.against(
         new ExperimentRunner().cases(List.of(cases)), target, ledger, agent, SHORT);
   }
@@ -505,8 +505,8 @@ class ExperimentRunnerTest {
 
   /** The cases as an attack against a scripted target and the ledger. */
   @SafeVarargs
-  private Experiment attack(
-      EvalTarget<String> target, EvaluatorBindings agent, EvalCase<String>... cases) {
+  private <V> Experiment<V> attack(
+      EvalTarget<String> target, EvaluatorBindings agent, EvalCase<String, ? extends V>... cases) {
     return ExperimentRunner.against(
         new ExperimentRunner().attacks(List.of(cases)), target, ledger, agent, SHORT);
   }
@@ -926,7 +926,7 @@ class ExperimentRunnerTest {
 
   @Test
   void attacksAreValidatedLikeCases() {
-    assertThatThrownBy(() -> new ExperimentRunner().attacks(List.<EvalCase<String>>of()))
+    assertThatThrownBy(() -> new ExperimentRunner().attacks(List.<EvalCase<String, Object>>of()))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("at least one case required");
     assertThatThrownBy(
@@ -984,6 +984,200 @@ class ExperimentRunnerTest {
         .isEqualTo("{\"customerId\":\"cust_1\",\"question\":\"Which tier?\"}");
   }
 
+  record Route(String tool) {}
+
+  /** The attempt of one graded case against a target that replies with the value. */
+  private CaseResult graded(EvalCase<String, String> evalCase, Object reply) {
+    return experiment(Targets.replying(ledger, turn -> reply), bindings(), evalCase)
+        .run()
+        .results()
+        .getFirst();
+  }
+
+  @Test
+  void aReplyEqualToTheExpectedReplyPassesTheAttemptWithoutAnEvaluator() {
+    var result =
+        graded(
+            EvalCase.of("c", "Where is o_42?", "Order o_42 is shipped."), "Order o_42 is shipped.");
+
+    assertThat(result.passed()).isTrue();
+    assertThat(result.evalResults())
+        .containsExactly(
+            EvalResult.pass(ExperimentRunner.EXPECTED, "the reply equals the expected reply"));
+    assertThat(result.describe()).contains("PASS expected: the reply equals the expected reply");
+  }
+
+  @Test
+  void aReplyDifferentFromTheExpectedReplyFailsTheAttemptDespiteAPassingEvaluator() {
+    var replying = Targets.replying(ledger, turn -> "Order o_42 is delivered.");
+    EvalTarget<String> target =
+        turn -> {
+          var outcome = (EvalTarget.Outcome.Answered) replying.call(turn);
+          verdict(outcome.interactionId().orElseThrow(), QUALITY, Evaluation.passed("fine"));
+          return outcome;
+        };
+
+    var report =
+        experiment(
+                target,
+                bindings(QUALITY),
+                EvalCase.of("c", "Where is o_42?", "Order o_42 is shipped."))
+            .run();
+    var result = report.results().getFirst();
+
+    assertThat(result.failed()).isTrue();
+    assertThat(result.evalResults())
+        .containsExactly(
+            EvalResult.fail(
+                ExperimentRunner.EXPECTED,
+                "expected Order o_42 is shipped., the reply is Order o_42 is delivered."),
+            EvalResult.pass(QUALITY, "fine"));
+    assertThat(report.render()).contains("expected 0/1").contains("quality 1/1");
+  }
+
+  @Test
+  void anExpectedReplyOfTheHandlersOwnTypeIsComparedByEqualityAndRenderedAsJson() {
+    var matching =
+        experiment(
+                Targets.replying(ledger, turn -> new Route("open-refund")),
+                bindings(),
+                EvalCase.of("c", "I want my money back", new Route("open-refund")))
+            .run()
+            .results()
+            .getFirst();
+    assertThat(matching.passed()).isTrue();
+
+    var differing =
+        experiment(
+                Targets.replying(ledger, turn -> new Route("close-ticket")),
+                bindings(),
+                EvalCase.of("c", "I want my money back", new Route("open-refund")))
+            .run()
+            .results()
+            .getFirst();
+    assertThat(resultOf(differing, ExperimentRunner.EXPECTED).detail())
+        .isEqualTo("expected {\"tool\":\"open-refund\"}, the reply is {\"tool\":\"close-ticket\"}");
+  }
+
+  @Test
+  void aGraderDecidesHowTheReplyIsComparedAndItsScoreIsInTheDetail() {
+    var result =
+        experiment(
+                Targets.replying(ledger, turn -> "Order o_42 is shipped."),
+                bindings(),
+                EvalCase.of("c", "Where is o_42?", "shipped"))
+            .grade(
+                (expected, reply) ->
+                    reply.contains(expected)
+                        ? Evaluation.passed("the reply holds " + expected).withScore(1.0)
+                        : Evaluation.failed("the reply lacks " + expected))
+            .run()
+            .results()
+            .getFirst();
+
+    assertThat(result.evalResults())
+        .containsExactly(
+            EvalResult.pass(ExperimentRunner.EXPECTED, "the reply holds shipped (score 1.00)"));
+  }
+
+  @Test
+  void aGraderThatThrowsFailsTheExpectedResult() {
+    var result =
+        experiment(
+                Targets.replying(ledger, turn -> "a reply"),
+                bindings(),
+                EvalCase.of("c", "q", "SELECT 1"))
+            .grade(
+                (expected, reply) -> {
+                  throw new IllegalStateException("database down");
+                })
+            .run()
+            .results()
+            .getFirst();
+
+    assertThat(result.evalResults())
+        .containsExactly(
+            EvalResult.fail(
+                ExperimentRunner.EXPECTED,
+                "the grader threw IllegalStateException: database down"));
+  }
+
+  @Test
+  void aFailedAgentCallLeavesTheExpectedResultInconclusive() {
+    EvalTarget<String> target =
+        turn -> {
+          throw new IllegalStateException("model unavailable");
+        };
+
+    var result =
+        experiment(target, bindings(), EvalCase.of("c", "q", "a reply")).run().results().getFirst();
+
+    assertThat(result.failed()).isTrue();
+    assertThat(result.evalResults())
+        .containsExactly(
+            EvalResult.fail(ExperimentRunner.TARGET, "IllegalStateException: model unavailable"),
+            EvalResult.inconclusive(
+                ExperimentRunner.EXPECTED,
+                "the agent call failed, so there is no reply to compare"));
+  }
+
+  @Test
+  void anAnswerWithoutAValueLeavesTheExpectedResultInconclusive() {
+    EvalTarget<String> target = turn -> EvalTarget.Outcome.answered(Optional.empty());
+
+    var result =
+        experiment(target, bindings(), EvalCase.of("c", "q", "a reply")).run().results().getFirst();
+
+    assertThat(result.inconclusive()).isTrue();
+    assertThat(result.evalResults())
+        .containsExactly(
+            EvalResult.inconclusive(
+                ExperimentRunner.EXPECTED,
+                "the agent returned no value, so there is no reply to compare"));
+  }
+
+  @Test
+  void casesWithAndWithoutAnExpectedReplyAreRefused() {
+    assertThatThrownBy(
+            () ->
+                new ExperimentRunner()
+                    .cases(
+                        EvalCase.of("a", "q", "reply"),
+                        EvalCase.of("b", "q"),
+                        EvalCase.of("c", "q")))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage(
+            "Cases without an expected reply next to cases with one: [b, c]. Give every case an"
+                + " expected reply, or none");
+  }
+
+  @Test
+  void aGraderWithoutExpectedRepliesIsRefused() {
+    var experiment = experiment(answering(), bindings(), EvalCase.of("c", "q"));
+
+    assertThatThrownBy(() -> experiment.grade((expected, reply) -> Evaluation.passed("")))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageStartingWith("No case has an expected reply, so there is nothing to grade.");
+  }
+
+  @Test
+  void anEvaluatorNamedExpectedIsRefused() {
+    var bindings =
+        new EvaluatorBindings(
+            AGENT, List.of(new EvaluatorBindings.Binding(ExperimentRunner.EXPECTED, 1.0, false)));
+
+    assertThatThrownBy(
+            () ->
+                ExperimentRunner.against(
+                    new ExperimentRunner().cases(EvalCase.of("c", "q")),
+                    answering(),
+                    ledger,
+                    bindings,
+                    SHORT))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("has the component id [expected]");
+  }
+
   @Test
   void aCaseWithoutACommandIsRejected() {
     assertThatThrownBy(() -> EvalCase.of("c", " "))
@@ -996,7 +1190,7 @@ class ExperimentRunnerTest {
 
   @Test
   void anExperimentNeedsAtLeastOneCase() {
-    assertThatThrownBy(() -> new ExperimentRunner().cases(List.<EvalCase<String>>of()))
+    assertThatThrownBy(() -> new ExperimentRunner().cases(List.<EvalCase<String, Object>>of()))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("at least one case required");
   }

@@ -38,8 +38,7 @@ final class AgentTarget<A extends Agent, C, R> implements EvalTarget<C> {
               .method(method)
               .withDetailedReply()
               .invoke(turn.command());
-      return Outcome.answered(
-          reply.interactionId(), Optional.ofNullable(reply.value()).map(EvalCase::asText));
+      return Outcome.answered(reply.interactionId(), Optional.ofNullable(reply.value()));
     } catch (RuntimeException e) {
       return Outcome.failed(e);
     }

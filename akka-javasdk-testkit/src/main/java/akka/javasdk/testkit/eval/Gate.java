@@ -95,7 +95,45 @@ public final class Gate {
    * @param evaluatorClass the evaluator component class, annotated with {@link Component}
    */
   public static Gate passRateShouldBeAtLeast(Class<?> evaluatorClass, double minimumRate) {
-    var evaluator = componentId(evaluatorClass);
+    return passRateShouldBeAtLeast(componentId(evaluatorClass), minimumRate);
+  }
+
+  /**
+   * The reply of every attempt must match the expected reply of its case: every {@link
+   * ExperimentRunner#EXPECTED} result passed. An attempt without a reply to compare, because the
+   * agent call failed, fails the gate. Fails when no case has an expected reply.
+   */
+  public static Gate expectedShouldPass() {
+    return new Gate(
+        (results, runs) -> {
+          if (results.stream().noneMatch(result -> hasResultOf(result, ExperimentRunner.EXPECTED)))
+            return Verdict.fail("no case has an expected reply, so the replies cannot be compared");
+          var mismatched =
+              failedCases(
+                  results,
+                  runs,
+                  result ->
+                      result.evalResults().stream()
+                          .anyMatch(
+                              evalResult ->
+                                  evalResult.evaluator().equals(ExperimentRunner.EXPECTED)
+                                      && evalResult.verdict() != EvalResult.Verdict.PASS));
+          return mismatched.isEmpty()
+              ? Verdict.pass("every reply matches the expected reply")
+              : Verdict.fail("the reply does not match the expected reply on " + mismatched);
+        });
+  }
+
+  /**
+   * The share of the attempts whose reply matches the expected reply of its case must be at least
+   * {@code minimumRate}, over the attempts where the comparison ran: an attempt without a reply to
+   * compare, because the agent call failed, is left out. Fails when no case has an expected reply.
+   */
+  public static Gate expectedPassRateShouldBeAtLeast(double minimumRate) {
+    return passRateShouldBeAtLeast(ExperimentRunner.EXPECTED, minimumRate);
+  }
+
+  private static Gate passRateShouldBeAtLeast(String evaluator, double minimumRate) {
     return new Gate(
         (results, runs) -> {
           var evalResults =
@@ -123,6 +161,10 @@ public final class Gate {
                   minimumRate);
           return actual >= minimumRate ? Verdict.pass(summary) : Verdict.fail(summary);
         });
+  }
+
+  private static boolean hasResultOf(CaseResult result, String evaluator) {
+    return result.evalResults().stream().anyMatch(r -> r.evaluator().equals(evaluator));
   }
 
   private static String componentId(Class<?> componentClass) {

@@ -7,6 +7,7 @@ package akkajavasdk.eval;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import akka.javasdk.DependencyProvider;
+import akka.javasdk.evaluation.Evaluation;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
@@ -117,7 +118,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
   }
 
   /** One case with the mocked model. There is no gate, so the case itself must pass. */
-  private ExperimentRunner.CaseResult runOne(EvalCase<String> evalCase) {
+  private ExperimentRunner.CaseResult runOne(EvalCase<String, Object> evalCase) {
     return experimentRunner.cases(evalCase).agent(SupportAgent::ask).run().results().getFirst();
   }
 
@@ -182,7 +183,50 @@ public class SupportAgentEvalTest extends TestKitSupport {
 
   // ---- the cases ----
 
-  private static List<EvalCase<String>> curatedCases() {
+  @Test
+  public void aCaseWithAnExpectedReplyIsGradedByTheRunner() {
+    var tickets = "What is cust_7 waiting on?";
+    var reply = "Grace Hopper has one open ticket: card declined at checkout.";
+
+    var equal =
+        experimentRunner
+            .cases(EvalCase.of("tickets", tickets, reply))
+            .agent(SupportAgent::ask)
+            .run()
+            .results()
+            .getFirst();
+    assertThat(equal.passed()).withFailMessage(equal::describe).isTrue();
+    assertThat(equal.describe())
+        .contains("PASS expected: the reply equals the expected reply")
+        .contains("PASS tool-use");
+
+    var graded =
+        experimentRunner
+            .cases(EvalCase.of("tickets", tickets, "card declined"))
+            .agent(SupportAgent::ask)
+            .grade(
+                (expected, actual) ->
+                    actual.contains(expected)
+                        ? Evaluation.passed("names the ticket")
+                        : Evaluation.failed("does not name the ticket"))
+            .gate(Gate.expectedShouldPass())
+            .run();
+    assertThat(graded.passed()).withFailMessage(graded::render).isTrue();
+    assertThat(graded.render()).contains("expected 1/1");
+
+    var wrong =
+        experimentRunner
+            .cases(EvalCase.of("tickets", tickets, "Nothing is open."))
+            .agent(SupportAgent::ask)
+            .run()
+            .results()
+            .getFirst();
+    assertThat(wrong.failed()).isTrue();
+    assertThat(wrong.describe())
+        .contains("FAIL expected: expected Nothing is open., the reply is " + reply);
+  }
+
+  private static List<EvalCase<String, Object>> curatedCases() {
     return List.of(
         EvalCase.of(
             "customer-lookup", "Is cust_1 still one of our customers, and under what name?"),
@@ -300,7 +344,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
 
   @Test
   public void typedCasesRunAsABatchBehindAGate() {
-    List<EvalCase<AccountSupportAgent.Question>> cases =
+    List<EvalCase<AccountSupportAgent.Question, Object>> cases =
         List.of(
             EvalCase.of(
                 "who-am-i",

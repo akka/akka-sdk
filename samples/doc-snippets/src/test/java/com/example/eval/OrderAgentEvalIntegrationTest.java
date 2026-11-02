@@ -3,12 +3,15 @@ package com.example.eval;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import akka.javasdk.DependencyProvider;
+import akka.javasdk.evaluation.Evaluation;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
 import akka.javasdk.testkit.eval.EvalCase;
 import akka.javasdk.testkit.eval.EvalCases;
 import akka.javasdk.testkit.eval.ExperimentRunner;
+import akka.javasdk.testkit.eval.Gate;
+import java.util.Locale;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -94,6 +97,35 @@ public class OrderAgentEvalIntegrationTest extends TestKitSupport {
   }
 
   // end::cases-file[]
+
+  // tag::graded[]
+  @Test
+  public void theReplyIsComparedWithTheExpectedReply() {
+    var cases = EvalCases.readJsonLinesResource(
+      "eval/graded-cases.jsonl",
+      String.class,
+      String.class // <1>
+    );
+
+    var report = new ExperimentRunner(testKit)
+      .cases(cases)
+      .agent(OrderAgent::ask)
+      .grade(
+        (expected, reply) -> // <2>
+          reply.toLowerCase(Locale.ROOT).contains(expected)
+            ? Evaluation.passed("the reply says " + expected)
+            : Evaluation.failed("the reply does not say " + expected)
+      )
+      .gate(Gate.expectedShouldPass()) // <3>
+      .run();
+
+    assertThat(report.passed()).withFailMessage(report::render).isTrue();
+    assertThat(report.results().getFirst().describe()).contains(
+      "PASS expected: the reply says shipped" // <4>
+    );
+  }
+
+  // end::graded[]
 
   // tag::judge[]
   @Test

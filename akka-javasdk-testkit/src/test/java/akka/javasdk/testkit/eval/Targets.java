@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /** Scripted targets, ledger records and bindings for the runner's and the gate's tests. */
 final class Targets {
@@ -218,6 +219,22 @@ final class Targets {
             ledger.seed(verdict(interactionId, evaluator, Evaluation.passed("fine")));
           }
         });
+  }
+
+  /**
+   * A target that records the value as the reply of the interaction and returns it as the value of
+   * the call, with no evaluations.
+   */
+  static EvalTarget<String> replying(
+      TestLedgerClient ledger, Function<EvalTarget.Turn<String>, Object> value) {
+    var calls = new AtomicInteger();
+    return turn -> {
+      var interactionId = turn.caseId() + "-" + calls.incrementAndGet();
+      var returned = value.apply(turn);
+      ledger.seed(
+          interaction(interactionId, turn.sessionId(), EvalCase.asText(returned), List.of()));
+      return EvalTarget.Outcome.answered(Optional.of(interactionId), Optional.of(returned));
+    };
   }
 
   /**

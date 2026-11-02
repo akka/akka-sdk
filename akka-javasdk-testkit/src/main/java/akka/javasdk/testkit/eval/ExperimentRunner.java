@@ -6,6 +6,7 @@ package akka.javasdk.testkit.eval;
 
 import akka.japi.function.Function2;
 import akka.javasdk.agent.Agent;
+import akka.javasdk.evaluation.Evaluation;
 import akka.javasdk.impl.evaluation.AgentEvaluatorBindings;
 import akka.javasdk.ledger.EvaluationRecord;
 import akka.javasdk.ledger.GuardrailDecisionRecord;
@@ -66,7 +67,9 @@ import org.slf4j.LoggerFactory;
  * time>.json}, see {@link EvalReport#reportFile}.
  *
  * <p>The cases carry the command the agent's command handler takes, so the handler's own type is
- * passed through unchanged.
+ * passed through unchanged. A case may also carry the reply the handler is expected to return. The
+ * runner then compares the two, with {@link Experiment#grade} or by equality, and records the
+ * outcome as the {@link #EXPECTED} result of the attempt.
  *
  * <pre>{@code
  * var runner = new ExperimentRunner(testKit);
@@ -117,6 +120,12 @@ public final class ExperimentRunner {
     ATTACK
   }
 
+  /**
+   * The evaluator name of the result the runner reports when the case carries an expected reply:
+   * the comparison of the reply with it, see {@link Experiment#grade}.
+   */
+  public static final String EXPECTED = "expected";
+
   private final TestKit testKit;
 
   /**
@@ -136,10 +145,13 @@ public final class ExperimentRunner {
    * The cases the experiment runs, as an evaluation.
    *
    * @param first the first case
-   * @param more further cases, with the same command type
+   * @param more further cases, with the same command type and reply type
+   * @throws IllegalArgumentException when two cases have the same id, or when some cases have an
+   *     expected reply and others do not
    */
   @SafeVarargs
-  public final <C> ExperimentCases<C> cases(EvalCase<C> first, EvalCase<C>... more) {
+  public final <C, V> ExperimentCases<C, V> cases(
+      EvalCase<C, ? extends V> first, EvalCase<C, ? extends V>... more) {
     return cases(asList(first, more));
   }
 
@@ -147,8 +159,10 @@ public final class ExperimentRunner {
    * The cases the experiment runs, as an evaluation.
    *
    * @param cases at least one case
+   * @throws IllegalArgumentException when two cases have the same id, or when some cases have an
+   *     expected reply and others do not
    */
-  public <C> ExperimentCases<C> cases(List<EvalCase<C>> cases) {
+  public <C, V> ExperimentCases<C, V> cases(List<? extends EvalCase<C, ? extends V>> cases) {
     return experimentCases(cases, Kind.EVALUATION);
   }
 
@@ -156,10 +170,13 @@ public final class ExperimentRunner {
    * The cases the experiment runs, as an attack.
    *
    * @param first the first case
-   * @param more further cases, with the same command type
+   * @param more further cases, with the same command type and reply type
+   * @throws IllegalArgumentException when two cases have the same id, or when some cases have an
+   *     expected reply and others do not
    */
   @SafeVarargs
-  public final <C> ExperimentCases<C> attacks(EvalCase<C> first, EvalCase<C>... more) {
+  public final <C, V> ExperimentCases<C, V> attacks(
+      EvalCase<C, ? extends V> first, EvalCase<C, ? extends V>... more) {
     return attacks(asList(first, more));
   }
 
@@ -167,19 +184,23 @@ public final class ExperimentRunner {
    * The cases the experiment runs, as an attack.
    *
    * @param cases at least one case
+   * @throws IllegalArgumentException when two cases have the same id, or when some cases have an
+   *     expected reply and others do not
    */
-  public <C> ExperimentCases<C> attacks(List<EvalCase<C>> cases) {
+  public <C, V> ExperimentCases<C, V> attacks(List<? extends EvalCase<C, ? extends V>> cases) {
     return experimentCases(cases, Kind.ATTACK);
   }
 
-  private static <C> List<EvalCase<C>> asList(EvalCase<C> first, EvalCase<C>[] more) {
-    var all = new ArrayList<EvalCase<C>>();
+  private static <C, V> List<EvalCase<C, ? extends V>> asList(
+      EvalCase<C, ? extends V> first, EvalCase<C, ? extends V>[] more) {
+    var all = new ArrayList<EvalCase<C, ? extends V>>();
     all.add(first);
     all.addAll(List.of(more));
     return all;
   }
 
-  private <C> ExperimentCases<C> experimentCases(List<EvalCase<C>> cases, Kind kind) {
+  private <C, V> ExperimentCases<C, V> experimentCases(
+      List<? extends EvalCase<C, ? extends V>> cases, Kind kind) {
     if (cases == null || cases.isEmpty()) {
       throw new IllegalArgumentException("at least one case required");
     }
@@ -196,40 +217,53 @@ public final class ExperimentRunner {
                 + " one");
       }
     }
+    var withoutExpected =
+        cases.stream().filter(c -> c.expected().isEmpty()).map(EvalCase::id).toList();
+    if (!withoutExpected.isEmpty() && withoutExpected.size() < cases.size()) {
+      throw new IllegalArgumentException(
+          "Cases without an expected reply next to cases with one: "
+              + withoutExpected
+              + ". Give every case an expected reply, or none");
+    }
     return new Cases<>(testKit, List.copyOf(cases), kind);
   }
 
   // For the runner's own tests: the cases run against a scripted target instead of an agent, read
   // an in-memory ledger with the given timeout, and write no report file unless the test names a
   // directory.
-  static <C> Experiment against(
-      ExperimentCases<C> cases,
+  static <C, V> Experiment<V> against(
+      ExperimentCases<C, V> cases,
       EvalTarget<C> target,
       LedgerClient ledger,
       EvaluatorBindings bindings,
       Duration evaluationTimeout) {
-    return ((Cases<C>) cases)
+    return ((Cases<C, V>) cases)
         .target(target, ledger, bindings, evaluationTimeout)
         .withoutReportFile();
   }
 
-  private record Cases<C>(TestKit testKit, List<EvalCase<C>> cases, Kind kind)
-      implements ExperimentCases<C> {
+  private record Cases<C, V>(
+      TestKit testKit, List<? extends EvalCase<C, ? extends V>> cases, Kind kind)
+      implements ExperimentCases<C, V> {
 
     // The bindings are checked here, before any case runs: a binding to an evaluator id without a
     // component would leave every attempt waiting for the timeout, and an agent without a binding
-    // would leave every attempt inconclusive without saying why.
+    // would leave every attempt inconclusive without saying why, unless the cases carry an expected
+    // reply, whose comparison can pass the attempt on its own.
     @Override
-    public <A extends Agent, R> Experiment agent(Function2<A, C, Agent.Effect<R>> method) {
+    public <A extends Agent, R extends V> Experiment<V> agent(
+        Function2<A, C, Agent.Effect<R>> method) {
       if (method == null) throw new IllegalArgumentException("agent method required");
       var config = testKit.getApplicationConfig();
       var bindings = EvaluatorBindings.of(config, method);
       bindings.requireEvaluatorComponents(
           AgentEvaluatorBindings.evaluatorComponentIds(
               Thread.currentThread().getContextClassLoader()));
-      bindings
-          .describeUnbound(AgentEvaluatorBindings.boundAgentComponentIds(config))
-          .ifPresent(log::warn);
+      if (!graded()) {
+        bindings
+            .describeUnbound(AgentEvaluatorBindings.boundAgentComponentIds(config))
+            .ifPresent(log::warn);
+      }
       return target(
           new AgentTarget<>(testKit.getComponentClient(), method),
           testKit.getLedgerClient(),
@@ -237,7 +271,12 @@ public final class ExperimentRunner {
           DEFAULT_EVALUATION_TIMEOUT);
     }
 
-    private Experiment target(
+    // Every case has an expected reply, or none has, checked in cases(…).
+    private boolean graded() {
+      return cases.getFirst().expected().isPresent();
+    }
+
+    private Experiment<V> target(
         EvalTarget<C> target,
         LedgerClient ledger,
         EvaluatorBindings bindings,
@@ -258,8 +297,21 @@ public final class ExperimentRunner {
           "",
           Optional.of(DEFAULT_REPORT_DIRECTORY),
           1,
-          evaluationTimeout);
+          evaluationTimeout,
+          equality());
     }
+  }
+
+  /** The grader that applies without {@link Experiment#grade}: the two replies must be equal. */
+  static <V> Grader<V> equality() {
+    return (expected, reply) ->
+        expected.equals(reply)
+            ? Evaluation.passed("the reply equals the expected reply")
+            : Evaluation.failed(
+                "expected "
+                    + EvalCase.asText(expected)
+                    + ", the reply is "
+                    + EvalCase.asText(reply));
   }
 
   private static void requirePositive(Duration evaluationTimeout) {
@@ -267,8 +319,8 @@ public final class ExperimentRunner {
       throw new IllegalArgumentException("evaluation timeout must be positive");
   }
 
-  private record Ready<C>(
-      List<EvalCase<C>> cases,
+  private record Ready<C, V>(
+      List<? extends EvalCase<C, ? extends V>> cases,
       Kind kind,
       EvalTarget<C> target,
       LedgerClient ledger,
@@ -277,48 +329,76 @@ public final class ExperimentRunner {
       String name,
       Optional<Path> reportDirectory,
       int runs,
-      Duration evaluationTimeout)
-      implements Experiment {
+      Duration evaluationTimeout,
+      Grader<V> grader)
+      implements Experiment<V> {
 
     @Override
-    public Experiment gate(Gate gate) {
+    public Experiment<V> gate(Gate gate) {
       if (gate == null) throw new IllegalArgumentException("gate required");
-      return with(gate, name, reportDirectory, runs, evaluationTimeout);
+      return with(gate, name, reportDirectory, runs, evaluationTimeout, grader);
     }
 
     @Override
-    public Experiment name(String name) {
+    public Experiment<V> grade(Grader<V> grader) {
+      if (grader == null) throw new IllegalArgumentException("grader required");
+      if (cases.getFirst().expected().isEmpty()) {
+        throw new IllegalArgumentException(
+            "No case has an expected reply, so there is nothing to grade. Give the cases an"
+                + " expected reply, or read the file with the reply type of the agent's command"
+                + " handler");
+      }
+      return with(gate, name, reportDirectory, runs, evaluationTimeout, grader);
+    }
+
+    @Override
+    public Experiment<V> name(String name) {
       requireFileName(name);
-      return with(gate, name, reportDirectory, runs, evaluationTimeout);
+      return with(gate, name, reportDirectory, runs, evaluationTimeout, grader);
     }
 
     @Override
-    public Experiment reportDirectory(Path directory) {
+    public Experiment<V> reportDirectory(Path directory) {
       if (directory == null) throw new IllegalArgumentException("directory required");
-      return with(gate, name, Optional.of(directory), runs, evaluationTimeout);
+      return with(gate, name, Optional.of(directory), runs, evaluationTimeout, grader);
     }
 
     @Override
-    public Experiment withoutReportFile() {
-      return with(gate, name, Optional.empty(), runs, evaluationTimeout);
+    public Experiment<V> withoutReportFile() {
+      return with(gate, name, Optional.empty(), runs, evaluationTimeout, grader);
     }
 
     @Override
-    public Experiment repeat(int times) {
+    public Experiment<V> repeat(int times) {
       if (times < 1) throw new IllegalArgumentException("repeat needs at least 1, was " + times);
-      return with(gate, name, reportDirectory, times, evaluationTimeout);
+      return with(gate, name, reportDirectory, times, evaluationTimeout, grader);
     }
 
     @Override
-    public Experiment evaluationTimeout(Duration timeout) {
+    public Experiment<V> evaluationTimeout(Duration timeout) {
       requirePositive(timeout);
-      return with(gate, name, reportDirectory, runs, timeout);
+      return with(gate, name, reportDirectory, runs, timeout, grader);
     }
 
-    private Ready<C> with(
-        Gate gate, String name, Optional<Path> reportDirectory, int runs, Duration timeout) {
+    private Ready<C, V> with(
+        Gate gate,
+        String name,
+        Optional<Path> reportDirectory,
+        int runs,
+        Duration timeout,
+        Grader<V> grader) {
       return new Ready<>(
-          cases, kind, target, ledger, bindings, gate, name, reportDirectory, runs, timeout);
+          cases,
+          kind,
+          target,
+          ledger,
+          bindings,
+          gate,
+          name,
+          reportDirectory,
+          runs,
+          timeout,
+          grader);
     }
 
     // Run-major, every case once and then every case again, so the attempts of one case are spread
@@ -402,7 +482,7 @@ public final class ExperimentRunner {
       return false;
     }
 
-    private CaseResult evaluate(EvalCase<C> evalCase, int run) {
+    private CaseResult evaluate(EvalCase<C, ? extends V> evalCase, int run) {
       var turn =
           new EvalTarget.Turn<>(UUID.randomUUID().toString(), evalCase.id(), evalCase.command());
       EvalTarget.Outcome outcome;
@@ -435,6 +515,8 @@ public final class ExperimentRunner {
           interaction = reader.newestInteraction(bindings.agentComponentId(), turn.sessionId());
         }
       }
+      var called = outcome;
+      evalCase.expected().ifPresent(expected -> results.add(grade(expected, called)));
       interaction.ifPresent(
           record -> {
             var expected = bindings.expectedEvaluators(record.failed());
@@ -470,6 +552,29 @@ public final class ExperimentRunner {
               : EvalResult.fail(GUARDRAIL, detail));
     }
 
+    // The reply type of the agent is a subtype of the reply type of the cases, checked by the
+    // compiler at agent(…), so the returned value is a V.
+    @SuppressWarnings("unchecked")
+    private EvalResult grade(V expected, EvalTarget.Outcome outcome) {
+      return switch (outcome) {
+        case EvalTarget.Outcome.Answered answered when answered.value().isPresent() -> {
+          try {
+            var evaluation = grader.grade(expected, (V) answered.value().get());
+            if (evaluation == null) yield EvalResult.fail(EXPECTED, "the grader returned null");
+            yield verdictResult(EXPECTED, evaluation);
+          } catch (RuntimeException e) {
+            yield EvalResult.fail(EXPECTED, "the grader threw " + describe(e));
+          }
+        }
+        case EvalTarget.Outcome.Answered answered ->
+            EvalResult.inconclusive(
+                EXPECTED, "the agent returned no value, so there is no reply to compare");
+        case EvalTarget.Outcome.Failed failed ->
+            EvalResult.inconclusive(
+                EXPECTED, "the agent call failed, so there is no reply to compare");
+      };
+    }
+
     // The newest record of the evaluator decides. An evaluator without a record within the timeout
     // is inconclusive, so the attempt cannot pass.
     private EvalResult resultOf(String evaluator, List<EvaluationRecord> records) {
@@ -487,26 +592,18 @@ public final class ExperimentRunner {
     }
   }
 
+  private static String describe(RuntimeException e) {
+    return e.getMessage() == null
+        ? e.getClass().getSimpleName()
+        : e.getClass().getSimpleName() + ": " + e.getMessage();
+  }
+
   /** The result an evaluation record stands for. */
   static EvalResult resultOf(EvaluationRecord record) {
     var evaluator = record.evaluatorComponentId();
     return switch (record.outcome()) {
-      case EvaluationRecord.Outcome.Verdict verdict -> {
-        var evaluation = verdict.evaluation();
-        var detail = evaluation.explanation();
-        var facts = new ArrayList<String>();
-        evaluation.score().ifPresent(s -> facts.add(String.format(Locale.ROOT, "score %.2f", s)));
-        evaluation.label().ifPresent(label -> facts.add("label " + label));
-        evaluation.attributes().forEach((key, value) -> facts.add(key + "=" + value));
-        var inBrackets = String.join(", ", facts);
-        var text =
-            detail.isEmpty()
-                ? inBrackets
-                : inBrackets.isEmpty() ? detail : detail + " (" + inBrackets + ")";
-        yield evaluation.passed()
-            ? EvalResult.pass(evaluator, text)
-            : EvalResult.fail(evaluator, text);
-      }
+      case EvaluationRecord.Outcome.Verdict verdict ->
+          verdictResult(evaluator, verdict.evaluation());
       case EvaluationRecord.Outcome.Inconclusive inconclusive ->
           EvalResult.inconclusive(evaluator, inconclusive.reason());
       case EvaluationRecord.Outcome.NotApplicable notApplicable ->
@@ -514,6 +611,25 @@ public final class ExperimentRunner {
       case EvaluationRecord.Outcome.Failed failed ->
           EvalResult.fail(evaluator, "the evaluator failed: " + failed.reason());
     };
+  }
+
+  /**
+   * The result a verdict stands for: the explanation, with the score, the label and the attributes.
+   */
+  static EvalResult verdictResult(String evaluator, Evaluation evaluation) {
+    var detail = evaluation.explanation();
+    var facts = new ArrayList<String>();
+    evaluation.score().ifPresent(s -> facts.add(String.format(Locale.ROOT, "score %.2f", s)));
+    evaluation.label().ifPresent(label -> facts.add("label " + label));
+    evaluation.attributes().forEach((key, value) -> facts.add(key + "=" + value));
+    var inBrackets = String.join(", ", facts);
+    var text =
+        detail.isEmpty()
+            ? inBrackets
+            : inBrackets.isEmpty() ? detail : detail + " (" + inBrackets + ")";
+    return evaluation.passed()
+        ? EvalResult.pass(evaluator, text)
+        : EvalResult.fail(evaluator, text);
   }
 
   /** The characters no common file system accepts in a file name, and the control characters. */
@@ -558,7 +674,8 @@ public final class ExperimentRunner {
    * @param evidence what the attempt left in the ledger
    * @param evalResults one per expected evaluator, in evaluator order, after the {@link #GUARDRAIL}
    *     result for an enforcing denial that stopped the interaction, or else after the {@link
-   *     #TARGET} result when the runner reports one
+   *     #TARGET} result when the runner reports one, and after the {@link #EXPECTED} result when
+   *     the case carries an expected reply
    */
   public record CaseResult(
       String caseId, int run, Evidence evidence, List<EvalResult> evalResults) {
@@ -714,10 +831,11 @@ public final class ExperimentRunner {
 
   /**
    * The verdicts of one evaluator over all runs of a case. The runner's {@link #TARGET} and {@link
-   * #GUARDRAIL} results count as evaluators.
+   * #GUARDRAIL} and {@link #EXPECTED} results count as evaluators.
    *
    * @param caseId the case
-   * @param evaluator the evaluator component id, {@link #TARGET} or {@link #GUARDRAIL}
+   * @param evaluator the evaluator component id, {@link #TARGET}, {@link #GUARDRAIL} or {@link
+   *     #EXPECTED}
    * @param passedIn the runs with the verdict PASS, ascending
    * @param failedIn the runs with the verdict FAIL, ascending
    * @param inconclusiveIn the runs with the verdict INCONCLUSIVE, ascending

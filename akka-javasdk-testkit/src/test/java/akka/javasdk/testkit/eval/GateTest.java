@@ -30,7 +30,7 @@ class GateTest {
 
   private final TestLedgerClient ledger = TestLedgerClient.create();
 
-  private static EvalCase<String> evalCase(String id) {
+  private static EvalCase<String, Object> evalCase(String id) {
     return EvalCase.of(id, "a question");
   }
 
@@ -53,7 +53,7 @@ class GateTest {
       EvalTarget<String> target,
       EvaluatorBindings agent,
       int runs,
-      List<EvalCase<String>> cases) {
+      List<? extends EvalCase<String, ?>> cases) {
     return ExperimentRunner.against(
             new ExperimentRunner().cases(cases), target, ledger, agent, Duration.ofMillis(50))
         .repeat(runs)
@@ -62,13 +62,99 @@ class GateTest {
   }
 
   private ExperimentRunner.EvalReport run(
-      Gate gate, EvalTarget<String> target, int runs, List<EvalCase<String>> cases) {
+      Gate gate,
+      EvalTarget<String> target,
+      EvaluatorBindings agent,
+      List<? extends EvalCase<String, ?>> cases) {
+    return run(gate, target, agent, 1, cases);
+  }
+
+  private ExperimentRunner.EvalReport run(
+      Gate gate, EvalTarget<String> target, int runs, List<? extends EvalCase<String, ?>> cases) {
     return run(gate, target, bindings(QUALITY), runs, cases);
   }
 
   private ExperimentRunner.EvalReport run(
-      Gate gate, EvalTarget<String> target, List<EvalCase<String>> cases) {
+      Gate gate, EvalTarget<String> target, List<? extends EvalCase<String, ?>> cases) {
     return run(gate, target, 1, cases);
+  }
+
+  /** A target whose reply is the case id with {@code -reply} appended, and that fails on c3. */
+  private EvalTarget<String> replyingWithTheCaseId() {
+    var replying = Targets.replying(ledger, turn -> turn.caseId() + "-reply");
+    return turn ->
+        turn.caseId().equals("c3")
+            ? EvalTarget.Outcome.failed("model unavailable")
+            : replying.call(turn);
+  }
+
+  @Test
+  void expectedShouldPassFailsOnAMismatchAndNamesTheCase() {
+    var cases =
+        List.of(EvalCase.of("c1", "q", "c1-reply"), EvalCase.of("c2", "q", "another reply"));
+
+    var report = run(Gate.expectedShouldPass(), replyingWithTheCaseId(), bindings(), cases);
+
+    assertThat(report.passed()).isFalse();
+    assertThat(report.render())
+        .contains("gate: FAILED — the reply does not match the expected reply on [c2 (run 1)]")
+        .contains("expected 1/2");
+    assertThat(
+            run(
+                    Gate.expectedShouldPass(),
+                    replyingWithTheCaseId(),
+                    bindings(),
+                    List.of(EvalCase.of("c1", "q", "c1-reply")))
+                .render())
+        .contains("gate: passed — every reply matches the expected reply");
+  }
+
+  @Test
+  void expectedShouldPassFailsWhenTheAgentCallFailed() {
+    var cases = List.of(EvalCase.of("c1", "q", "c1-reply"), EvalCase.of("c3", "q", "c3-reply"));
+
+    var report = run(Gate.expectedShouldPass(), replyingWithTheCaseId(), bindings(), cases);
+
+    assertThat(report.passed()).isFalse();
+    assertThat(report.render())
+        .contains("the reply does not match the expected reply on [c3 (run 1)]")
+        .contains("expected 1/1 (1 inconclusive)");
+  }
+
+  @Test
+  void theExpectedGatesFailWithoutExpectedReplies() {
+    var cases = List.of(evalCase("c1"));
+
+    assertThat(run(Gate.expectedShouldPass(), failingOn(), cases).render())
+        .contains(
+            "gate: FAILED — no case has an expected reply, so the replies cannot be compared");
+    assertThat(run(Gate.expectedPassRateShouldBeAtLeast(0.5), failingOn(), cases).render())
+        .contains("gate: FAILED — expected judged no case, so its rate cannot be read");
+  }
+
+  @Test
+  void theExpectedPassRateLeavesAttemptsWithoutAReplyOut() {
+    var cases =
+        List.of(
+            EvalCase.of("c1", "q", "c1-reply"),
+            EvalCase.of("c2", "q", "another reply"),
+            EvalCase.of("c3", "q", "c3-reply"));
+
+    var report =
+        run(Gate.expectedPassRateShouldBeAtLeast(0.5), replyingWithTheCaseId(), bindings(), cases);
+
+    assertThat(report.passed()).isTrue();
+    assertThat(report.render())
+        .contains("expected rate 0.50 over 2 judged attempts, required 0.50")
+        .contains("expected 1/2 (1 inconclusive)");
+    assertThat(
+            run(
+                    Gate.expectedPassRateShouldBeAtLeast(0.6),
+                    replyingWithTheCaseId(),
+                    bindings(),
+                    cases)
+                .passed())
+        .isFalse();
   }
 
   @Test
@@ -383,7 +469,7 @@ class GateTest {
   }
 
   private ExperimentRunner.EvalReport attack(
-      Gate gate, EvalTarget<String> target, List<EvalCase<String>> cases) {
+      Gate gate, EvalTarget<String> target, List<? extends EvalCase<String, ?>> cases) {
     return ExperimentRunner.against(
             new ExperimentRunner().attacks(cases),
             target,

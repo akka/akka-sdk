@@ -110,8 +110,9 @@ public record ReportDocument(
       double passRate) {}
 
   /**
-   * @param evaluator the evaluator component id, or {@link ExperimentRunner#TARGET} or {@link
-   *     ExperimentRunner#GUARDRAIL} for a result the runner reports itself
+   * @param evaluator the evaluator component id, {@link ExperimentRunner#TARGET} or {@link
+   *     ExperimentRunner#GUARDRAIL} for a result the runner reports itself, or {@link
+   *     ExperimentRunner#EXPECTED} for the comparison of the reply with the expected reply
    * @param passed results with the verdict PASS
    * @param failed results with the verdict FAIL
    * @param inconclusive results with the verdict INCONCLUSIVE
@@ -154,7 +155,8 @@ public record ReportDocument(
    * @param failedRuns runs with the verdict FAIL
    * @param inconclusiveRuns runs with the verdict INCONCLUSIVE
    * @param verdicts the verdicts of each evaluator of the case, in the order the results first
-   *     appear in its attempts; the runner's target and guardrail results count as evaluators
+   *     appear in its attempts; the runner's target, guardrail and expected results count as
+   *     evaluators
    */
   public record Case(
       String id,
@@ -168,7 +170,7 @@ public record ReportDocument(
    * The verdicts of one evaluator over all runs of a case.
    *
    * @param evaluator the evaluator component id, {@link ExperimentRunner#TARGET} or {@link
-   *     ExperimentRunner#GUARDRAIL}
+   *     ExperimentRunner#GUARDRAIL} or {@link ExperimentRunner#EXPECTED}
    * @param outcome over the runs where the evaluator reached a verdict: PASSED, FAILED,
    *     INCONSISTENT when it passed in some runs and failed in others, or INCONCLUSIVE when it was
    *     conclusive in no run
@@ -278,7 +280,7 @@ public record ReportDocument(
 
   /**
    * @param evaluator the evaluator component id, {@link ExperimentRunner#TARGET} or {@link
-   *     ExperimentRunner#GUARDRAIL}
+   *     ExperimentRunner#GUARDRAIL} or {@link ExperimentRunner#EXPECTED}
    * @param verdict PASS, FAIL, INCONCLUSIVE or NOT_APPLICABLE
    * @param detail the explanation and the score, or why there is no verdict; empty when the
    *     evaluator gave none
