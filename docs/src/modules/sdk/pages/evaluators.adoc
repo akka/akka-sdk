@@ -323,6 +323,27 @@ include::example$doc-snippets/src/main/java/com/example/evaluator/LedgerUsage.ja
 
 See link:{attachmentsdir}/api/akka/javasdk/ledger/FlowRecord.html[`FlowRecord`] for the kinds of records and what the transcript contains.
 
+[#_optional_ledger_records]
+=== Optional ledger records
+
+Each ledger record adds database load and stored data. Turn off these records in `application.conf`:
+
+[source,conf,indent=0]
+.src/main/resources/application.conf
+----
+akka.javasdk.agent.ledger.records {
+  tool-call-intent = false
+  guardrail-allow = false
+  sanitizer-no-masking = false
+}
+----
+
+`tool-call-intent`:: The record that the runtime writes before each tool call. The interaction record holds the same call, but the runtime writes it when the interaction ends. Without the intent, a tool call leaves no trace when the runtime stops before that. Keep this record for a tool that performs a protected operation.
+`guardrail-allow`:: The record of a guardrail decision that allows, for enforcing and report-only guardrails. Without it, the ledger has no allow count to compute a pass rate from. Metrics still count the decision.
+`sanitizer-no-masking`:: The record of a sanitizer that masked nothing in an interaction. A sanitizer that masked text keeps its record.
+
+The defaults keep all of these records. The ledger always holds the interactions, the evaluations, and the guardrail denials and failures, so evaluators work with all three keys off. Each runtime node names the keys that are off in its control configuration record, so a reader can tell a record that was not written from a record that is missing.
+
 == Testing
 
 === Evaluating an agent with eval cases
