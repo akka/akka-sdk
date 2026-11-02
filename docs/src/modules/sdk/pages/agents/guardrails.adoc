@@ -19,7 +19,7 @@ This distinction matters: bolt-on governance fails because it depends on develop
 When governance lives in the runtime, it cannot be bypassed, forgotten, or misconfigured by individual teams.
 
 This architecture directly supports regulatory frameworks such as the **EU AI Act**, which requires that high-risk AI systems embed risk controls into their design rather than relying on after-the-fact auditing.
-Every guardrail decision is a record in the ledger and is also reported in logs, metrics, and traces, so you get an auditable compliance trail without extra instrumentation. See xref:concepts:evidence.adoc[].
+The runtime always records a guardrail denial or failure in the ledger, and records an allow by default, as described in xref:sdk:evaluators.adoc#_optional_ledger_records[optional ledger records]. The runtime also reports every decision in logs, metrics, and traces, so you get an auditable compliance trail without extra instrumentation. See xref:concepts:evidence.adoc[].
 
 NOTE: For protecting sensitive information like PII, see xref:sdk:sanitization.adoc[Sanitization].
 
