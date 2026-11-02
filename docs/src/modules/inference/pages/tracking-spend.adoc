@@ -212,12 +212,12 @@ Version       2
 Effective at  2026-10-01T00:00:00Z
 Published at  2026-09-30T09:12:40.118204Z
 Source        negotiated rate
-SERVED NAME     VERSION  MODEL               CURRENCY  ASSIGNED  INPUT  CACHE-READ  CACHE-WRITE  OUTPUT  REASONING
-frontier-model  2        example/frontier/1  USD       yes       4      —           —            20      —
-finetune-model  1        example/finetune/1  USD       yes       0.1    0.01        —            0.3     —
+SERVED NAME     PRICED BY  MODEL               CURRENCY  ASSIGNED  INPUT  CACHE-READ  CACHE-WRITE  OUTPUT  REASONING
+finetune-model  1          example/finetune/1  USD       yes       0.10   0.01        —            0.30    —
+frontier-model  2          example/frontier/1  USD       yes       4.00   —           —            20.00   —
 ----
 
-`get` lists every served name that has a price in force, each with the entry of the version that prices it. `VERSION` names that version. The top block names the version that most recently took effect. In this example, version 2 priced only `frontier-model`, so `finetune-model` keeps the price that version 1 set. A class with no price shows `—`. Pass `--at` with an ISO-8601 instant to read the prices in force at that time.
+`get` lists every served name that has a price in force, ordered by served name, each with the entry of the version that prices it. `PRICED BY` names that version. The top block names the version that most recently took effect. In this example, version 2 priced only `frontier-model`, so `finetune-model` keeps the price that version 1 set. A class with no price shows `—`. Pass `--at` with an ISO-8601 instant to read the prices in force at that time.
 
 To see when each version took effect, list the versions:
 
@@ -240,8 +240,9 @@ The list is newest first.
 akka optimize pricing-catalog get -o json > catalog.json
 ----
 
-. Edit the rates in `catalog.json`.
-. Set `effectiveAt` to an instant later than every price in the file.
+. Keep only the entries that you change, and edit their rates. The service never removes a version, so an entry that repeats a price makes the catalog larger and changes nothing.
+. Run `akka optimize pricing-catalog versions list`, and look for a version that takes effect after the `effectiveAt` in the file. `get` shows the prices in force now, so the file holds no version dated in the future and no version published after you read it. A document dated after such a version replaces its rate for every served name that both price.
+. Set `effectiveAt` to an instant later than the `effectiveAt` in the file.
 . Check the document:
 +
 [source,shell]
