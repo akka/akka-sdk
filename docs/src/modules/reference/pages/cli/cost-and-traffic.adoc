@@ -23,16 +23,16 @@ These commands cover what an organization spends on inference. Every command on 
 | Two periods, and the difference between them.
 
 | `akka optimize spend series --from INSTANT --to INSTANT --granularity hour\|day`
-| A period in hour or day buckets, each what a read of it alone states.
+| A period divided into UTC hours or days, each answered as a read of that hour or day alone.
 
 | `akka optimize spend recent --since INSTANT`
-| The most recent model calls, newest first.
+| The most recent exchanges, newest first.
 
 | `akka optimize spend conversations list --from INSTANT --to INSTANT`
 | The conversations of a period that cost the most.
 
 | `akka optimize spend system-ids`
-| Every system id the service has seen, with its calls and its first and last hour.
+| Every system id the service has seen, with how many exchanges named it and the first and the last hour in which one did.
 
 | `akka optimize spend info`
 | Which service is answering at this address.

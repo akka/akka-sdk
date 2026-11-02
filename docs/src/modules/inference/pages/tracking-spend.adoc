@@ -459,7 +459,7 @@ svc-triage   30500  2026-07-01T10:00:00Z  2026-09-15T22:00:00Z
 
 Each row is one system id that the service holds. `CALLS` is how many exchanges named it, and `FIRST CALL HOUR` and `LAST CALL HOUR` are the first and the last UTC hour in which one did. These are whole hours, not instants. A system id whose exchanges left the records before the service counted them in an hour has no calls and no hours, such as `svc-legacy` above. To list the last exchanges of a system id, run `akka optimize spend recent --system ID`. See <<recent>>.
 
-Nothing vouches for a system id: a client sends the value it chooses, unless your deployment overwrites the header at its own edge. The service keeps every system id that it sees, and nothing deletes one. Use the name of a system as the system id, never personal data.
+The service does not check a system id. A client sends the value that it chooses, unless your deployment overwrites the header at its own edge. The service keeps every system id that it sees, and nothing deletes one. Use the name of a system as the system id, never personal data.
 
 [#unpriced]
 === Find unpriced traffic

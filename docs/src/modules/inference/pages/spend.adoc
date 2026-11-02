@@ -35,7 +35,7 @@ The rate that applies to an exchange is the one that the catalog holds for its s
 * When the served name has a price at that instant, the service prices the exchange, or leaves it unpriced if a token class it used has no rate. Either way the exchange keeps that catalog version. A later version does not change it, also when the later version takes effect from an instant in the past.
 * When the served name has no price at that instant, the service stores the exchange unpriced, with no catalog version. Once a published version prices that served name at that instant, the service gives the exchange that version. The exchange is then priced, or remains unpriced if a token class it used has no rate in that version. The service starts this shortly after the publish, and a long range takes longer.
 
-The service keeps the record of each exchange for a record period of at least 90 days, and pricing after the fact reaches back that far. Hours older than the record period keep their figures and their unpriced counts. It follows that:
+The service keeps the record of each exchange for a record period of at least 90 days, and prices recorded traffic after the fact for that period. Hours older than the record period keep their figures and their unpriced counts. It follows that:
 
 * The spend of a period can rise after a publish, and its unpriced count fall, also when the period is complete.
 * Traffic recorded soon after a publish can still be priced at the previous rate.
@@ -104,7 +104,7 @@ Conversations are ranked by spend rather than divided, so the most expensive con
 * A period is whole UTC hours.
 * The catalog holds one currency.
 * A new price cannot take effect earlier than the latest price for the same served name. A later rate does not change an exchange that an earlier version priced or left unpriced, and an exchange older than the record period stays as it is. Publish a price for every served name before its traffic is served.
-* Nothing vouches for a system id: a client sends the value it chooses, unless your deployment overwrites the header at its own edge. The service keeps every system id that it sees, also past the record period, and nothing deletes one. Use the name of a system as the system id, never personal data.
+* The service does not check a system id. A client sends the value that it chooses, unless your deployment overwrites the header at its own edge. The service keeps every system id that it sees, also past the record period, and nothing deletes one. Use the name of a system as the system id, never personal data.
 
 == Next steps
 
