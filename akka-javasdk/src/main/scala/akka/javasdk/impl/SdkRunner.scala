@@ -173,6 +173,7 @@ import akka.runtime.sdk.spi.SpiEvaluator
 import akka.runtime.sdk.spi.SpiEventSourcedEntity
 import akka.runtime.sdk.spi.SpiEventingSupportSettings
 import akka.runtime.sdk.spi.SpiGuardrailSetup
+import akka.runtime.sdk.spi.SpiLedgerRecordSettings
 import akka.runtime.sdk.spi.SpiMockedEventingSettings
 import akka.runtime.sdk.spi.SpiSanitizerClient
 import akka.runtime.sdk.spi.SpiSanitizerEngine
@@ -262,6 +263,14 @@ object SdkRunner {
 
     val spiDeployedEventingSettings = extractDeployedEventingSettings(applicationConf)
 
+    val ledgerRecords = {
+      val records = applicationConf.getConfig("akka.javasdk.agent.ledger.records")
+      new SpiLedgerRecordSettings(
+        toolCallIntent = records.getBoolean("tool-call-intent"),
+        guardrailAllow = records.getBoolean("guardrail-allow"),
+        sanitizerNoMasking = records.getBoolean("sanitizer-no-masking"))
+    }
+
     new SpiSettings(
       eventSourcedEntitySnapshotEvery,
       cleanupDeletedEntityAfter,
@@ -270,7 +279,8 @@ object SdkRunner {
       ledgerEnabled,
       devModeSettings,
       Some(sanitizationSettings),
-      Some(spiDeployedEventingSettings))
+      Some(spiDeployedEventingSettings),
+      ledgerRecords)
   }
 
   private def extractDevObjectStorageBuckets(objectStorageConf: Config): Seq[SpiDevObjectStorageBucketConfig] = {

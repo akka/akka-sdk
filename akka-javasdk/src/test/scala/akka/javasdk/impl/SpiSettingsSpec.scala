@@ -34,6 +34,14 @@ class SpiSettingsSpec extends AnyWordSpec with Matchers with OptionValues {
     buckets.head.asInstanceOf[SpiDevObjectStorageS3BucketConfig]
   }
 
+  // (toolCallIntent, guardrailAllow, sanitizerNoMasking)
+  private def ledgerRecords(settings: String): (Boolean, Boolean, Boolean) = {
+    val records = SdkRunner
+      .extractSpiSettings(ConfigFactory.parseString(settings).withFallback(ConfigFactory.load()))
+      .ledgerRecords
+    (records.toolCallIntent, records.guardrailAllow, records.sanitizerNoMasking)
+  }
+
   "The SDK settings" should {
     "parse all valid google pub sub modes" in {
       val modes = Seq(
@@ -143,6 +151,37 @@ class SpiSettingsSpec extends AnyWordSpec with Matchers with OptionValues {
         .parseString("akka.javasdk.agent.ledger.enabled = false")
         .withFallback(ConfigFactory.load())
       SdkRunner.extractSpiSettings(config).ledgerEnabled shouldBe false
+    }
+
+    "keep every optional ledger record by default" in {
+      ledgerRecords("") shouldBe ((true, true, true))
+    }
+
+    "turn off only the tool call intent record" in {
+      ledgerRecords("akka.javasdk.agent.ledger.records.tool-call-intent = false") shouldBe ((false, true, true))
+    }
+
+    "turn off only the guardrail allow record" in {
+      ledgerRecords("akka.javasdk.agent.ledger.records.guardrail-allow = false") shouldBe ((true, false, true))
+    }
+
+    "turn off only the sanitizer no masking record" in {
+      ledgerRecords("akka.javasdk.agent.ledger.records.sanitizer-no-masking = false") shouldBe ((true, true, false))
+    }
+
+    "apply the optional ledger records in dev mode, where the ledger is always enabled" in {
+      val config = ConfigFactory
+        .parseString("""
+          akka.javasdk.dev-mode.enabled = true
+          akka.javasdk.agent.ledger.enabled = false
+          akka.javasdk.agent.ledger.records.guardrail-allow = false
+        """)
+        .withFallback(ConfigFactory.load())
+      val settings = SdkRunner.extractSpiSettings(config)
+      settings.ledgerEnabled shouldBe true
+      settings.ledgerRecords.guardrailAllow shouldBe false
+      settings.ledgerRecords.toolCallIntent shouldBe true
+      settings.ledgerRecords.sanitizerNoMasking shouldBe true
     }
   }
 
