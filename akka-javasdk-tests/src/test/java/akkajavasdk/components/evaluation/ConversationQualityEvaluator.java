@@ -25,7 +25,7 @@ public class ConversationQualityEvaluator extends Evaluator {
   @Override
   public Effect evaluate(EvaluationContext context) {
     var subject = (Subject.Interaction) context.subject();
-    // a real evaluator would fetch the transcript via the interaction log / ledger client
+    // a real evaluator would fetch the transcript via the ledger client
     String transcript =
         "interaction " + subject.interactionId() + " of agent " + subject.agentComponentId();
 
