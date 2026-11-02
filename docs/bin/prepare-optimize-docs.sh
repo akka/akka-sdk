@@ -6,6 +6,11 @@ docs_dir="${nexus_dir}/optimize-docs"
 
 make -C "${docs_dir}" examples bundles
 
+# The release notes in Optimize 0.10.1 show API paths with {id} style segments as attribute
+# references, and the warnings fail the build. Remove this after the next Optimize bump.
+perl -pi -e 's/`((?:POST|GET) [^`+]*\{(?:id|ns|name|vN|analysisId)\}[^`]*)`/`+$1+`/g' \
+  "${docs_dir}"/src/modules/optimize/pages/release-notes/*.adoc
+
 # The SDK component descriptor registers the navigation for both repositories.
 source_descriptor="${docs_dir}/src/antora.yml"
 managed_descriptor="${docs_dir}/src-managed/antora.yml"
