@@ -324,18 +324,18 @@ A route holds how the gateway router reached the destination of an exchange: the
 
 [source,shell]
 ----
-akka optimize spend get --from 2026-09-15T00:00:00Z --to 2026-09-16T00:00:00Z --by useCase,route
+akka optimize spend get --from 2026-09-12T00:00:00Z --to 2026-09-13T00:00:00Z --by useCase,route
 ----
 
 [source,text]
 ----
-USE-CASE         ROUTE                                 EXCHANGES  TOKENS  SPEND       UNPRICED  UNPRICED TOKENS
-support triage   rule optimize@7 summarise → frontier  2140       51200+  0.6400 USD  0         0
-—                none                                  310        7400+   0.0930 USD  0         0
-—                unknown                               120        2900+   0.0310 USD  0         0
-billing reports  manifest → finetune-billing           980        22100+  0.0210 USD  0         0
-support triage   rule optimize@8 summarise → finetune  610        14800+  0.0120 USD  0         0
-TOTAL                                                  4160       98400+  0.7970 USD  0         0
+USE-CASE         ROUTE                                 EXCHANGES  TOKENS  SPEND                   UNPRICED  UNPRICED TOKENS
+support triage   rule optimize@7 summarise → frontier  2140       51200+  0.6400000000000000 USD  0         0
+—                none                                  310        7400+   0.0930000000000000 USD  0         0
+—                unknown                               120        2900+   0.0310000000000000 USD  0         0
+billing reports  manifest → finetune-billing           980        22100+  0.0042300000000000 USD  0         0
+support triage   rule optimize@8 summarise → finetune  610        14800+  0.0028400000000000 USD  0         0
+TOTAL                                                  4160       98400+  0.7710700000000000 USD  0         0
 ----
 
 A route reads as its basis, then `ruleset@revision` and the rule where the route has them, then `→` and the destination where it has one. The basis is one of these:
@@ -384,8 +384,9 @@ akka optimize spend get --from 2026-09-15T16:00:00Z --to 2026-09-15T17:00:00Z --
 ----
 MODEL           TEAM      EXCHANGES  TOKENS  SPEND                   UNPRICED  UNPRICED TOKENS
 frontier-model  payments  41         948+    0.0154000000000000 USD  0         0
-frontier-model  support   19         441+    0.0071750000000000 USD  0         0
-frontier-model  —         9          186+    0.0030000000000000 USD  0         0
+frontier-model  search    19         441+    0.0071850000000000 USD  0         0
+frontier-model  unknown   6          120+    0.0019200000000000 USD  0         0
+frontier-model  —         3          66+     0.0010700000000000 USD  0         0
 finetune-model  payments  12         285+    0.0000615000000000 USD  0         0
 TOTAL                     81         1860+   0.0256365000000000 USD  0         0
 ----
@@ -406,13 +407,13 @@ akka optimize spend get --from 2026-09-15T00:00:00Z --to 2026-09-16T00:00:00Z --
 
 [source,text]
 ----
-SYSTEM ID     EXCHANGES  TOKENS   SPEND       UNPRICED  UNPRICED TOKENS
-svc-support   4210       98400+   1.2400 USD  0         0
-svc-search    2100       47600+   0.5900 USD  0         0
-svc-billing   980        22100+   0.2900 USD  0         0
-svc-triage    1200       23400+   0.2900 USD  0         0
-unidentified  120        2900+    0.0310 USD  0         0
-TOTAL         8610       194400+  2.4410 USD  0         0
+SYSTEM ID     EXCHANGES  TOKENS   SPEND                   UNPRICED  UNPRICED TOKENS
+svc-support   4210       98400+   1.2400000000000000 USD  0         0
+svc-search    2100       47600+   0.5900000000000000 USD  0         0
+svc-billing   980        22100+   0.2900000000000000 USD  0         0
+svc-triage    1200       23400+   0.2900000000000000 USD  0         0
+unidentified  120        2900+    0.0310000000000000 USD  0         0
+TOTAL         8610       194400+  2.4410000000000000 USD  0         0
 ----
 
 The answer has a row for every system id with traffic in the period. Nothing is ranked or folded, so the rows add up to the total. `system` combines with the other divisions, for example `--by system,model` for what each system spent on each model.
@@ -426,10 +427,10 @@ akka optimize spend get --from 2026-09-15T00:00:00Z --to 2026-09-16T00:00:00Z --
 
 [source,text]
 ----
-MODEL           EXCHANGES  TOKENS  SPEND       UNPRICED  UNPRICED TOKENS
-frontier-model  3890       91800+  1.2310 USD  0         0
-finetune-model  320        6600+   0.0090 USD  0         0
-TOTAL           4210       98400+  1.2400 USD  0         0
+MODEL           EXCHANGES  TOKENS  SPEND                   UNPRICED  UNPRICED TOKENS
+frontier-model  3890       91800+  1.2387000000000000 USD  0         0
+finetune-model  320        6600+   0.0013000000000000 USD  0         0
+TOTAL           4210       98400+  1.2400000000000000 USD  0         0
 ----
 
 List every system id that the service has seen:
@@ -443,11 +444,13 @@ akka optimize spend system-ids
 ----
 SYSTEM ID    CALLS  FIRST CALL HOUR       LAST CALL HOUR
 svc-billing  41200  2026-06-02T09:00:00Z  2026-09-15T23:00:00Z
+svc-legacy   0      —                     —
 svc-search   88100  2026-08-30T14:00:00Z  2026-09-16T00:00:00Z
 svc-support  96400  2026-05-11T08:00:00Z  2026-09-16T00:00:00Z
+svc-triage   30500  2026-07-01T10:00:00Z  2026-09-15T22:00:00Z
 ----
 
-Each row states how many exchanges named the system id, and the first and the last UTC hour in which one did. These are whole hours, not instants. To list the last exchanges of a system id, run `akka optimize spend recent --system ID`. See <<recent>>.
+Each row is one system id that the service holds. `CALLS` is how many exchanges named it, and `FIRST CALL HOUR` and `LAST CALL HOUR` are the first and the last UTC hour in which one did. These are whole hours, not instants. A system id whose exchanges left the records before the service counted them in an hour has no calls and no hours, such as `svc-legacy` above. To list the last exchanges of a system id, run `akka optimize spend recent --system ID`. See <<recent>>.
 
 Nothing vouches for a system id: a client sends the value it chooses, unless your deployment overwrites the header at its own edge. The service keeps every system id that it sees, and nothing deletes one. Use the name of a system as the system id, never personal data.
 
@@ -494,13 +497,13 @@ akka optimize spend series --from 2026-09-13T00:00:00Z --to 2026-09-15T00:00:00Z
 
 [source,text]
 ----
-BUCKET                COMPLETENESS  PERMANENCE  MODEL           EXCHANGES  TOKENS  SPEND        UNPRICED  UNPRICED TOKENS
-2026-09-13T00:00:00Z  complete      reported    frontier-model  1204       29800+  12.4010 USD  0         0
-2026-09-13T00:00:00Z  complete      reported    finetune-model  610        14200+  0.0453 USD   0         0
-2026-09-13T00:00:00Z  complete      reported    TOTAL           1814       44000+  12.4463 USD  0         0
-2026-09-14T00:00:00Z  complete      reported    frontier-model  1188       29350+  12.2260 USD  0         0
-2026-09-14T00:00:00Z  complete      reported    finetune-model  645        15020+  0.0479 USD   0         0
-2026-09-14T00:00:00Z  complete      reported    TOTAL           1833       44370+  12.2739 USD  0         0
+BUCKET                COMPLETENESS  PERMANENCE  MODEL           EXCHANGES  TOKENS  SPEND                   UNPRICED  UNPRICED TOKENS
+2026-09-13T00:00:00Z  complete      reported    frontier-model  1204       29800+  0.4050000000000000 USD  0         0
+2026-09-13T00:00:00Z  complete      reported    finetune-model  610        14200+  0.0026600000000000 USD  0         0
+2026-09-13T00:00:00Z  complete      reported    TOTAL           1814       44000+  0.4076600000000000 USD  0         0
+2026-09-14T00:00:00Z  complete      reported    frontier-model  1188       29350+  0.3977500000000000 USD  0         0
+2026-09-14T00:00:00Z  complete      reported    finetune-model  645        15020+  0.0028060000000000 USD  0         0
+2026-09-14T00:00:00Z  complete      reported    TOTAL           1833       44370+  0.4005560000000000 USD  0         0
 ----
 
 `--granularity` is `hour` or `day`, and has no default. A day series starts and ends at midnight UTC. For days in another time zone, ask for hours and add them up. `PERMANENCE` is `reported` when nothing more arrives for that hour or day, and `working` otherwise. A publish can still price the unpriced traffic of a reported hour or day. `--by` and `--system` work as they do for one period.
@@ -512,15 +515,15 @@ BUCKET                COMPLETENESS  PERMANENCE  MODEL           EXCHANGES  TOKEN
 
 [source,shell]
 ----
-akka optimize spend recent --since 2026-09-15T16:00:00Z --limit 3
+akka optimize spend recent --since 2026-09-16T00:00:00Z --limit 3
 ----
 
 [source,text]
 ----
 SERVED AT                 EXCHANGE                    SYSTEM ID     TAGS           MODEL           PROVIDER  OUTCOME   TOKENS  SPEND
-2026-09-15T16:04:12.481Z  01K5AZ3V9JQ8M4T2X7C1D6E0RB  svc-support   team=payments  frontier-model  example   answered  212+    0.0003672000000000 USD
-2026-09-15T16:04:09.032Z  01K5AZ3RZ4P1N8W3Y6B0F2H9QK  svc-billing   —              —               —         refused   0+      — (no-price)
-2026-09-15T16:03:58.770Z  01K5AZ3E8C5V2R7T0M4X9D1GJS  unidentified  team=search    frontier-model  example   answered  65+     0.0001384500000000 USD
+2026-09-16T00:04:12.481Z  01M2KREEJ184G7ZWYRD6Z1RV0W  svc-support   team=payments  frontier-model  example   answered  212+    0.0017000000000000 USD
+2026-09-16T00:04:09.032Z  01M2KREB68355QAKGD2AVSQWH2  svc-search    —              —               —         refused   0+      — (no-price)
+2026-09-16T00:03:58.770Z  01M2KRE15JF8QY40YGECYYS9E9  unidentified  team=search    frontier-model  example   answered  65+     0.0008250000000000 USD
 ----
 
 Each row is one exchange: when it was served, its exchange id, its system id, its tags, the model, the provider that the pricing catalog names for the model, its outcome, its tokens and its spend. `TAGS` holds every tag of the exchange, written `KEY=VALUE`, such as `team=payments`. `--limit` sets how many rows the command returns: 20 by default, and at most 100. `--system` lists the exchanges of one system id, and `--tag KEY:VALUE` lists the exchanges that carry that tag. With both flags, a row has to match both.
