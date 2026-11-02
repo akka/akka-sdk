@@ -254,6 +254,52 @@ All rulesets of an exchange share one classifier deadline. A tagging ruleset tha
 
 To read spend by tag, see xref:inference:tracking-spend.adoc#tags[Divide spend by a tag].
 
+=== Shifting traffic gradually
+
+A `canary` outcome sends a share of the conversations a rule matches to a candidate destination and the rest to a baseline destination. The candidate and the baseline are the two arms of the canary.
+
+Start a canary by writing a rule with a low `candidatePercent`. `trial.json` holds the rule:
+
+[source,json]
+----
+{
+  "priority": 200,
+  "match": { "attribute": "protocol", "equals": "openai.chat" },
+  "outcome": { "canary": { "baseline": "frontier", "candidate": "finetune", "candidatePercent": 1 } }
+}
+----
+
+[source, shell]
+----
+akka optimize rulesets rules apply commit-routing trial -f trial.json
+----
+
+`baseline` and `candidate` are destinations the ruleset declares, and not the same one. `candidatePercent` is from 0 to 100 with up to two decimals. See xref:reference:descriptors/routing-ruleset.adoc#canary[canary] for the fields.
+
+`candidatePercent` is a share of conversations, not of requests or of spend, so a long conversation weighs more than a short one. Every request of one xref:reference:descriptors/routing-ruleset.adoc#attribute-conversation[`conversation`] takes the same arm while the rule is unchanged. By default, an Akka agent names its conversation with the `x-akka-flow-id` header, as xref:sdk:model-provider-details.adoc#_identity_headers[Identity headers] describes. A caller that is not an Akka service can send the same header.
+
+Raise or lower the share by writing the rule again with a new `candidatePercent`. Raising it only moves conversations from the baseline to the candidate, and lowering it only moves them back. Each write is a new revision of the ruleset, and it takes effect on every instance once the listing of rulesets has caught up and the instance has read it.
+
+End the canary by writing the rule as `toDestination` to the candidate or the baseline, or by removing it:
+
+[source, shell]
+----
+akka optimize rulesets rules delete commit-routing trial
+----
+
+To keep a segment, such as one region, on the baseline, write a `toDestination` rule that is evaluated before the canary. See <<_setting_the_order_rules_are_evaluated_in,Setting the order rules are evaluated in>>.
+
+A canary rule reads `conversation`, so its ruleset waits for the request body. A body over 8 MiB, or one that does not parse, then stops that ruleset from deciding, so the rules evaluated before the canary and the ruleset default do not apply either.
+
+A dry run decides the arm from the `conversation` attribute of the request file, as live traffic does. Without one, each run of `akka optimize rulesets test` is a new draw. State the value under `attributes`:
+
+[source,json]
+----
+{ "attributes": { "protocol": "openai.chat", "conversation": "order-4471" } }
+----
+
+Every exchange records the ruleset, its revision, the rule and the arm. Pass `--by route` to `akka optimize spend get` to read the spend of each arm at each revision. See xref:inference:tracking-spend.adoc#_divide_the_period[Divide the period].
+
 [#request-meaning]
 == Routing on request meaning
 

@@ -81,6 +81,8 @@ To remove one rule:
 akka optimize rulesets rules delete RULESET RULE
 ----
 
+These two commands start, change, and end a canary, as xref:inference:routing.adoc#_shifting_traffic_gradually[Shifting traffic gradually] describes.
+
 === Testing a ruleset
 
 To see what a ruleset would decide for a sample request, with no traffic involved:
