@@ -24,9 +24,10 @@ public interface Experiment<V> {
 
   /**
    * How the reply of an attempt is compared with the expected reply of its case. Without a grader
-   * the two must be equal, which suits a mocked model or a typed reply. The result of the
-   * comparison is the {@link ExperimentRunner#EXPECTED} result of the attempt, next to the verdicts
-   * of the bound evaluators, and the gate and the report treat it like an evaluator verdict.
+   * the runner compares them with {@link Object#equals}, which suits a mocked model or a typed
+   * reply. The result of the comparison is the {@link ExperimentRunner#EXPECTED} result of the
+   * attempt, next to the verdicts of the bound evaluators, and the gate and the report treat it
+   * like an evaluator verdict.
    *
    * <p>The grader is not called when the agent call failed or returned no value. The {@link
    * ExperimentRunner#EXPECTED} result is then inconclusive.

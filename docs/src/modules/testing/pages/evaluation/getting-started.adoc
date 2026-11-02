@@ -205,14 +205,10 @@ A line that is not a case stops the read with an `IllegalArgumentException` that
 [#expected-reply]
 == Cases with an expected reply
 
-Some checks compare the reply with the known correct reply of the case: a text-to-SQL agent is graded by running the SQL of the case, a routing agent by the tool it chose, an extraction agent by the fields it returned.
-For these, a case carries an `expected` reply, and the runner compares the reply of every attempt with it.
-The comparison runs in the test, so the agent and the evaluators are not changed, and the expected reply is never sent to the agent.
-
-The expected reply has the type the command handler returns: a `String` for a handler that replies with the model text, or the type given to `responseConformsTo`.
-In a file it is a JSON string for a `String` reply, and a JSON object for any other type.
-Within one experiment, either every case has an expected reply or none has.
-The runner refuses a mix at `cases(...)`.
+When you know the correct reply of a case, give the case an `expected` reply.
+The runner compares the reply of every attempt with it and records the comparison as the `expected` result of the attempt.
+The test code decides how the two replies are compared.
+The agent and the evaluators do not change.
 
 [source,json]
 .{sample-base-url}/doc-snippets/src/test/resources/eval/graded-cases.jsonl[graded-cases.jsonl]
@@ -226,16 +222,11 @@ include::sdk:example$doc-snippets/src/test/resources/eval/graded-cases.jsonl[]
 include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentEvalIntegrationTest.java[tag=graded]
 ----
 <1> The reply type of the command handler. The reader decodes `expected` into it, and the compiler rejects an agent whose handler replies with another type. The reader without a reply type refuses a file with `expected`, so a file with expected replies is not run without comparing them.
-<2> The `Grader`. It receives the expected reply and the reply of the attempt and returns an `Evaluation`, with the explanation the report prints and optionally a score. Here the reply must name the status. A grader can run the SQL of the case against a database, or compare one field of a typed reply. A grader that throws fails the result with the exception as the detail.
+<2> The `Grader`. It receives the expected reply and the reply of the attempt and returns an `Evaluation`, with the explanation the report prints and optionally a score. A grader that throws fails the result with the exception as the detail.
 <3> The gate on the comparison, see xref:testing:evaluation/gates-and-reports.adoc#gates[Gates].
 <4> The comparison is the result named `expected` of the attempt, next to the verdicts of the bound evaluators.
 
-Without `grade(...)` the reply must equal the expected reply.
-That suits a mocked model, whose reply is fixed, and a typed reply, such as a record with the tool the agent chose.
-A real model does not word a `String` reply the same way twice, so compare such a reply with a grader.
-
-In Java, `EvalCase.of(id, command, expected)` writes a case with an expected reply.
-A case without one that is kept in a field is declared with `Object` as the reply type, `EvalCase<String, Object>`, so it runs against an agent with any reply type.
+Without `grade(...)` the runner compares the two replies with Java `equals` method.
 
 [#mocked]
 == Running the cases with a mocked model

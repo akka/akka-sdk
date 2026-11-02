@@ -14,7 +14,7 @@
  * <p>{@link akka.javasdk.testkit.eval.ExperimentRunner} calls the agent in a fresh session per
  * case, reads the interaction and the guardrail decisions from the ledger, and waits for the
  * evaluation every bound evaluator records about the interaction. When the cases carry an expected
- * reply, the runner compares the reply with it, by equality or with a {@link
+ * reply, the runner compares the reply with it, with {@code equals} or with a {@link
  * akka.javasdk.testkit.eval.Grader}, and records the comparison as one more result of the attempt.
  * Without a {@link akka.javasdk.testkit.eval.Gate} every case must pass, which suits a mocked
  * model. With a real model gate the batch on rates.
