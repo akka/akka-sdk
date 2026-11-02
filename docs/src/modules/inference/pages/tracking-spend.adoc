@@ -317,7 +317,7 @@ A `+` after a token count marks a lower bound: some exchanges did not report eve
 | Route that the gateway router took to the destination of the exchange.
 
 | `tag:KEY`
-| Value that the tagging ruleset `KEY` gave the exchange, and one row for traffic that got no value. See <<tags>>.
+| Value that the tagging ruleset `KEY` gave the exchange, and one row for traffic that the ruleset did not decide for. See <<tags>>.
 
 | A comma-separated list, such as `model,useCase` or `system,route`
 | Combination of the listed divisions, at most eight in one read.
@@ -396,7 +396,7 @@ finetune-model  payments  12         285+    0.0000615000000000 USD  0         0
 TOTAL                     81         1860+   0.0256365000000000 USD  0         0
 ----
 
-The row with no name holds the traffic that got no value for the key, so the rows still add up to the total. The gateway router sets the tag when it serves the exchange, so a ruleset that you change later does not move a figure.
+Traffic that no rule of the ruleset claims gets the default destination of the ruleset as its value, such as `unknown` above. The row with no name holds the traffic that the ruleset did not decide for: for example, traffic served before the ruleset was in force, traffic for which the ruleset failed, or a request that a ruleset ahead of it denied. The rows still add up to the total. The gateway router sets the tag when it serves the exchange, so a ruleset that you change later does not move a figure.
 
 [#systems]
 === Attribute spend to systems

@@ -5,7 +5,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-A routing ruleset is the JSON document applied by `akka optimize rulesets apply`. A ruleset either routes traffic to a destination or tags traffic with a value. See <<tagging-ruleset>>. It declares the closed set of destinations the ruleset may emit, the destination for unclaimed traffic, the headers the gateway reports its decision in, and the rules themselves. See xref:inference:routing.adoc#request-attributes[Routing on request attributes] for the tasks these documents support.
+A routing ruleset is the JSON document applied by `akka optimize rulesets apply`. It declares the closed set of destinations the ruleset may emit, the destination for unclaimed traffic, the headers the gateway reports its decision in, and the rules themselves. A ruleset can also tag traffic with a value instead of routing it, and then states no headers. See <<tagging-ruleset>>. See xref:inference:routing.adoc#request-attributes[Routing on request attributes] for the tasks these documents support.
 
 A ruleset is a logical grouping of named rules. The ruleset is the unit of enforcement, not the individual rule. The evidence log emitted by the gateway records which rules were evaluated and their results, and rules cannot be enforced on requests outside a ruleset.
 
@@ -178,10 +178,12 @@ A `byAttribute` outcome maps a value that the request already carries onto a des
 |A map from the values of the attribute to destination labels. Several values can map to one destination. Every destination must be declared by the ruleset.
 
 |*onUnmapped*
-|The destination when the request does not carry the attribute, or carries a value that `values` does not hold. Blank leaves the decision to the rules after this one, and then to the ruleset default destination.
+|The destination when the request does not carry the attribute, or carries a value that `values` does not hold. It must be a destination the ruleset declares. Omitted or blank leaves the decision to the rules after this one, and then to the ruleset default destination.
 |===
 
-The gateway router matches the keys of `values` trimmed and without regard to case.
+The outcome applies only when the `match` of its rule holds. In the example of <<tagging-ruleset>>, the match requires the header, so a request without it never reaches `onUnmapped`.
+
+The gateway router matches the keys of `values` trimmed and without regard to case. A write with two keys that are the same after trimming and case folding is refused with `ambiguous-label-mapping`.
 
 [#ruleset-document]
 == Ruleset documents
