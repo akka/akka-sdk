@@ -19,6 +19,7 @@ import akka.actor.testkit.typed.scaladsl.LogCapturing
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.javasdk.LogSanitizer
 import akka.javasdk.SanitizerContext
+import akka.javasdk.SanitizerException
 import akka.javasdk.TextSanitizer
 import akka.javasdk.agent.Classification
 import akka.javasdk.agent.ClassifierClient
@@ -26,6 +27,7 @@ import akka.runtime.sdk.spi.SpiDataSanitizer
 import akka.runtime.sdk.spi.SpiLogSanitizer
 import akka.runtime.sdk.spi.SpiSanitizer
 import akka.runtime.sdk.spi.SpiSanitizerClient
+import akka.runtime.sdk.spi.SpiSanitizerException
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import org.scalatest.matchers.should.Matchers
@@ -293,6 +295,11 @@ object SanitizerProviderSpec {
     runtimeClient.register(provider.spiSanitizers(_ => Set.empty), provider.spiLogSanitizers)
     (provider, runtimeClient)
   }
+
+  /** Test-only stand-in for the runtime client that answers every call with the given Future. */
+  final class FixedSpiSanitizerClient(answer: Future[String]) extends SpiSanitizerClient {
+    override def sanitize(name: String, text: String): Future[String] = answer
+  }
 }
 
 class SanitizerProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Matchers with LogCapturing {
@@ -300,6 +307,13 @@ class SanitizerProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
 
   private def await(stage: CompletionStage[String]): String =
     stage.toCompletableFuture.get(3, TimeUnit.SECONDS)
+
+  /** A provider on [[failingConfig]] whose runtime client answers every call with the given Future. */
+  private def providerAnswering(answer: Future[String]): SanitizerProvider =
+    new SanitizerProvider(system, failingConfig, new FixedSpiSanitizerClient(answer), wireSanitizer)
+
+  private def asyncFailure(provider: SanitizerProvider, name: String): Throwable =
+    intercept[java.util.concurrent.ExecutionException](await(provider.client.sanitizeAsync(name, "text"))).getCause
 
   "The SanitizerProvider" should {
 
@@ -415,6 +429,49 @@ class SanitizerProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLi
         provider.client.sanitizeAsync("does-not-exist", "x").toCompletableFuture.get(3, TimeUnit.SECONDS))
       failure.getCause shouldBe an[IllegalArgumentException]
       failure.getCause.getMessage should include("No sanitizer configured with name [does-not-exist]")
+    }
+
+    "fail with a SanitizerException when the runtime reports a failed sanitizer" in {
+      val cause = new IllegalStateException("kaboom")
+      val provider =
+        providerAnswering(Future.failed(new SpiSanitizerException("throwing", "Sanitizer [throwing] failed", cause)))
+
+      val async = asyncFailure(provider, "throwing")
+      async shouldBe a[SanitizerException]
+      async.asInstanceOf[SanitizerException].getSanitizerName shouldEqual "throwing"
+      async.getMessage shouldEqual "Sanitizer [throwing] failed"
+      (async.getCause should be).theSameInstanceAs(cause)
+
+      // the blocking variant throws the exception itself, not one that has it as its cause
+      val blocking = intercept[SanitizerException](provider.client.sanitize("throwing", "text"))
+      blocking.getSanitizerName shouldEqual "throwing"
+      blocking.getMessage shouldEqual "Sanitizer [throwing] failed"
+      (blocking.getCause should be).theSameInstanceAs(cause)
+    }
+
+    "fail with a SanitizerException without a cause when the runtime reports one without a cause" in {
+      val provider = providerAnswering(
+        Future.failed(new SpiSanitizerException("throwing", "Sanitizer [throwing] returned null", null)))
+
+      val async = asyncFailure(provider, "throwing")
+      async shouldBe a[SanitizerException]
+      async.asInstanceOf[SanitizerException].getSanitizerName shouldEqual "throwing"
+      async.getMessage shouldEqual "Sanitizer [throwing] returned null"
+      async.getCause shouldBe null
+
+      val blocking = intercept[SanitizerException](provider.client.sanitize("throwing", "text"))
+      blocking.getSanitizerName shouldEqual "throwing"
+      blocking.getMessage shouldEqual "Sanitizer [throwing] returned null"
+      blocking.getCause shouldBe null
+    }
+
+    "pass on any other failure of the runtime unchanged" in {
+      val failure = new IllegalStateException("runtime failure")
+      val provider = providerAnswering(Future.failed(failure))
+
+      (asyncFailure(provider, "throwing") should be).theSameInstanceAs(failure)
+      val blocking = intercept[IllegalStateException](provider.client.sanitize("throwing", "text"))
+      (blocking should be).theSameInstanceAs(failure)
     }
 
     "fail when the configured class implements neither sanitizer interface" in {

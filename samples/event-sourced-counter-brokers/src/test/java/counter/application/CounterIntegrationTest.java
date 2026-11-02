@@ -133,9 +133,9 @@ public class CounterIntegrationTest extends TestKitSupport { // <1>
 
     commandsTopic.publish(testKit.getMessageBuilder().of(increaseCmd, metadata)); // <4>
 
-    var increasedEvent = eventsTopicWithMeta.expectOneTyped(IncreaseCounter.class);
-    var actualMd = increasedEvent.getMetadata(); // <5>
-    assertEquals(counterId, actualMd.asCloudEvent().subject().get()); // <6>
+    var increasedEvent = eventsTopicWithMeta.expectOneTyped(IncreaseCounter.class, counterId); // <5>
+    var actualMd = increasedEvent.getMetadata(); // <6>
+    assertEquals(counterId, actualMd.asCloudEvent().subject().get()); // <7>
     assertEquals("application/json", actualMd.get("Content-Type").get());
   }
   // end::test-topic-metadata[]

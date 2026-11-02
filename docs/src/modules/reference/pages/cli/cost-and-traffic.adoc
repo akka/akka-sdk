@@ -1,5 +1,5 @@
 = Cost and traffic commands
-:page-summary: The akka optimize commands for spend, callers, incidents, pricing, and recorded captures.
+:page-summary: The akka optimize commands for spend, callers, pricing, and recorded captures.
 :page-persona: builder-ai-ml, operator
 :page-banner: inference
 
@@ -43,19 +43,6 @@ These commands cover what an organization spends on inference. Every command on 
 
 | `akka optimize callers erase VALUE --basis BASIS --dry-run`
 | Report what the erasure would reach without writing anything.
-|===
-
-== Incidents
-
-`akka optimize incidents` is the incident feed, unioned from its sources. The alias `incident` is accepted.
-
-[cols="2,3", options="header"]
-|===
-| Command
-| Description
-
-| `akka optimize incidents list`
-| The incident feed: anomalies, blocked requests and scrub failures.
 |===
 
 == Pricing catalog

@@ -86,6 +86,8 @@ class TimedActionImplSpec
       throw new IllegalStateException("boom")
     }
 
+    def myMethodReturningNull(): TimedAction.Effect = null
+
   }
 
   "The action service" should {
@@ -113,6 +115,27 @@ class TimedActionImplSpec
                   "MyMethodWithException",
                   Some(new BytesPayload(ByteString.empty, "")),
                   SpiMetadata.empty))
+              .futureValue
+              .asInstanceOf[SpiTimedAction.ErrorEffect]
+          }
+
+      reply.error.description should startWith("Unexpected error")
+    }
+
+    "turn a null Effect from the command handler into a failure response with a clear message" in {
+      val service = create(TimedActionDescriptorFactory.buildDescriptorFor(classOf[TestTimedAction], serializer))
+
+      val reply =
+        LoggingTestKit
+          .custom { event =>
+            event.message.startsWith("Failure during handling command [MyMethodReturningNull]") &&
+            event.throwable.exists(
+              _.getMessage.startsWith("TimedAction [dummy-id] command handler [MyMethodReturningNull] returned null"))
+          }
+          .expect {
+            service
+              .handleCommand(
+                new SpiTimedAction.Command("MyMethodReturningNull", Some(BytesPayload.empty), SpiMetadata.empty))
               .futureValue
               .asInstanceOf[SpiTimedAction.ErrorEffect]
           }

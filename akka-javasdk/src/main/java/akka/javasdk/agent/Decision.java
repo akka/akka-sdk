@@ -26,14 +26,16 @@ public sealed interface Decision {
   /**
    * The guardrail decided the call must not proceed.
    *
-   * @param reason human-readable explanation surfaced to the user as the failure message
+   * @param reason human-readable explanation. The runtime uses it as the failure message when
+   *     {@code report-only} is false.
    */
   record Deny(String reason) implements Decision {}
 
   /**
    * The guardrail could not reach a verdict because the check itself failed.
    *
-   * @param reason human-readable explanation surfaced to the user
+   * @param reason human-readable explanation. The runtime uses it as the failure message when
+   *     {@code report-only} is false and {@code fail-mode} is {@code fail-closed}.
    * @param cause the underlying throwable, or {@code null} if none
    */
   record Fail(String reason, Throwable cause) implements Decision {

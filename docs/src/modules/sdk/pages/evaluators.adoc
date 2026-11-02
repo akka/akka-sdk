@@ -2,10 +2,11 @@
 :page-component-type: evaluator
 :page-summary: A component the runtime triggers for the interactions of a bound agent, to assess them and record a verdict.
 :page-when-to-use: When you want agent interactions assessed automatically as they happen, for quality tracking, regression detection, or compliance, without adding evaluation calls to the agents themselves.
-:page-related: xref:sdk:agents/llm_eval.adoc[], xref:sdk:agents.adoc[], xref:concepts:controls.adoc#evals[], xref:concepts:evaluation.adoc[]
+:page-related: xref:sdk:evaluators/examples.adoc[], xref:sdk:agents.adoc[], xref:concepts:controls.adoc#evals[], xref:concepts:evaluation.adoc[]
 :page-prerequisites: An Akka project with at least one agent defined.
 :page-persona: developer, governance-compliance
 :page-banner: evaluations
+:page-aliases: sdk:agents/llm_eval.adoc
 
 include::ROOT:partial$include.adoc[]
 
@@ -17,7 +18,7 @@ Each invocation receives one interaction to evaluate.
 The evaluator returns a verdict, pass or fail, optionally with a score, a label, and attributes.
 The runtime records the verdict in the ledger and exposes it in metrics and traces. An evaluator implements the eval control type; see xref:concepts:controls.adoc#evals[Controls] and xref:concepts:evaluation.adoc[].
 
-Without an Evaluator, you evaluate interactions yourself. For an autonomous agent, you write a Consumer that listens for task completions and calls a judge agent, as shown in xref:sdk:agents/llm_eval.adoc[LLM evaluation]. A request-based agent has no such event source, so you call the judge from the code that called the agent.
+Without an Evaluator, you evaluate interactions yourself. For an autonomous agent, you write a Consumer that listens for task completions and calls a judge agent. A request-based agent has no such event source, so you call the judge from the code that called the agent.
 In both cases the code is specific to one agent, and you repeat it for every agent you want evaluated.
 An Evaluator replaces that wiring with configuration.
 You implement the evaluation once and bind it to agents or agent roles in `application.conf`. The runtime then triggers it for the interactions of those agents.
@@ -29,7 +30,7 @@ Two kinds of evaluator exist:
 
 Both kinds are bound to agents the same way and record the same kind of result.
 
-NOTE: An Evaluator runs after the interaction has completed, in the background. It does not delay the agent's response, and its verdict cannot change what the agent does next. If the agent or workflow must react to the verdict, for example retry a step that failed the evaluation, call the judge agent directly from the agent or workflow, as described in xref:sdk:agents/llm_eval.adoc[LLM evaluation].
+NOTE: An Evaluator runs after the interaction has completed, in the background. It does not delay the agent's response, and its verdict cannot change what the agent does next. If a workflow must react to the verdict, for example retry a step that failed the evaluation, call the judge agent from the workflow, as described in xref:_reacting_to_a_verdict_in_a_workflow[Reacting to a verdict in a workflow].
 
 == Implementing an evaluator
 
@@ -50,6 +51,12 @@ include::example$doc-snippets/src/main/java/com/example/evaluator/InteractionQua
 <7> An `Evaluation` can carry a score, a label, and arbitrary attributes for downstream analysis.
 
 The runtime creates a new evaluator instance for each evaluation, so the evaluator holds no state between interactions.
+
+The runtime runs a limited number of evaluations of `Evaluator` components at the same time, so slow `evaluate` calls of one evaluator delay the evaluations of the other evaluators.
+When `evaluate` does not return within 2 minutes, the runtime records a failed evaluation.
+For an evaluation that can take longer, use a xref:_durable_evaluators[durable evaluator].
+
+For evaluators that ask a judge agent for the verdict, see xref:sdk:evaluators/examples.adoc[].
 
 The link:{attachmentsdir}/api/akka/javasdk/evaluation/Subject.html[`Subject`] in the link:{attachmentsdir}/api/akka/javasdk/evaluation/EvaluationContext.html[`EvaluationContext`] also carries `agentComponentId()`, useful when one evaluator is bound to several agents, and `flowId()` when the agent ran inside an autonomous-agent flow.
 
@@ -159,7 +166,7 @@ A xref:_durable_evaluators[durable evaluator] reads `config()` from the running 
 
 Set `control-id` on the evaluator, not on a binding, to name the control that the evaluator implements. See xref:concepts:governance-and-the-runtime.adoc#control-ids[control ids]. The runtime records the control id on each evaluation that the evaluator runs, and link:{attachmentsdir}/api/akka/javasdk/ledger/EvaluationRecord.html[`EvaluationRecord.controlId()`] returns it.
 
-NOTE: Evaluators typically use an LLM, so each evaluation has a cost. In a high-volume deployment, use a deployment override to set a lower `sampling-ratio`, which evaluates a smaller share of the interactions, or to set `enabled = false`, which turns a binding off.
+NOTE: Evaluators typically call a model, so each evaluation has a cost. In a high-volume deployment, use a deployment override to set a lower `sampling-ratio`, which evaluates a smaller share of the interactions, or to set `enabled = false`, which turns a binding off.
 
 
 [#_durable_evaluators]
@@ -194,6 +201,31 @@ The `Effect` of `onEvaluation` and of every step is one of:
 
 There is no other way to finish. When a step exhausts its retries or the evaluation timeout expires, the runtime records a failed evaluation and removes the instance.
 An evaluation that has completed cannot transition further.
+
+[#_reacting_to_a_verdict_in_a_workflow]
+== Reacting to a verdict in a workflow
+
+When a workflow must react to a verdict, for example retry a step whose result fails a check, call a judge agent from the workflow step with the component client.
+Select the next step from the result of the judge.
+This step asks the `LabelJudge` agent from xref:sdk:evaluators/examples.adoc[] whether the summary that a previous step wrote is good:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/evaluator/ReviewedSummaryWorkflow.java[ReviewedSummaryWorkflow.java]
+----
+include::example$doc-snippets/src/main/java/com/example/evaluator/ReviewedSummaryWorkflow.java[tag=check]
+----
+<1> The judge runs in its own session, separate from the session of the summarizer agent.
+<2> The step sends the summary and the document with the prompt of `SummarizationJudgeEvaluator`.
+<3> A `good` label accepts the summary and ends the workflow.
+<4> Any other label passes the explanation of the judge to the summarize step, which asks the summarizer agent for a better summary.
+<5> After the last attempt, the workflow ends without an accepted summary.
+
+A model call can take longer than the default step timeout of a workflow, so set a longer step timeout, as described in xref:sdk:workflows.adoc#_timeouts[Timeouts].
+
+The runtime records this call as an interaction of the judge agent.
+It does not record an evaluation of the interaction that the judge assessed, so the verdict does not appear in the evaluation records or in the `akka.evaluation.result` metric.
+
+To stop a reply before it reaches the caller, use a xref:sdk:agents/guardrails.adoc[guardrail] instead.
 
 [#_the_ledger_client]
 == The ledger client
@@ -247,3 +279,9 @@ include::example$doc-snippets/src/test/java/com/example/evaluator/TranscriptJudg
 <2> The evaluation runs in the background, so poll `getLedgerClient().getEvaluations(interactionId)` until the record appears.
 <3> Check that the outcome is a verdict before reading the `Evaluation`. A failed or inconclusive evaluation has no `Evaluation`.
 
+== See also
+
+* xref:sdk:evaluators/examples.adoc[]
+* xref:concepts:evaluation.adoc[]
+* xref:testing:evaluation/index.adoc[] to evaluate an agent in tests
+* xref:sdk:agents/guardrails.adoc[]

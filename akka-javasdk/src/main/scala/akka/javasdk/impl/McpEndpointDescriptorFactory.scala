@@ -12,8 +12,10 @@ import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import java.util.Optional
 import java.util.concurrent.CompletionStage
+import java.util.concurrent.ConcurrentHashMap
 
 import scala.collection.immutable.VectorMap
+import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
@@ -117,7 +119,7 @@ object McpEndpointDescriptorFactory {
   }
 
   // Structured content must conform to the output schema, which lists Optional fields as not required but
-  // cannot express null, so empty and null fields are left out
+  // cannot express null, so empty and null fields are left out. A null in a required field gives a warning.
   private lazy val toolResultMapper =
     objectMapper.copy().setDefaultPropertyInclusion(JsonInclude.Include.NON_ABSENT)
 
@@ -128,6 +130,66 @@ object McpEndpointDescriptorFactory {
 
   // structured content must be a JSON object, so array results are wrapped in an object with this field
   private val ArrayResultField = "result"
+
+  // A check of structured content against an output schema, with only the parts where a value can be missing:
+  // required fields, and array elements that are null. Built once per tool.
+  private[impl] sealed trait ValueCheck
+  private final class ObjectCheck(val required: Array[String], val nested: Array[(String, ValueCheck)])
+      extends ValueCheck
+  private final class ArrayCheck(val items: Option[ValueCheck]) extends ValueCheck
+
+  // None when no value can be missing
+  private[impl] def valueCheckFor(schema: JsonSchemaDataType): Option[ValueCheck] = schema match {
+    case obj: JsonSchemaObject =>
+      val nested = obj.properties.toArray.flatMap { case (name, propertySchema) =>
+        valueCheckFor(propertySchema).map(name -> _)
+      }
+      if (obj.required.isEmpty && nested.isEmpty) None
+      else Some(new ObjectCheck(obj.required.toArray, nested))
+    case array: JsonSchemaArray => Some(new ArrayCheck(valueCheckFor(array.items)))
+    case _                      => None
+  }
+
+  // rendered only when a value is missing
+  private final class ValuePath(parent: ValuePath, segment: String) {
+    def child(name: String) = new ValuePath(this, name)
+    def element = new ValuePath(this, "[]")
+    override def toString: String =
+      if (parent == null) segment
+      else if (segment == "[]") s"$parent$segment"
+      else {
+        val parentPath = parent.toString
+        if (parentPath.isEmpty) segment else s"$parentPath.$segment"
+      }
+  }
+
+  // Paths of the values missing from the structured content, with `[]` for array elements. A field with a null
+  // value counts as missing. Values are Scala collections because the mapper has the Scala module.
+  private[impl] def missingValues(value: Any, check: ValueCheck, rootPath: String): Seq[String] = {
+    var missing: mutable.LinkedHashSet[String] = null
+    def add(path: ValuePath): Unit = {
+      if (missing == null) missing = mutable.LinkedHashSet.empty
+      missing += path.toString
+    }
+    def walk(value: Any, check: ValueCheck, path: ValuePath): Unit = (check, value) match {
+      case (obj: ObjectCheck, map: scala.collection.Map[_, _]) =>
+        val fields = map.asInstanceOf[scala.collection.Map[String, Any]]
+        obj.required.foreach(name => if (fields.getOrElse(name, null) == null) add(path.child(name)))
+        obj.nested.foreach { case (name, nestedCheck) =>
+          val nestedValue = fields.getOrElse(name, null)
+          if (nestedValue != null) walk(nestedValue, nestedCheck, path.child(name))
+        }
+      case (array: ArrayCheck, elements: scala.collection.Iterable[_]) =>
+        val elementPath = path.element
+        elements.foreach { element =>
+          if (element == null) add(elementPath)
+          else array.items.foreach(walk(element, _, elementPath))
+        }
+      case _ =>
+    }
+    walk(value, check, new ValuePath(null, rootPath))
+    if (missing == null) Nil else missing.toSeq
+  }
 
   private sealed trait ToolOutput {
     def outputSchema: Option[JsonSchemaObject] = None
@@ -209,6 +271,28 @@ object McpEndpointDescriptorFactory {
                 ex)
           }
 
+        val valueCheck = toolOutput match {
+          case ObjectToolOutput(schema) => valueCheckFor(schema)
+          case ArrayToolOutput(schema)  => valueCheckFor(schema.properties(ArrayResultField))
+          case _                        => None
+        }
+        val warnedPaths = ConcurrentHashMap.newKeySet[String]()
+        def warnOnMissingValues(structured: AnyRef, rootPath: String): Unit =
+          valueCheck.foreach { check =>
+            missingValues(structured, check, rootPath).filter(warnedPaths.add).foreach { valuePath =>
+              val advice =
+                if (valuePath.endsWith("[]")) "Keep null elements out of the list."
+                else "Use Optional for a field that can be empty."
+              logger.warn(
+                "Tool [{}] defined in [{}] returned structured content without a value for [{}]. The structured " +
+                "content does not match the output schema. {} This is logged once per tool and path.",
+                toolName,
+                methodLocation,
+                valuePath,
+                advice)
+            }
+          }
+
         // FIXME handle/allow audio and image content types, supported by protocol, but how do we fit it in SDK API?
         def toToolCallResult(returnValue: AnyRef): ToolCallResult =
           toolOutput match {
@@ -219,11 +303,13 @@ object McpEndpointDescriptorFactory {
             case StringToolOutput   => textResult(returnValue.asInstanceOf[String])
             case JsonTextToolOutput => textResult(serialized(toolResultMapper.writeValueAsString(returnValue)))
             case ObjectToolOutput(_) =>
-              structuredResult(
-                VectorMap.from(serialized(toolResultMapper.convertValue(returnValue, JavaMapTypeRef)).asScala))
+              val structured = serialized(toolResultMapper.convertValue(returnValue, JavaMapTypeRef))
+              warnOnMissingValues(structured.asScala, "")
+              structuredResult(VectorMap.from(structured.asScala))
             case ArrayToolOutput(_) =>
-              structuredResult(
-                VectorMap(ArrayResultField -> serialized(toolResultMapper.convertValue(returnValue, JavaListTypeRef))))
+              val structured = serialized(toolResultMapper.convertValue(returnValue, JavaListTypeRef))
+              warnOnMissingValues(structured.asScala, ArrayResultField)
+              structuredResult(VectorMap(ArrayResultField -> structured))
           }
 
         val callback: (McpEndpointConstructionContext, Map[String, Any]) => Future[ToolCallResult] =

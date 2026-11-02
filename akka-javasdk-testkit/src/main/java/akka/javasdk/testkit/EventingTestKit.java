@@ -11,6 +11,7 @@ import akka.javasdk.testkit.impl.TestKitMessageImpl;
 import com.google.protobuf.ByteString;
 import java.time.Duration;
 import java.util.List;
+import java.util.function.Predicate;
 
 public interface EventingTestKit {
 
@@ -149,6 +150,57 @@ public interface EventingTestKit {
      * @return message including ByteString payload and metadata
      */
     <T> Message<T> expectOneTyped(Class<T> instance, Duration timeout);
+
+    /**
+     * Waits for the next unread message with the given CloudEvent subject and parses it to the
+     * given type. Drops unread messages with a different or missing subject. The call throws a
+     * timeout exception if no matching message arrives within the default timeout.
+     *
+     * @param instance class type to cast the received message bytes to
+     * @param subject the CloudEvent subject (the {@code ce-subject} metadata) to match
+     * @param <T> a given domain type
+     * @return a Message of type T
+     */
+    <T> Message<T> expectOneTyped(Class<T> instance, String subject);
+
+    /**
+     * Waits for the next unread message with the given CloudEvent subject and parses it to the
+     * given type. Drops unread messages with a different or missing subject. The call throws a
+     * timeout exception if no matching message arrives within the timeout.
+     *
+     * @param instance class type to cast the received message bytes to
+     * @param subject the CloudEvent subject (the {@code ce-subject} metadata) to match
+     * @param timeout amount of time to wait for a matching message
+     * @param <T> a given domain type
+     * @return a Message of type T
+     */
+    <T> Message<T> expectOneTyped(Class<T> instance, String subject, Duration timeout);
+
+    /**
+     * Waits for the next unread message that parses to the given type and matches the predicate.
+     * Drops unread messages that do not parse or do not match. The call throws a timeout exception
+     * if no matching message arrives within the default timeout.
+     *
+     * @param instance class type to cast the received message bytes to
+     * @param matching the condition the parsed message must meet
+     * @param <T> a given domain type
+     * @return a Message of type T
+     */
+    <T> Message<T> expectOneTyped(Class<T> instance, Predicate<Message<T>> matching);
+
+    /**
+     * Waits for the next unread message that parses to the given type and matches the predicate.
+     * Drops unread messages that do not parse or do not match. The call throws a timeout exception
+     * if no matching message arrives within the timeout.
+     *
+     * @param instance class type to cast the received message bytes to
+     * @param matching the condition the parsed message must meet
+     * @param timeout amount of time to wait for a matching message
+     * @param <T> a given domain type
+     * @return a Message of type T
+     */
+    <T> Message<T> expectOneTyped(
+        Class<T> instance, Predicate<Message<T>> matching, Duration timeout);
 
     /**
      * Waits for a default amount of time before returning all unread messages. If no message is

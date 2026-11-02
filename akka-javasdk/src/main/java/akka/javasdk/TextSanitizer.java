@@ -35,7 +35,8 @@ public interface TextSanitizer {
    *
    * <p>A thrown exception or a {@code null} result fails the call the text was masked for, so
    * unmasked text is never passed on. For an agent, the function given to {@code onFailure}
-   * receives a {@link SanitizerException}.
+   * receives a {@link SanitizerException}. A call through {@link SanitizerClient} fails with a
+   * {@link SanitizerException}.
    *
    * @return the masked text
    */

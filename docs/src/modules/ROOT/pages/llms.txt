@@ -238,8 +238,8 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [CLI conventions](https://doc.akka.io/reference/cli/conventions.html.md): Flags, output formats, and behavior shared by the akka commands
 - [CLI command map](https://doc.akka.io/reference/cli/command-map.html.md): Which section describes the tasks for each akka command group
 - [Model commands](https://doc.akka.io/reference/cli/models.html.md): akka models — deployments, hardware, routes, keys, and governance
-- [Routing commands](https://doc.akka.io/reference/cli/routing.html.md): akka rulesets, routing-classifiers, use-cases, and routing-policies
-- [Cost and traffic commands](https://doc.akka.io/reference/cli/cost-and-traffic.html.md): akka optimize spend, callers, incidents, pricing-catalog, and captures
+- [Routing commands](https://doc.akka.io/reference/cli/routing.html.md): akka rulesets, routing-classifiers, and use-cases
+- [Cost and traffic commands](https://doc.akka.io/reference/cli/cost-and-traffic.html.md): akka optimize spend, callers, pricing-catalog, and captures
 - [Training and evaluation commands](https://doc.akka.io/reference/cli/training.html.md): akka optimize training, trained-models, datasets, and eval
 - [Model descriptor](https://doc.akka.io/reference/descriptors/model-descriptor.html.md): Every field of the YAML that declares accelerator allocations, models, and model endpoints
 - [Routing ruleset](https://doc.akka.io/reference/descriptors/routing-ruleset.html.md): Predicates, attributes, match blocks, and outcomes for attribute routing

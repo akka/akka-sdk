@@ -131,6 +131,10 @@ private[impl] final class TimedActionImpl[TA <: TimedAction](
           }
       case ErrorEffect(description) =>
         Future.successful(new SpiTimedAction.ErrorEffect(new SpiTimedAction.Error(description)))
+      case null =>
+        throw new IllegalStateException(
+          s"TimedAction [$componentId] command handler [${command.name}] returned null instead of an Effect. " +
+          "Return effects().done() or effects().error(...).")
       case unknown =>
         throw new IllegalArgumentException(s"Unknown TimedAction.Effect type ${unknown.getClass}")
     }

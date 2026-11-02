@@ -14,7 +14,7 @@ addSbtPlugin("com.thesamet" % "sbt-protoc" % "1.0.8")
 addSbtPlugin("com.thoughtworks.sbt-api-mappings" % "sbt-api-mappings" % "3.1.0")
 addDependencyTreePlugin
 
-addSbtPlugin("io.akka.sbt" % "sbt-artifact-bom" % "0.3.0")
+addSbtPlugin("io.akka.sbt" % "sbt-artifact-bom" % "0.4.0")
 
 // align guava version between sbt-akka-grpc and sbt-java-formatter
 libraryDependencies += "com.google.guava" % "guava" % "33.7.2-jre"

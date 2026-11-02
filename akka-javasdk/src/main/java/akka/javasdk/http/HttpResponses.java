@@ -8,7 +8,6 @@ import akka.NotUsed;
 import akka.http.javadsl.model.*;
 import akka.http.javadsl.model.headers.CacheControl;
 import akka.http.javadsl.model.headers.CacheDirectives;
-import akka.http.javadsl.model.headers.Connection;
 import akka.http.javadsl.model.sse.ServerSentEvent;
 import akka.japi.pf.Match;
 import akka.javasdk.JsonSupport;
@@ -19,7 +18,6 @@ import akka.stream.javadsl.Source;
 import akka.util.ByteString;
 import com.google.common.net.HttpHeaders;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Function;
@@ -374,9 +372,7 @@ public class HttpResponses {
 
     return HttpResponse.create()
         .withStatus(StatusCodes.OK)
-        .withHeaders(
-            Arrays.asList(
-                CacheControl.create(CacheDirectives.NO_CACHE), Connection.create("keep-alive")))
+        .addHeader(CacheControl.create(CacheDirectives.NO_CACHE))
         .withEntity(HttpEntities.create(TEXT_EVENT_STREAM, sseSource));
   }
 }

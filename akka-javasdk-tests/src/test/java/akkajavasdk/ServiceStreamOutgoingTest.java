@@ -92,4 +92,19 @@ public class ServiceStreamOutgoingTest extends TestKitSupport {
 
     outgoing.expectNone(ofSeconds(2));
   }
+
+  @Test
+  @Order(3)
+  public void shouldReadEventsBySubject() {
+    OutgoingMessages outgoing = outgoing();
+    String otherId = UUID.randomUUID().toString();
+    String id = UUID.randomUUID().toString();
+
+    add(otherId, 1);
+    add(id, 2);
+
+    var message = outgoing.expectOneTyped(PublicNumber.class, id, ofSeconds(20));
+    assertThat(message.getPayload()).isEqualTo(new PublicNumber(id, 2));
+    assertThat(message.getMetadata().get("ce-subject")).contains(id);
+  }
 }

@@ -11,6 +11,7 @@ import scala.jdk.CollectionConverters._
 import akka.annotation.InternalApi
 import akka.javasdk.impl.ControlId
 import akka.javasdk.impl.agent.ConfiguredGuardrail.UseFor
+import akka.runtime.sdk.spi.SpiGuardrail
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigObject
 
@@ -53,6 +54,20 @@ import com.typesafe.config.ConfigObject
     }
   }
 
+  private val failModesMap: Map[String, SpiGuardrail.FailMode] =
+    Map("fail-closed" -> SpiGuardrail.FailMode.FailClosed, "fail-open" -> SpiGuardrail.FailMode.FailOpen)
+
+  private def readFailMode(name: String, config: Config): SpiGuardrail.FailMode =
+    if (!config.hasPath("fail-mode")) SpiGuardrail.FailMode.FailClosed
+    else {
+      val value = config.getString("fail-mode")
+      failModesMap.getOrElse(
+        value.toLowerCase(Locale.ROOT),
+        throw new IllegalArgumentException(
+          s"Unknown fail-mode [$value] in guardrail configuration [$name]. " +
+          s"Use one of [${failModesMap.keys.mkString(", ")}]."))
+    }
+
   sealed abstract class UseFor(val configName: String)
   final object UseFor {
     final case object ModelRequest extends UseFor("model-request")
@@ -88,6 +103,7 @@ import com.typesafe.config.ConfigObject
       agentRoles = config.getOptionalStringSet("agent-roles"),
       category = config.getString("category"),
       reportOnly = config.getOptionalBoolean("report-only"),
+      failMode = readFailMode(name, config),
       useFor = useFor,
       // Optional tool-name filter for a ToolCallGuardrail; empty means "all tools on the agent".
       tools = config.getOptionalStringSet("tools"),
@@ -106,6 +122,7 @@ import com.typesafe.config.ConfigObject
     agentRoles: Set[String],
     category: String,
     reportOnly: Boolean,
+    failMode: SpiGuardrail.FailMode,
     useFor: Set[UseFor],
     tools: Set[String],
     config: Config,
