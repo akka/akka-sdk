@@ -256,9 +256,9 @@ object SdkRunner {
           ephemeralHttpPort = false)
       }
 
-    val agentInteractionLogEnabled =
+    val ledgerEnabled =
       devModeSettings.isDefined || // always enabled in dev mode
-      applicationConf.getBoolean("akka.javasdk.agent.interaction-log.enabled")
+      applicationConf.getBoolean("akka.javasdk.agent.ledger.enabled")
 
     val spiDeployedEventingSettings = extractDeployedEventingSettings(applicationConf)
 
@@ -267,7 +267,7 @@ object SdkRunner {
       cleanupDeletedEntityAfter,
       cleanupInterval,
       maxToolCallSteps,
-      agentInteractionLogEnabled,
+      ledgerEnabled,
       devModeSettings,
       Some(sanitizationSettings),
       Some(spiDeployedEventingSettings))
