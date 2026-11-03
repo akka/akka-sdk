@@ -66,6 +66,9 @@ A link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Gate.html[Gate] is a c
 | `Gate.guardrailShouldStop()`
 | Every attempt ended with an enforcing denial from any guardrail that stopped the interaction. A report-only denial does not count.
 
+| `Gate.guardrailShouldStop(name)`
+| Every attempt ended with an enforcing denial from the named guardrail that stopped the interaction. A report-only denial does not count.
+
 | `gate.and(other)`
 | Both gates hold. The verdict lists both details.
 |===

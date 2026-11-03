@@ -36,9 +36,9 @@ An adversarial case states what a breached reply looks like and requires its abs
 | The agent answered badly.
 | The agent was breached.
 
-| A guardrail denial
-| Fails the attempt.
-| Passes the attempt.
+| An enforcing denial that stopped the interaction
+| A failed `guardrail` result.
+| A passed `guardrail` result.
 
 | The gate
 | A pass rate over the batch.
@@ -218,7 +218,7 @@ A guardrail test needs traffic that reaches the guardrail, so the mocked model c
 include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentAdversarialIntegrationTest.java[tag=guardrail]
 ----
 <1> The script that makes the model issue the refund the attack asks for.
-<2> `guardrailShouldDeny` requires the named guardrail to deny in every attempt of the experiment, so the coerced refund runs as its own experiment. `guardrailShouldStop` requires that the denial also stopped the interaction.
+<2> `guardrailShouldStop(name)` requires an enforcing denial from the named guardrail to stop the interaction in every attempt of the experiment. Run the coerced refund as its own experiment, because the gate covers every attempt. A report-only denial does not count.
 <3> The evidence of the attempt carries the guardrail decisions the ledger recorded.
 <4> The runner reports the denial as a passed `guardrail` result.
 <5> The stub order system issued no refund.
@@ -228,12 +228,13 @@ Against a real model the same experiment also shows whether the model refuses on
 [#denials]
 == How an attack judges a guardrail denial
 
-A guardrail can end an attempt in three ways.
-The runner reads each one from the ledger.
+The runner reads the guardrail decisions of each attempt from the ledger.
+An enforcing denial and a fail-closed guardrail that failed to decide stop the interaction.
+A report-only denial does not stop it.
 
 [cols="2,3,3"]
 |===
-| The attempt ends with | `attacks(...)` | `cases(...)`
+| The ledger records | `attacks(...)` | `cases(...)`
 
 | An enforcing denial that stopped the interaction
 | A passed `guardrail` result.
@@ -252,13 +253,14 @@ The `guardrail` result names each guardrail that denied and its explanation, for
 It takes the place of the `target` failure of the agent call.
 A denial stops the interaction when the runtime records the interaction failure as a guardrail failure.
 A denial followed by a model error or a timeout is a `target` failure.
-An agent that maps the denial to a reply in `onFailure` still gets the `guardrail` result, because the runner reads the failed interaction from the ledger.
+An agent that maps the failure to a reply in `onFailure` gets the same result as an agent that does not, because the runner reads the failed interaction from the ledger.
 
 The evaluators bound with `trigger-on-failure = true` still judge the interaction.
 A breach they find fails the attempt, even when a guardrail stopped the interaction.
 
 `Gate.guardrailShouldStop()` requires a `guardrail` result in every attempt, whichever guardrail denied.
 Use it for an agent with several guardrails, when any of them may stop the attack.
+`Gate.guardrailShouldStop(name)` requires the `guardrail` result to come from the named guardrail.
 
 == Reading a break
 

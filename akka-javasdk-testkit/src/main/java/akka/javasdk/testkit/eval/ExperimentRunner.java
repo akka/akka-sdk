@@ -90,22 +90,29 @@ public final class ExperimentRunner {
   public static final Duration DEFAULT_EVALUATION_TIMEOUT = Duration.ofSeconds(10);
 
   /**
-   * The evaluator name of the result the runner reports when the agent call failed: the call threw
-   * instead of replying.
+   * The evaluator name of the failed result the runner reports when the agent call failed, unless
+   * an enforcing denial stopped the interaction. A fail-closed guardrail that failed to decide
+   * gives this result also when the agent mapped the failure to a reply in {@code onFailure}.
    */
   public static final String TARGET = "target";
 
   /**
-   * The evaluator name of the result the runner reports when a guardrail denial stopped the
+   * The evaluator name of the result the runner reports for an enforcing denial that stopped the
    * interaction. It passes in an attack and fails in an evaluation.
    */
   public static final String GUARDRAIL = "guardrail";
 
   /** What the experiment's cases are. */
   public enum Kind {
-    /** Cases the agent must answer. A guardrail denial fails the attempt. */
+    /**
+     * Cases the agent must answer. An enforcing denial that stopped the interaction gives a failed
+     * {@link #GUARDRAIL} result.
+     */
     EVALUATION,
-    /** Cases the agent must resist. A guardrail denial passes the attempt. */
+    /**
+     * Cases the agent must resist. An enforcing denial that stopped the interaction gives a passed
+     * {@link #GUARDRAIL} result.
+     */
     ATTACK
   }
 
@@ -442,8 +449,13 @@ public final class ExperimentRunner {
       return new CaseResult(evalCase.id(), run, evidence, List.copyOf(results));
     }
 
-    // A denial that stopped the interaction takes the place of the target failure.
+    // A guardrail error that stopped the interaction is a target failure, also when the agent
+    // mapped it to a reply. A denial that stopped the interaction takes the place of the target
+    // failure.
     private Optional<EvalResult> runnerResult(Evidence evidence, Optional<String> failure) {
+      if (evidence.stoppedByGuardrailError())
+        return failure.or(evidence::failure).map(reason -> EvalResult.fail(TARGET, reason));
+
       var denials = evidence.stoppingDenials();
       if (denials.isEmpty()) return failure.map(reason -> EvalResult.fail(TARGET, reason));
 
@@ -548,8 +560,8 @@ public final class ExperimentRunner {
    * @param run the run the attempt belongs to, from 1; always 1 without {@link Experiment#repeat}
    * @param evidence what the attempt left in the ledger
    * @param evalResults one per expected evaluator, in evaluator order, after the {@link #GUARDRAIL}
-   *     result when a guardrail denial stopped the interaction, or else after the {@link #TARGET}
-   *     result when the agent call failed
+   *     result for an enforcing denial that stopped the interaction, or else after the {@link
+   *     #TARGET} result when the runner reports one
    */
   public record CaseResult(
       String caseId, int run, Evidence evidence, List<EvalResult> evalResults) {
@@ -568,7 +580,8 @@ public final class ExperimentRunner {
      * FAIL when a result failed. Otherwise INCONCLUSIVE when a result is inconclusive, or when no
      * result passed: every result is not applicable, or there is no result. Otherwise PASS: at
      * least one result passed and the others are not applicable. A failed agent call is a failed
-     * result.
+     * {@link #TARGET} result, unless an enforcing denial stopped the interaction, see {@link
+     * #GUARDRAIL}.
      */
     public EvalResult.Verdict verdict() {
       var verdicts = evalResults.stream().map(EvalResult::verdict).collect(Collectors.toSet());

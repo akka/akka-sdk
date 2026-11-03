@@ -9,7 +9,7 @@
     "format": { "const": "akka-eval-report" },
     "formatVersion": { "const": 4 },
     "name": { "type": "string", "description": "The name given with Experiment.name, or the test method that ran the experiment, for example SupportAgentEvalTest.qualityGate. The same name over several runs." },
-    "kind": { "enum": ["EVALUATION", "ATTACK"], "description": "EVALUATION for an experiment built with ExperimentRunner.cases, ATTACK for one built with ExperimentRunner.attacks. A guardrail denial that stops the interaction fails an attempt of an evaluation. It passes an attempt of an attack." },
+    "kind": { "enum": ["EVALUATION", "ATTACK"], "description": "EVALUATION for an experiment built with ExperimentRunner.cases, ATTACK for one built with ExperimentRunner.attacks. An enforcing denial that stopped the interaction gives a failed guardrail result in an evaluation and a passed guardrail result in an attack." },
     "startedAt": { "type": "string", "format": "date-time", "description": "When the run started, UTC." },
     "finishedAt": { "type": "string", "format": "date-time", "description": "When the run finished, after the last attempt was evaluated, UTC." },
     "runs": { "type": "integer", "minimum": 1, "description": "How many times every case ran. 1 unless the experiment set Experiment.repeat." },
@@ -76,7 +76,7 @@
       "type": "object",
       "required": ["evaluator", "passed", "failed", "inconclusive", "notApplicable"],
       "properties": {
-        "evaluator": { "type": "string", "description": "The evaluator component id. The runner reports target when the agent call failed, and guardrail when a guardrail denial stopped the interaction." },
+        "evaluator": { "type": "string", "description": "The evaluator component id. The runner reports guardrail for an enforcing denial that stopped the interaction, and target when the agent call failed for any other reason or a fail-closed guardrail failed to decide." },
         "passed": { "type": "integer", "minimum": 0 },
         "failed": { "type": "integer", "minimum": 0 },
         "inconclusive": { "type": "integer", "minimum": 0 },

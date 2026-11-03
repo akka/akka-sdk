@@ -134,7 +134,10 @@ public final class Gate {
     return component.id();
   }
 
-  /** No agent call may fail. */
+  /**
+   * No attempt may have a failed {@link ExperimentRunner#TARGET} result. The gate ignores the
+   * {@link ExperimentRunner#GUARDRAIL} result of an enforcing denial that stopped the interaction.
+   */
   public static Gate targetShouldNotFail() {
     return new Gate(
         (results, runs) -> {
@@ -205,6 +208,29 @@ public final class Gate {
           return notStopped.isEmpty()
               ? Verdict.pass("a guardrail stopped every attempt")
               : Verdict.fail("no guardrail stopped " + notStopped);
+        });
+  }
+
+  /**
+   * Passes when an enforcing denial from the named guardrail stopped the interaction in every
+   * attempt. Report-only denials do not count.
+   *
+   * @param name the configured name of the guardrail
+   */
+  public static Gate guardrailShouldStop(String name) {
+    requireGuardrailName(name);
+    return new Gate(
+        (results, runs) -> {
+          var notStopped =
+              failedCases(
+                  results,
+                  runs,
+                  result ->
+                      result.evidence().stoppingDenials().stream()
+                          .noneMatch(denial -> denial.name().equals(name)));
+          return notStopped.isEmpty()
+              ? Verdict.pass("guardrail " + name + " stopped every attempt")
+              : Verdict.fail("guardrail " + name + " did not stop " + notStopped);
         });
   }
 

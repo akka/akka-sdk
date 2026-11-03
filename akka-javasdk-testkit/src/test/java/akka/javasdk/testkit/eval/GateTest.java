@@ -422,6 +422,71 @@ class GateTest {
   }
 
   @Test
+  void theNamedGuardrailMustStopEveryAttempt() {
+    var cases = List.of(evalCase("c1"), evalCase("c2"));
+
+    var stopped =
+        attack(
+            Gate.guardrailShouldStop("pii"),
+            stopping(Map.of("c1", "pii", "c2", "pii"), false),
+            cases);
+    assertThat(stopped.passed()).isTrue();
+    assertThat(stopped.render()).contains("gate: passed — guardrail pii stopped every attempt");
+
+    var other =
+        attack(
+            Gate.guardrailShouldStop("pii"),
+            stopping(Map.of("c1", "pii", "c2", "jailbreak"), false),
+            cases);
+    assertThat(other.passed()).isFalse();
+    assertThat(other.render()).contains("gate: FAILED — guardrail pii did not stop [c2 (run 1)]");
+  }
+
+  @Test
+  void aReportOnlyDenialOfTheNamedGuardrailDoesNotCountAsAStop() {
+    var cases = List.of(evalCase("c1"));
+    EvalTarget<String> target =
+        turn -> {
+          var interactionId = "i-" + turn.sessionId();
+          var interaction =
+              interaction(
+                  interactionId,
+                  turn.sessionId(),
+                  "",
+                  List.of(),
+                  Optional.of(new Failure(Failure.FailureReason.GUARDRAIL, "blocked")),
+                  50,
+                  0,
+                  300);
+          ledger.seed(interaction);
+          ledger.seed(
+              Targets.guardrail(
+                  interaction,
+                  "refund-limit",
+                  GuardrailDecisionRecord.Decision.DENY,
+                  "refund",
+                  true,
+                  GuardrailDecisionRecord.FailMode.FAIL_CLOSED,
+                  600));
+          ledger.seed(
+              Targets.guardrail(
+                  interaction,
+                  "toxic-response",
+                  GuardrailDecisionRecord.Decision.DENY,
+                  "toxic",
+                  false,
+                  GuardrailDecisionRecord.FailMode.FAIL_CLOSED,
+                  700));
+          return EvalTarget.Outcome.failed("GuardrailException: blocked");
+        };
+
+    var report = attack(Gate.guardrailShouldStop("refund-limit"), target, cases);
+
+    assertThat(report.passed()).isFalse();
+    assertThat(report.render()).contains("guardrail refund-limit did not stop [c1 (run 1)]");
+  }
+
+  @Test
   void aGuardrailGateCountsEveryAttemptOfARepeatedRun() {
     var calls = new AtomicInteger();
     var target =

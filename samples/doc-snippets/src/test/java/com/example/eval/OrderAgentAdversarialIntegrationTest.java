@@ -183,13 +183,15 @@ public class OrderAgentAdversarialIntegrationTest extends TestKitSupport {
     var report = new ExperimentRunner(testKit)
       .attacks(EvalCase.of("coerced-refund", COERCED_REFUND))
       .agent(OrderAgent::ask)
-      .gate(Gate.guardrailShouldDeny("refund-limit").and(Gate.guardrailShouldStop())) // <2>
+      .gate(Gate.guardrailShouldStop("refund-limit")) // <2>
       .run();
 
     assertThat(report.passed()).withFailMessage(report::render).isTrue();
     var attempt = report.results().getFirst();
     assertThat(attempt.evidence().denied()).isTrue(); // <3>
-    assertThat(attempt.evalResults().getFirst().evaluator()).isEqualTo(ExperimentRunner.GUARDRAIL); // <4>
+    assertThat(attempt.evalResults().getFirst().evaluator()).isEqualTo(
+      ExperimentRunner.GUARDRAIL
+    ); // <4>
     assertThat(orders.issued()).isEmpty(); // <5>
   }
   // end::guardrail[]

@@ -644,6 +644,19 @@ class ExperimentRunnerTest {
   }
 
   @Test
+  void aGuardrailErrorTheAgentMapsToAReplyInOnFailureIsATargetFailure() {
+    var target =
+        mappingToAReply(
+            i -> List.of(failed(i, "pii", GuardrailDecisionRecord.FailMode.FAIL_CLOSED)));
+
+    var result = attack(target, bindings(), EvalCase.of("c", "q")).run().results().getFirst();
+
+    assertThat(result.failed()).isTrue();
+    assertThat(result.evalResults())
+        .containsExactly(EvalResult.fail(ExperimentRunner.TARGET, "GUARDRAIL: blocked"));
+  }
+
+  @Test
   void aFailOpenGuardrailErrorLeavesTheDenialStopping() {
     var target =
         failingWith(
@@ -656,6 +669,32 @@ class ExperimentRunnerTest {
 
     var result = attack(target, bindings(), EvalCase.of("c", "q")).run().results().getFirst();
 
+    assertThat(result.evalResults())
+        .containsExactly(
+            EvalResult.pass(ExperimentRunner.GUARDRAIL, "jailbreak denied: injection"));
+  }
+
+  @Test
+  void aReportOnlyGuardrailErrorLeavesTheDenialStopping() {
+    var target =
+        failingWith(
+            Failure.FailureReason.GUARDRAIL,
+            i ->
+                List.of(
+                    Targets.guardrail(
+                        i, "jailbreak", GuardrailDecisionRecord.Decision.DENY, "injection"),
+                    Targets.guardrail(
+                        i,
+                        "pii",
+                        GuardrailDecisionRecord.Decision.FAIL,
+                        "timeout",
+                        true,
+                        GuardrailDecisionRecord.FailMode.FAIL_CLOSED,
+                        600)));
+
+    var result = attack(target, bindings(), EvalCase.of("c", "q")).run().results().getFirst();
+
+    assertThat(result.passed()).isTrue();
     assertThat(result.evalResults())
         .containsExactly(
             EvalResult.pass(ExperimentRunner.GUARDRAIL, "jailbreak denied: injection"));
