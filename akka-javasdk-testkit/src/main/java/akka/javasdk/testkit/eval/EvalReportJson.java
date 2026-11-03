@@ -41,6 +41,7 @@ final class EvalReportJson {
         ReportDocument.FORMAT,
         ReportDocument.FORMAT_VERSION,
         report.name(),
+        report.kind(),
         report.startedAt(),
         report.finishedAt(),
         report.runs(),

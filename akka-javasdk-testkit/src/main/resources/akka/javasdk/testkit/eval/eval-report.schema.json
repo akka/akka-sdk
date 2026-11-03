@@ -4,11 +4,12 @@
   "title": "Akka eval report",
   "description": "The outcome of one ExperimentRunner run: the gate verdict, the rates per evaluator, the spend, every case with its outcome over all runs, and every attempt with its evidence and results. An attempt is one case in one run; without repeated runs every case has one attempt. A reader ignores properties it does not know. formatVersion increments when a property changes meaning or is removed.",
   "type": "object",
-  "required": ["format", "formatVersion", "name", "startedAt", "finishedAt", "runs", "gate", "summary", "evaluators", "guardrails", "spend", "cases", "attempts"],
+  "required": ["format", "formatVersion", "name", "kind", "startedAt", "finishedAt", "runs", "gate", "summary", "evaluators", "guardrails", "spend", "cases", "attempts"],
   "properties": {
     "format": { "const": "akka-eval-report" },
     "formatVersion": { "const": 4 },
     "name": { "type": "string", "description": "The name given with Experiment.name, or the test method that ran the experiment, for example SupportAgentEvalTest.qualityGate. The same name over several runs." },
+    "kind": { "enum": ["EVALUATION", "ATTACK"], "description": "EVALUATION for an experiment built with ExperimentRunner.cases, ATTACK for one built with ExperimentRunner.attacks. A guardrail denial that stops the interaction fails an attempt of an evaluation. It passes an attempt of an attack." },
     "startedAt": { "type": "string", "format": "date-time", "description": "When the run started, UTC." },
     "finishedAt": { "type": "string", "format": "date-time", "description": "When the run finished, after the last attempt was evaluated, UTC." },
     "runs": { "type": "integer", "minimum": 1, "description": "How many times every case ran. 1 unless the experiment set Experiment.repeat." },
@@ -75,7 +76,7 @@
       "type": "object",
       "required": ["evaluator", "passed", "failed", "inconclusive", "notApplicable"],
       "properties": {
-        "evaluator": { "type": "string", "description": "The evaluator component id. target is reported by the runner when the agent call failed." },
+        "evaluator": { "type": "string", "description": "The evaluator component id. The runner reports target when the agent call failed, and guardrail when a guardrail denial stopped the interaction." },
         "passed": { "type": "integer", "minimum": 0 },
         "failed": { "type": "integer", "minimum": 0 },
         "inconclusive": { "type": "integer", "minimum": 0 },
@@ -101,14 +102,14 @@
         "passedRuns": { "type": "integer", "minimum": 0, "description": "Runs with the verdict PASS." },
         "failedRuns": { "type": "integer", "minimum": 0, "description": "Runs with the verdict FAIL." },
         "inconclusiveRuns": { "type": "integer", "minimum": 0, "description": "Runs with the verdict INCONCLUSIVE." },
-        "verdicts": { "type": "array", "description": "The verdicts of each evaluator of the case, in the order the results first appear in its attempts. The runner's target result counts as an evaluator.", "items": { "$ref": "#/$defs/evaluatorVerdicts" } }
+        "verdicts": { "type": "array", "description": "The verdicts of each evaluator of the case, in the order the results first appear in its attempts. The runner's target and guardrail results count as evaluators.", "items": { "$ref": "#/$defs/evaluatorVerdicts" } }
       }
     },
     "evaluatorVerdicts": {
       "type": "object",
       "required": ["evaluator", "outcome", "passedIn", "failedIn", "inconclusiveIn", "notApplicableIn"],
       "properties": {
-        "evaluator": { "type": "string", "description": "The evaluator component id, or target." },
+        "evaluator": { "type": "string", "description": "The evaluator component id, target or guardrail." },
         "outcome": { "enum": ["PASSED", "FAILED", "INCONSISTENT", "INCONCLUSIVE"], "description": "Over the runs where the evaluator reached a verdict. INCONSISTENT when it passed in some runs and failed in others, INCONCLUSIVE when it was conclusive in no run." },
         "passedIn": { "type": "array", "items": { "type": "integer", "minimum": 1 }, "description": "The runs with the verdict PASS, ascending." },
         "failedIn": { "type": "array", "items": { "type": "integer", "minimum": 1 }, "description": "The runs with the verdict FAIL, ascending." },
@@ -193,7 +194,7 @@
       "type": "object",
       "required": ["evaluator", "verdict", "detail"],
       "properties": {
-        "evaluator": { "type": "string", "description": "The evaluator component id, or target." },
+        "evaluator": { "type": "string", "description": "The evaluator component id, target or guardrail." },
         "verdict": { "enum": ["PASS", "FAIL", "INCONCLUSIVE", "NOT_APPLICABLE"] },
         "detail": { "type": "string", "description": "The explanation and the score, or why there is no verdict. Empty when the evaluator gave none." }
       }

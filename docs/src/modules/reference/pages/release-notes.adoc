@@ -12,6 +12,12 @@ Current versions
 
 == November 2026
 
+// FIXME: name the SDK version, link its release tag and add its runtime version when it is released.
+* Akka SDK, next release
+- Run attack experiments with `ExperimentRunner.attacks(...)`. A guardrail denial that stops the interaction passes the attempt with a `guardrail` result. In `cases(...)` the same denial fails the attempt. See xref:testing:evaluation/adversarial.adoc#denials[How an attack judges a guardrail denial].
+- `Gate.guardrailShouldStop()` requires a guardrail denial to stop every attempt.
+- The evaluation report states the experiment kind.
+
 * [[cli-3-0-81]]Akka CLI 3.0.81
 - **Breaking change**: Organization membership is now controlled by `akka organization role-bindings` (it used to be `akka organization users`).
 - Management of custom roles

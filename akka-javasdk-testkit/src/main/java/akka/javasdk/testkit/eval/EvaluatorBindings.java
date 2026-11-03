@@ -79,17 +79,17 @@ record EvaluatorBindings(String agentComponentId, List<Binding> bindings) {
     }
   }
 
-  // The runner's own result is named after the target, so an evaluator with that id would merge
-  // with it in the report.
-  void requireNoTargetName() {
-    if (bindings.stream().anyMatch(binding -> binding.evaluator().equals(ExperimentRunner.TARGET)))
-      throw new IllegalArgumentException(
-          "An evaluator bound to agent ["
-              + agentComponentId
-              + "] has the component id ["
-              + ExperimentRunner.TARGET
-              + "], which the runner uses for its own result on a failed agent call. Give the"
-              + " evaluator another id.");
+  // Refuses an evaluator id the runner uses for its own results.
+  void requireNoRunnerName() {
+    for (var name : List.of(ExperimentRunner.TARGET, ExperimentRunner.GUARDRAIL)) {
+      if (bindings.stream().anyMatch(binding -> binding.evaluator().equals(name)))
+        throw new IllegalArgumentException(
+            "An evaluator bound to agent ["
+                + agentComponentId
+                + "] has the component id ["
+                + name
+                + "], which the runner uses for its own result. Give the evaluator another id.");
+    }
   }
 
   // A binding to an evaluator id without a component never records an evaluation, so every attempt

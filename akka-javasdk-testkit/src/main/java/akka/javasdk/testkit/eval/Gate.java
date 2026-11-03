@@ -188,6 +188,26 @@ public final class Gate {
         });
   }
 
+  /**
+   * Passes when an enforcing denial from any guardrail stopped the interaction in every attempt.
+   * Report-only denials do not count.
+   */
+  public static Gate guardrailShouldStop() {
+    return new Gate(
+        (results, runs) -> {
+          var notStopped =
+              failedCases(
+                  results,
+                  runs,
+                  result ->
+                      result.evalResults().stream()
+                          .noneMatch(r -> r.evaluator().equals(ExperimentRunner.GUARDRAIL)));
+          return notStopped.isEmpty()
+              ? Verdict.pass("a guardrail stopped every attempt")
+              : Verdict.fail("no guardrail stopped " + notStopped);
+        });
+  }
+
   private static void requireGuardrailName(String name) {
     if (name == null || name.isBlank())
       throw new IllegalArgumentException("guardrail name required");

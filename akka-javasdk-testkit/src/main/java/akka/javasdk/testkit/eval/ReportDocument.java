@@ -5,6 +5,7 @@
 package akka.javasdk.testkit.eval;
 
 import akka.javasdk.JsonSupport;
+import akka.javasdk.testkit.eval.ExperimentRunner.Kind;
 import akka.javasdk.testkit.eval.ExperimentRunner.Outcome;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -27,6 +28,8 @@ import java.util.List;
  *     removed
  * @param name the name given with {@link Experiment#name}, or the test method that ran the
  *     experiment
+ * @param kind EVALUATION for an experiment built with {@link ExperimentRunner#cases}, ATTACK for
+ *     one built with {@link ExperimentRunner#attacks}
  * @param startedAt when the run started
  * @param finishedAt when the last attempt was evaluated
  * @param runs how many times every case ran
@@ -47,6 +50,7 @@ public record ReportDocument(
     String format,
     int formatVersion,
     String name,
+    Kind kind,
     Instant startedAt,
     Instant finishedAt,
     int runs,
@@ -106,8 +110,8 @@ public record ReportDocument(
       double passRate) {}
 
   /**
-   * @param evaluator the evaluator component id, or {@link ExperimentRunner#TARGET} for the result
-   *     the runner reports when the agent call failed
+   * @param evaluator the evaluator component id, or {@link ExperimentRunner#TARGET} or {@link
+   *     ExperimentRunner#GUARDRAIL} for a result the runner reports itself
    * @param passed results with the verdict PASS
    * @param failed results with the verdict FAIL
    * @param inconclusive results with the verdict INCONCLUSIVE
@@ -150,7 +154,7 @@ public record ReportDocument(
    * @param failedRuns runs with the verdict FAIL
    * @param inconclusiveRuns runs with the verdict INCONCLUSIVE
    * @param verdicts the verdicts of each evaluator of the case, in the order the results first
-   *     appear in its attempts; the runner's target result counts as an evaluator
+   *     appear in its attempts; the runner's target and guardrail results count as evaluators
    */
   public record Case(
       String id,
@@ -163,7 +167,8 @@ public record ReportDocument(
   /**
    * The verdicts of one evaluator over all runs of a case.
    *
-   * @param evaluator the evaluator component id, or {@link ExperimentRunner#TARGET}
+   * @param evaluator the evaluator component id, {@link ExperimentRunner#TARGET} or {@link
+   *     ExperimentRunner#GUARDRAIL}
    * @param outcome over the runs where the evaluator reached a verdict: PASSED, FAILED,
    *     INCONSISTENT when it passed in some runs and failed in others, or INCONCLUSIVE when it was
    *     conclusive in no run
@@ -271,7 +276,8 @@ public record ReportDocument(
       String explanation) {}
 
   /**
-   * @param evaluator the evaluator component id, or {@link ExperimentRunner#TARGET}
+   * @param evaluator the evaluator component id, {@link ExperimentRunner#TARGET} or {@link
+   *     ExperimentRunner#GUARDRAIL}
    * @param verdict PASS, FAIL, INCONCLUSIVE or NOT_APPLICABLE
    * @param detail the explanation and the score, or why there is no verdict; empty when the
    *     evaluator gave none

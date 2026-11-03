@@ -4,6 +4,7 @@
 
 package akka.javasdk.testkit.eval;
 
+import akka.javasdk.ledger.Failure;
 import akka.javasdk.ledger.GuardrailDecisionRecord;
 import akka.javasdk.ledger.InteractionRecord;
 import akka.javasdk.ledger.ToolCall;
@@ -99,5 +100,34 @@ public record Evidence(
   /** Whether a guardrail denied content in the interaction. */
   public boolean denied() {
     return guardrails.stream().anyMatch(g -> g.decision() == GuardrailDecisionRecord.Decision.DENY);
+  }
+
+  /**
+   * The enforcing denials that stopped the interaction, oldest first. Empty when no guardrail
+   * stopped it, or when a guardrail error stopped it.
+   */
+  List<GuardrailDecisionRecord> stoppingDenials() {
+    if (!stoppedByGuardrail() || stoppedByGuardrailError()) return List.of();
+    return guardrails.reversed().stream()
+        .filter(g -> !g.reportOnly() && g.decision() == GuardrailDecisionRecord.Decision.DENY)
+        .toList();
+  }
+
+  /** Whether a fail-closed guardrail that failed to decide stopped the interaction. */
+  boolean stoppedByGuardrailError() {
+    return stoppedByGuardrail()
+        && guardrails.stream()
+            .anyMatch(
+                g ->
+                    !g.reportOnly()
+                        && g.decision() == GuardrailDecisionRecord.Decision.FAIL
+                        && g.failMode() == GuardrailDecisionRecord.FailMode.FAIL_CLOSED);
+  }
+
+  private boolean stoppedByGuardrail() {
+    return interaction
+        .flatMap(InteractionRecord::failure)
+        .map(failure -> failure.reason() == Failure.FailureReason.GUARDRAIL)
+        .orElse(false);
   }
 }

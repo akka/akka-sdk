@@ -2,6 +2,7 @@
   "format" : "akka-eval-report",
   "formatVersion" : 4,
   "name" : "support-agent-quality",
+  "kind" : "EVALUATION",
   "startedAt" : "2026-10-15T14:30:27.579747Z",
   "finishedAt" : "2026-10-15T14:30:27.580566Z",
   "runs" : 1,

@@ -15,10 +15,13 @@ import akka.javasdk.annotations.Component;
 import akka.javasdk.evaluation.Evaluation;
 import akka.javasdk.evaluation.EvaluationContext;
 import akka.javasdk.evaluation.Evaluator;
+import akka.javasdk.ledger.Failure;
 import akka.javasdk.ledger.GuardrailDecisionRecord;
 import akka.javasdk.testkit.TestLedgerClient;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
@@ -340,6 +343,82 @@ class GateTest {
     assertThat(missed.render()).contains("guardrail no-refunds did not deny on [c2 (run 1)]");
     var absent = run(Gate.guardrailShouldDeny("pii"), denyingOn("c1", "c2"), cases);
     assertThat(absent.render()).contains("guardrail pii did not deny on [c1 (run 1), c2 (run 1)]");
+  }
+
+  /**
+   * Each case in {@code stoppedBy} ends in a failed interaction that the named guardrail denied.
+   * The denial is report-only when {@code reportOnly} is true. The other cases answer.
+   */
+  private EvalTarget<String> stopping(Map<String, String> stoppedBy, boolean reportOnly) {
+    return turn -> {
+      var interactionId = "i-" + turn.sessionId();
+      var guardrail = stoppedBy.get(turn.caseId());
+      if (guardrail == null) {
+        ledger.seed(interaction(interactionId, turn.sessionId(), "r", List.of()));
+        return EvalTarget.Outcome.answered(interactionId);
+      }
+
+      var interaction =
+          interaction(
+              interactionId,
+              turn.sessionId(),
+              "",
+              List.of(),
+              Optional.of(new Failure(Failure.FailureReason.GUARDRAIL, "blocked")),
+              50,
+              0,
+              300);
+      ledger.seed(interaction);
+      ledger.seed(
+          Targets.guardrail(
+              interaction,
+              guardrail,
+              GuardrailDecisionRecord.Decision.DENY,
+              "attack",
+              reportOnly,
+              GuardrailDecisionRecord.FailMode.FAIL_CLOSED,
+              700));
+      return EvalTarget.Outcome.failed("GuardrailException: blocked");
+    };
+  }
+
+  private ExperimentRunner.EvalReport attack(
+      Gate gate, EvalTarget<String> target, List<EvalCase<String>> cases) {
+    return ExperimentRunner.against(
+            new ExperimentRunner().attacks(cases),
+            target,
+            ledger,
+            bindings(),
+            Duration.ofMillis(50))
+        .gate(gate)
+        .run();
+  }
+
+  @Test
+  void aGuardrailMustStopEveryAttemptWhicheverGuardrailDenies() {
+    var cases = List.of(evalCase("c1"), evalCase("c2"));
+
+    var stopped =
+        attack(
+            Gate.guardrailShouldStop(),
+            stopping(Map.of("c1", "jailbreak", "c2", "pii"), false),
+            cases);
+    assertThat(stopped.passed()).isTrue();
+    assertThat(stopped.render()).contains("gate: passed — a guardrail stopped every attempt");
+
+    var answered = attack(Gate.guardrailShouldStop(), stopping(Map.of("c1", "pii"), false), cases);
+    assertThat(answered.passed()).isFalse();
+    assertThat(answered.render()).contains("gate: FAILED — no guardrail stopped [c2 (run 1)]");
+  }
+
+  @Test
+  void aReportOnlyDenialDoesNotCountAsAStop() {
+    var cases = List.of(evalCase("c1"));
+
+    var report = attack(Gate.guardrailShouldStop(), stopping(Map.of("c1", "pii"), true), cases);
+
+    assertThat(report.passed()).isFalse();
+    assertThat(report.render()).contains("no guardrail stopped [c1 (run 1)]");
   }
 
   @Test

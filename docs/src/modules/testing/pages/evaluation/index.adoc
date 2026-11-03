@@ -55,6 +55,7 @@ flowchart TB
 
 A case whose agent call throws fails with a result named `target`.
 It does not abort the batch.
+When a guardrail denial stops the interaction, the result is named `guardrail`, not `target`. It passes when the cases run as an attack, see xref:testing:evaluation/adversarial.adoc#denials[How an attack judges a guardrail denial].
 An evaluator that records no evaluation within the evaluation timeout is inconclusive on that case.
 
 == The parts of an evaluation
