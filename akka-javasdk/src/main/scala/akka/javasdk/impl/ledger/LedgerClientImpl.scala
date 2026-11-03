@@ -130,6 +130,9 @@ private[ledger] object LedgerClientImpl {
   def toEvaluationRecord(record: SpiLedger.EvaluationRecord): EvaluationRecord = {
     val subject = record.subject match {
       case interaction: SpiLedger.InteractionSubject => interaction
+      case workflow: SpiLedger.WorkflowSubject =>
+        throw new IllegalArgumentException(
+          s"Workflow subjects are not supported by this SDK version: [${workflow.workflowComponentId}]")
     }
     new EvaluationRecord(
       record.evaluationId,

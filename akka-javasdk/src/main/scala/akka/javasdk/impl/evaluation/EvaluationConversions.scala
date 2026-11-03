@@ -24,6 +24,9 @@ private[javasdk] object EvaluationConversions {
     subject match {
       case interaction: SpiEvaluator.Interaction =>
         new Subject.Interaction(interaction.interactionId, interaction.agentComponentId, interaction.flowId.toJava)
+      case workflow: SpiEvaluator.Workflow =>
+        throw new IllegalArgumentException(
+          s"Workflow subjects are not supported by this SDK version: [${workflow.workflowComponentId}]")
     }
 
   def toSpiSubject(subject: Subject): SpiEvaluator.Subject =

@@ -25,7 +25,8 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
       trigger = SpiLedger.EvaluationTrigger.OnInteraction,
       subject = new SpiLedger.InteractionSubject("interaction-1", "support-agent"),
       outcome = new SpiLedger.EvaluationInconclusive("no verdict"),
-      timestamp = Instant.EPOCH)
+      timestamp = Instant.EPOCH,
+      attributes = Map.empty)
 
   private def spiInteractionRecord(modelResponses: SpiLedger.ModelResponse*): SpiLedger.InteractionRecord =
     new SpiLedger.InteractionRecord(
@@ -112,7 +113,8 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
         trigger = SpiLedger.EvaluationTrigger.OnInteraction,
         subject = new SpiLedger.InteractionSubject("interaction-1", "support-agent"),
         outcome = new SpiLedger.EvaluationNotApplicable("no tool call"),
-        timestamp = Instant.EPOCH)
+        timestamp = Instant.EPOCH,
+        attributes = Map.empty)
 
       val record = LedgerClientImpl.toEvaluationRecord(spiRecord)
 
