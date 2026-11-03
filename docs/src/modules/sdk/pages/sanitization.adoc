@@ -61,7 +61,7 @@ A sanitizer scoped to an agent or to an application point masks the text you pas
 include::example$doc-snippets/src/main/java/com/example/api/SanitizingEndpoint.java[tag=ad-hoc-sanitization]
 ----
 
-When the sanitizer is a `TextSanitizer` that throws or returns `null`, `sanitize` throws an `akka.javasdk.SanitizerException`, and the stage of `sanitizeAsync` fails with one. The exception has the name of the sanitizer. Its cause is the exception that the `TextSanitizer` threw, and the cause can be `null`. The message of the cause can hold the text that the sanitizer was masking. Do not log the cause, and do not return its message to the caller of your component.
+When the sanitizer is a `TextSanitizer` that throws or returns `null`, `sanitize` throws an `akka.javasdk.SanitizerException`, and the stage of `sanitizeAsync` fails with it. The exception has the name of the sanitizer. Its cause is the exception that the `TextSanitizer` threw, and the cause can be `null`. The message of the cause can hold the text that the sanitizer was masking, therefore do not log the cause, and do not return its message to the caller of your component.
 
 
 == Configuring sanitizers
