@@ -22,11 +22,12 @@ akka optimize spend compare --from INSTANT --to INSTANT --against-from INSTANT -
 ----
       --against-from string   start of the period to compare against, an ISO-8601 instant in UTC, inclusive
       --against-to string     end of the period to compare against, an ISO-8601 instant in UTC, exclusive
-      --by string             divide the answer: none, caller, or a comma-separated list of model, useCase and
-                              tag:KEY, where KEY is the name of one of your tagging rulesets
+      --by string             divide the answer: none, or a comma-separated list of model, useCase, system, route
+                              and tag:KEY, where KEY is the name of one of your tagging rulesets
       --from string           start of the period, an ISO-8601 instant in UTC, inclusive
   -h, --help                  help for compare
-      --limit int             how many groups to rank; the service states the default
+      --system string         read only the spend of this system id, the one a request named in x-akka-system-id.
+                              Completed work is counted for every system id together, so it is not stated
       --to string             end of the period, an ISO-8601 instant in UTC, exclusive
 ----
 
@@ -42,14 +43,13 @@ akka optimize spend compare --from INSTANT --to INSTANT --against-from INSTANT -
       --force                Skip the confirmation prompt
       --jq string            Filter the JSON output with a jq expression
       --json string          Output JSON with only these fields; --json= lists the fields a command offers
-      --no-color             Print without color, as NO_COLOR does
+      --no-color             Print without color or a redrawn progress line, as NO_COLOR does
   -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
       --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
-      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then a local dev-mode service, then http://localhost:9001)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----

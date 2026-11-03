@@ -1,0 +1,53 @@
+= akka organizations roles create
+
+Create a custom role in the organization from a YAML descriptor.
+
+== Synopsis
+
+Create a custom role in the organization from a YAML descriptor.
+The id of the role is the id field of the descriptor, it can be up to 63 characters long and contain letters, digits, dots, underscores and hyphens, and must be unique among the custom roles of the organization.
+
+[source,shell]
+----
+akka organizations roles create [flags]
+----
+
+== Examples
+
+[source,shell]
+----
+akka organizations roles create -f my-role.yaml
+----
+
+== Options
+
+[source,text]
+----
+  -f, --file string           The YAML descriptor file. If not supplied, will read from stdin.
+  -h, --help                  help for create
+      --organization string   name or ID for organization
+----
+
+== Options inherited from parent commands
+
+[source,text]
+----
+      --cache-file string   location of cache file (default "~/.akka/cache.yaml")
+      --config string       location of config file (default "~/.akka/config.yaml")
+      --context string      configuration context to use
+      --disable-prompt      Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                            This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+  -o, --output string       set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string    the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet               set quiet output (helpful when used as part of a script)
+      --timeout duration    client command timeout (default 10s)
+      --use-grpc-web        use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose             set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_organizations_roles.html[akka organizations roles]	 - Manage organization custom roles.
+
+[discrete]
+

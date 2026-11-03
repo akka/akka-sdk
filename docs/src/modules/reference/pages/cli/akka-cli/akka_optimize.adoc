@@ -16,10 +16,9 @@ The command tree is written to drop into `akka optimize` unchanged, so nouns are
   -h, --help                 help for optimize
       --jq string            Filter the JSON output with a jq expression
       --json string          Output JSON with only these fields; --json= lists the fields a command offers
-      --no-color             Print without color, as NO_COLOR does
+      --no-color             Print without color or a redrawn progress line, as NO_COLOR does
       --region string        Region to use if the project has more than one region
-      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
-      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then a local dev-mode service, then http://localhost:9001)
 ----
 
 == Options inherited from parent commands
@@ -42,20 +41,18 @@ The command tree is written to drop into `akka optimize` unchanged, so nouns are
 == SEE ALSO
 
 * link:akka.html[akka]	 - Akka control
-* link:akka_optimize_callers.html[akka optimize callers]	 - The callers the spend figures are attributed to
-* link:akka_optimize_captures.html[akka optimize captures]	 - Recorded interaction artifacts, read off a filesystem
+* link:akka_optimize_captures.html[akka optimize captures]	 - Captured exchanges, raw or normalized, read from files
 * link:akka_optimize_eval.html[akka optimize eval]	 - Datasets, experiments and the evaluators that score them
-* link:akka_optimize_incidents.html[akka optimize incidents]	 - The incident feed, unioned from its sources
-* link:akka_optimize_models.html[akka optimize models]	 - The corporate model registry
+* link:akka_optimize_models.html[akka optimize models]	 - Models in the registry, with what training, routing and pricing know about them
 * link:akka_optimize_pricing-catalog.html[akka optimize pricing-catalog]	 - What a unit of usage costs, and when that price was in force
 * link:akka_optimize_registry.html[akka optimize registry]	 - The artifact registry: named models, datasets and bundles
 * link:akka_optimize_routing-classifiers.html[akka optimize routing-classifiers]	 - Named pointers to model providers, immutable once registered
-* link:akka_optimize_routing-policies.html[akka optimize routing-policies]	 - What serves a use-case, and in what share
+* link:akka_optimize_routing-destinations.html[akka optimize routing-destinations]	 - Which registry model version each route header value reaches
 * link:akka_optimize_rulesets.html[akka optimize rulesets]	 - Attribute-matching rules that choose a destination
 * link:akka_optimize_spend.html[akka optimize spend]	 - What a period consumed, what it cost, and what one conversation cost
 * link:akka_optimize_status.html[akka optimize status]	 - Which services are answering, and at what address
 * link:akka_optimize_traffic.html[akka optimize traffic]	 - Recorded LLM exchanges, run through the gateway router's routing chain
-* link:akka_optimize_training.html[akka optimize training]	 - Base models, training projects, runs, snapshots, comparisons, pipelines, evaluations, endpoints and their data
+* link:akka_optimize_training.html[akka optimize training]	 - Base models, training projects, runs, snapshots, comparisons, pipelines, evaluations, distillations, endpoints and their data
 * link:akka_optimize_use-cases.html[akka optimize use-cases]	 - Discovered use-cases, and the manifests frozen from them
 
 [discrete]

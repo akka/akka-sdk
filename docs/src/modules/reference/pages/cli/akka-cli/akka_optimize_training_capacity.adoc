@@ -11,8 +11,10 @@ DECLARED is what the deployment says the pool holds, which is what work is admit
 The two disagree where a cluster has scaled to zero or has not grown a node yet, which is a fact about the cluster rather than about the queue.
 MAX CLAIM is the largest device claim the pool accepts.
 For a training pool, it is the most GPUs the deployment trains one run on, the same for every training pool unless the pool declares fewer.
-Run "training base-models get" to see the GPU counts admitted for a model.
 HOST RAM is what a node carrying the accelerator states it has, and is what a run's own host memory figure is refused against.
+
+TRAINING ENVELOPES says whether the catalog's measured envelopes are advisory, which admits a run outside them with a warning, or strict, which refuses it.
+Run "training base-models envelopes" to list the envelopes.
 
 DECLARED counts a capacity window while it is open.
 WINDOWS lists, for a pool whose accelerator exists for bounded times, every window that is open or still to come: the devices it adds to the pool's fixed count, and when it opens and ends, in UTC.
@@ -20,7 +22,7 @@ A claim for more devices than the pool always has waits for a window that can ho
 WARNINGS names each claim still holding devices of a window that has ended.
 Nothing stops such a claim, and its devices may already be gone.
 
-CLAIMS is every run, evaluation and endpoint that holds devices or is waiting for them.
+CLAIMS is every run, evaluation, distillation and endpoint that holds devices or is waiting for them.
 An endpoint a run brought up as its judge names that run.
 
 PROJECTS is one row per training project that holds a claim or has a quota of its own.
@@ -68,21 +70,20 @@ akka optimize training capacity [flags]
       --force                Skip the confirmation prompt
       --jq string            Filter the JSON output with a jq expression
       --json string          Output JSON with only these fields; --json= lists the fields a command offers
-      --no-color             Print without color, as NO_COLOR does
+      --no-color             Print without color or a redrawn progress line, as NO_COLOR does
   -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
       --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
-      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then a local dev-mode service, then http://localhost:9001)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----
 
 == SEE ALSO
 
-* link:akka_optimize_training.html[akka optimize training]	 - Base models, training projects, runs, snapshots, comparisons, pipelines, evaluations, endpoints and their data
+* link:akka_optimize_training.html[akka optimize training]	 - Base models, training projects, runs, snapshots, comparisons, pipelines, evaluations, distillations, endpoints and their data
 
 [discrete]
 

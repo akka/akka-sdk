@@ -1,0 +1,76 @@
+= akka optimize captures download
+
+Save captures from the capture refinery into a directory
+
+== Synopsis
+
+Save captures from the capture refinery into a directory, by exchange id or by period.
+
+Each is written to DIR/EXCHANGE_ID.json, the normalized record, or with --raw to DIR/EXCHANGE_ID.acp.gz, the raw capture as the gateway stored it, byte for byte.
+--raw is not capture-reader's --with-raw, which adds the body bytes to a normalized record.
+
+A period is by ship time, when the gateway sealed the capture: --from inclusive, --to exclusive.
+It lists the captures the refinery has derived a record from, so a raw capture it has not derived yet is not in it.
+By exchange id alone, a capture is found when it shipped in the hour the exchange started or the hour after.
+Download a capture that shipped later by its period.
+
+A file is written whole or not at all, and only you can read it.
+A file already present is kept and not asked for again, so the same command run again finishes an interrupted download.
+A capture the refinery does not hold is reported as missing, the rest are still downloaded, and the command then exits non-zero.
+
+captures list and captures show read what this writes.
+
+[source,shell]
+----
+akka optimize captures download (EXCHANGE_ID... | --from INSTANT --to INSTANT) [flags]
+----
+
+== Examples
+
+[source,shell]
+----
+  akka optimize captures download 01M3Q7SVZNGDBC8QQW88PXWVX5 --dir captures
+  akka optimize captures download --raw --dir captures \
+      --from 2026-09-29T18:00:00Z --to 2026-09-29T19:00:00Z
+----
+
+== Options
+
+[source,text]
+----
+      --dir string    the directory to write to, created when missing (default ".")
+      --from string   start of the period, an ISO-8601 instant in UTC, inclusive
+  -h, --help          help for download
+      --raw           download the raw captures instead of the normalized records
+      --to string     end of the period, an ISO-8601 instant in UTC, exclusive
+----
+
+== Options inherited from parent commands
+
+[source,text]
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color or a redrawn progress line, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --timeout duration     client command timeout (default 10s)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then a local dev-mode service, then http://localhost:9001)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize_captures.html[akka optimize captures]	 - Captured exchanges, raw or normalized, read from files
+
+[discrete]
+
