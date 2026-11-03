@@ -10,6 +10,7 @@ import akka.javasdk.testkit.impl.EvaluatorResultImpl;
 import akka.javasdk.testkit.impl.TestKitEvaluationContext;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import java.util.Map;
 import java.util.function.Supplier;
 
 /**
@@ -22,10 +23,10 @@ import java.util.function.Supplier;
  * <p>The {@code factory} supplies the evaluator under test — construct it with whatever
  * collaborators the test needs (for example a stubbed {@code ComponentClient} for LLM-as-judge
  * calls, or an in-memory ledger client). Use the {@code evaluate} methods to run the {@code
- * evaluate} handler over a chosen {@link Subject} and assert on the returned {@link
- * EvaluatorResult}. An evaluator that reads {@link
- * akka.javasdk.evaluation.EvaluationContext#config()} gets the configuration given to {@link
- * #withConfig(Config)}, empty by default.
+ * evaluate} handler over a chosen {@link Subject}, with the attributes of an evaluation started on
+ * request when the evaluator reads them, and assert on the returned {@link EvaluatorResult}. An
+ * evaluator that reads {@link akka.javasdk.evaluation.EvaluationContext#config()} gets the
+ * configuration given to {@link #withConfig(Config)}, empty by default.
  */
 public class EvaluatorTestKit<E extends Evaluator> {
 
@@ -59,25 +60,54 @@ public class EvaluatorTestKit<E extends Evaluator> {
 
   /**
    * Run the evaluator's {@code evaluate} handler over the given subject, using the {@link
-   * #DEFAULT_EVALUATION_ID}.
+   * #DEFAULT_EVALUATION_ID} and no attributes.
    *
-   * @param subject the interaction to evaluate
+   * @param subject what to evaluate
    * @return the result of the evaluation
    */
   public EvaluatorResult evaluate(Subject subject) {
-    return evaluate(subject, DEFAULT_EVALUATION_ID);
+    return evaluate(subject, DEFAULT_EVALUATION_ID, Map.of());
   }
 
   /**
    * Run the evaluator's {@code evaluate} handler over the given subject, using the given evaluation
-   * id.
+   * id and no attributes.
    *
-   * @param subject the interaction to evaluate
+   * @param subject what to evaluate
    * @param evaluationId the id of the evaluation
    * @return the result of the evaluation
    */
   public EvaluatorResult evaluate(Subject subject, String evaluationId) {
-    var context = new TestKitEvaluationContext(subject, evaluationId, config);
+    return evaluate(subject, evaluationId, Map.of());
+  }
+
+  /**
+   * Run the evaluator's {@code evaluate} handler over the given subject with the given attributes,
+   * as an evaluation started through {@link akka.javasdk.client.EvaluatorClient} carries them,
+   * using the {@link #DEFAULT_EVALUATION_ID}.
+   *
+   * @param subject what to evaluate
+   * @param attributes the attributes the evaluation sees through {@link
+   *     akka.javasdk.evaluation.EvaluationContext#attributes()}
+   * @return the result of the evaluation
+   */
+  public EvaluatorResult evaluate(Subject subject, Map<String, String> attributes) {
+    return evaluate(subject, DEFAULT_EVALUATION_ID, attributes);
+  }
+
+  /**
+   * Run the evaluator's {@code evaluate} handler over the given subject with the given attributes,
+   * using the given evaluation id.
+   *
+   * @param subject what to evaluate
+   * @param evaluationId the id of the evaluation
+   * @param attributes the attributes the evaluation sees through {@link
+   *     akka.javasdk.evaluation.EvaluationContext#attributes()}
+   * @return the result of the evaluation
+   */
+  public EvaluatorResult evaluate(
+      Subject subject, String evaluationId, Map<String, String> attributes) {
+    var context = new TestKitEvaluationContext(subject, evaluationId, attributes, config);
     var effect = evaluatorFactory.get().evaluate(context);
     return new EvaluatorResultImpl(effect);
   }

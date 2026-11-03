@@ -9,6 +9,7 @@ import scala.concurrent.duration._
 
 import akka.javasdk.evaluation.EvaluationContext
 import akka.javasdk.evaluation.Evaluator
+import akka.javasdk.evaluation.Subject
 import akka.javasdk.testmodels.evaluation.EvaluatorTestModels.SomeEvaluator
 import akka.runtime.sdk.spi.SpiEvaluator
 import com.typesafe.config.Config
@@ -50,11 +51,44 @@ class EvaluatorImplSpec extends AnyWordSpec with Matchers {
             }
           },
         classOf[Evaluator],
-        agentComponentId => ConfigFactory.parseString(s"""agent = "$agentComponentId" """))
+        {
+          case interaction: Subject.Interaction =>
+            ConfigFactory.parseString(s"""agent = "${interaction.agentComponentId()}" """)
+          case _: Subject.Workflow => ConfigFactory.empty()
+        })
 
       Await.result(impl.evaluate(new SpiEvaluator.EvaluationContext(trigger, OtelContext.root())), 3.seconds)
 
       seen.map(_.getString("agent")) shouldBe Some("my-agent")
+    }
+
+    "pass the attributes and the config of the evaluator for a workflow subject" in {
+      var seen: Option[(Subject, java.util.Map[String, String], Config)] = None
+      val impl = new EvaluatorImpl[Evaluator](
+        _ =>
+          new Evaluator {
+            override def evaluate(context: EvaluationContext): Evaluator.Effect = {
+              seen = Some((context.subject(), context.attributes(), context.config()))
+              effects().inconclusive("context seen")
+            }
+          },
+        classOf[Evaluator],
+        {
+          case _: Subject.Interaction => ConfigFactory.empty()
+          case _: Subject.Workflow    => ConfigFactory.parseString("""entry = "evaluator" """)
+        })
+      val manualTrigger = new SpiEvaluator.Trigger(
+        "evaluation-2",
+        SpiEvaluator.TriggerSource.Manual,
+        new SpiEvaluator.Workflow("workflow-1", "order-workflow"),
+        Map("interactionIds" -> "i1,i2"))
+
+      Await.result(impl.evaluate(new SpiEvaluator.EvaluationContext(manualTrigger, OtelContext.root())), 3.seconds)
+
+      val (subject, attributes, config) = seen.get
+      subject shouldBe new Subject.Workflow("workflow-1", "order-workflow")
+      attributes shouldBe java.util.Map.of("interactionIds", "i1,i2")
+      config.getString("entry") shouldBe "evaluator"
     }
 
     "map a not applicable effect" in {

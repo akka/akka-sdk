@@ -7,6 +7,8 @@ package akka.javasdk.testkit.ledger;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import akka.javasdk.evaluation.Evaluation;
+import akka.javasdk.ledger.EvaluationRecord;
 import akka.javasdk.ledger.GuardrailDecisionRecord;
 import akka.javasdk.ledger.InteractionMetadata;
 import akka.javasdk.ledger.InteractionRecord;
@@ -45,6 +47,32 @@ public class TestLedgerClientTest {
         timestamp);
   }
 
+  private static EvaluationRecord workflowEvaluation(
+      String id, String workflowId, Instant timestamp) {
+    return new EvaluationRecord(
+        id,
+        "order-evaluator",
+        Optional.empty(),
+        EvaluationRecord.Trigger.MANUAL,
+        new EvaluationRecord.Subject.Workflow(workflowId, "order-workflow"),
+        Map.of("interactionIds", "i1,i2"),
+        new EvaluationRecord.Outcome.Verdict(Evaluation.passed("ok")),
+        timestamp);
+  }
+
+  private static EvaluationRecord interactionEvaluation(
+      String id, String interactionId, Instant timestamp) {
+    return new EvaluationRecord(
+        id,
+        "quality-evaluator",
+        Optional.empty(),
+        EvaluationRecord.Trigger.ON_INTERACTION,
+        new EvaluationRecord.Subject.Interaction(interactionId, "support-agent"),
+        Map.of(),
+        new EvaluationRecord.Outcome.Verdict(Evaluation.passed("ok")),
+        timestamp);
+  }
+
   private static GuardrailDecisionRecord decision(
       String id, String interactionId, String sessionId, Instant timestamp) {
     return new GuardrailDecisionRecord(
@@ -79,6 +107,24 @@ public class TestLedgerClientTest {
 
     assertEquals(List.of(second, first), ledger.getInteractions("support-agent", "session-1"));
     assertTrue(ledger.getInteractions("support-agent", "session-3").isEmpty());
+  }
+
+  @Test
+  public void listsTheEvaluationsOfAWorkflowRunNewestFirst() {
+    var first = workflowEvaluation("e1", "workflow-1", Instant.ofEpochSecond(1));
+    var second = workflowEvaluation("e2", "workflow-1", Instant.ofEpochSecond(2));
+    var ofInteraction = interactionEvaluation("e3", "interaction-1", Instant.ofEpochSecond(3));
+    var ledger =
+        TestLedgerClient.create()
+            .seed(first)
+            .seed(second)
+            .seed(workflowEvaluation("e4", "workflow-2", Instant.ofEpochSecond(4)))
+            .seed(ofInteraction);
+
+    assertEquals(
+        List.of(second, first), ledger.getWorkflowEvaluations("order-workflow", "workflow-1"));
+    assertTrue(ledger.getWorkflowEvaluations("other-workflow", "workflow-1").isEmpty());
+    assertEquals(List.of(ofInteraction), ledger.getEvaluations("interaction-1"));
   }
 
   @Test

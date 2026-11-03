@@ -14,8 +14,9 @@ import java.util.concurrent.CompletionStage;
  * evaluations and the guardrail decisions made in them.
  *
  * <p>A {@code LedgerClient} can be injected into any component. An {@link
- * akka.javasdk.evaluation.Evaluator} uses it to fetch the interaction referenced by its {@link
- * akka.javasdk.evaluation.Subject#interactionId()}.
+ * akka.javasdk.evaluation.Evaluator} uses it to fetch the interactions that its {@link
+ * akka.javasdk.evaluation.Subject} and {@link
+ * akka.javasdk.evaluation.EvaluationContext#attributes()} refer to.
  *
  * <p>Not for user extension.
  */
@@ -86,6 +87,30 @@ public interface LedgerClient {
    * @return a stage that completes with the evaluations of that interaction
    */
   CompletionStage<List<EvaluationRecord>> getEvaluationsAsync(String interactionId);
+
+  /**
+   * Fetch the evaluations recorded about the run of the workflow with the given {@code
+   * workflowComponentId} and {@code workflowId}, newest first. At most the 100 newest evaluations
+   * are returned.
+   *
+   * <p>Blocks the calling thread until the records have been fetched. Safe to call on a virtual
+   * thread. Use {@link #getWorkflowEvaluationsAsync(String, String)} for the non-blocking variant.
+   *
+   * @param workflowComponentId the component id of the workflow
+   * @param workflowId the id of the evaluated workflow instance
+   * @return the evaluations of that workflow run, or an empty list when none are recorded
+   */
+  List<EvaluationRecord> getWorkflowEvaluations(String workflowComponentId, String workflowId);
+
+  /**
+   * Async variant of {@link #getWorkflowEvaluations(String, String)}.
+   *
+   * @param workflowComponentId the component id of the workflow
+   * @param workflowId the id of the evaluated workflow instance
+   * @return a stage that completes with the evaluations of that workflow run
+   */
+  CompletionStage<List<EvaluationRecord>> getWorkflowEvaluationsAsync(
+      String workflowComponentId, String workflowId);
 
   /**
    * Fetch the interactions of the agent with the given {@code agentComponentId} in the session with

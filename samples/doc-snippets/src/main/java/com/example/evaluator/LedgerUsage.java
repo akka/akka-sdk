@@ -26,4 +26,13 @@ public class LedgerUsage {
     List<EvaluationRecord> evaluations = ledger.getEvaluations(interactionId); // <1>
     // end::evaluations[]
   }
+
+  void evaluationsOfRun(String workflowId) {
+    // tag::workflow-evaluations[]
+    List<EvaluationRecord> evaluations = ledger.getWorkflowEvaluations(
+      "evaluated-agent-team",
+      workflowId
+    );
+    // end::workflow-evaluations[]
+  }
 }

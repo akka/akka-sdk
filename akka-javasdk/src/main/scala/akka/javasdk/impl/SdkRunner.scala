@@ -150,6 +150,7 @@ import akka.runtime.sdk.spi.RemoteIdentification
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiAutonomousAgent
 import akka.runtime.sdk.spi.SpiClassifierClient
+import akka.runtime.sdk.spi.SpiEvaluationClient
 import akka.runtime.sdk.spi.SpiClassifierSetup
 import akka.runtime.sdk.spi.SpiComponents
 import akka.runtime.sdk.spi.SpiConsumer
@@ -450,6 +451,7 @@ class SdkRunner private (
         startContext.componentClients,
         startContext.eventLogClient,
         startContext.ledgerClient,
+        startContext.evaluationClient,
         startContext.remoteIdentification,
         startContext.tracerFactory,
         startContext.sdkMeter,
@@ -522,6 +524,7 @@ private[javasdk] object Sdk {
       classifierClient: ClassifierClient,
       sanitizerClient: SanitizerClient,
       ledgerClient: LedgerClient,
+      evaluationClient: SpiEvaluationClient,
       inMemorySpanExporter: Option[InMemorySpanExporter],
       // Completed by the runtime with the address its HTTP endpoint was bound to, see StartContext. Carried
       // here for the testkit, which awaits it from the thread that started the testkit. Nothing in the SDK
@@ -585,6 +588,7 @@ private final class Sdk(
     runtimeComponentClients: ComponentClients,
     eventLogClient: EventLogClient,
     spiLedgerClient: SpiLedgerClient,
+    spiEvaluationClient: SpiEvaluationClient,
     remoteIdentification: Option[RemoteIdentification],
     tracerFactory: String => Tracer,
     sdkMeter: Meter,
@@ -811,6 +815,7 @@ private final class Sdk(
       sdkTracerFactory,
       regionInfo,
       runtimeComponentClients,
+      spiEvaluationClient,
       { context =>
         val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
         val workflow = wiredInstance("Workflow", clz) {
@@ -915,6 +920,7 @@ private final class Sdk(
     val scanTimeComponentClient: ComponentClient =
       ComponentClientImpl(
         runtimeComponentClients,
+        spiEvaluationClient,
         serializer,
         agentClassById = Map.empty,
         agentCapabilityConverter = None,
@@ -1488,6 +1494,7 @@ private final class Sdk(
               classifierClient,
               sanitizerClient,
               ledgerClient,
+              spiEvaluationClient,
               inMemorySpanExporter,
               httpEndpointBound))
           Future.successful(Done)
@@ -1525,6 +1532,7 @@ private final class Sdk(
               classifierClient,
               sanitizerClient,
               ledgerClient,
+              spiEvaluationClient,
               inMemorySpanExporter,
               httpEndpointBound))
           Future.successful(Done)
@@ -1786,6 +1794,7 @@ private final class Sdk(
   private def componentClient(telemetryContext: Option[OtelContext]): ComponentClient = {
     ComponentClientImpl(
       runtimeComponentClients,
+      spiEvaluationClient,
       serializer,
       agentRegistry.agentClassById,
       Some(agentCapabilityConverter),
