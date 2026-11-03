@@ -103,6 +103,11 @@ private[ledger] object LedgerClientImpl {
   def toEvaluationRecord(record: SpiLedger.EvaluationRecord): EvaluationRecord = {
     val subject = record.subject match {
       case interaction: SpiLedger.InteractionSubject => interaction
+
+      // FIXME: support workflow subjects
+      case workflow: SpiLedger.WorkflowSubject =>
+        throw new IllegalArgumentException(
+          s"Workflow evaluation records are not supported: [${workflow.workflowComponentId}/${workflow.workflowId}]")
     }
     new EvaluationRecord(
       record.evaluationId,
@@ -132,6 +137,10 @@ private[ledger] object LedgerClientImpl {
         new EvaluationRecord.Outcome.Inconclusive(inconclusive.reason)
       case failure: SpiLedger.EvaluationFailure =>
         new EvaluationRecord.Outcome.Failed(failure.reason)
+
+      // FIXME: map to a dedicated not-applicable outcome
+      case notApplicable: SpiLedger.EvaluationNotApplicable =>
+        new EvaluationRecord.Outcome.Inconclusive(notApplicable.reason)
     }
 
   private def toEvaluation(evaluation: SpiLedger.Evaluation): Evaluation = {

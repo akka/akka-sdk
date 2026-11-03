@@ -91,6 +91,11 @@ class ComponentClientTest {
           public SpiObjectStorage objectStorage() {
             return null;
           }
+
+          @Override
+          public SpiDecisionModelClient decisionModelClient() {
+            return null;
+          }
         };
     componentClient =
         new ComponentClientImpl(
