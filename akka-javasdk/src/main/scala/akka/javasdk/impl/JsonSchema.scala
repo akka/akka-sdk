@@ -11,6 +11,9 @@ import java.lang.reflect.Parameter
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import java.util.Optional
+import java.util.OptionalDouble
+import java.util.OptionalInt
+import java.util.OptionalLong
 
 import scala.jdk.CollectionConverters._
 import scala.util.control.NonFatal
@@ -29,9 +32,15 @@ import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaInteger
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaNumber
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaObject
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaString
+import com.fasterxml.jackson.databind.JavaType
 import com.fasterxml.jackson.databind.introspect.AnnotatedField
 import com.fasterxml.jackson.databind.introspect.AnnotatedMember
 import com.fasterxml.jackson.databind.introspect.AnnotatedMethod
+import com.fasterxml.jackson.databind.jsonFormatVisitors.JsonBooleanFormatVisitor
+import com.fasterxml.jackson.databind.jsonFormatVisitors.JsonFormatVisitorWrapper
+import com.fasterxml.jackson.databind.jsonFormatVisitors.JsonIntegerFormatVisitor
+import com.fasterxml.jackson.databind.jsonFormatVisitors.JsonNumberFormatVisitor
+import com.fasterxml.jackson.databind.jsonFormatVisitors.JsonStringFormatVisitor
 import com.google.protobuf.Descriptors
 import com.google.protobuf.GeneratedMessageV3
 import org.slf4j.LoggerFactory
@@ -112,20 +121,29 @@ private[impl] object JsonSchema {
     "java.lang.Double" -> number,
     "java.lang.Float" -> number,
     "java.lang.Boolean" -> boolean,
+    "java.lang.String" -> string,
     "java.math.BigDecimal" -> number)
 
-  private final val typesWithStringJsonRepresentation = Set[Class[_]](
-    classOf[String], // obviously
-    classOf[java.time.Instant], // time and date types rendered as string in json
-    classOf[java.time.LocalTime],
-    classOf[java.time.LocalDate],
-    classOf[java.time.LocalDateTime],
-    classOf[java.time.ZonedDateTime],
-    classOf[java.time.OffsetDateTime],
-    classOf[java.time.OffsetTime],
-    classOf[java.time.Duration], // example Jackson output "PT72H"
-    classOf[java.time.Period],
-    classOf[java.util.UUID])
+  // Jackson reports these as arrays, but writes them as a string, base64 for bytes
+  private final val arrayTypesWithStringJsonRepresentation =
+    Set[Class[_]](classOf[Array[Byte]], classOf[Array[Char]], classOf[java.nio.ByteBuffer])
+
+  // The schema for a class that Jackson writes as a string, number or boolean, such as URI, BigInteger or Date
+  private def scalarSchemaFor(clazz: Class[_]): Option[Option[String] => JsonSchemaDataType] = {
+    var schema: Option[Option[String] => JsonSchemaDataType] = None
+    val visitor = new JsonFormatVisitorWrapper.Base {
+      override def expectStringFormat(tpe: JavaType): JsonStringFormatVisitor = { schema = Some(string); null }
+      override def expectNumberFormat(tpe: JavaType): JsonNumberFormatVisitor = { schema = Some(number); null }
+      override def expectIntegerFormat(tpe: JavaType): JsonIntegerFormatVisitor = { schema = Some(integer); null }
+      override def expectBooleanFormat(tpe: JavaType): JsonBooleanFormatVisitor = { schema = Some(boolean); null }
+    }
+    try {
+      JsonSerializer.internalObjectMapper.acceptJsonFormatVisitor(clazz, visitor)
+      schema
+    } catch {
+      case NonFatal(_) => None
+    }
+  }
 
   private def emptyObject(description: Option[String]) =
     new JsonSchemaObject(description, properties = Map.empty, required = Seq.empty)
@@ -155,8 +173,12 @@ private[impl] object JsonSchema {
               (emptyObject(description), true)
             case _ if seenTypes.contains(clazz) =>
               (emptyObject(description), true) // avoid infinite recursion
-            case _ if typesWithStringJsonRepresentation.contains(clazz) =>
-              (new JsonSchemaString(description), true)
+            case _ if arrayTypesWithStringJsonRepresentation.contains(clazz) =>
+              (string(description), true)
+            case _ if clazz == classOf[OptionalInt] || clazz == classOf[OptionalLong] =>
+              (integer(description), false)
+            case _ if clazz == classOf[OptionalDouble] =>
+              (number(description), false)
             case _ if clazz.isArray =>
               (new JsonSchemaArray(jsonSchemaTypeFor(clazz.getComponentType, None, seenTypes)._1, None), true)
             case g: GenericArrayType =>
@@ -179,19 +201,10 @@ private[impl] object JsonSchema {
               (new JsonSchemaEnum(values, description), true)
 
             case _ =>
-              // Note: for now the top level can only be a class
-              val properties = jacksonProperties(clazz).map { case (name, propertyType, member) =>
-                val description = Option(member.getAnnotation(classOf[Description])).map(_.value())
-                name -> jsonSchemaTypeFor(propertyType, description, seenTypes + clazz)
-              }.toMap
-
-              val jsObjectSchema = new JsonSchemaObject(
-                description = description,
-                properties = properties.map { case (key, (schemaType, _)) => key -> schemaType },
-                // All fields that are not wrapped in Optional are listed as required
-                required = properties.collect { case (key, (_, required)) if required => key }.toSeq.sorted)
-
-              (jsObjectSchema, true)
+              scalarSchemaFor(clazz) match {
+                case Some(scalarSchema) => (scalarSchema(description), true)
+                case None               => (objectSchemaFor(clazz, description, seenTypes), true)
+              }
           }
         } catch {
           case NonFatal(ex) =>
@@ -199,6 +212,23 @@ private[impl] object JsonSchema {
             (emptyObject(description), true)
         }
     }
+  }
+
+  // Note: for now the top level can only be a class
+  private def objectSchemaFor(
+      clazz: Class[_],
+      description: Option[String],
+      seenTypes: Set[Class[_]]): JsonSchemaObject = {
+    val properties = jacksonProperties(clazz).map { case (name, propertyType, member) =>
+      val description = Option(member.getAnnotation(classOf[Description])).map(_.value())
+      name -> jsonSchemaTypeFor(propertyType, description, seenTypes + clazz)
+    }.toMap
+
+    new JsonSchemaObject(
+      description = description,
+      properties = properties.map { case (key, (schemaType, _)) => key -> schemaType },
+      // All fields that are not wrapped in Optional are listed as required
+      required = properties.collect { case (key, (_, required)) if required => key }.toSeq.sorted)
   }
 
   // The properties Jackson writes for a class, by JSON name, with the generic type and the member carrying the
