@@ -151,7 +151,6 @@ import akka.runtime.sdk.spi.RemoteIdentification
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiAutonomousAgent
 import akka.runtime.sdk.spi.SpiClassifierClient
-import akka.runtime.sdk.spi.SpiEvaluationClient
 import akka.runtime.sdk.spi.SpiClassifierSetup
 import akka.runtime.sdk.spi.SpiComponents
 import akka.runtime.sdk.spi.SpiConsumer
@@ -169,6 +168,7 @@ import akka.runtime.sdk.spi.SpiDevObjectStorageS3PathAccessStyle
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3ProfileCredentials
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3StaticCredentials
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3VirtualHostAccessStyle
+import akka.runtime.sdk.spi.SpiEvaluationClient
 import akka.runtime.sdk.spi.SpiEvaluator
 import akka.runtime.sdk.spi.SpiEventSourcedEntity
 import akka.runtime.sdk.spi.SpiEventingSupportSettings
