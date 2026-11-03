@@ -4,7 +4,8 @@
 
 package akka.javasdk.testkit.eval;
 
-import akka.javasdk.testkit.eval.Evaluator.EvalResult;
+import akka.javasdk.annotations.Component;
+import akka.javasdk.ledger.GuardrailDecisionRecord;
 import akka.javasdk.testkit.eval.ExperimentRunner.CaseResult;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -20,9 +21,10 @@ import java.util.function.Predicate;
  * <p>A real model is not deterministic, so a batch asserts on rates rather than on every case. With
  * a mocked model leave the gate out: without one every case must pass.
  *
- * <p>An attempt passes only when every result passed. An attempt with an inconclusive result, or
- * with no result, is inconclusive. It never passes: it fails {@link #allCasesShouldPass} and counts
- * against the rate of {@link #passRateShouldBeAtLeast(double)}.
+ * <p>An attempt passes when at least one result passed and no result failed or is inconclusive. A
+ * not applicable result does not count against the attempt. An attempt with an inconclusive result,
+ * or without a passed result, is inconclusive. It never passes: it fails {@link
+ * #allCasesShouldPass} and counts against the rate of {@link #passRateShouldBeAtLeast(double)}.
  */
 public final class Gate {
 
@@ -87,26 +89,26 @@ public final class Gate {
 
   /**
    * The pass rate of one evaluator, over the attempts where it was conclusive, must be at least
-   * {@code minimumRate}. Fails when the evaluator judged no attempt.
+   * {@code minimumRate}. An inconclusive or not applicable result is left out. Fails when the
+   * evaluator judged no attempt.
    *
-   * @param evaluator the evaluator's class. The built-ins are nested in {@link Evaluators}, for
-   *     example {@code Evaluators.ToolArgument.class}
-   * @throws IllegalArgumentException when the class does not carry a valid {@link EvalLabel}
+   * @param evaluatorClass the evaluator component class, annotated with {@link Component}
    */
-  public static Gate passRateShouldBeAtLeast(
-      Class<? extends Evaluator> evaluator, double minimumRate) {
-    var label = Evaluators.label(evaluator);
-
+  public static Gate passRateShouldBeAtLeast(Class<?> evaluatorClass, double minimumRate) {
+    var evaluator = componentId(evaluatorClass);
     return new Gate(
         (results, runs) -> {
           var evalResults =
               results.stream()
                   .flatMap(result -> result.evalResults().stream())
-                  .filter(evalResult -> evalResult.evaluator().equals(label))
-                  .filter(evalResult -> evalResult.verdict() != EvalResult.Verdict.INCONCLUSIVE)
+                  .filter(evalResult -> evalResult.evaluator().equals(evaluator))
+                  .filter(
+                      evalResult ->
+                          evalResult.verdict() == EvalResult.Verdict.PASS
+                              || evalResult.verdict() == EvalResult.Verdict.FAIL)
                   .toList();
           if (evalResults.isEmpty()) {
-            return Verdict.fail(label + " judged no case, so its rate cannot be read");
+            return Verdict.fail(evaluator + " judged no case, so its rate cannot be read");
           }
           var passed =
               evalResults.stream().filter(f -> f.verdict() == EvalResult.Verdict.PASS).count();
@@ -115,7 +117,7 @@ public final class Gate {
               String.format(
                   Locale.ROOT,
                   "%s rate %.2f over %d judged attempts, required %.2f",
-                  label,
+                  evaluator,
                   actual,
                   evalResults.size(),
                   minimumRate);
@@ -123,7 +125,16 @@ public final class Gate {
         });
   }
 
-  /** No attempt may fail while its recorded calls are loaded or in the agent call. */
+  private static String componentId(Class<?> componentClass) {
+    if (componentClass == null) throw new IllegalArgumentException("evaluator class required");
+    var component = componentClass.getAnnotation(Component.class);
+    if (component == null)
+      throw new IllegalArgumentException(
+          componentClass.getName() + " has no @Component annotation");
+    return component.id();
+  }
+
+  /** No agent call may fail. */
   public static Gate targetShouldNotFail() {
     return new Gate(
         (results, runs) -> {
@@ -136,12 +147,58 @@ public final class Gate {
                           .anyMatch(
                               evalResult ->
                                   evalResult.verdict() == EvalResult.Verdict.FAIL
-                                      && (evalResult.evaluator().equals(Evaluators.TARGET)
-                                          || evalResult.evaluator().equals(Evaluators.SETUP))));
+                                      && evalResult.evaluator().equals(ExperimentRunner.TARGET)));
           return failed.isEmpty()
               ? Verdict.pass("no target failures")
               : Verdict.fail("target failed on " + failed);
         });
+  }
+
+  /**
+   * The named guardrail must deny nothing in any attempt. For a guardrail that must stay silent on
+   * legitimate traffic.
+   *
+   * @param name the configured name of the guardrail
+   */
+  public static Gate guardrailShouldNotDeny(String name) {
+    requireGuardrailName(name);
+    return new Gate(
+        (results, runs) -> {
+          var denied = failedCases(results, runs, result -> denied(result, name));
+          return denied.isEmpty()
+              ? Verdict.pass("guardrail " + name + " denied nothing")
+              : Verdict.fail("guardrail " + name + " denied on " + denied);
+        });
+  }
+
+  /**
+   * The named guardrail must deny in every attempt. For a guardrail that must catch an attack every
+   * case carries.
+   *
+   * @param name the configured name of the guardrail
+   */
+  public static Gate guardrailShouldDeny(String name) {
+    requireGuardrailName(name);
+    return new Gate(
+        (results, runs) -> {
+          var allowed = failedCases(results, runs, result -> !denied(result, name));
+          return allowed.isEmpty()
+              ? Verdict.pass("guardrail " + name + " denied every attempt")
+              : Verdict.fail("guardrail " + name + " did not deny on " + allowed);
+        });
+  }
+
+  private static void requireGuardrailName(String name) {
+    if (name == null || name.isBlank())
+      throw new IllegalArgumentException("guardrail name required");
+  }
+
+  private static boolean denied(CaseResult result, String guardrail) {
+    return result.evidence().guardrails().stream()
+        .anyMatch(
+            decision ->
+                decision.name().equals(guardrail)
+                    && decision.decision() == GuardrailDecisionRecord.Decision.DENY);
   }
 
   /** Both must hold. */

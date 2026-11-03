@@ -79,7 +79,7 @@ Access these documentation files for detailed patterns:
 - `akka-context/sdk/mcp-endpoints.html.md` - Exposing tools, resources, and prompts to MCP clients
 - `akka-context/sdk/timed-actions.html.md` - Scheduling and timers
 - `akka-context/sdk/evaluators.html.md` - Evaluators that judge agent interactions, bound to agents in configuration
-- `akka-context/sdk/evaluators/examples.html.md` - Example evaluators that ask a judge agent for a toxicity, summary, or hallucination verdict
+- `akka-context/sdk/evaluators/examples.html.md` - Example evaluators that ask a judge agent for a score against a criterion, or a toxicity, summary, or hallucination label
 - `akka-context/sdk/setup-and-dependency-injection.html.md` - Service bootstrap and dependency injection
 
 **Cross-cutting concerns:**

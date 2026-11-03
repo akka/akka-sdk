@@ -93,6 +93,16 @@ public record InteractionRecord(
         .collect(Collectors.toList());
   }
 
+  /** The calls of the named tool, in order. */
+  public List<ToolCall> toolCalls(String name) {
+    return toolCalls().stream().filter(call -> call.name().equals(name)).toList();
+  }
+
+  /** The name of every tool call, in order. */
+  public List<String> toolNames() {
+    return toolCalls().stream().map(ToolCall::name).toList();
+  }
+
   /**
    * The total number of input tokens across all model calls of the interaction, including prompt
    * tokens read from or written to the provider's prompt cache. See {@link

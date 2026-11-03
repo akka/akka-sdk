@@ -189,17 +189,13 @@ Each section of the documentation keeps its own words for the parts of evaluatio
 | Developing
 | The component that the runtime triggers after an interaction to record a verdict.
 
-| evaluator
-| Testing
-| One check over the reply and the traced tool calls of an evaluation case.
-
 | evaluation case
 | Testing
-| One input to the agent and the evaluators that apply to it.
+| One command sent to the agent. The evaluators bound to the agent judge the interaction.
 
 | judge
 | Developing and Testing
-| A model that scores a reply against a criterion. In Developing it is an agent; in Testing it is a TestKit evaluator.
+| An agent that scores a reply against a criterion, called by an evaluator.
 
 | experiment
 | Reference (CLI)

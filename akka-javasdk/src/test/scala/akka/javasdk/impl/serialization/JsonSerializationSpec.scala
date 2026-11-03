@@ -9,6 +9,7 @@ import java.util
 import java.util.Base64
 import java.util.Optional
 
+import scala.annotation.nowarn
 import scala.beans.BeanProperty
 
 import akka.Done
@@ -113,6 +114,7 @@ object JsonSerializationSpec {
   // Note that the Akka runtime representation doesn't have the label
   final case class RuntimeEvaluationResult(explanation: String, passed: Boolean)
 
+  @nowarn("msg=deprecated")
   final class ApplicationEvaluationResult(val explanation: String, val passed: Boolean) extends EvaluationResult
 
   object OptionalBackwardCompatibility {

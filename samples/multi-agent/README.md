@@ -7,10 +7,10 @@ A sample application demonstrating how to build a multi-agent system using Akka 
 This project illustrates a multi-agent system built around the Autonomous Agent component. The system:
 
 - Receives an activity-suggestion request for a user
-- Personalizes the request with any stored user preferences
 - Hands the request to an Autonomous Agent coordinator that delegates dynamically to a weather agent and an activity agent
+- Personalizes the suggestions with the user's stored preferences in the activity agent
 - Returns a typed answer once the coordinator's task completes
-- Evaluates each completed task with a custom LLM-as-judge and the built-in toxicity evaluator; verdicts are logged and surfaced through metrics and traces
+- Evaluates each completed task with a custom LLM-as-judge against the request and the same preferences; the verdicts are logged, recorded in the ledger and surfaced through metrics and traces
 
 ### Akka components
 
@@ -18,9 +18,9 @@ This sample leverages specific Akka components:
 
 - **Autonomous Agent (`ActivityCoordinator`)**: Accepts a `SuggestActivities` task and declares `Delegation` to the worker agents. The runtime drives its decision loop until the task completes.
 - **Agent (`WeatherAgent`, `ActivityAgent`)**: Plain request-based agents that the coordinator delegates to. Each exposes a `query` method whose parameter type is serialized into a tool schema for the coordinator's model. `WeatherAgent.query` takes a `String`; `ActivityAgent.query` takes an `AgentRequest` record so it can look up the user's preferences with the userId.
-- **Agent (`EvaluatorAgent`)**: An LLM-as-judge agent that evaluates the coordinator's answer against the original (preference-aware) request.
+- **Agent (`EvaluatorAgent`)**: An LLM-as-judge agent that evaluates the coordinator's answer against the original request and the user's preferences.
+- **Evaluator (`ActivityEvaluator`)**: Bound to the coordinator in `application.conf`. The runtime triggers it after each coordinator interaction; when the interaction completed the task, it reads the task result and the user's preferences, asks the `EvaluatorAgent` for a verdict, logs it and records it in the ledger.
 - **EventSourced Entity (`PreferencesEntity`)**: Holds the user's preferences.
-- **Consumer (`EvaluationConsumer`)**: Subscribes to the runtime's task entity events. On task completion it runs `EvaluatorAgent` and the built-in `ToxicityEvaluator`, logging the verdicts.
 - **HTTP Endpoint (`ActivityEndpoint`)**: Exposes the `/activities` and `/preferences` routes.
 
 ### Other
@@ -37,7 +37,7 @@ sequenceDiagram
     participant Coordinator as ActivityCoordinator
     participant WeatherAgent as Weather Agent
     participant ActivityAgent as Activity Agent
-    participant EvalConsumer as EvaluationConsumer
+    participant Evaluator as ActivityEvaluator
 
     User->>HTTPEndpoint: POST /activities/alice "I am in Madrid..."
     HTTPEndpoint->>Coordinator: runSingleTask(SUGGEST_ACTIVITIES.instructions(message))
@@ -52,11 +52,14 @@ sequenceDiagram
     Coordinator->>ActivityAgent: delegate "Suggest activities for a rainy day in Madrid"
     ActivityAgent-->>Coordinator: "Visit the Prado Museum or enjoy local cafes"
 
+    Coordinator-->>Evaluator: interaction recorded in the ledger
+    Note over Evaluator: task not completed, not applicable
+
     Note over Coordinator: Synthesize final answer
     Coordinator->>Task: complete with result
 
-    Task-->>EvalConsumer: TaskCompleted event
-    EvalConsumer->>EvalConsumer: run EvaluatorAgent + ToxicityEvaluator (log verdicts)
+    Coordinator-->>Evaluator: interaction recorded in the ledger
+    Evaluator->>Evaluator: read task result and preferences, run EvaluatorAgent, record the verdict
 
     User->>HTTPEndpoint: GET /activities/alice/{taskId}
     HTTPEndpoint->>Task: get snapshot
@@ -124,7 +127,7 @@ curl -i -XPOST --location "http://localhost:9000/activities/alice" \
   --data '{"message": "I do not work tomorrow. I am in Madrid. What should I do? Beware of the weather"}'
 ```
 
-The endpoint personalizes the request with any stored preferences and calls `runSingleTask` on the coordinator. The response body and `Location` header carry the task id.
+The endpoint calls `runSingleTask` on the coordinator with the user id and the message as the task instructions. The response body and `Location` header carry the task id.
 
 * Retrieve the response for a specific task:
 ```shell
@@ -142,7 +145,7 @@ curl -i localhost:9000/preferences/alice \
   }'
 ```
 
-Preferences are read by the endpoint on each new request and inlined into the task instructions, so subsequent suggestions take them into account. The `EvaluationConsumer` runs on every completed task; inspect the service logs to see its verdicts.
+The `ActivityAgent` reads the preferences on each new request, so subsequent suggestions take them into account. The `ActivityEvaluator` judges every completed task against the same preferences. It logs each verdict, and the verdicts are in the ledger.
 
 ## Deployment
 

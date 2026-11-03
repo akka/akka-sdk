@@ -111,5 +111,5 @@ Inspect the logs again. The coordinator should now skip the `WeatherAgent` and g
 == Next steps
 
 * The coordinator currently uses the `Delegation` capability. xref:sdk:autonomous-agents/capabilities.adoc[Coordination capabilities] also covers handoff, teams, and moderation. The xref:sdk:autonomous-agents/coordination.adoc[coordination patterns] page explains when each pattern is the right fit.
-* Continue with xref:planner-agent/eval.adoc[] to add an evaluation Consumer that judges each task's result on completion, illustrating the Consumer component and "LLM as judge" pattern.
+* Continue with xref:planner-agent/eval.adoc[] to add an evaluator that judges each task's result on completion, illustrating the Evaluator component and the "LLM as judge" pattern.
 

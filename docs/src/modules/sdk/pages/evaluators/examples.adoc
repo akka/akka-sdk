@@ -1,7 +1,7 @@
 = Evaluator examples
-:page-summary: Example evaluators that ask a model to judge the reply of an agent for toxicity, summary quality, and hallucination.
+:page-summary: Example evaluators that ask a model to judge the reply of an agent: a score against a configured criterion, and labels for toxicity, summary quality, and hallucination.
 :page-when-to-use: When you need a starting point for an evaluator that asks a model for its verdict.
-:page-related: sdk:evaluators.adoc, sdk:agents.adoc, testing:evaluation/judges.adoc
+:page-related: sdk:evaluators.adoc, sdk:agents.adoc, testing:evaluation/index.adoc
 :page-prerequisites: An Akka project with at least one agent defined.
 :page-persona: developer, governance-compliance
 :page-banner: evaluations
@@ -10,13 +10,18 @@ include::ROOT:partial$include.adoc[]
 
 == Overview
 
-Each xref:sdk:evaluators.adoc[evaluator] on this page fetches an agent interaction from the ledger, asks a judge agent to label it, and records the label as a pass or a fail.
+Each xref:sdk:evaluators.adoc[evaluator] on this page fetches an agent interaction from the ledger and asks a judge agent for a verdict.
+`JudgeEvaluator` records a score against a criterion from its configuration. The other evaluators record a label as a pass or a fail.
 The examples are source code in the documentation samples, not components of the SDK.
 Copy them into your project and adapt the prompts to your agents.
 
 [cols="2,3,2"]
 |===
-| Evaluator | What the judge receives from the interaction | Labels (pass, fail)
+| Evaluator | What the judge receives from the interaction | Verdict (pass, fail)
+
+| `JudgeEvaluator`
+| The whole transcript, with the criterion from the configuration.
+| A score from 0.0 to 1.0, passing at the configured threshold.
 
 | `ToxicityJudgeEvaluator`
 | The reply.
@@ -40,9 +45,46 @@ A large text can exceed the context window of the judge model, and the judge cal
 The runtime also records the prompt in the ledger, as an interaction of the judge.
 When the inputs of your agent can be large, limit the length of the text that the evaluator sends to the judge.
 
-== The judge agent shared by the examples
+[#judging]
+== Scoring a reply against a criterion
 
-All examples call the same judge agent:
+`JudgeEvaluator` scores the reply against a criterion from its configuration. The judge, `OrderJudge`, is an agent that reads the transcript of the interaction and replies with a score, and the evaluator passes the reply at a configured threshold.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderJudge.java[OrderJudge.java]
+----
+include::example$doc-snippets/src/test/java/com/example/eval/OrderJudge.java[tag=all]
+----
+<1> The verdict as a record. The score is a number from 0.0 to 1.0, the reason one sentence.
+<2> `responseConformsTo` makes the model answer with the JSON of the record.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/eval/JudgeEvaluator.java[JudgeEvaluator.java]
+----
+include::example$doc-snippets/src/test/java/com/example/eval/JudgeEvaluator.java[tag=all]
+----
+<1> The criterion and the threshold are xref:sdk:evaluators.adoc#_configuration_properties_of_an_evaluator[configuration properties of the evaluator], so one class serves any criterion. The criterion is one sentence that states what a good reply does.
+<2> The judge runs in a session named after the evaluation id, apart from the session of the evaluated agent.
+<3> The transcript of the interaction, `InteractionRecord.transcript()`, as the ledger recorded it.
+<4> The verdict passes at the threshold. The score goes on the evaluation.
+
+The binding carries the criterion and the threshold:
+
+[source,conf,indent=0]
+----
+akka.javasdk.evaluation.evaluators.judge {
+  criterion = "The reply answers the question with what the tools returned."
+  threshold = 0.7
+  agents.order-agent { trigger = interaction }
+}
+----
+
+Do not bind an evaluator to its judge agent, and give the judge no `@AgentRole` that a `*` binding matches.
+The evaluator's call to the judge is an interaction of the judge, which would trigger the evaluator again, without end.
+
+== The judge agent shared by the label examples
+
+The toxicity, summarization and hallucination examples call the same judge agent:
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/evaluator/LabelJudge.java[LabelJudge.java]
@@ -50,7 +92,7 @@ All examples call the same judge agent:
 include::example$doc-snippets/src/main/java/com/example/evaluator/LabelJudge.java[tag=all]
 ----
 <1> The judge is an ordinary xref:sdk:agents.adoc[Agent]. It has no `@AgentRole`, so a binding under `agent-roles` does not bind it to an evaluator.
-<2> The evaluator passes the system message and the user message, so all examples use one judge agent.
+<2> The evaluator passes the system message and the user message, so the three label examples use one judge agent.
 <3> The model replies with an explanation and a label.
 <4> `toEvaluation` maps the label to a passed or a failed `Evaluation` and records the label on it. For any other label it throws, and the runtime records the evaluation as failed.
 <5> The judge runs without session memory, so one verdict does not influence the next.
@@ -171,5 +213,5 @@ include::example$doc-snippets/src/test/java/com/example/evaluator/ToxicityJudgeE
 == See also
 
 * xref:sdk:evaluators.adoc[]
-* xref:testing:evaluation/judges.adoc[] to judge replies in tests
+* xref:testing:evaluation/getting-started.adoc[] to judge replies in tests
 * xref:sdk:agents/guardrails.adoc[] to block a reply before it reaches the caller

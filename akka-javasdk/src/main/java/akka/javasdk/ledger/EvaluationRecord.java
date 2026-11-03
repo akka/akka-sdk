@@ -57,11 +57,20 @@ public record EvaluationRecord(
     /** The evaluation ran but could not reach a verdict. This is a deliberate, expected outcome. */
     record Inconclusive(String reason) implements Outcome {}
 
+    /**
+     * The evaluation ran and found nothing to evaluate in the subject. This is a deliberate,
+     * expected outcome.
+     */
+    record NotApplicable(String reason) implements Outcome {}
+
     /** The evaluation failed, as opposed to reporting an inconclusive outcome. */
     record Failed(String reason) implements Outcome {}
   }
 
-  /** The verdict this evaluation reached, or empty for an inconclusive or failed evaluation. */
+  /**
+   * The verdict this evaluation reached, or empty for an inconclusive, not applicable or failed
+   * evaluation.
+   */
   public Optional<Evaluation> evaluation() {
     return outcome instanceof Outcome.Verdict verdict
         ? Optional.of(verdict.evaluation())

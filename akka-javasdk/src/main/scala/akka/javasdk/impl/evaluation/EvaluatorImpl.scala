@@ -13,6 +13,7 @@ import akka.javasdk.evaluation.Evaluator
 import akka.javasdk.evaluation.Subject
 import akka.javasdk.impl.evaluation.EvaluatorEffectImpl.CompleteEffect
 import akka.javasdk.impl.evaluation.EvaluatorEffectImpl.InconclusiveEffect
+import akka.javasdk.impl.evaluation.EvaluatorEffectImpl.NotApplicableEffect
 import akka.runtime.sdk.spi.SpiEvaluator
 import com.typesafe.config.Config
 import io.opentelemetry.context.{ Context => OtelContext }
@@ -85,6 +86,8 @@ private[impl] final class EvaluatorImpl[E <: Evaluator](
         Future.successful(new SpiEvaluator.CompleteEffect(EvaluationConversions.toSpiEvaluation(evaluation)))
       case InconclusiveEffect(reason) =>
         Future.successful(new SpiEvaluator.InconclusiveEffect(reason))
+      case NotApplicableEffect(reason) =>
+        Future.successful(new SpiEvaluator.NotApplicableEffect(reason))
       case unknown =>
         throw new IllegalArgumentException(s"Unknown Evaluator.Effect type ${unknown.getClass}")
     }

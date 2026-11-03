@@ -261,6 +261,23 @@ class DurableEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionValu
       recordedResult.asInstanceOf[spi.SpiEvaluator.InconclusiveResult].reason shouldBe "no verdict"
     }
 
+    "record a not applicable outcome via the SPI recorder" in {
+      val recorder = new RecorderProbe
+      val impl = newImpl(recorder)
+      val started = await(impl.handleEvaluationStart(None, trigger(), null))
+      val startState = started
+        .asInstanceOf[SpiWorkflow.CommandTransitionalEffect]
+        .persistence
+        .asInstanceOf[SpiWorkflow.UpdateState]
+        .newState
+      val outcomePayload = serializer.toBytes(Outcome.notApplicable("no tool call"))
+
+      await(impl.invokeStep(Some(startState), stepCommand(RecordStepName, Some(outcomePayload))))
+
+      val (_, recordedResult) = recorder.recorded.value
+      recordedResult.asInstanceOf[spi.SpiEvaluator.NotApplicableResult].reason shouldBe "no tool call"
+    }
+
     "record a completed outcome with its evaluations" in {
       val recorder = new RecorderProbe
       val impl = newImpl(recorder)

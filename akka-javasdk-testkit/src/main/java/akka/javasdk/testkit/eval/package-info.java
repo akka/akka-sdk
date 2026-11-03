@@ -1,24 +1,19 @@
 /**
  * Evaluation of an agent inside a {@code TestKitSupport} test. Cases run against the running
- * service and are scored on the reply and on the tool calls the runtime traced.
+ * service and are judged by the {@link akka.javasdk.evaluation.Evaluator} components bound to the
+ * agent.
  *
- * <p>An {@link akka.javasdk.testkit.eval.EvalCase} has the command sent to the agent and the
- * evaluators the reply and the tool calls are checked with. The command is the user message as a
- * String, or the command handler's own type. The built-in evaluators are in {@link
- * akka.javasdk.testkit.eval.Evaluators}. The test prepares the mocked tools before the run. Cases
- * are written in Java, or derived from recorded production interactions by {@link
- * akka.javasdk.testkit.eval.EvalCaseParser}. A derived case carries the recorded tool calls and
- * expects the recorded behavior as a baseline; the runner loads the recorded results into the
- * test's stubs through the {@link akka.javasdk.testkit.eval.ToolBindings} given to it.
+ * <p>An {@link akka.javasdk.testkit.eval.EvalCase} is the command sent to the agent, as the user
+ * message or as the command handler's own type. Cases are written in Java or read from a JSON Lines
+ * file with {@link akka.javasdk.testkit.eval.EvalCases}. The evaluators and their bindings come
+ * from the configuration the TestKit runs with, under {@code akka.javasdk.evaluation.evaluators}: a
+ * test binds its own evaluators, kept in the test sources, and disables production ones with {@code
+ * TestKit.Settings.withAdditionalConfig}. The test prepares the mocked tools before the run.
  *
  * <p>{@link akka.javasdk.testkit.eval.ExperimentRunner} calls the agent in a fresh session per
- * case. Without a {@link akka.javasdk.testkit.eval.Gate} every case must pass, which suits a mocked
- * model. With a real model gate the batch on rates. Tool and model evidence is read from the
- * runtime trace through {@link akka.javasdk.testkit.TelemetryReader}.
- *
- * <p>Criteria the built-in expectations cannot express, such as tone or completeness, go to a model
- * through {@link akka.javasdk.testkit.eval.Judge}.
- *
- * <p>{@code SupportAgentEvalTest} in the {@code akka-javasdk-tests} module is a complete example.
+ * case, reads the interaction and the guardrail decisions from the ledger, and waits for the
+ * evaluation every bound evaluator records about the interaction. Without a {@link
+ * akka.javasdk.testkit.eval.Gate} every case must pass, which suits a mocked model. With a real
+ * model gate the batch on rates.
  */
 package akka.javasdk.testkit.eval;

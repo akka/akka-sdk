@@ -22,6 +22,7 @@ import akka.javasdk.impl.evaluation.DurableEvaluatorEffects.CompleteTransition
 import akka.javasdk.impl.evaluation.DurableEvaluatorEffects.EffectImpl
 import akka.javasdk.impl.evaluation.DurableEvaluatorEffects.InconclusiveTransition
 import akka.javasdk.impl.evaluation.DurableEvaluatorEffects.NoPersistence
+import akka.javasdk.impl.evaluation.DurableEvaluatorEffects.NotApplicableTransition
 import akka.javasdk.impl.evaluation.DurableEvaluatorEffects.StepTransition
 import akka.javasdk.impl.evaluation.DurableEvaluatorEffects.UpdateState
 import akka.javasdk.impl.evaluation.DurableEvaluatorProtocol.EvaluationData
@@ -263,8 +264,9 @@ private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
         if (outcome.evaluation() == null)
           throw new IllegalStateException(s"Completed outcome of evaluation [$workflowId] carries no evaluation")
         new SpiEvaluator.CompletedResult(toSpiEvaluation(outcome.evaluation()))
-      case Outcome.Kind.INCONCLUSIVE => new SpiEvaluator.InconclusiveResult(outcome.reason())
-      case Outcome.Kind.FAILED       => new SpiEvaluator.FailedResult(outcome.reason())
+      case Outcome.Kind.INCONCLUSIVE   => new SpiEvaluator.InconclusiveResult(outcome.reason())
+      case Outcome.Kind.NOT_APPLICABLE => new SpiEvaluator.NotApplicableResult(outcome.reason())
+      case Outcome.Kind.FAILED         => new SpiEvaluator.FailedResult(outcome.reason())
     }
 
   private def toSpiEvaluation(data: EvaluationData): SpiEvaluator.Evaluation =
@@ -323,6 +325,8 @@ private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
         new SpiWorkflow.StepTransition(RecordStepName, Some(serializer.toBytes(Outcome.completed(evaluation))))
       case InconclusiveTransition(reason) =>
         new SpiWorkflow.StepTransition(RecordStepName, Some(serializer.toBytes(Outcome.inconclusive(reason))))
+      case NotApplicableTransition(reason) =>
+        new SpiWorkflow.StepTransition(RecordStepName, Some(serializer.toBytes(Outcome.notApplicable(reason))))
     }
 
   private def decodeEnvelope(userState: Option[BytesPayload]): Option[StateEnvelope] =

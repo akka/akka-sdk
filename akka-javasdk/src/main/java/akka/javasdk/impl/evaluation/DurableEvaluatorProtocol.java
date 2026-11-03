@@ -66,6 +66,7 @@ public final class DurableEvaluatorProtocol {
     public enum Kind {
       COMPLETED,
       INCONCLUSIVE,
+      NOT_APPLICABLE,
       FAILED
     }
 
@@ -75,6 +76,10 @@ public final class DurableEvaluatorProtocol {
 
     public static Outcome inconclusive(String reason) {
       return new Outcome(Kind.INCONCLUSIVE, null, reason);
+    }
+
+    public static Outcome notApplicable(String reason) {
+      return new Outcome(Kind.NOT_APPLICABLE, null, reason);
     }
 
     public static Outcome failed(String reason) {

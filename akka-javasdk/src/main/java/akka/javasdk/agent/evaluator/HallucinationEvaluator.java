@@ -25,7 +25,11 @@ import java.util.Locale;
  * hallucination-evaluator.system} and {@code hallucination-evaluator.user} respectively. Default
  * prompts are used if these are not defined. The prompts can be initialized or updated with the
  * {@link PromptTemplate} entity.
+ *
+ * @deprecated Write an {@link akka.javasdk.evaluation.Evaluator} component that calls a judge agent
+ *     of your own to judge whether an output is grounded in a reference text.
  */
+@Deprecated(since = "3.7.1")
 @Component(
     id = HallucinationEvaluator.COMPONENT_ID,
     name = "Hallucination Evaluator Agent",

@@ -7,7 +7,6 @@ package akka.javasdk.testkit.eval;
 import akka.annotation.DoNotInherit;
 import akka.japi.function.Function2;
 import akka.javasdk.agent.Agent;
-import java.util.function.Function;
 
 /**
  * The cases of an experiment, before the agent under test is named. Obtained from {@link
@@ -21,31 +20,12 @@ import java.util.function.Function;
 public interface ExperimentCases<C> {
 
   /**
-   * An evaluator that runs on every case, in addition to the case's expectations. Its class carries
-   * an {@link EvalLabel}.
-   */
-  ExperimentCases<C> evaluator(Evaluator evaluator);
-
-  /**
-   * The stubs the recorded tool calls are loaded into. Needed when a case carries recorded calls,
-   * such as one from {@link EvalCaseParser}. Every tool a case names must be bound.
-   */
-  ExperimentCases<C> bindings(ToolBindings bindings);
-
-  /**
-   * The agent under test. Its command handler takes the case's command. A String reply is used as
-   * is, any other reply is rendered as JSON.
+   * The agent under test. Its command handler takes the case's command. The evaluators bound to the
+   * agent in the configuration the TestKit runs with evaluate every attempt.
    *
    * @param method the agent's command handler, for example {@code SupportAgent::ask}
+   * @throws IllegalArgumentException when an evaluator is bound to the agent with a sampling ratio
+   *     below 1.0, since the experiment waits for every bound evaluator on every attempt
    */
   <A extends Agent, R> Experiment agent(Function2<A, C, Agent.Effect<R>> method);
-
-  /**
-   * The agent under test. {@code replyText} renders the reply instead of the default JSON.
-   *
-   * @param method the agent's command handler
-   * @param replyText renders the reply as the text the evaluators read
-   */
-  <A extends Agent, R> Experiment agent(
-      Function2<A, C, Agent.Effect<R>> method, Function<R, String> replyText);
 }

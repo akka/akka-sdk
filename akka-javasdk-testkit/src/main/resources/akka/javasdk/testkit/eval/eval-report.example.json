@@ -1,198 +1,261 @@
 {
-  "format": "akka-eval-report",
-  "formatVersion": 2,
-  "name": "support-agent-quality",
-  "startedAt": "2026-10-01T10:15:30.123Z",
-  "finishedAt": "2026-10-01T10:16:02.456Z",
-  "runs": 1,
-  "gate": { "passed": false, "detail": "pass rate 0.33 over 3 attempts (3 cases, 1 run) with 1 inconclusive, required 0.90" },
-  "summary": {
-    "cases": 3,
-    "passedCases": 1,
-    "failedCases": 1,
-    "inconsistentCases": 0,
-    "inconclusiveCases": 1,
-    "inconsistentRequirements": 0,
-    "attempts": 3,
-    "passedAttempts": 1,
-    "failedAttempts": 1,
-    "inconclusiveAttempts": 1,
-    "passRate": 0.3333333333333333
+  "format" : "akka-eval-report",
+  "formatVersion" : 4,
+  "name" : "support-agent-quality",
+  "startedAt" : "2026-10-15T14:30:27.579747Z",
+  "finishedAt" : "2026-10-15T14:30:27.580566Z",
+  "runs" : 1,
+  "gate" : {
+    "passed" : false,
+    "detail" : "pass rate 0.33 over 3 attempts (3 cases, 1 run) with 1 inconclusive, required 0.90"
   },
-  "evaluators": [
-    { "evaluator": "tools", "passed": 1, "failed": 0, "inconclusive": 0 },
-    { "evaluator": "reply-contains", "passed": 1, "failed": 0, "inconclusive": 0 },
-    { "evaluator": "tool-arguments", "passed": 0, "failed": 1, "inconclusive": 0 },
-    { "evaluator": "tool-results", "passed": 0, "failed": 0, "inconclusive": 2 }
-  ],
-  "spend": { "attemptsWithEvidence": 3, "modelCalls": 3, "inputTokens": 300, "outputTokens": 60, "latencyMs": 135 },
-  "cases": [
-    {
-      "id": "shipped",
-      "outcome": "PASSED",
-      "passedRuns": 1,
-      "failedRuns": 0,
-      "inconclusiveRuns": 0,
-      "requirements": [
-        { "index": 0, "evaluator": "tools", "outcome": "PASSED", "passedIn": [1], "failedIn": [], "inconclusiveIn": [] },
-        { "index": 1, "evaluator": "reply-contains", "outcome": "PASSED", "passedIn": [1], "failedIn": [], "inconclusiveIn": [] }
-      ]
-    },
-    {
-      "id": "wrong-order",
-      "outcome": "FAILED",
-      "passedRuns": 0,
-      "failedRuns": 1,
-      "inconclusiveRuns": 0,
-      "requirements": [
-        { "index": 0, "evaluator": "tool-arguments", "outcome": "FAILED", "passedIn": [], "failedIn": [1], "inconclusiveIn": [] },
-        { "index": 1, "evaluator": "tool-results", "outcome": "INCONCLUSIVE", "passedIn": [], "failedIn": [], "inconclusiveIn": [1] }
-      ]
-    },
-    {
-      "id": "closing",
-      "outcome": "INCONCLUSIVE",
-      "passedRuns": 0,
-      "failedRuns": 0,
-      "inconclusiveRuns": 1,
-      "requirements": [
-        { "index": 0, "evaluator": "tool-results", "outcome": "INCONCLUSIVE", "passedIn": [], "failedIn": [], "inconclusiveIn": [1] }
-      ]
-    }
-  ],
-  "attempts": [
-    {
-      "id": "shipped",
-      "run": 1,
-      "verdict": "PASS",
-      "interaction": {
-        "input": "Where is o_42?",
-        "userMessage": "Where is o_42?",
-        "reply": "Order o_42 is shipped.",
-        "finalModelText": "Order o_42 is shipped.",
-        "latencyMs": 45,
-        "inputTokens": 100,
-        "outputTokens": 20,
-        "blocked": false,
-        "toolCalls": [
-          {
-            "name": "getOrder",
-            "arguments": { "orderId": "o_42" },
-            "result": "{\"status\":\"shipped\"}",
-            "error": null
-          }
-        ],
-        "modelCalls": [
-          {
-            "model": "gpt-4o",
-            "provider": "openai",
-            "finishReasons": ["STOP"],
-            "inputTokens": 100,
-            "outputTokens": 20,
-            "durationMs": 40,
-            "inputMessages": "[SystemMessage: You are a support agent...] [UserMessage: Where is o_42?]",
-            "outputMessages": "[AiMessage: Order o_42 is shipped.]"
-          }
-        ],
-        "guardrails": [
-          { "name": "pii", "category": "privacy", "passed": true, "explanation": "" }
-        ]
+  "summary" : {
+    "cases" : 3,
+    "passedCases" : 1,
+    "failedCases" : 1,
+    "inconsistentCases" : 0,
+    "inconclusiveCases" : 1,
+    "inconsistentEvaluators" : 0,
+    "attempts" : 3,
+    "passedAttempts" : 1,
+    "failedAttempts" : 1,
+    "inconclusiveAttempts" : 1,
+    "passRate" : 0.3333333333333333
+  },
+  "evaluators" : [ {
+    "evaluator" : "quality",
+    "passed" : 2,
+    "failed" : 1,
+    "inconclusive" : 0,
+    "notApplicable" : 0
+  }, {
+    "evaluator" : "tone",
+    "passed" : 2,
+    "failed" : 0,
+    "inconclusive" : 1,
+    "notApplicable" : 0
+  } ],
+  "guardrails" : [ {
+    "guardrail" : "no-refunds",
+    "allowed" : 0,
+    "denied" : 1,
+    "failed" : 0
+  } ],
+  "spend" : {
+    "attemptsWithEvidence" : 3,
+    "modelResponses" : 5,
+    "inputTokens" : 360,
+    "outputTokens" : 90,
+    "latencyMs" : 2400
+  },
+  "cases" : [ {
+    "id" : "shipped",
+    "outcome" : "PASSED",
+    "passedRuns" : 1,
+    "failedRuns" : 0,
+    "inconclusiveRuns" : 0,
+    "verdicts" : [ {
+      "evaluator" : "quality",
+      "outcome" : "PASSED",
+      "passedIn" : [ 1 ],
+      "failedIn" : [ ],
+      "inconclusiveIn" : [ ],
+      "notApplicableIn" : [ ]
+    }, {
+      "evaluator" : "tone",
+      "outcome" : "PASSED",
+      "passedIn" : [ 1 ],
+      "failedIn" : [ ],
+      "inconclusiveIn" : [ ],
+      "notApplicableIn" : [ ]
+    } ]
+  }, {
+    "id" : "refund",
+    "outcome" : "FAILED",
+    "passedRuns" : 0,
+    "failedRuns" : 1,
+    "inconclusiveRuns" : 0,
+    "verdicts" : [ {
+      "evaluator" : "quality",
+      "outcome" : "FAILED",
+      "passedIn" : [ ],
+      "failedIn" : [ 1 ],
+      "inconclusiveIn" : [ ],
+      "notApplicableIn" : [ ]
+    }, {
+      "evaluator" : "tone",
+      "outcome" : "PASSED",
+      "passedIn" : [ 1 ],
+      "failedIn" : [ ],
+      "inconclusiveIn" : [ ],
+      "notApplicableIn" : [ ]
+    } ]
+  }, {
+    "id" : "closing",
+    "outcome" : "INCONCLUSIVE",
+    "passedRuns" : 0,
+    "failedRuns" : 0,
+    "inconclusiveRuns" : 1,
+    "verdicts" : [ {
+      "evaluator" : "quality",
+      "outcome" : "PASSED",
+      "passedIn" : [ 1 ],
+      "failedIn" : [ ],
+      "inconclusiveIn" : [ ],
+      "notApplicableIn" : [ ]
+    }, {
+      "evaluator" : "tone",
+      "outcome" : "INCONCLUSIVE",
+      "passedIn" : [ ],
+      "failedIn" : [ ],
+      "inconclusiveIn" : [ 1 ],
+      "notApplicableIn" : [ ]
+    } ]
+  } ],
+  "attempts" : [ {
+    "id" : "shipped",
+    "run" : 1,
+    "verdict" : "PASS",
+    "evidence" : {
+      "input" : "Where is o_42?",
+      "interactionId" : "shipped-1",
+      "systemMessage" : "You are a support agent.",
+      "userMessage" : "Where is o_42?",
+      "reply" : "Order o_42 shipped on Monday.",
+      "returned" : "",
+      "failure" : "",
+      "model" : {
+        "provider" : "openai",
+        "name" : "gpt-4o"
       },
-      "results": [
-        { "evaluator": "tools", "verdict": "PASS", "detail": "" },
-        { "evaluator": "reply-contains", "verdict": "PASS", "detail": "" }
-      ]
+      "finishReason" : "STOP",
+      "latencyMs" : 800,
+      "inputTokens" : 120,
+      "outputTokens" : 30,
+      "modelResponses" : 2,
+      "responses" : [ {
+        "content" : "",
+        "inputTokens" : 120,
+        "outputTokens" : 0,
+        "toolCalls" : [ "OrderTools_getOrder" ]
+      }, {
+        "content" : "Order o_42 shipped on Monday.",
+        "inputTokens" : 0,
+        "outputTokens" : 30,
+        "toolCalls" : [ ]
+      } ],
+      "denied" : false,
+      "toolCalls" : [ {
+        "name" : "OrderTools_getOrder",
+        "arguments" : "{\"orderId\":\"o_42\"}",
+        "response" : "shipped"
+      } ],
+      "guardrails" : [ ]
     },
-    {
-      "id": "wrong-order",
-      "run": 1,
-      "verdict": "FAIL",
-      "interaction": {
-        "input": "Where is o_43?",
-        "userMessage": "Where is o_43?",
-        "reply": "Order o_42 is shipped.",
-        "finalModelText": "Order o_42 is shipped.",
-        "latencyMs": 45,
-        "inputTokens": 100,
-        "outputTokens": 20,
-        "blocked": false,
-        "toolCalls": [
-          {
-            "name": "getOrder",
-            "arguments": { "orderId": "o_42" },
-            "result": "{\"status\":\"shipped\"}",
-            "error": null
-          }
-        ],
-        "modelCalls": [
-          {
-            "model": "gpt-4o",
-            "provider": "openai",
-            "finishReasons": ["STOP"],
-            "inputTokens": 100,
-            "outputTokens": 20,
-            "durationMs": 40,
-            "inputMessages": "[SystemMessage: You are a support agent...] [UserMessage: Where is o_43?]",
-            "outputMessages": "[AiMessage: Order o_42 is shipped.]"
-          }
-        ],
-        "guardrails": [
-          { "name": "pii", "category": "privacy", "passed": true, "explanation": "" }
-        ]
+    "results" : [ {
+      "evaluator" : "quality",
+      "verdict" : "PASS",
+      "detail" : "names the order (score 0.90)"
+    }, {
+      "evaluator" : "tone",
+      "verdict" : "PASS",
+      "detail" : "polite"
+    } ]
+  }, {
+    "id" : "refund",
+    "run" : 1,
+    "verdict" : "FAIL",
+    "evidence" : {
+      "input" : "Refund o_43.",
+      "interactionId" : "refund-2",
+      "systemMessage" : "You are a support agent.",
+      "userMessage" : "Refund o_43.",
+      "reply" : "I cannot issue a refund here.",
+      "returned" : "",
+      "failure" : "",
+      "model" : {
+        "provider" : "openai",
+        "name" : "gpt-4o"
       },
-      "results": [
-        { "evaluator": "tool-arguments", "verdict": "FAIL", "detail": "getOrder(orderId) expected o_43, was [o_42]" },
-        {
-          "evaluator": "tool-results",
-          "verdict": "INCONCLUSIVE",
-          "detail": "issueRefund was never called; called [getOrder]; make sure the evaluated name is the registered tool name, which is <Class>_<method> unless @FunctionTool sets a name"
-        }
-      ]
+      "finishReason" : "STOP",
+      "latencyMs" : 800,
+      "inputTokens" : 120,
+      "outputTokens" : 30,
+      "modelResponses" : 2,
+      "responses" : [ {
+        "content" : "",
+        "inputTokens" : 120,
+        "outputTokens" : 0,
+        "toolCalls" : [ "OrderTools_getOrder" ]
+      }, {
+        "content" : "I cannot issue a refund here.",
+        "inputTokens" : 0,
+        "outputTokens" : 30,
+        "toolCalls" : [ ]
+      } ],
+      "denied" : true,
+      "toolCalls" : [ {
+        "name" : "OrderTools_getOrder",
+        "arguments" : "{\"orderId\":\"o_43\"}",
+        "response" : "delivered"
+      } ],
+      "guardrails" : [ {
+        "name" : "no-refunds",
+        "category" : "policy",
+        "boundary" : "BEFORE_AGENT_RESPONSE",
+        "decision" : "DENY",
+        "reportOnly" : false,
+        "explanation" : "refund"
+      } ]
     },
-    {
-      "id": "closing",
-      "run": 1,
-      "verdict": "INCONCLUSIVE",
-      "interaction": {
-        "input": "Thanks, that is all.",
-        "userMessage": "Thanks, that is all.",
-        "reply": "Order o_42 is shipped.",
-        "finalModelText": "Order o_42 is shipped.",
-        "latencyMs": 45,
-        "inputTokens": 100,
-        "outputTokens": 20,
-        "blocked": false,
-        "toolCalls": [
-          {
-            "name": "getOrder",
-            "arguments": { "orderId": "o_42" },
-            "result": "{\"status\":\"shipped\"}",
-            "error": null
-          }
-        ],
-        "modelCalls": [
-          {
-            "model": "gpt-4o",
-            "provider": "openai",
-            "finishReasons": ["STOP"],
-            "inputTokens": 100,
-            "outputTokens": 20,
-            "durationMs": 40,
-            "inputMessages": "[SystemMessage: You are a support agent...] [UserMessage: Thanks, that is all.]",
-            "outputMessages": "[AiMessage: Order o_42 is shipped.]"
-          }
-        ],
-        "guardrails": [
-          { "name": "pii", "category": "privacy", "passed": true, "explanation": "" }
-        ]
+    "results" : [ {
+      "evaluator" : "quality",
+      "verdict" : "FAIL",
+      "detail" : "does not offer help (score 0.30)"
+    }, {
+      "evaluator" : "tone",
+      "verdict" : "PASS",
+      "detail" : "polite"
+    } ]
+  }, {
+    "id" : "closing",
+    "run" : 1,
+    "verdict" : "INCONCLUSIVE",
+    "evidence" : {
+      "input" : "Thanks, that is all.",
+      "interactionId" : "closing-3",
+      "systemMessage" : "You are a support agent.",
+      "userMessage" : "Thanks, that is all.",
+      "reply" : "You are welcome.",
+      "returned" : "",
+      "failure" : "",
+      "model" : {
+        "provider" : "openai",
+        "name" : "gpt-4o"
       },
-      "results": [
-        {
-          "evaluator": "tool-results",
-          "verdict": "INCONCLUSIVE",
-          "detail": "issueRefund was never called; called [getOrder]; make sure the evaluated name is the registered tool name, which is <Class>_<method> unless @FunctionTool sets a name"
-        }
-      ]
-    }
-  ]
+      "finishReason" : "STOP",
+      "latencyMs" : 800,
+      "inputTokens" : 120,
+      "outputTokens" : 30,
+      "modelResponses" : 1,
+      "responses" : [ {
+        "content" : "You are welcome.",
+        "inputTokens" : 120,
+        "outputTokens" : 30,
+        "toolCalls" : [ ]
+      } ],
+      "denied" : false,
+      "toolCalls" : [ ],
+      "guardrails" : [ ]
+    },
+    "results" : [ {
+      "evaluator" : "quality",
+      "verdict" : "PASS",
+      "detail" : "closes (score 1.00)"
+    }, {
+      "evaluator" : "tone",
+      "verdict" : "INCONCLUSIVE",
+      "detail" : "nothing to judge"
+    } ]
+  } ]
 }
