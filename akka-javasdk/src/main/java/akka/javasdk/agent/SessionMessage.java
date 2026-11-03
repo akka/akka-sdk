@@ -205,7 +205,12 @@ public sealed interface SessionMessage {
     }
   }
 
-  /** The model's reply, with any tool calls it requested and the token usage it incurred. */
+  /**
+   * The model's reply, with any tool calls it requested and the token usage it incurred.
+   *
+   * @param attributes provider attributes of the reply. Session memory keeps only values of type
+   *     {@code String} or {@code List} of {@code String}.
+   */
   record AiMessage(
       Instant timestamp,
       String text,
