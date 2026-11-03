@@ -51,6 +51,10 @@ Semantic routing handles requests not claimed by attribute rules. It matches the
 
 Rules are preferable when you can state the condition directly. Semantic routing is useful when the task expressed by the request determines the destination. A frozen manifest can become less representative as traffic changes.
 
+=== Introducing a new model
+
+A canary rule sends a share of the conversations it matches to a candidate destination. To raise the share, write the rule again, as xref:inference:routing.adoc#_shifting_traffic_gradually[Shifting traffic gradually] describes.
+
 === Recording routing decisions
 
 The gateway router records each routing decision against the version of the rules that made it, so you can examine a past decision later.

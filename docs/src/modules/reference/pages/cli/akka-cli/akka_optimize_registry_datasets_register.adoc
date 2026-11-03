@@ -4,7 +4,7 @@ Upload a dataset version under a named dataset
 
 == Synopsis
 
-Upload a chat-format JSONL file, or a zip of the objects a version contains.
+Upload a chat or preference JSONL file, or a zip of the objects a version contains.
 
 The form is read from the leading bytes and not from the file name.
 Use --format to state the format where the objects do not, and --alias to point an alias at the result.
@@ -15,6 +15,16 @@ It contains the descriptor, the items in items.jsonl, and the fixture object the
 A zip containing prepared.json is a prepared-tokens-v1 version: supervised rows already tokenised and masked, in the Parquet files the descriptor lists.
 A run trains them as given.
 The datasets page offers a script that writes the descriptor and the zip.
+
+A file whose first line has "chosen" is a preference-jsonl-v1 version: a prompt, a chosen answer and a rejected answer on each line.
+A dataset holds chat conversations or preference pairs, not both, and a line of the other kind is refused.
+
+A JSONL file of up to 256 MiB is sent as one object.
+A larger file is cut into shards of up to 256 MiB on line boundaries and sent through an upload session.
+--shard-size states another size, and sends a file of any size in shards.
+The cut does not depend on the registry, so the same file cut at the same size registers as the same version on every deployment.
+The registry's limits refuse a shard or a single upload that is too large before anything is sent.
+An upload that stops resumes from the shards the session holds when the same command is run again within 7 days.
 
 Examples can reference local image files by relative path.
 Each image is uploaded under the digest of its own bytes before the examples that reference it, so registering a second version over the same pages uploads only its text.
@@ -37,6 +47,9 @@ akka optimize registry datasets register NS/NAME -f FILE [flags]
   # Upload examples and point an alias at the result
   akka optimize registry datasets register triage/train -f examples.jsonl --alias candidate
 
+  # Upload examples in shards of 64 MiB
+  akka optimize registry datasets register triage/train -f examples.jsonl --shard-size 64MiB
+
   # Report the images the registry does not hold, without uploading
   akka optimize registry datasets register triage/train -f examples.jsonl --no-upload
 ----
@@ -45,12 +58,13 @@ akka optimize registry datasets register NS/NAME -f FILE [flags]
 
 [source,text]
 ----
-      --alias string     Point this alias of the named dataset at the registered version
-  -f, --file string      Path to the chat-format JSONL file, or to a zip of the version's objects
-      --format string    State the format the objects are in. Read from the objects when left out
-  -h, --help             help for register
-      --lineage string   Path to JSON parent references and producer metadata
-      --no-upload        Report the images the registry does not hold, without uploading or registering
+      --alias string        Point this alias of the named dataset at the registered version
+  -f, --file string         Path to the chat or preference JSONL file, or to a zip of the version's objects
+      --format string       State the format the objects are in. Read from the objects when left out
+  -h, --help                help for register
+      --lineage string      Path to JSON parent references and producer metadata
+      --no-upload           Report the images the registry does not hold, without uploading or registering
+      --shard-size string   Send the JSONL file in shards of at most this size, such as 64MiB. 256MiB above 256 MiB
 ----
 
 == Options inherited from parent commands
@@ -65,14 +79,13 @@ akka optimize registry datasets register NS/NAME -f FILE [flags]
       --force                Skip the confirmation prompt
       --jq string            Filter the JSON output with a jq expression
       --json string          Output JSON with only these fields; --json= lists the fields a command offers
-      --no-color             Print without color, as NO_COLOR does
+      --no-color             Print without color or a redrawn progress line, as NO_COLOR does
   -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
       --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
-      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then a local dev-mode service, then http://localhost:9001)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----

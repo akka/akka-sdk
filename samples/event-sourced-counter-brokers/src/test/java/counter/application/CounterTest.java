@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import akka.javasdk.testkit.EventSourcedResult;
 import akka.javasdk.testkit.EventSourcedTestKit;
 import counter.domain.CounterEvent;
-import jnr.ffi.annotations.In;
 import org.junit.jupiter.api.Test;
 
 public class CounterTest {

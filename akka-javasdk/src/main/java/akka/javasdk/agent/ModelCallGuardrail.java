@@ -46,7 +46,10 @@ public non-sealed interface ModelCallGuardrail extends Guardrail {
     /** The system message, or an empty string when the agent has none. */
     String systemMessage();
 
-    /** All messages entering the model call, oldest first. */
+    /**
+     * All messages entering the model call, oldest first. An image or PDF that the runtime loaded
+     * arrives as a {@link MessageContent.DataMessageContent}. Do not modify its bytes.
+     */
     List<Message> messages();
 
     /**

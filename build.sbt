@@ -22,6 +22,9 @@ ThisBuild / makeBomIncludeDependencies := true
 // see Dependencies.jacksonModules
 ThisBuild / dependencyOverrides ++= Dependencies.jacksonModules
 
+// accept the jwt-json-common version the runtime selects over the one akka-http-jwt declares
+ThisBuild / libraryDependencySchemes += "com.github.jwt-scala" %% "jwt-json-common" % VersionScheme.Always
+
 lazy val checkRuntimeDependencyAlignment =
   taskKey[Unit]("Verify direct dependency versions against the versions the Akka Runtime resolves")
 

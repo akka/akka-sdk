@@ -175,7 +175,7 @@ The available organizational roles are: `superuser`, `project-admin`, `billing-a
 An example of creating an OIDC group called `akka-project-admins` with a role of project-admin:
 [source,command line]
 ----
-akka organization user add-binding --group akka-project-admins --role project-admin
+akka organizations role-bindings add --group akka-project-admins --role project-admin
 ----
 
 [#assigning_project_level_roles]
@@ -202,7 +202,7 @@ akka roles add-binding --group akka-dev-admin --role viewer --project project2
 
 - xref:operations:organizations/manage-users.adoc[]
 - xref:operations:projects/manage-project-access.adoc[]
-- xref:reference:cli/akka-cli/akka_organizations_users.adoc#_see_also[`akka organization users` commands]
+- xref:reference:cli/akka-cli/akka_organizations_role-bindings.adoc#_see_also[`akka organizations role-bindings` commands]
 - xref:reference:cli/akka-cli/akka_roles.adoc#_see_also[`akka roles` commands]
 - xref:reference:cli/akka-cli/akka_organizations_auth_add_openid.adoc[`akka organization auth add openid` command]
 - xref:reference:cli/akka-cli/akka_organizations_auth_test.adoc[`akka organizations auth test` command]

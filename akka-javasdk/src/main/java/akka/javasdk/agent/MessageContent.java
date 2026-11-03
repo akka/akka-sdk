@@ -29,7 +29,8 @@ public sealed interface MessageContent {
    *
    * <p>Application code is not expected to construct these directly; reference content by URI (e.g.
    * {@code object://bucket/key}) and let the runtime load it. Concrete implementations are provided
-   * internally and produced by the testkit so tests can inspect what the model received.
+   * internally. A {@link ModelCallGuardrail} receives them, and the testkit produces them so tests
+   * can inspect what the model received.
    */
   sealed interface DataMessageContent extends MessageContent {
     /** The inline bytes. */

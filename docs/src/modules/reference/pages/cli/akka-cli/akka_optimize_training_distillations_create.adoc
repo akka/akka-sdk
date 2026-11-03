@@ -1,0 +1,97 @@
+= akka optimize training distillations create
+
+Start a distillation
+
+== Synopsis
+
+Start a distillation.
+The teacher answers every decision in the source dataset.
+Optimize then registers the accepted answers as a version of the target dataset.
+The distillation completes.
+
+The teacher first answers the smoke decisions on one GPU.
+The smoke takes the first 16 decisions of the source, and all but one must be accepted.
+Use --smoke to specify the decisions instead.
+Every specified decision must be accepted.
+Once the smoke passes, the teacher answers decisions across the whole source on --replicas replicas, with one GPU each, until the distillation ends.
+
+References in --teacher, --from and --to without a namespace use the training project's namespace.
+
+Omitted settings use these defaults: --max-tokens 4096, --max-model-length 65536, --temperature 1.0, --top-p 1.0, --seed 0, --thinking off and --replicas 1.
+
+[source,shell]
+----
+akka optimize training distillations create --project PROJECT --teacher MODEL --from DATASET --to NAME [flags]
+----
+
+== Examples
+
+[source,shell]
+----
+  # Start a distillation whose smoke takes the first decisions of the source
+  akka optimize training distillations create --project support-triage \
+    --teacher google/gemma-4-31b-it:v1 --from triage/conversations:v2 --to triage-distilled
+
+  # Name the smoke's decisions
+  akka optimize training distillations create --project support-triage \
+    --teacher google/gemma-4-31b-it:v1 --from triage/conversations:v2 --to triage-distilled \
+    --smoke 0:1,1:1,2:3
+
+  # Answer on four replicas, with reasoning, and wait for it
+  akka optimize training distillations create --project support-triage \
+    --teacher google/gemma-4-31b-it:v1 --from triage/conversations:v2 --to triage-distilled \
+    --smoke 0:1,1:1 --replicas 4 --thinking on --wait
+----
+
+== Options
+
+[source,text]
+----
+      --description string     Description for the distillation
+      --exit-status            Exit with a non-zero status if the distillation fails or is cancelled. Requires --wait
+      --from string            Source chat dataset whose assistant messages are the decisions, as NS/NAME[:VERSION]
+  -h, --help                   help for create
+      --instructions string    Text appended to each prompt's system message
+      --max-model-length int   Maximum combined token count for a prompt and its answer (default 65536)
+      --max-tokens int         Maximum number of tokens the teacher generates for one decision (default 4096)
+      --project string         Training project name or ID whose GPU quota the distillation counts against
+      --replicas int           Teacher replicas after the smoke, one GPU each (default 1)
+      --seed int               Sampling seed
+      --smoke string           Decisions the smoke answers on one GPU, as ROW:MESSAGE pairs separated by commas, such as 0:2,5:1. If omitted, the smoke uses the first 16 decisions of the source
+      --teacher string         Model that answers, as a registry reference NS/NAME[:VERSION]: a base model or an adapter over one
+      --temperature float      Sampling temperature (default 1)
+      --thinking string        Whether the prompt asks the teacher to reason first: on or off (default "off")
+      --to string              Named dataset for the accepted rows, as NS/NAME
+      --top-p float            Nucleus sampling threshold (default 1)
+      --wait                   Wait until the distillation ends
+----
+
+== Options inherited from parent commands
+
+[source,text]
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color or a redrawn progress line, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --timeout duration     client command timeout (default 10s)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then a local dev-mode service, then http://localhost:9001)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize_training_distillations.html[akka optimize training distillations]	 - Manage distillations
+
+[discrete]
+
