@@ -98,6 +98,8 @@ with this in mind. For example, accepting an offset of some sort to let a client
 in the stream. Streaming gRPC endpoint methods cannot rely on a stream itself to keep a local JVM object alive.
 A reconnected client may not end up in the same service instance as the original connection.
 
+IMPORTANT: In a deployed service, a streaming gRPC call ends after 60 seconds unless its route rule sets `allowStreaming: true`. See xref:operations:services/invoke-service.adoc#streaming[Routing streaming and long-running requests].
+
 To stream the results of a request, mark the return type of the method as `stream` in the `.proto` file:
 
 [source,protobuf]
