@@ -9,6 +9,7 @@ import static akkajavasdk.components.agent.RequestRecordingModelProvider.message
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import akka.javasdk.SanitizerException;
 import akka.javasdk.agent.SessionMemoryEntity;
 import akka.javasdk.agent.SessionMessage;
 import akka.javasdk.agent.SessionMessage.AiMessage;
@@ -518,6 +519,62 @@ public class SanitizerIntegrationTest extends TestKitSupport {
     assertThatThrownBy(() -> failed.get(5, TimeUnit.SECONDS))
         .isInstanceOf(ExecutionException.class)
         .hasRootCauseInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  public void shouldFailByNameWithTheCauseWhenASanitizerFails() {
+    // the cause holds the text that the sanitizer was masking, and the message does not
+    assertThatThrownBy(() -> getSanitizerClient().sanitize("failing", "a failsanitizer here"))
+        .isInstanceOfSatisfying(
+            SanitizerException.class, e -> assertThat(e.getSanitizerName()).isEqualTo("failing"))
+        .hasMessage("Sanitizer [failing] failed")
+        .cause()
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("cannot mask: a failsanitizer here");
+
+    var failed =
+        getSanitizerClient().sanitizeAsync("failing", "a failsanitizer here").toCompletableFuture();
+    assertThatThrownBy(() -> failed.get(5, TimeUnit.SECONDS))
+        .isInstanceOf(ExecutionException.class)
+        .cause()
+        .isInstanceOfSatisfying(
+            SanitizerException.class, e -> assertThat(e.getSanitizerName()).isEqualTo("failing"))
+        .hasMessage("Sanitizer [failing] failed")
+        .cause()
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("cannot mask: a failsanitizer here");
+  }
+
+  @Test
+  public void shouldFailByNameWithTheCauseWhenTheStageOfASanitizerFails() {
+    // the cause is the exception of the sanitizer, not the CompletionException around it
+    assertThatThrownBy(() -> getSanitizerClient().sanitize("failing", "a failasyncsanitizer here"))
+        .isInstanceOfSatisfying(
+            SanitizerException.class, e -> assertThat(e.getSanitizerName()).isEqualTo("failing"))
+        .hasMessage("Sanitizer [failing] failed")
+        .cause()
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("cannot mask: a failasyncsanitizer here");
+  }
+
+  @Test
+  public void shouldFailByNameWithoutACauseWhenASanitizerReturnsNull() {
+    assertThatThrownBy(() -> getSanitizerClient().sanitize("failing", "a nullsanitizer here"))
+        .isInstanceOfSatisfying(
+            SanitizerException.class, e -> assertThat(e.getSanitizerName()).isEqualTo("failing"))
+        .hasMessage("Sanitizer [failing] returned null")
+        .hasNoCause();
+  }
+
+  @Test
+  public void shouldFailByNameFromAComponentWhenASanitizerFails() {
+    var response =
+        httpClient
+            .GET("/sanitize-failure/failing/a%20failsanitizer%20here")
+            .responseBodyAs(String.class)
+            .invoke();
+
+    assertThat(response.body()).isEqualTo("failing: Sanitizer [failing] failed");
   }
 
   @Test

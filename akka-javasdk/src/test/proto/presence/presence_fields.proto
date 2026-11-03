@@ -1,0 +1,26 @@
+// Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
+
+syntax = "proto3";
+
+package presence;
+
+import "google/protobuf/timestamp.proto";
+
+option java_outer_classname = "PresenceProtos";
+
+// Fields with and without explicit presence, for view schema coverage
+message PresenceFields {
+  string id = 1;
+  Nested nested = 2;
+  optional string nickname = 3;
+  optional google.protobuf.Timestamp review_date = 4;
+  repeated string tags = 5;
+  oneof contact {
+    string email = 6;
+    string phone = 7;
+  }
+}
+
+message Nested {
+  string value = 1;
+}

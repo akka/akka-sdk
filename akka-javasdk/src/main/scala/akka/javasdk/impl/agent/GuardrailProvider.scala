@@ -10,6 +10,7 @@ import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
+import scala.jdk.OptionConverters._
 import scala.util.Failure
 
 import akka.actor.typed.ActorSystem
@@ -258,7 +259,7 @@ import org.slf4j.LoggerFactory
       toSpiDecision(
         guardrail.decideAsync(
           new AgentResponseGuardrailCallContextImpl(
-            new Message.AiMessage(ctx.response, java.util.List.of()),
+            new Message.AiMessage(ctx.response, java.util.List.of(), ctx.thinking.toJava, ctx.attributes.asJava),
             ctx.agentId,
             ctx.sessionId,
             ctx.modelName,
@@ -275,7 +276,9 @@ import org.slf4j.LoggerFactory
       case a: SpiAgent.ContextMessage.AiMessage =>
         new Message.AiMessage(
           Option(a.content).getOrElse(""),
-          a.toolRequests.map(tr => new AiMessage.ToolCallRequest(tr.id, tr.name, tr.arguments)).asJava)
+          a.toolRequests.map(tr => new AiMessage.ToolCallRequest(tr.id, tr.name, tr.arguments)).asJava,
+          a.thinking.toJava,
+          a.attributes.asJava)
       case t: SpiAgent.ContextMessage.ToolCallResponseMessage =>
         new Message.ToolCallResponse(t.id, t.name, t.contents.map(AgentImpl.fromSpiMessageContent).asJava, t.isError)
     }

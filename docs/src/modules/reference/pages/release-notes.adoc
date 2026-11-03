@@ -10,6 +10,22 @@ Current versions
 * Akka CLI {akka-cli-version}
 * A glance of all Akka libraries and their current versions is presented at https://doc.akka.io/libraries/akka-dependencies/current[Akka library versions].
 
+== November 2026
+
+* [[cli-3-0-81]]Akka CLI 3.0.81
+- **Breaking change**: Organization membership is now controlled by `akka organization role-bindings` (it used to be `akka organization users`).
+- Management of custom roles
+- Akka Optimize 0.10.1
+- Akka Verify commands
+
+* [[sdk-3-7-1]]https://github.com/akka/akka-sdk/releases/tag/v3.7.1[Akka SDK 3.7.1,window="new"]
+- Runtime 1.7.4
+- Fail mode for a guardrail sets whether a guardrail that fails to decide blocks the call, see xref:sdk:agents/guardrails.adoc#_configuring_guardrails[Configuring guardrails]
+- `AiMessage` in a guardrail exposes the thinking of the model and the attributes from the model provider.
+- System id and service id headers in model requests, see xref:sdk:model-provider-details.adoc#_identity_headers[Identity headers]
+- `SanitizerClient` fails with a `SanitizerException` when a sanitizer class fails or returns `null`.
+- Views support optional and recursive protobuf message fields.
+
 == October 2026
 
 [sidebar]
@@ -22,6 +38,11 @@ The Akka runtime enforces governance while it executes each agent interaction, s
 The ledger records every agent interaction with its model calls, tool calls, token usage, and outcome. The new xref:sdk:evaluators.adoc[Evaluator] component assesses the interactions of the agents that you bind it to. The runtime runs an evaluator in the background after each interaction and records the verdict in the ledger.
 
 ****
+
+* xref:release-notes/runtime/1.7.4.adoc[Akka Runtime 1.7.4]
+- Fail mode of a guardrail.
+- Ledger listing filters
+- Fixes for workflows, Azure OpenAI and Vertex AI model calls, gRPC endpoints, and the backoffice.
 
 * Akka CLI 3.0.78
 - Workload identity support for data management 

@@ -18,13 +18,13 @@ A capture is the input and output of one exchange that passed through the model 
 
 A use case is a kind of task, such as classifying a support request. Routing, grading, training, and cost reporting use the same use case to describe that traffic. A use case can involve several tools; it is not the same thing as a tool.
 
-The gateway records requests and responses as capture artifacts. A derived capture gives downstream services a common representation of the model, use case, caller, conversation, and token usage. Grading measures output quality. Targeting combines quality checks, traffic volume, task similarity, and cost to identify training candidates.
+The gateway records requests and responses as capture artifacts. A derived capture gives downstream services a common representation of the model, use case, system id, conversation, and token usage. Grading measures output quality. Targeting combines quality checks, traffic volume, task similarity, and cost to identify training candidates.
 
 Captures and the ledger serve different purposes. Captures describe traffic through the gateway. The ledger records actions and control verdicts. Neither should be assumed to replace the other.
 
 === Choosing what to grade
 
-Use deterministic graders when an answer can be checked exactly, such as a classification label or the result of generated SQL. Use a model judge for criteria that require interpretation. A task without a reliable quality measure is unsuitable for automatic promotion to a specialized model.
+Use deterministic graders when an answer can be checked exactly, such as a classification label or the result of generated SQL. Use a model judge for criteria that require interpretation. A task without a reliable quality measure is unsuitable for promotion to a specialized model.
 
 A grader scores a finished answer; a reward guides sampled completions during reinforcement training. Their execution frequency and cost differ. See xref:optimize:trainer/graders-and-rewards.adoc[].
 
@@ -43,16 +43,16 @@ A training project groups the runs and models for a use case. Runs produce versi
 
 === Promotion and production traffic
 
-The improvement policy defines the quality and token-use objectives for a candidate. Evidence supporting promotion is kept in the ledger. A staged routing policy introduces the model through shadow traffic, then a canary, before directing the use case to it.
+The improvement policy defines the quality and token-use objectives for a candidate. Evidence supporting promotion is kept in the ledger. A canary rule introduces the model by sending a share of the conversations it matches to the model. You raise the share by writing the rule again, and you end the canary by writing the rule as `toDestination`. See xref:inference:routing.adoc#_shifting_traffic_gradually[Shifting traffic gradually].
 
 Selecting a `champion` artifact, approving a model for production, deploying its weights, and routing traffic are separate operations. The artifact registry stores versions and aliases; the organization's model registry records sanction and conditions of use. A trainer endpoint tests a model; a model endpoint serves production requests.
 
-Grading continues after promotion. Drift prompts reassessment and retraining; insufficient quality requires restoring the previous model and routing policy. Evidence for one specialized use case does not establish suitability for another.
+Grading continues after promotion. Drift prompts reassessment and retraining; insufficient quality requires restoring the previous model and its routing. Evidence for one specialized use case does not establish suitability for another.
 
 [#spend-and-budgets]
 == Spend and budgets
 
-Spend is the cost of recorded model traffic, calculated from token usage and a versioned pricing catalog. It connects model usage to the use cases and callers responsible for it.
+Spend is the cost of recorded model traffic, calculated from token usage and a versioned pricing catalog. It connects model usage to the use cases and systems responsible for it.
 
 === Cost and quality
 

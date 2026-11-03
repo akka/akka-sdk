@@ -54,7 +54,7 @@ Serving decides what runs. xref:inference:routing.adoc[Routing requests to model
 [#spend]
 == Spend
 
-xref:inference:tracking-spend.adoc[Tracking inference spend] reports what model traffic in a period consumed and cost, priced from a pricing catalog that you publish. Spend is attributed to callers, and xref:inference:erasing-caller-data.adoc[Erasing caller data] removes the identifier of a caller, for example to answer a privacy request.
+xref:inference:tracking-spend.adoc[Tracking inference spend] reports what model traffic in a period consumed and cost, priced from a pricing catalog that you publish. Spend is attributed to systems by the system id that each request names.
 
 include::partial$aao-inference-notice.adoc[]
 

@@ -1,0 +1,115 @@
+= akka optimize training datasets analyze
+
+Measure a dataset's token lengths under a base model, and estimate a run over it
+
+== Synopsis
+
+Measure a dataset under a base model's tokenizer and chat template.
+The analysis claims no GPU.
+
+DATASET is a registry reference that names its namespace, such as triage/train.
+--model names the base model by repository.
+Where it is not given, the base model is the run file's baseModel, and a --model that names another base model than the run file is refused.
+The analysis measures the examples of the dataset version the reference resolves to, under the commit the base model pins.
+A dataset of prepared token rows is refused, since it carries its lengths already.
+A dataset of preference pairs is measured as a dpo run reads it.
+
+Optimize keeps one analysis for each set of examples, base model commit and Optimize version.
+Two dataset versions or names that hold the same examples share one analysis.
+Running the command again for the same three returns that analysis.
+A failed analysis is started again, except one that refused the dataset, which is returned as it is.
+
+A row's length is the length a run compares against maxSeqLength.
+The report gives:
+
+* what the rows were measured under: the tokenizer's repository and commit, the digest of the chat template the rows were rendered under, whether that template is a corrected copy or the one the repository ships, and the Optimize version;
+* the rows, and the median, 90th percentile, 99th percentile and longest row;
+* how many rows are longer than each common sequence length;
+* the longest rows, numbered from 0 among the dataset's non-blank lines, as a run's refusal numbers them;
+* the smallest common sequence length that covers every row, and the smallest at or above the 99th percentile with the rows longer than it.
+Either is absent where no common length is large enough;
+* the tokens a run trains under the default loss policy and under all assistant turns, counted before any row is cut or left out, or why a policy cannot train the rows.
+
+In a dataset of preference pairs, the report says pairs where it says rows.
+A pair's length is the longer of the prompt with the chosen answer and the prompt with the rejected answer, which is what a dpo run compares against maxSeqLength.
+A dpo run removes no turns, so the report shows no trimmed lengths.
+Its trained tokens are those of both answers, or why a pair cannot be trained, such as a chat template that does not render the answer after its prompt.
+
+Once the analysis is done, the report estimates the steps of a run over every analyzed row, including rows that data.truncation: drop would leave out: a supervised run over chat examples, and a dpo run over preference pairs.
+It also estimates the time, from the GPU seconds per row of completed supervised runs of the same base model, scaled to the estimated steps, batch and GPUs.
+Those runs can have trained on other GPU counts and other datasets.
+The times come from completed supervised runs, so a dpo run's time is not estimated.
+
+--file reads a run file, as "training runs start -f" does, and estimates a run of its config and execution.
+Without it, the estimate is for a run with the default settings.
+Each value the steps are computed from is marked "run file" where the run file supplied the value the run uses, and "default" where the run file left it out, or gave zero or a value the run replaces.
+
+Without --wait, the command starts the analysis or reads it, and prints where it stands.
+With --wait, it follows the analysis until it is done or failed, then prints the report.
+--timeout bounds the wait, not the analysis, which carries on.
+A read that fails with a server error or a dropped connection is tried again a few times.
+A refusal, such as a missing permission, ends the wait at once.
+The estimates are asked for the dataset version the first answer named, so a reference that moves during the wait does not change what is reported.
+
+A failed analysis prints its reason and exits with a non-zero status.
+
+-o json prints the response as Optimize sends it.
+
+[source,shell]
+----
+akka optimize training datasets analyze DATASET [--model BASE_MODEL] [-f RUN_FILE] [flags]
+----
+
+== Examples
+
+[source,shell]
+----
+  # Measure a dataset and wait for the report
+  akka optimize training datasets analyze triage/train --model Qwen/Qwen3-0.6B --wait
+
+  # Estimate the steps and time of a run file over the dataset
+  akka optimize training datasets analyze triage/train --model Qwen/Qwen3-0.6B -f run.json --wait
+
+  # Print the report as JSON
+  akka optimize training datasets analyze triage/train --model Qwen/Qwen3-0.6B --wait -o json
+----
+
+== Options
+
+[source,text]
+----
+  -f, --file string        A run file whose config and execution the estimates are for. Use '-' to read from standard input
+  -h, --help               help for analyze
+      --model string       The base model the rows are measured under, by repository. Defaults to the run file's baseModel
+      --timeout duration   With --wait, the longest to wait before timing out
+      --wait               Wait for the analysis to finish, then print the report
+----
+
+== Options inherited from parent commands
+
+[source,text]
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color or a redrawn progress line, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then a local dev-mode service, then http://localhost:9001)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize_training_datasets.html[akka optimize training datasets]	 - Measure a registered dataset under a base model before training on it
+
+[discrete]
+
