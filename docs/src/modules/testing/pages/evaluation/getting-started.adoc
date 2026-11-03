@@ -73,7 +73,7 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/RefundPolicyEva
 <1> A tool call in the ledger is the request the model made. A call that a guardrail denied has no response, so only a call with a response counts as a refund.
 <2> A xref:sdk:evaluators.adoc#outcomes[not applicable] result does not count against the case.
 
-The sample has two more evaluators, which the test below also binds: `ReplyGroundingEvaluator` compares the reply with the order the tool returned, and a xref:sdk:evaluators.adoc#judging[judge] scores the helpfulness of the reply.
+The sample has two more evaluators, which the test below also binds: `ReplyGroundingEvaluator` compares the reply with the order the tool returned, and a xref:sdk:evaluators/examples.adoc#judging[judge] scores the helpfulness of the reply.
 
 [#test-class]
 == The test class

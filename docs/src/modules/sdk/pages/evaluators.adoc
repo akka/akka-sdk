@@ -54,47 +54,9 @@ The runtime runs a limited number of evaluations of `Evaluator` components at th
 When `evaluate` does not return within 2 minutes, the runtime records a failed evaluation.
 For an evaluation that can take longer, use a xref:_durable_evaluators[durable evaluator].
 
-For evaluators that ask a judge agent for the verdict, see xref:sdk:evaluators/examples.adoc[].
+A criterion that has no exact answer, such as whether a reply is helpful, needs a model. xref:sdk:evaluators/examples.adoc[] shows evaluators that ask a judge agent for the verdict, starting with xref:sdk:evaluators/examples.adoc#judging[Scoring a reply against a criterion].
 
 The link:{attachmentsdir}/api/akka/javasdk/evaluation/Subject.html[`Subject`] in the link:{attachmentsdir}/api/akka/javasdk/evaluation/EvaluationContext.html[`EvaluationContext`] also carries `agentComponentId()`, useful when one evaluator is bound to several agents, and `flowId()` when the agent ran inside an autonomous-agent flow.
-
-[#judging]
-=== Judging with a model
-
-A criterion that has no exact answer, such as whether a reply is helpful, needs a model.
-The judge is an agent of your own that reads the interaction and replies with a score, and the judge evaluator is the evaluator that calls it.
-
-[source,java,indent=0]
-.{sample-base-url}/doc-snippets/src/test/java/com/example/eval/OrderJudge.java[OrderJudge.java]
-----
-include::example$doc-snippets/src/test/java/com/example/eval/OrderJudge.java[tag=all]
-----
-<1> The verdict as a record. The score is a number from 0.0 to 1.0, the reason one sentence.
-<2> `responseConformsTo` makes the model answer with the JSON of the record.
-
-[source,java,indent=0]
-.{sample-base-url}/doc-snippets/src/test/java/com/example/eval/JudgeEvaluator.java[JudgeEvaluator.java]
-----
-include::example$doc-snippets/src/test/java/com/example/eval/JudgeEvaluator.java[tag=all]
-----
-<1> The criterion and the threshold are xref:_configuration_properties_of_an_evaluator[configuration properties of the evaluator], so one class serves any criterion. The criterion is one sentence that states what a good reply does.
-<2> The judge runs in a session named after the evaluation id, apart from the session of the evaluated agent.
-<3> The transcript of the interaction, `InteractionRecord.transcript()`, as the ledger recorded it.
-<4> The verdict passes at the threshold. The score goes on the evaluation.
-
-The binding carries the criterion and the threshold:
-
-[source,conf,indent=0]
-----
-akka.javasdk.evaluation.evaluators.judge {
-  criterion = "The reply answers the question with what the tools returned."
-  threshold = 0.7
-  agents.order-agent { trigger = interaction }
-}
-----
-
-Do not bind an evaluator to its judge agent, and give the judge no `@AgentRole` that a `*` binding matches.
-The evaluator's call to the judge is an interaction of the judge, which would trigger the evaluator again, without end.
 
 === Recording the verdict
 

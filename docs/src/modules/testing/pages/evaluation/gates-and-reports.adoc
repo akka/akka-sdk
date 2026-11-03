@@ -81,7 +81,7 @@ Assert on the report, and use the rendered report as the failure message.
 === Gating a judged batch
 
 A judge can give the same reply a different score on another run.
-Gate a batch on the pass rate of the xref:sdk:evaluators.adoc#judging[judge evaluator] instead of asserting on one judged case.
+Gate a batch on the pass rate of the xref:sdk:evaluators/examples.adoc#judging[judge evaluator] instead of asserting on one judged case.
 `Gate.passRateShouldBeAtLeast(JudgeEvaluator.class, minimumRate)` rates the evaluator over the attempts where it reached a verdict, and fails when it judged none.
 
 [source,java,indent=0]

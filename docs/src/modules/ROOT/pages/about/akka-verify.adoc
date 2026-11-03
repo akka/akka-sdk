@@ -34,7 +34,7 @@ A control is an obligation plus the mechanism that meets it. Every control is on
 
 | Evaluation
 | Measures and scores behavior, live or in a test.
-| xref:sdk:evaluators.adoc[Evaluators], xref:sdk:evaluators.adoc#judging[Judging with a model]
+| xref:sdk:evaluators.adoc[Evaluators], xref:sdk:evaluators/examples.adoc#judging[Scoring a reply against a criterion]
 
 | Human
 | Gives a named person authority over a decision. The agent waits, durably, until the person decides.
