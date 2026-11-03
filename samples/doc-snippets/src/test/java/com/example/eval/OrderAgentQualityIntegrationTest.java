@@ -111,7 +111,7 @@ public class OrderAgentQualityIntegrationTest extends TestKitSupport {
 
   // tag::judged-batch[]
   @Test
-  public void repliesStayHelpful() {
+  public void repliesAnswerFromTheTools() {
     var report = new ExperimentRunner(testKit)
       .cases(OrderCases.CURATED)
       .agent(OrderAgent::ask)

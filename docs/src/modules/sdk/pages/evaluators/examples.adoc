@@ -48,7 +48,6 @@ When the inputs of your agent can be large, limit the length of the text that th
 [#judging]
 == Scoring a reply against a criterion
 
-A criterion that has no exact answer, such as whether a reply is helpful, needs a model.
 `JudgeEvaluator` scores the reply against a criterion from its configuration. The judge, `OrderJudge`, is an agent that reads the transcript of the interaction and replies with a score, and the evaluator passes the reply at a configured threshold.
 
 [source,java,indent=0]

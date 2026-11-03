@@ -85,7 +85,7 @@ An evaluator that records no evaluation within the evaluation timeout is inconcl
 | What one attempt left in the ledger: the interaction and the guardrail decisions. See xref:testing:evaluation/gates-and-reports.adoc#reading-a-failed-case[Reading an attempt that did not pass].
 |===
 
-All types are in the `akka.javasdk.testkit.eval` package.
+The testkit types are in the `akka.javasdk.testkit.eval` package. `Evaluator` is in the `akka.javasdk.evaluation` package of the SDK.
 The API documentation is at link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/package-summary.html[akka.javasdk.testkit.eval].
 
 == See also

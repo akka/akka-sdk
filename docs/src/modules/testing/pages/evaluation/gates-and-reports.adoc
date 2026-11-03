@@ -101,7 +101,7 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 | Accessor | Content
 
 | `name()`
-| The name given with `name(...)`, or the test method that ran the experiment, for example `OrderAgentEvalIntegrationTest.qualityGate`.
+| The name given with `name(...)`, or the test method that ran the experiment, for example `OrderAgentQualityIntegrationTest.qualityGate`.
 
 | `passed()`
 | Whether the gate passed.
@@ -125,7 +125,7 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 | The report as data, a `ReportDocument` with every case, every attempt and its evidence, for tools that render their own reports.
 
 | `reportFile()`
-| The JSON file `run()` wrote to `target/eval-reports/<name>-<start time>.json`, for example `OrderAgentEvalIntegrationTest.qualityGate-20261001-101530-123.json`, holding `document()`. Every run keeps its own file. See the xref:sdk:attachment$eval-report.example.json[example report]. `ReportDocument.read(path)` reads it back. `reportDirectory(path)` on the experiment changes the directory, `withoutReportFile()` writes none. Empty when no file was written.
+| The JSON file `run()` wrote to `target/eval-reports/<name>-<start time>.json`, for example `OrderAgentQualityIntegrationTest.qualityGate-20261001-101530-123.json`, holding `document()`. Every run keeps its own file. See the xref:sdk:attachment$eval-report.example.json[example report]. `ReportDocument.read(path)` reads it back. `reportDirectory(path)` on the experiment changes the directory, `withoutReportFile()` writes none. Empty when no file was written.
 |===
 
 A rendered report of a passing batch:
