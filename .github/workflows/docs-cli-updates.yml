@@ -46,6 +46,7 @@ jobs:
         chmod +x docs/src-static/install-cli.sh
         docs/src-static/install-cli.sh --force --prefix="${CLI_INSTALL_PATH}" --version="$REQUESTED_CLI_VERSION"
         CLI_VERSION=$(akka version)
+        echo "version=${CLI_VERSION}" >> "$GITHUB_OUTPUT"
         echo "setting CLI version to ${CLI_VERSION}"
         sed -i.bak -E "s/^AKKA_CLI_VERSION := .*/AKKA_CLI_VERSION := ${CLI_VERSION}/" Makefile
         rm Makefile.bak
@@ -57,7 +58,7 @@ jobs:
       # https://github.com/peter-evans/create-pull-request/releases
       uses: peter-evans/create-pull-request@v8.0.0
       with:
-        title: "docs: akka CLI docs"
+        title: "docs: akka CLI ${{ steps.install-cli.outputs.version }} docs"
         branch-suffix: short-commit-hash
         body: |
           Latest Akka CLI help texts
