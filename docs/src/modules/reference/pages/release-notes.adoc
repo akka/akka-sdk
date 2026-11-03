@@ -12,6 +12,12 @@ Current versions
 
 == November 2026
 
+* [[cli-3.0.81]]Akka CLI 3.0.81
+- **Breaking change**: Organization membership is now controlled by `akka organization role-bindings` (it used to be `akka organization users`).
+- Management of custom roles
+- Akka Optimize 0.10.1
+- Akka Verify commands
+
 * [[sdk-3-7-1]]https://github.com/akka/akka-sdk/releases/tag/v3.7.1[Akka SDK 3.7.1,window="new"]
 - Runtime 1.7.4
 - Fail mode for a guardrail sets whether a guardrail that fails to decide blocks the call, see xref:sdk:agents/guardrails.adoc#_configuring_guardrails[Configuring guardrails]

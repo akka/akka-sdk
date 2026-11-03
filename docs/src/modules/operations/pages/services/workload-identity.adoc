@@ -427,17 +427,17 @@ For the full set of options, see xref:reference:cli/akka-cli/akka_roles_add-bind
 
 ==== Granting an organization role to a service
 
-Use the same `--service` flag on `akka organizations users add-binding`:
+Use the same `--service` flag on `akka organizations role-bindings add`:
 
 [source, command line]
 ----
-akka organizations users add-binding --organization my-organization \
+akka organizations role-bindings add --organization my-organization \
   --service my-service --role member
 ----
 
 The `--service-project`, `--service-region`, and `--service-region-group` flags work the same way as for `akka roles add-binding`, above.
 
-For the full set of options, see xref:reference:cli/akka-cli/akka_organizations_users_add-binding.adoc[akka organizations users add-binding] and xref:operations:organizations/manage-users.adoc[Managing organization users].
+For the full set of options, see xref:reference:cli/akka-cli/akka_organizations_role-bindings_add.adoc[akka organizations role-bindings add] and xref:operations:organizations/manage-users.adoc[Managing organization users].
 
 == Authenticating with third-party and non-local cloud providers
 
