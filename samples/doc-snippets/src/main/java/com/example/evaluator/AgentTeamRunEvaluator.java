@@ -24,8 +24,13 @@ public class AgentTeamRunEvaluator extends Evaluator {
     if (!(context.subject() instanceof Subject.Workflow run)) { // <2>
       return effects().notApplicable("only runs of the agent team are evaluated");
     }
-    var interactionIds = context.attributes().get("interactionIds").split(","); // <3>
-    var interactions = Stream.of(interactionIds).map(ledger::getInteraction).toList(); // <4>
+    var interactionIds = context.attributes().getOrDefault("interactionIds", ""); // <3>
+    if (interactionIds.isBlank()) {
+      return effects().notApplicable("the run has no agent interactions to judge");
+    }
+    var interactions = Stream.of(interactionIds.split(","))
+      .map(ledger::getInteraction)
+      .toList(); // <4>
     if (interactions.stream().anyMatch(InteractionRecord::failed)) {
       return effects().inconclusive("an agent call of run " + run.workflowId() + " failed");
     }

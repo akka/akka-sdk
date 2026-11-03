@@ -62,9 +62,10 @@ private[javasdk] object DurableEvaluatorImpl {
       evaluationAttributes: util.Map[String, String],
       evaluationConfig: Config)
       extends EvaluationContext {
+    private val unmodifiableAttributes = util.Collections.unmodifiableMap(evaluationAttributes)
     override def subject(): Subject = evaluationSubject
     override def evaluationId(): String = id
-    override def attributes(): util.Map[String, String] = evaluationAttributes
+    override def attributes(): util.Map[String, String] = unmodifiableAttributes
     override def config(): Config = evaluationConfig
   }
 

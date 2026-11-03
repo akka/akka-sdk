@@ -25,10 +25,11 @@ public interface EvaluationContext {
   Subject subject();
 
   /**
-   * The attributes passed when the evaluation was started through {@link
-   * akka.javasdk.client.EvaluatorClient}
+   * The attributes the evaluation was started with through {@link
+   * akka.javasdk.client.EvaluatorClient}, pointers for the evaluator such as the ids of the
+   * interactions to judge. Empty for an evaluation that a binding starts.
    *
-   * @return the attributes of this evaluation
+   * @return the attributes of this evaluation, unmodifiable
    */
   Map<String, String> attributes();
 

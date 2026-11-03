@@ -1,8 +1,8 @@
 = Evaluators
 :page-component-type: evaluator
 :page-aliases: sdk:agents/llm_eval.adoc, testing:evaluation/judges.adoc
-:page-summary: A component the runtime triggers for the interactions of a bound agent, to assess them and record a verdict.
-:page-when-to-use: When you want agent interactions assessed automatically as they happen, for quality tracking, regression detection, or compliance, without adding evaluation calls to the agents themselves.
+:page-summary: A component that assesses an agent interaction or a workflow run and records a verdict. The runtime triggers it for the interactions of a bound agent, and a workflow or an endpoint starts it on request.
+:page-when-to-use: When you want agent interactions assessed automatically as they happen, or the outcome of a workflow run assessed when the run ends, for quality tracking, regression detection, or compliance, without adding evaluation calls to the agents themselves.
 :page-related: xref:sdk:evaluators/examples.adoc[], xref:sdk:agents.adoc[], xref:testing:evaluation/index.adoc[], xref:concepts:controls.adoc#evals[], xref:concepts:evaluation.adoc[]
 :page-prerequisites: An Akka project with at least one agent defined.
 :page-persona: developer, governance-compliance
@@ -12,9 +12,10 @@ include::ROOT:partial$include.adoc[]
 
 == Overview
 
-An link:{attachmentsdir}/api/akka/javasdk/evaluation/Evaluator.html[`Evaluator`] is a component that assesses agent interactions.
+An link:{attachmentsdir}/api/akka/javasdk/evaluation/Evaluator.html[`Evaluator`] is a component that assesses agent interactions and workflow runs.
 You bind it to one or more agents in configuration, and the runtime then invokes it for the interactions of a bound agent.
-Each invocation receives one subject to evaluate: an interaction of a bound agent, or a workflow run when the workflow starts the evaluation itself, see <<workflow-run>>.
+A workflow or an endpoint can also start an evaluation on request, see <<workflow-run>>.
+Each invocation receives one subject to evaluate: an interaction, or a workflow run.
 The evaluator returns a verdict, pass or fail, optionally with a score, a label, and attributes.
 The runtime records the verdict in the ledger and exposes it in metrics and traces. An evaluator implements the eval control type; see xref:concepts:controls.adoc#evals[Controls] and xref:concepts:evaluation.adoc[].
 
@@ -142,7 +143,7 @@ When an agent matches more than one entry, the runtime uses one of them, in this
 
 In the example, `billing-agent` has its own entry under `agents`, and that entry is disabled. The runtime does not evaluate `billing-agent`, even though it has the `customer-facing` role.
 
-The `enabled` setting defaults to `true`. Set `enabled = false` on an evaluator entry to disable the evaluator for all agents. Set it on a single binding to disable only that binding.
+The `enabled` setting defaults to `true`. Set `enabled = false` on an evaluator entry to disable the evaluator: the runtime evaluates no interactions of its bound agents, and a start on request, see <<workflow-run>>, fails with `IllegalStateException`. Set it on a single binding to disable only that binding.
 
 A binding can set `sampling-ratio`, a number from 0.0 to 1.0. For each interaction of the agent, the runtime triggers the evaluator with that probability, so the evaluator evaluates about that share of the interactions. A binding can set `trigger-on-failure = true`. The evaluator then also evaluates the failed interactions of the agent, and the sampling ratio applies to them as well. The defaults are `sampling-ratio = 1.0` and `trigger-on-failure = false`. Set both keys on a binding or under `akka.javasdk.evaluation.defaults.agent`, not on the evaluator entry.
 
@@ -253,9 +254,9 @@ To stop a reply before it reaches the caller, use a xref:sdk:agents/guardrails.a
 == Evaluating a workflow run
 
 An evaluator bound to an agent judges one interaction. A workflow that orchestrates several agents produces a result that no single interaction holds: the outcome of the whole run.
-To have that outcome judged, the workflow starts the evaluation itself, as a rule from its final step, with `ComponentClient.forEvaluator(evaluatorClass)`.
+To have that outcome judged, the workflow starts the evaluation itself with `ComponentClient.forEvaluator(evaluatorClass)`, usually from its final step.
 The subject is then a `Subject.Workflow`, the workflow instance by its id and component id.
-The evaluation also carries attributes: pointers for the evaluator, such as the ids of the agent interactions of the run.
+The start also carries trigger attributes: pointers for the evaluator, such as the ids of the agent interactions of the run.
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/evaluator/EvaluatedAgentTeamWorkflow.java[EvaluatedAgentTeamWorkflow.java]
@@ -266,11 +267,16 @@ include::example$doc-snippets/src/main/java/com/example/evaluator/EvaluatedAgent
 <2> `withDetailedReply()` returns the reply together with the id of the interaction it came from.
 <3> The final step starts the evaluation. `startEvaluation` returns the evaluation id once the trigger is durably queued. The evaluation runs in the background.
 <4> The subject names this run: the workflow id and the component id of the workflow.
-<5> The attributes point the evaluator at the interactions to judge. An attribute value is a string, so a list of ids is one value with a separator. Pass ids, not content: the evaluator fetches the records from the ledger.
+<5> The trigger attributes point the evaluator at the interactions to judge. An attribute value is a string, so a list of ids is one value with a separator. Pass ids, not content: the evaluator fetches the records from the ledger.
 
-The evaluation id is derived from the evaluator, the subject and the attributes. A retried step that calls `startEvaluation` again with the same arguments starts the evaluation once.
+The evaluation can start before the runtime persists the step that calls `startEvaluation`. Persist the result to evaluate in an earlier step, and start the evaluation from a step that updates no state, as the final step above does. An evaluator that reads the workflow state then sees the result.
 
-The evaluator reads the subject and the attributes from the `EvaluationContext`:
+The evaluation id is derived from the evaluator, the subject and the trigger attributes, so a retried step that calls `startEvaluation` again with the same arguments gets the same id.
+The runtime delivers the trigger at least once. An `Evaluator` runs again for each repeated call and records each run under that id, so a retried step can run the evaluator twice.
+A durable evaluator runs once per id while its instance exists: a repeated call returns the id without running anything.
+To evaluate the same subject again on purpose, for example after a prompt change, pass a trigger attribute that differs, such as the prompt version.
+
+The evaluator reads the subject and the trigger attributes from the `EvaluationContext`:
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/evaluator/AgentTeamRunEvaluator.java[AgentTeamRunEvaluator.java]
@@ -279,10 +285,10 @@ include::example$doc-snippets/src/main/java/com/example/evaluator/AgentTeamRunEv
 ----
 <1> The evaluator is bound to no agent. Its `@Component` id is what the workflow starts it by.
 <2> `Subject` is sealed. An evaluator that accepts one kind checks for it and reports any other kind as not applicable.
-<3> The attributes, as the workflow passed them.
+<3> The trigger attributes, as the workflow passed them. A start without the attribute the evaluator needs gives it nothing to evaluate.
 <4> The interactions of the run, fetched from the ledger by id. An evaluator can also read the state of the workflow through the `ComponentClient`, by the workflow id of the subject.
 <5> The answer of the run is the final response of its last agent call.
-<6> The verdict is recorded under the workflow run, together with the attributes.
+<6> The attributes of the verdict, separate from the trigger attributes. The ledger records the verdict under the workflow run, with both.
 
 The `config()` of such an evaluation is the evaluator entry of the configuration, since no agent binding applies.
 The ledger lists the evaluations of a run by the workflow component id and the workflow id:
@@ -293,7 +299,7 @@ The ledger lists the evaluations of a run by the workflow component id and the w
 include::example$doc-snippets/src/main/java/com/example/evaluator/LedgerUsage.java[tag=workflow-evaluations]
 ----
 
-An endpoint can start an evaluation the same way, for example to evaluate a recorded interaction again after a prompt change. The subject is then a `Subject.Interaction`.
+An endpoint can start an evaluation the same way, for example to evaluate a recorded interaction again after a prompt change. The subject is then a `Subject.Interaction`, and a trigger attribute such as the prompt version gives the repeated evaluation its own id.
 
 [#_the_ledger_client]
 == The ledger client

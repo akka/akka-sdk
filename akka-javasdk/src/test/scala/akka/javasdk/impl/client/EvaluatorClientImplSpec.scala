@@ -5,10 +5,14 @@
 package akka.javasdk.impl.client
 
 import java.util
+import java.util.Optional
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import akka.javasdk.evaluation.Subject
+import akka.javasdk.evaluation.TranscriptQualityEvaluator
+import akka.javasdk.impl.serialization.Serializer
 import akka.runtime.sdk.spi.SpiEvaluationClient
 import akka.runtime.sdk.spi.SpiEvaluator
 import io.opentelemetry.context.{ Context => OtelContext }
@@ -60,6 +64,21 @@ class EvaluatorClientImplSpec extends AnyWordSpec with Matchers with OptionValue
       }
 
       exception.getMessage should include("unknown-evaluator")
+    }
+
+    "be selected by ComponentClient.forEvaluator for a durable evaluator, by its component id" in {
+      val probe = new EvaluationClientProbe
+      val componentClient =
+        ComponentClientImpl(null, probe, new Serializer, Map.empty, None, None)(ExecutionContext.global, null)
+
+      val evaluationId = componentClient
+        .forEvaluator(classOf[TranscriptQualityEvaluator])
+        .startEvaluation(new Subject.Interaction("interaction-1", "my-agent", Optional.empty()), util.Map.of())
+
+      evaluationId shouldBe "evaluation-1"
+      val (evaluatorComponentId, subject, _) = probe.started.value
+      evaluatorComponentId shouldBe "transcript-quality-evaluator"
+      subject.asInstanceOf[SpiEvaluator.Interaction].interactionId shouldBe "interaction-1"
     }
 
     "reject a null subject and null attributes" in {

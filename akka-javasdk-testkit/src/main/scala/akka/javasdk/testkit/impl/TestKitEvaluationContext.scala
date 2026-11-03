@@ -28,7 +28,9 @@ private[testkit] final class TestKitEvaluationContext(
 
   override def evaluationId(): String = evaluationId
 
-  override def attributes(): util.Map[String, String] = attributes
+  private val unmodifiableAttributes = util.Collections.unmodifiableMap(attributes)
+
+  override def attributes(): util.Map[String, String] = unmodifiableAttributes
 
   override def config(): Config = evaluationConfig
 }

@@ -244,6 +244,49 @@ class DurableEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionValu
       outcome.reason() should include(TranscriptQualityEvaluator.EMPTY_INTERACTION_ID)
     }
 
+    "run a step from an envelope that SDK 3.7 persisted and record its interaction subject" in {
+      // SDK 3.7 persisted the interaction as flat fields and, through a getter, as a subject without a type tag
+      val legacyEnvelopes = Seq(
+        """{"triggerSource":"ON_INTERACTION","flowId":null,"agentComponentId":"my-agent","interactionId":"interaction-1",""" +
+        """"userState":null,"userStateContentType":null,""" +
+        """"subject":{"interactionId":"interaction-1","agentComponentId":"my-agent","flowId":null}}""",
+        """{"triggerSource":"ON_INTERACTION","flowId":"flow-1","agentComponentId":"my-agent","interactionId":"interaction-1",""" +
+        """"userState":null,"userStateContentType":null}""")
+
+      legacyEnvelopes.foreach { json =>
+        val recorder = new RecorderProbe
+        val impl = newImpl(recorder)
+        val legacyState =
+          new BytesPayload(akka.util.ByteString(json), serializer.contentTypeFor(classOf[StateEnvelope]))
+
+        val result = await(impl.invokeStep(Some(legacyState), stepCommand("fetchTranscript")))
+          .asInstanceOf[SpiWorkflow.StepTransitionalEffect]
+        result.transition.asInstanceOf[SpiWorkflow.StepTransition].stepName shouldBe "judge"
+        val envelope = decodeEnvelope(result.persistence)
+        envelope.subject().toSubject().asInstanceOf[Subject.Interaction].interactionId() shouldBe "interaction-1"
+        envelope.subject().toSubject().asInstanceOf[Subject.Interaction].agentComponentId() shouldBe "my-agent"
+        envelope.attributes() shouldBe util.Map.of()
+
+        val outcomePayload = serializer.toBytes(Outcome.inconclusive("no verdict"))
+        await(impl.invokeStep(Some(legacyState), stepCommand(RecordStepName, Some(outcomePayload))))
+        val (recordedTrigger, _) = recorder.recorded.value
+        recordedTrigger.subject.asInstanceOf[SpiEvaluator.Interaction].interactionId shouldBe "interaction-1"
+        recordedTrigger.attributes shouldBe Map.empty
+      }
+    }
+
+    "give the evaluator unmodifiable attributes" in {
+      val attributes = new util.HashMap[String, String](util.Map.of("interactionIds", "i1,i2"))
+      val context = new DurableEvaluatorImpl.EvaluationContextImpl(
+        evaluationId,
+        new Subject.Workflow("workflow-1", "order-workflow"),
+        attributes,
+        ConfigFactory.empty())
+
+      context.attributes() shouldBe util.Map.of("interactionIds", "i1,i2")
+      an[UnsupportedOperationException] should be thrownBy context.attributes().put("x", "y")
+    }
+
     "persist a workflow subject with the attributes and record the trigger with them" in {
       val recorder = new RecorderProbe
       val impl = newImpl(recorder)

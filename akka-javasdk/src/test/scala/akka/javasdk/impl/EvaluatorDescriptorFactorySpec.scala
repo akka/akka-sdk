@@ -56,6 +56,31 @@ class EvaluatorDescriptorFactorySpec extends AnyWordSpec with Matchers {
     }
   }
 
+  "Evaluator enabled setting" should {
+
+    "default to enabled, also for an evaluator without an entry" in {
+      val config = load("""akka.javasdk.evaluation.evaluators.judge { threshold = 0.7 }""")
+      EvaluatorSettings.enabled(config, "judge") shouldBe true
+      EvaluatorSettings.enabled(config, "unconfigured") shouldBe true
+    }
+
+    "read enabled = false from the entry of the evaluator" in {
+      val config = load("""akka.javasdk.evaluation.evaluators.judge { enabled = false }""")
+      EvaluatorSettings.enabled(config, "judge") shouldBe false
+    }
+
+    "take the evaluator defaults when the entry does not set it" in {
+      val config = load("""
+        akka.javasdk.evaluation.defaults.evaluator.enabled = false
+        akka.javasdk.evaluation.evaluators.judge { enabled = true }
+        akka.javasdk.evaluation.evaluators.other { threshold = 0.7 }
+      """)
+      EvaluatorSettings.enabled(config, "judge") shouldBe true
+      EvaluatorSettings.enabled(config, "other") shouldBe false
+      EvaluatorSettings.enabled(config, "unconfigured") shouldBe false
+    }
+  }
+
   "Evaluator config bindings" should {
 
     "read the agents bound to an evaluator from config" in {

@@ -128,6 +128,14 @@ private[impl] object EvaluatorSettings {
       .map(entry => BindingsKeys.foldLeft(entry)(_.withoutPath(_)))
       .getOrElse(ConfigFactory.empty())
 
+  /** Whether the given evaluator is enabled: its `enabled` setting, with the evaluator defaults as fallback. */
+  def enabled(config: Config, evaluatorComponentId: String): Boolean = {
+    val evaluatorDefaults = configAt(config, EvaluatorDefaultsPath)
+    evaluatorEntry(config, evaluatorComponentId)
+      .fold(evaluatorDefaults)(_.withFallback(evaluatorDefaults))
+      .getBoolean("enabled")
+  }
+
   private def evaluatorEntry(config: Config, evaluatorComponentId: String): Option[Config] =
     configAt(config, EvaluatorsPath).root().asScala.get(evaluatorComponentId).collect { case entry: ConfigObject =>
       entry.toConfig

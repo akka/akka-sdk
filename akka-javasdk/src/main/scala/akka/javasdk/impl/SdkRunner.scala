@@ -101,6 +101,7 @@ import akka.javasdk.impl.consumer.MessageContextImpl
 import akka.javasdk.impl.evaluation.DurableEvaluatorImpl
 import akka.javasdk.impl.evaluation.EvaluatorImpl
 import akka.javasdk.impl.evaluation.EvaluatorSettings
+import akka.javasdk.impl.evaluation.GuardedEvaluationClient
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityImpl
 import akka.javasdk.impl.grpc.GrpcClientProviderImpl
 import akka.javasdk.impl.http.HttpClientProviderImpl
@@ -617,6 +618,8 @@ private final class Sdk(
   @volatile private var dependencyProviderOpt: Option[DependencyProvider] = dependencyProviderOverride
 
   private val applicationConfig = ApplicationConfig(system).getConfig
+  private val evaluationClient: SpiEvaluationClient =
+    new GuardedEvaluationClient(spiEvaluationClient, applicationConfig)
   private val sdkSettings = Settings(applicationConfig.getConfig("akka.javasdk"), spiSettings)
 
   spiSettings.devMode.foreach { devMode =>
@@ -815,7 +818,7 @@ private final class Sdk(
       sdkTracerFactory,
       regionInfo,
       runtimeComponentClients,
-      spiEvaluationClient,
+      evaluationClient,
       { context =>
         val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
         val workflow = wiredInstance("Workflow", clz) {
@@ -920,7 +923,7 @@ private final class Sdk(
     val scanTimeComponentClient: ComponentClient =
       ComponentClientImpl(
         runtimeComponentClients,
-        spiEvaluationClient,
+        evaluationClient,
         serializer,
         agentClassById = Map.empty,
         agentCapabilityConverter = None,
@@ -1494,7 +1497,7 @@ private final class Sdk(
               classifierClient,
               sanitizerClient,
               ledgerClient,
-              spiEvaluationClient,
+              evaluationClient,
               inMemorySpanExporter,
               httpEndpointBound))
           Future.successful(Done)
@@ -1532,7 +1535,7 @@ private final class Sdk(
               classifierClient,
               sanitizerClient,
               ledgerClient,
-              spiEvaluationClient,
+              evaluationClient,
               inMemorySpanExporter,
               httpEndpointBound))
           Future.successful(Done)
@@ -1794,7 +1797,7 @@ private final class Sdk(
   private def componentClient(telemetryContext: Option[OtelContext]): ComponentClient = {
     ComponentClientImpl(
       runtimeComponentClients,
-      spiEvaluationClient,
+      evaluationClient,
       serializer,
       agentRegistry.agentClassById,
       Some(agentCapabilityConverter),

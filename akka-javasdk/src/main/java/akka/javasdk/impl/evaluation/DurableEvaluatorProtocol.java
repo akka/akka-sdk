@@ -7,6 +7,8 @@ package akka.javasdk.impl.evaluation;
 import akka.annotation.InternalApi;
 import akka.javasdk.evaluation.Evaluation;
 import akka.javasdk.evaluation.Subject;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.util.Map;
@@ -31,13 +33,39 @@ public final class DurableEvaluatorProtocol {
     ON_INTERACTION
   }
 
-  /** The persisted state of one evaluation: the trigger it was started with and the user state. */
+  /**
+   * The persisted state of one evaluation: the trigger it was started with and the user state. An
+   * envelope persisted by SDK 3.7 holds the interaction subject as the flat fields {@code
+   * interactionId}, {@code agentComponentId} and {@code flowId} and no attributes.
+   */
   public record StateEnvelope(
       TriggerSource triggerSource,
       SubjectData subject,
       Map<String, String> attributes,
       byte[] userState,
       String userStateContentType) {
+
+    @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+    static StateEnvelope fromJson(
+        @JsonProperty("triggerSource") TriggerSource triggerSource,
+        @JsonProperty("subject") SubjectData subject,
+        @JsonProperty("attributes") Map<String, String> attributes,
+        @JsonProperty("interactionId") String interactionId,
+        @JsonProperty("agentComponentId") String agentComponentId,
+        @JsonProperty("flowId") String flowId,
+        @JsonProperty("userState") byte[] userState,
+        @JsonProperty("userStateContentType") String userStateContentType) {
+      var resolvedSubject =
+          subject != null
+              ? subject
+              : new SubjectData.Interaction(interactionId, agentComponentId, flowId);
+      return new StateEnvelope(
+          triggerSource,
+          resolvedSubject,
+          attributes != null ? attributes : Map.of(),
+          userState,
+          userStateContentType);
+    }
 
     public static StateEnvelope of(
         TriggerSource triggerSource,
@@ -50,8 +78,14 @@ public final class DurableEvaluatorProtocol {
     }
   }
 
-  /** Serializable shape of {@link Subject}, one record per subject kind. */
-  @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+  /**
+   * Serializable shape of {@link Subject}, one record per subject kind. A subject without a type
+   * tag, as SDK 3.7 persisted it, is an interaction.
+   */
+  @JsonTypeInfo(
+      use = JsonTypeInfo.Id.NAME,
+      property = "type",
+      defaultImpl = SubjectData.Interaction.class)
   @JsonSubTypes({
     @JsonSubTypes.Type(value = SubjectData.Interaction.class, name = "I"),
     @JsonSubTypes.Type(value = SubjectData.Workflow.class, name = "W")
