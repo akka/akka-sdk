@@ -1,0 +1,100 @@
+= Specifications and conformance
+:page-aliases: concepts:development-process.adoc, concepts:specification.adoc, concepts:conformance.adoc
+:page-summary: Specifications state requirements, and conformance checks whether an implementation meets their acceptance conditions. Together they connect project rules to reviewable evidence.
+:page-when-to-use: When you need an overview of specifications and conformance and links to the task guides.
+:page-related: sdk:spec-driven-development.adoc
+:page-persona: builder-developer, governance-compliance
+
+include::ROOT:partial$include.adoc[]
+
+Specifications state requirements, and conformance checks whether an implementation meets their acceptance conditions. Together they connect project rules to reviewable evidence.
+
+[#spec-driven-development]
+== Spec-driven development
+
+Spec-driven development builds an application from plain-language specifications versioned with the code. The specification states what the system must do and why; the plan describes how, and the tasks divide implementation into reviewable work.
+
+=== The development loop
+
+An AI harness is the coding tool in which you work. The Akka Specify Plugin supplies commands and guidance for that tool. You write a feature specification, clarify ambiguities, review the plan, implement tasks, and check the result against the specification.
+
+Compilation and tests check the implementation. Inspection exercises the running service through its endpoints, state, and user interface. Convergence identifies work still required by the specification. These checks complement each other: inspection does not replace acceptance conditions, and generating code does not establish conformance.
+
+=== Modernizing an existing system
+
+The same process can start from a system that already exists. The plugin recovers what a legacy system does, turns that behavior into checks that a replacement must pass, and shows that the replacement behaves the same.
+
+A blueprint is a recipe that the Akka Specify Plugin turns into a runnable system. It gives a project a starting specification instead of an empty one.
+
+=== Specification and acceptance
+
+The specification includes goals, functional requirements, and knowledge, together with risk and operational requirements and an improvement policy. Different teams can own these parts while reviewing them alongside code. See <<specification>>.
+
+An exit condition translates a requirement into an observable check. An auditor evaluates it. Together they make acceptance criteria explicit rather than leaving completion to the coding assistant's judgment.
+
+À la carte mode lets you choose commands and run advisory checks. Enforced mode requires exit conditions and checks them before shipping. An organization can restrict modes through policy. Every command remains available in both modes; the mode changes automation and enforcement.
+
+Local results guide development. The organization's CI must run conformance checks to enforce its merge and release policy. See <<conformance>>.
+
+[#specification]
+== The specification
+
+A specification is a set of plain-language requirements versioned with the code. It describes what a system must do and the constraints under which it operates, while plans and tasks describe implementation.
+
+=== Requirements and ownership
+
+[cols="1,2",options="header"]
+|===
+| Part | What it describes
+| Goals | Purpose, measures of success, and decision ownership.
+| Functional requirements | Behavior across agents, tools, orchestration, memory, APIs, and user interfaces.
+| Knowledge | Information the system needs and its sources.
+| Risk envelope | What could go wrong and the jurisdictions in which the system operates.
+| Operational envelope | Service levels, regions, latency, and token budgets.
+| Improvement policy | Quality and cost objectives, and how far the system may change itself.
+|===
+
+Builders typically own the first three parts. Risk, security, operations, and finance teams own the constraints relevant to them. Keeping these decisions with the code makes changes reviewable together.
+
+Feature specifications grow incrementally. The plan explains the technical approach, and the task list divides the work. A requirement can constrain technology without prescribing its implementation; distinguish the required outcome from how it is achieved.
+
+=== Constitution, policy, and checks
+
+The constitution holds project-wide rules that guide generation. An organization can add its own rules to the Akka constitution, and teams can add further constraints.
+
+An organization policy defines required exit conditions, development modes, release behavior, and exceptions. It establishes a floor that a developer cannot weaken. Exit conditions turn requirements into observable checks, rather than relying on the coding assistant to remember a rule.
+
+The risk envelope informs runtime controls. The operational envelope constrains deployment, and the improvement policy bounds model changes. These are related requirements, not interchangeable configuration files.
+
+[#conformance]
+== Exit conditions and conformance
+
+An exit condition is a machine-checkable statement of when a feature or system is done. An auditor checks it, and conformance reports whether the applicable conditions have passed.
+
+=== Requirements, checks, and evidence
+
+The Definition of Done states the required behavior in business terms. Exit conditions translate it into observable pass or fail criteria. Auditors run the checks, and their results determine whether the work meets those criteria.
+
+A check that can pass while its requirement is false gives misleading confidence. The adequacy review examines that risk. The coverage gate checks that the project's material surfaces have checks at all. These complement tests: they examine the set of checks as well as the application.
+
+A constitution guides what the AI coding assistant builds. An exit condition verifies an outcome. Keep that distinction when deciding whether a project rule must merely guide development or must block release.
+
+=== Conformance and release
+
+In enforced mode, unmet conditions prevent shipping unless an effective waiver permits it. A waiver records an accepted exception; it does not turn a failed check into a pass. Changes can make earlier results stale, so readiness depends on current evidence.
+
+In à la carte mode, checks are advisory and shipping can proceed with an override recorded. Your organization can restrict the available modes. Local checks guide development; conformance in the organization's CI enforces the merge or release decision.
+
+A conformance receipt records what was checked and which exceptions applied. It makes the basis for a release reviewable without implying that every check or review is sufficient.
+
+anchor:_conformance_modes[]
+anchor:_the_constitution[]
+
+== Next steps
+
+* xref:sdk:spec-driven-development.adoc[] writes specifications and implements features.
+* xref:sdk:enforced-mode.adoc[] and xref:sdk:a-la-carte-mode.adoc[] explain development modes.
+* xref:reference:specify/constitution.adoc[] and xref:reference:specify/policies.adoc[] define project and organization rules.
+* xref:reference:specify/exit-condition-states.adoc[] defines states, waivers, staleness, and ship tiers.
+* xref:reference:specify/auditor-kinds.adoc[], xref:reference:specify/coverage-gate.adoc[], and xref:reference:specify/adequacy-review.adoc[] define checks and integrity gates.
+* xref:reference:specify/content-governance.adoc[] covers checks on generated prose.

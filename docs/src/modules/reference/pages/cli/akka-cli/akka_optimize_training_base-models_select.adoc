@@ -21,25 +21,28 @@ A cached selection uses storage but no standing compute.
 The entry reports what the selection cached.
 It does not report weights that a job downloaded afterwards.
 
+[source,shell]
 ----
 akka optimize training base-models select BASE_MODEL [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Select a model
-  akka-optimize training base-models select Qwen/Qwen3-8B
+  akka optimize training base-models select Qwen/Qwen3-8B
 
   # Then watch it prepare
-  akka-optimize training base-models get Qwen/Qwen3-8B
+  akka optimize training base-models get Qwen/Qwen3-8B
 
   # Or wait for admission and any download configured for selection
-  akka-optimize training base-models select Qwen/Qwen3-8B --wait
+  akka optimize training base-models select Qwen/Qwen3-8B --wait
 ----
 
 == Options
 
+[source,text]
 ----
   -h, --help               help for select
       --timeout duration   Maximum time to wait for admission and selection; requires --wait (default 30m0s)
@@ -48,6 +51,7 @@ akka optimize training base-models select BASE_MODEL [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")
@@ -57,13 +61,12 @@ akka optimize training base-models select BASE_MODEL [flags]
       --force                Skip the confirmation prompt
       --jq string            Filter the JSON output with a jq expression
       --json string          Output JSON with only these fields; --json= lists the fields a command offers
-      --no-color             Print without color, as NO_COLOR does
+      --no-color             Print without color or a redrawn progress line, as NO_COLOR does
   -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
       --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then a local dev-mode service, then http://localhost:9001)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----

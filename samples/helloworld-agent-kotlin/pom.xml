@@ -6,7 +6,7 @@
   <parent>
     <groupId>io.akka</groupId>
     <artifactId>akka-javasdk-parent</artifactId>
-      <version>3.6.6</version>
+      <version>3.7.1</version>
   </parent>
 
   <groupId>com.example</groupId>
@@ -70,6 +70,7 @@
               <annotationProcessorArgs>
                 <arg>akka.javasdk.groupId=${project.groupId}</arg>
                 <arg>akka.javasdk.artifactId=${project.artifactId}</arg>
+                <arg>akka.javasdk.componentLibrary=${non-akka-service}</arg>
               </annotationProcessorArgs>
               <annotationProcessors>
                 <annotationProcessor>
@@ -100,6 +101,7 @@
               <annotationProcessorArgs>
                 <arg>akka.javasdk.groupId=${project.groupId}</arg>
                 <arg>akka.javasdk.artifactId=${project.artifactId}</arg>
+                <arg>akka.javasdk.componentLibrary=${non-akka-service}</arg>
               </annotationProcessorArgs>
               <annotationProcessorPaths>
                 <annotationProcessorPath>

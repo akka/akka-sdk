@@ -8,12 +8,14 @@ Get the last few lines of logs for a specific service in the current project.
 By default, includes instance and lifecycle logs.
 If there's only one pod for that service and only one container's logs are requested, the logs from the container start will be returned, otherwise up to 100 lines per container will be returned.
 
+[source,shell]
 ----
 akka logs [SERVICE] [INSTANCE] [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
 
 > akka logs my-service
@@ -24,6 +26,7 @@ akka logs [SERVICE] [INSTANCE] [flags]
 
 == Options
 
+[source,text]
 ----
       --color            Whether color output should be used (default true)
   -f, --follow           Whether logs should be followed.
@@ -41,6 +44,7 @@ akka logs [SERVICE] [INSTANCE] [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

@@ -1,12 +1,13 @@
 = Multi-region setup
+:page-aliases: operations:operator-best-practices.adoc
 
 include::ROOT:partial$include.adoc[]
 
 Projects in Akka can span across regions with data automatically replicated between all the regions. This increases availability as the regions can either be separate cloud / geographic regions or can be separate logical regions within the same cloud / geographic region. This gives you a high level of control for managing failure domains or fault boundaries in your applications. This is sometimes referred to as blast radius control.
 
-xref:organizations/regions.adoc[] are specified in the project configuration. All services in the project are deployed to all regions. One of the regions will be specified as the primary region. The primary region indicates the source from which region resources (services, routes, secrets, etc.) should be replicated from. By default the primary region is the first one added to the project at deployment time.
+xref:organizations/regions.adoc[] are specified in the project configuration. All services in the project are deployed to all regions. One of the regions will be specified as the project's primary region. The project's primary region indicates the source from which region resources (services, routes, secrets, etc.) should be replicated from. By default the project's primary region is the first one added to the project at deployment time.
 
-Additionally, the primary region also indicates where primary data copies should reside in stateful components like Event Sourced Entities, Key Value Entities or Workflow when using the `pinned-region` primary selection mode.
+Additionally, the project's primary region also indicates where primary data copies should reside in stateful components like Event Sourced Entities, Key Value Entities or Workflow when using the `pinned-region` primary selection mode.
 
 NOTE: Regions appear at two different scopes in Akka. The first is at the xref:organizations/index.adoc[] scope. This conveys which regions are available to your organization. The second is at the project scope, which conveys which regions a specific project is bound to.
 
@@ -46,6 +47,15 @@ There are two operational choices for deciding where the primary is located:
 
 * *request-region* mode - the primary is selected by each individual component instance based on where the write requests occur
 * *pinned-region* mode - one region is defined as the primary for the project, and all stateful component instances will use that region as primary
+
+[#_how_each_stateful_component_uses_its_primary_region]
+==== How each stateful component uses its primary region
+
+The primary selection mode has these implications for your project:
+
+Event Sourced Entities:: In request-region mode, each entity instance uses the region where its write requests occur as its primary region, after it synchronizes the events from its previous primary region. In pinned-region mode, every entity uses the project's primary region as its primary region. Entities still replicate events, and therefore state, to all regions in the project, but they accept writes only in the project's primary region. Akka routes update requests to that region from any endpoint.
+Key Value Entities:: Key Value Entities handle writes, reads and the forwarding of requests in the same way as Event Sourced Entities.
+Workflows:: Workflows handle writes, reads and the forwarding of requests in a similar way to Event Sourced Entities, but a workflow keeps its primary region in the region where it was created. Akka routes update requests to that region from any endpoint. Only the workflow instance in its primary region performs the workflow's actions.
 
 IMPORTANT: Before changing the primary selection mode, make sure that you understand and follow the steps described in the <<_how_to>>.
 
@@ -105,9 +115,11 @@ service:
 
 Changing the primary region of a project is how you control failover or migration in Akka.
 
-NOTE: The primary region of a project is also the region that will be used as primary for stateful components in the pinned-region selection mode. Changing primary should only be done with careful consideration of the consequences, and it is recommended to first change to the read-only mode in all regions. See <<selecting-primary>>.
+NOTE: The primary region of a project is also the region that will be used as primary for stateful components in the pinned-region selection mode. Changing primary should only be done with careful consideration of the consequences, and it is recommended to first change to read-only mode in all regions. See <<selecting-primary>>.
 
 IMPORTANT: Before changing the primary region, make sure that you understand and follow the steps described in the <<_how_to>>.
+
+Changing the project's primary region is a serious operation, so plan it ahead of time. Let the replication lag between the regions drop to zero before you make the change. To be sure that no writes collide while the project's primary region changes, put the project into read-only mode first, which stops all writes.
 
 To change the primary region of a project run:
 
@@ -255,4 +267,4 @@ Events that were written in the failing region and had not been replicated to ot
 
 == References
 
-* xref:operations:regions/infrastructure.adoc[]
+* xref:deployment:regions/infrastructure.adoc[]

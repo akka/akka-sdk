@@ -12,12 +12,14 @@ Supported providers and credential types:
 
 s3          native, static, profile   gcs         native, service-account-key   azure-blob  shared-key, sas
 
+[source,shell]
 ----
 akka projects config set object-storage bucket NAME [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
 
 # s3 with static credentials
@@ -40,6 +42,7 @@ akka projects config set object-storage bucket archive \
 
 == Options
 
+[source,text]
 ----
       --access-key-id-secret string         'secret-name/key' reference for S3 access key ID (for --credentials-type static)
       --account-key-secret string           'secret-name/key' reference for an Azure account key (for --credentials-type shared-key)
@@ -63,6 +66,7 @@ akka projects config set object-storage bucket archive \
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

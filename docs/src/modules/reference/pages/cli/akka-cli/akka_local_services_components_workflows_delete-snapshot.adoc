@@ -12,12 +12,14 @@ A snapshot change applies only in the region it is sent to.
 In a project with more than one region, pass --all-regions to run in every region, or --region REGION to run in one.
 A single-region project needs neither.
 
+[source,shell]
 ----
 akka local services components workflows delete-snapshot SERVICE_NAME COMPONENT_ID WORKFLOW_ID [flags]
 ----
 
 == Options
 
+[source,text]
 ----
       --all-regions      run the command in every region of the project
   -f, --force            Skip the confirmation prompt.
@@ -29,6 +31,7 @@ akka local services components workflows delete-snapshot SERVICE_NAME COMPONENT_
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

@@ -8,12 +8,14 @@ An accelerator allocation claims devices from a region's pools for the project;
 models place onto an allocation's entries by name.
 DEVICES is what the entries ask for, BOUND how many devices the region has actually bound to claims - an allocation is usable when Ready is True and the two agree.
 
+[source,shell]
 ----
 akka models allocations list [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
 akka models allocations list
 akka models allocations list --region aws-us-east-2 -o json
@@ -21,6 +23,7 @@ akka models allocations list --region aws-us-east-2 -o json
 
 == Options
 
+[source,text]
 ----
   -h, --help             help for list
       --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
@@ -30,6 +33,7 @@ akka models allocations list --region aws-us-east-2 -o json
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

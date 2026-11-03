@@ -149,8 +149,11 @@ private[impl] final class ConsumerImpl[C <: Consumer](
           .recover { case NonFatal(ex) =>
             handleUnexpectedException(message, ex)
           }
+      case null =>
+        throw new IllegalStateException(s"Consumer [$componentId] handler returned null instead of an Effect. " +
+        "Return effects().done() or effects().ignore(). The message is redelivered until the handler returns an Effect.")
       case unknown =>
-        throw new IllegalArgumentException(s"Unknown TimedAction.Effect type ${unknown.getClass}")
+        throw new IllegalArgumentException(s"Unknown Consumer.Effect type ${unknown.getClass}")
     }
   }
 

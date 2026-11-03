@@ -10,6 +10,7 @@ import java.util.concurrent.CompletionException
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.ConcurrentHashMap
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.FutureConverters._
 import scala.util.control.NonFatal
@@ -19,11 +20,13 @@ import akka.annotation.InternalApi
 import akka.javasdk.LogSanitizer
 import akka.javasdk.SanitizerClient
 import akka.javasdk.SanitizerContext
+import akka.javasdk.SanitizerException
 import akka.javasdk.TextSanitizer
 import akka.runtime.sdk.spi.SpiDataSanitizer
 import akka.runtime.sdk.spi.SpiLogSanitizer
 import akka.runtime.sdk.spi.SpiSanitizer
 import akka.runtime.sdk.spi.SpiSanitizerClient
+import akka.runtime.sdk.spi.SpiSanitizerException
 import com.typesafe.config.Config
 import org.slf4j.LoggerFactory
 
@@ -59,8 +62,14 @@ import org.slf4j.LoggerFactory
   val client: SanitizerClient = new SanitizerClient {
     override def sanitizeAsync(name: String, text: String): CompletionStage[String] =
       byName.get(name) match {
-        case Some(_) => runtimeSanitizerClient.sanitize(name, text).asJava
-        case None    => CompletableFuture.failedFuture(notConfigured(name))
+        case Some(_) =>
+          runtimeSanitizerClient
+            .sanitize(name, text)
+            .recoverWith { case exc: SpiSanitizerException =>
+              Future.failed(new SanitizerException(exc.getMessage, exc.sanitizerName, exc.getCause))
+            }(ExecutionContext.parasitic)
+            .asJava
+        case None => CompletableFuture.failedFuture(notConfigured(name))
       }
 
     override def sanitize(name: String, text: String): String = {

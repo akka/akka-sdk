@@ -17,7 +17,8 @@ import java.lang.annotation.*;
  *
  * <ul>
  *   <li>Must be public
- *   <li>Must return a {@code String}
+ *   <li>Can return a {@code String}, an object type, an array or collection, or nothing. See the
+ *       return types below.
  *   <li>Can accept 0 or more parameters
  *   <li>Must be in a class annotated with {@link McpEndpoint}
  * </ul>
@@ -30,6 +31,29 @@ import java.lang.annotation.*;
  * parameters unless a manual schema is provided via {@link #inputSchema()}. Use {@link
  * akka.javasdk.annotations.Description} annotations on parameters to help the LLM understand their
  * purpose.
+ *
+ * <p><strong>Return Types:</strong>
+ *
+ * <ul>
+ *   <li>The endpoint sends a {@code String} return value to the client as text content.
+ *   <li>For an object type, such as a record, the tool listing contains an output schema generated
+ *       from the fields of the type. The endpoint sends the object as structured content.
+ *   <li>For an array or a collection, the output schema is an object with a single {@code result}
+ *       field, and the endpoint sends the elements in the {@code result} field of the structured
+ *       content.
+ *   <li>For a {@code Map}, the output schema is an object without properties.
+ *   <li>For a {@code void} method, the endpoint sends the text {@code SUCCESS}.
+ *   <li>For other types, such as primitives, enums and dates, the endpoint sends the JSON of the
+ *       value as text content.
+ *   <li>A method can return a {@code CompletionStage} of any of the types above. The endpoint sends
+ *       the result when the stage completes.
+ * </ul>
+ *
+ * <p>The endpoint also sends structured content as JSON text content, for clients that do not
+ * support structured content. The endpoint leaves fields with an empty {@code Optional} or a {@code
+ * null} value out of the structured content. A {@code null} return value fails the tool call. A
+ * protobuf message, or a type that contains one, is not a valid return type and fails when the
+ * service starts.
  *
  * <p><strong>Best Practices:</strong>
  *

@@ -9,6 +9,9 @@ import akka.javasdk.annotations.Description;
 import akka.javasdk.annotations.mcp.*;
 import akka.javasdk.mcp.AbstractMcpEndpoint;
 import java.io.IOException;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @McpEndpoint(serverName = "test")
@@ -27,6 +30,31 @@ public class TestMcpEndpoint extends AbstractMcpEndpoint {
   public String fail(@Description("the reason to fail with") String reason) {
     throw new IllegalStateException("failed: " + reason);
   }
+
+  public record Weather(String city, int tempC) {}
+
+  @McpTool(description = "Structured weather tool")
+  public Weather weather(@Description("the city") String city) {
+    return new Weather(city, 20);
+  }
+
+  @McpTool(description = "Structured weather list tool")
+  public List<Weather> weatherList() {
+    return List.of(new Weather("Leuven", 20), new Weather("Uppsala", 10));
+  }
+
+  @McpTool(description = "Async structured weather tool")
+  public CompletionStage<Weather> asyncWeather(@Description("the city") String city) {
+    return CompletableFuture.supplyAsync(() -> new Weather(city, 20));
+  }
+
+  @McpTool(description = "A tool returning a primitive")
+  public int answer() {
+    return 42;
+  }
+
+  @McpTool(description = "A tool returning nothing")
+  public void ping() {}
 
   @McpResource(
       name = "example text",

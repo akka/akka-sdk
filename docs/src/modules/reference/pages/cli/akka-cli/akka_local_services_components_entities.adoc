@@ -8,12 +8,14 @@ The `akka local service components entities` commands manage individual entity i
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for entities
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

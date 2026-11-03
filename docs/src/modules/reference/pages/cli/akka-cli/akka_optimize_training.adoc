@@ -1,6 +1,6 @@
 = akka optimize training
 
-Base models, workloads, runs, snapshots, comparisons, pipelines, evaluations, endpoints and their data
+Base models, training projects, runs, snapshots, comparisons, pipelines, evaluations, distillations, endpoints and their data
 
 == Synopsis
 
@@ -8,8 +8,9 @@ A base model is what everything here trains over, and `base-models` is what this
 Selecting one registers it and caches its weights;
 nothing holds a GPU until you ask for work.
 
-A run trains a model from a registered dataset against a workload.
+A run trains a model from a registered dataset against a training project.
 An evaluation scores a model against a dataset with a grader.
+A distillation has a teacher model answer a chat dataset and keeps the answers it accepts.
 A pipeline executes curate, train and evaluate stages in one submission.
 An endpoint serves a base model or a candidate at an address so you can try it by hand.
 
@@ -17,18 +18,21 @@ A run commits snapshots as it trains.
 Snapshot weights can be registered as a model to score, or used as the source of a child run with `training runs branch`.
 
 A session is a raw conversation corpus, and a curation judges one into a training dataset.
+`datasets analyze` measures a registered dataset under a base model before a run claims a GPU.
 
 `capacity` reports what holds the GPU pools, which is what a queued run is behind.
 `info` reports which backend the service came up on, which is what to check before a run spends anything.
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for training
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")
@@ -38,14 +42,13 @@ A session is a raw conversation corpus, and a curation judges one into a trainin
       --force                Skip the confirmation prompt
       --jq string            Filter the JSON output with a jq expression
       --json string          Output JSON with only these fields; --json= lists the fields a command offers
-      --no-color             Print without color, as NO_COLOR does
+      --no-color             Print without color or a redrawn progress line, as NO_COLOR does
   -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
       --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then a local dev-mode service, then http://localhost:9001)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----
@@ -53,19 +56,21 @@ A session is a raw conversation corpus, and a curation judges one into a trainin
 == SEE ALSO
 
 * link:akka_optimize.html[akka optimize]	 - Own your intelligence: cost, models, training and routing
+* link:akka_optimize_training_adapters.html[akka optimize training adapters]	 - Import a LoRA adapter trained elsewhere, so an endpoint can serve it
 * link:akka_optimize_training_base-models.html[akka optimize training base-models]	 - See which base models this deployment allows, and select one to use
-* link:akka_optimize_training_bundles.html[akka optimize training bundles]	 - Manage scoring bundles
 * link:akka_optimize_training_capacity.html[akka optimize training capacity]	 - Report what holds the GPU pools
 * link:akka_optimize_training_comparisons.html[akka optimize training comparisons]	 - Compare a source snapshot with selected branch models
 * link:akka_optimize_training_curations.html[akka optimize training curations]	 - Judge raw sessions into a training dataset
+* link:akka_optimize_training_datasets.html[akka optimize training datasets]	 - Measure a registered dataset under a base model before training on it
+* link:akka_optimize_training_distillations.html[akka optimize training distillations]	 - Manage distillations
 * link:akka_optimize_training_endpoints.html[akka optimize training endpoints]	 - Serve a base model or a candidate to try it by hand
 * link:akka_optimize_training_evaluations.html[akka optimize training evaluations]	 - Manage model evaluations
 * link:akka_optimize_training_info.html[akka optimize training info]	 - Report the trainer's configuration and build
 * link:akka_optimize_training_pipelines.html[akka optimize training pipelines]	 - Manage training pipelines
+* link:akka_optimize_training_projects.html[akka optimize training projects]	 - Manage training projects
 * link:akka_optimize_training_runs.html[akka optimize training runs]	 - Manage training runs, snapshots and child runs
 * link:akka_optimize_training_sessions.html[akka optimize training sessions]	 - Raw conversation corpora
 * link:akka_optimize_training_snapshots.html[akka optimize training snapshots]	 - Inspect snapshots and candidate registration
-* link:akka_optimize_training_workloads.html[akka optimize training workloads]	 - Manage training workloads
 
 [discrete]
 

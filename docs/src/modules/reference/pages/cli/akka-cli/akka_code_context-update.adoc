@@ -10,12 +10,14 @@ It updates the 'akka-context' subdirectory and can optionally update AI assistan
 
 The existing context directory is backed up before being replaced.
 
+[source,shell]
 ----
 akka code context-update [flags]
 ----
 
 == Options
 
+[source,text]
 ----
       --agents-md-name string   Custom filename for AGENTS.md (default "AGENTS.md")
       --assistant string        AI assistant tool to update files for (claude-code, generic)
@@ -26,6 +28,7 @@ akka code context-update [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

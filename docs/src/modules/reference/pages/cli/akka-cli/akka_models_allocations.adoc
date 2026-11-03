@@ -4,12 +4,14 @@ Manage the project's accelerator allocations in a region.
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for allocations
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

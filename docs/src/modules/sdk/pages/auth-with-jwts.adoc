@@ -32,6 +32,8 @@ You can check in https://jwt.io/[window="new"] that this token contains the clai
 
 WARNING: It is recommended that `bearerTokenIssuers` contains the issuer that you use in your JWT key configuration. See https://doc.akka.io/reference/jwts.html[window="new"]. Otherwise, any services with a trusted key can impersonate the issuer.
 
+For `@WebSocket` methods, see xref:sdk:http-endpoints.adoc#websocket-jwt[Authenticating WebSocket connections with JWTs].
+
 === Configuring JWT at class level or method level
 
 The above examples show how to configure a JWT token on a class or method level. When the annotation is present on both endpoint class and a method, the configuration on the method overrides the class configuration for that method.

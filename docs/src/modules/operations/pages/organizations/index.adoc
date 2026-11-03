@@ -1,13 +1,18 @@
 = Organizations
+:page-summary: An organization is the root of the Akka management hierarchy. It holds the projects where services are deployed, the users who belong to it, and the regions its projects can use.
+:page-when-to-use: When you add users to an organization or a project, or need to know which organization, regions and roles apply to your work.
+:page-related: operations:organizations/manage-users.adoc, operations:projects/manage-project-access.adoc, operations:organizations/regions.adoc
+:page-persona: operator-platform
+
 include::ROOT:partial$include.adoc[]
 
 An _Organization_ in Akka is the root of the management hierarchy and serves as a container for all _Projects_ where _Services_ are deployed. It provides the context in which users operate, both in the _Akka Console_ and _Akka CLI_.
 
 To switch between organizations, you must specify the target organization's context.
 
-== Key Concepts
+== Key concepts
 
-* xref:organizations/manage-users.adoc[*User Membership*]: A user can belong to multiple organizations, but membership does not automatically grant access to the organization’s projects.
+* xref:organizations/manage-users.adoc[*User Membership*]: A user can belong to multiple organizations, but membership does not automatically grant access to the organization's projects.
 * xref:organizations/regions.adoc[*Regions*]: Each organization has access to specific regions. Projects created within the organization are located in one or more of these regions.
 * xref:projects/manage-project-access.adoc[*Role-Based Access*]: Membership and project access within an organization are managed through role bindings.
 
@@ -16,6 +21,13 @@ To switch between organizations, you must specify the target organization's cont
 * *Organization Administrator*: The first user of an organization is an Organization Administrator, who can invite or add users with different roles.
 * *Project Ownership*: Each project is owned by a single organization. Users must ensure that their projects are associated with the correct organization.
 * *Region Assignment*: Projects created for an organization are assigned to one or more of the organization's available regions.
+
+== Who can do what
+
+Two pages in this section set who can do what:
+
+* xref:organizations/manage-users.adoc[]: add users to the organization and give them organization roles.
+* xref:projects/manage-project-access.adoc[]: give organization members access to a project and its project roles.
 
 == Usage
 
@@ -34,8 +46,3 @@ acme        1a4a9d5d-1234-5678-910a-9c8fb3700da7   superuser
 ----
 
 NOTE: You can refer to the organization in `akka` commands using either the "friendly name" or the "ID" with the `--organization` flag. See the page on xref:organizations/manage-users.adoc[managing organization users] to find more, including the use of organization roles.
-
-== Topics
-
-- xref:organizations/manage-users.adoc[]
-- xref:organizations/regions.adoc[]

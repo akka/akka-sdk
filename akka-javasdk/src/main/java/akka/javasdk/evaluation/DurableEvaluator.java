@@ -74,8 +74,10 @@ public abstract class DurableEvaluator<S> {
   }
 
   /**
-   * The evaluation being run: the subject under evaluation and the evaluation id. Available in
-   * {@link #onEvaluation} and in every step method.
+   * The evaluation being run: the subject under evaluation, the evaluation id and the configuration
+   * of the evaluator. Available in {@link #onEvaluation} and in every step method. The
+   * configuration is read from the running service for each step, so a step that runs after a
+   * deployment with a changed configuration sees the changed configuration.
    *
    * @throws IllegalStateException if accessed outside a handler method
    */

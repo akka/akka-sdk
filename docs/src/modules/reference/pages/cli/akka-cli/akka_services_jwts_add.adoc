@@ -6,12 +6,14 @@ Add a JWT key to a service.
 
 The `akka service jwt add` command adds a JWT key to a service.
 
+[source,shell]
 ----
 akka services jwts add [SERVICE] [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
 > akka services jwt add my-service --key-id my-key
   --issuer my-issuer-name --algorithm HS256 --secret my-secret
@@ -19,6 +21,7 @@ akka services jwts add [SERVICE] [flags]
 
 == Options
 
+[source,text]
 ----
       --algorithm string   The JWT algorithm to use, use akka service jwt list-algorithms to list supported algorithms.
       --force-global       force an existing regional resource to be configured as a global resource
@@ -34,6 +37,7 @@ akka services jwts add [SERVICE] [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

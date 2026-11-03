@@ -55,7 +55,7 @@ NOTE: For gRPC streaming calls, the duration metric measures the full stream lif
 | > 1 cmd/s
 
 | Content load duration p99
-| `akka.agent.content_load.duration` (p99)
+| `akka.agent.content.load.duration` (p99)
 | > 2 s (depends on content source)
 |===
 
@@ -143,6 +143,14 @@ TIP: Key Value Entity metrics use `akka.component.type="key-value-entity"` to di
 | `akka.projection.consumer.lag` (max)
 | > 1 min
 
+| Running projection behind the latest event
+| `akka.projection.backlog.lag` (max)
+| > 1 min
+
+| Projection failed
+| `akka.projection.failed` (counter)
+| > 0
+
 | Events processing time (avg)
 | `akka.consumer.message.duration` (average)
 | > 1 s
@@ -151,6 +159,8 @@ TIP: Key Value Entity metrics use `akka.component.type="key-value-entity"` to di
 | `akka.eventing.stream.failed` (counter)
 | > 0
 |===
+
+NOTE: `akka.projection.backlog.lag` has one series per `akka.projection.key`, so alert on the maximum across series. A projection that failed and stopped reports a backlog lag of 0, so the projection failed alert is needed to catch it.
 
 == Replication
 

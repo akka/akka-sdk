@@ -100,17 +100,9 @@ resolve_version() {
         fetch "https://downloads.akka.io/latest/akka_version.txt" | \
         tr -d '[:space:]')
     else
-      local exists=$(
-        fetch "https://downloads.akka.io/" | \
-        grep -o "<Key>${tag}/akka</Key>" | \
+      version=$(
+        fetch "https://downloads.akka.io/${tag}/akka_version.txt" | \
         tr -d '[:space:]')
-
-      if [ -z "${exists}" ]; then
-        # error
-        version=""
-      else
-        version="$tag"
-      fi
     fi
 
     echo "${version}"

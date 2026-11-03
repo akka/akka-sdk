@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="144" height="88" viewBox="0 0 144 88" role="img" aria-labelledby="title desc">
+  <title id="title">Processing in a designated region</title>
+  <desc id="desc">A frame marks region B as the configured processing region. Only its Consumer calls the shared external destination, regardless of the event's origin. Consumers in A and C skip the event.</desc>
+  <rect width="144" height="88" rx="8" fill="#f4f4f5"/>
+  <g fill="none" stroke="#71717a" stroke-width="2" stroke-dasharray="3 3">
+    <circle cx="24" cy="22" r="14"/>
+    <circle cx="120" cy="22" r="14"/>
+  </g>
+  <rect x="53" y="3" width="38" height="38" rx="4" fill="none" stroke="#18181b" stroke-width="2"/>
+  <circle cx="72" cy="22" r="14" fill="#ffce4a" stroke="#18181b" stroke-width="2"/>
+  <g font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#18181b">
+    <text x="24" y="26">A</text><text x="72" y="26">B</text><text x="120" y="26">C</text>
+  </g>
+  <path d="M72 43V58M68 54L72 58L76 54" fill="none" stroke="#18181b" stroke-width="2" stroke-linejoin="round"/>
+  <rect x="59" y="62" width="26" height="18" rx="3" fill="#00d8dd" stroke="#18181b" stroke-width="2"/>
+</svg>

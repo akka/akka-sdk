@@ -7,18 +7,21 @@ Apply a service descriptor to the currently configured project.
 The `akka service apply` command applies a service descriptor, creating the service, or updating the service as appropriate.
 For more information see https://doc.akka.io/operations/services/deploy-service.html#apply
 
+[source,shell]
 ----
 akka services apply [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
 akka service apply -f _file-name_
 ----
 
 == Options
 
+[source,text]
 ----
   -f, --file string      The YAML file to apply. If not supplied, will read from stdin.
       --force-global     force an existing regional resource to be configured as a global resource
@@ -31,6 +34,7 @@ akka service apply -f _file-name_
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

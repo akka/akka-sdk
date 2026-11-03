@@ -68,6 +68,29 @@ class ViewSchemaSpec extends AnyWordSpec with Matchers {
       ViewSchema(classOf[com.google.protobuf.Timestamp]) shouldBe SpiTimestamp
     }
 
+    "map protobuf fields with explicit presence to SpiOptional" in {
+      val result = ViewSchema(classOf[presence.PresenceProtos.PresenceFields]).asInstanceOf[SpiClass]
+      result.fields should have size 7
+      val fieldTypes = result.fields.map(f => f.name -> f.fieldType).toMap
+      fieldTypes("id") shouldBe SpiString
+      fieldTypes("nested") shouldBe new SpiOptional(
+        new SpiClass("presence.Nested", Seq(new SpiField("value", SpiString))))
+      fieldTypes("nickname") shouldBe new SpiOptional(SpiString)
+      fieldTypes("review_date") shouldBe new SpiOptional(SpiTimestamp)
+      fieldTypes("tags") shouldBe new SpiList(SpiString)
+      fieldTypes("email") shouldBe new SpiOptional(SpiString)
+      fieldTypes("phone") shouldBe new SpiOptional(SpiString)
+    }
+
+    "not wrap protobuf fields in SpiOptional for query types" in {
+      val result = ViewSchema.forQuery(classOf[presence.PresenceProtos.PresenceFields]).asInstanceOf[SpiClass]
+      val fieldTypes = result.fields.map(f => f.name -> f.fieldType).toMap
+      fieldTypes("nested") shouldBe a[SpiClass]
+      fieldTypes("nickname") shouldBe SpiString
+      fieldTypes("review_date") shouldBe SpiTimestamp
+      fieldTypes("tags") shouldBe new SpiList(SpiString)
+    }
+
     "handle self referencing type trees" in {
       val result = ViewSchema(classOf[ViewTestModels.Recursive])
       result shouldBe a[SpiClass]
@@ -87,6 +110,48 @@ class ViewSchemaSpec extends AnyWordSpec with Matchers {
         .getField("recursive")
         .get
         .fieldType shouldBe new SpiClassRef(classOf[ViewTestModels.TwoStepRecursive].getName)
+    }
+
+    "handle recursive protobuf messages" in {
+      val result = ViewSchema(classOf[protoconsumer.EventsForConsumer.CircularParent])
+      result shouldBe a[SpiClass]
+      result
+        .asInstanceOf[SpiClass]
+        .getField("child")
+        .get
+        .fieldType
+        .asInstanceOf[SpiOptional]
+        .valueType
+        .asInstanceOf[SpiClass]
+        .getField("parent")
+        .get
+        .fieldType shouldBe new SpiOptional(new SpiClassRef("protoconsumer.CircularParent"))
+    }
+
+    "expand sibling fields of the same non-recursive protobuf message type" in {
+      val result = ViewSchema(classOf[protoconsumer.EventsForConsumer.SiblingParent]).asInstanceOf[SpiClass]
+      val expectedChild =
+        new SpiOptional(new SpiClass("protoconsumer.SiblingChild", Seq(new SpiField("name", SpiString))))
+      result.getField("first").get.fieldType shouldBe expectedChild
+      result.getField("second").get.fieldType shouldBe expectedChild
+    }
+
+    "handle indirectly recursive protobuf messages such as google.protobuf.Struct" in {
+      val result = ViewSchema(classOf[com.google.protobuf.Struct])
+      result shouldBe a[SpiClass]
+
+      val fieldsType = result.asInstanceOf[SpiClass].getField("fields").get.fieldType
+      fieldsType shouldBe a[SpiList]
+      val fieldsEntry = fieldsType.asInstanceOf[SpiList].valueType.asInstanceOf[SpiClass]
+      fieldsEntry.name shouldBe "google.protobuf.Struct.FieldsEntry"
+
+      val value = fieldsEntry.getField("value").get.fieldType.asInstanceOf[SpiOptional].valueType.asInstanceOf[SpiClass]
+      value.name shouldBe "google.protobuf.Value"
+      value.getField("struct_value").get.fieldType shouldBe new SpiOptional(new SpiClassRef("google.protobuf.Struct"))
+
+      val listValue =
+        value.getField("list_value").get.fieldType.asInstanceOf[SpiOptional].valueType.asInstanceOf[SpiClass]
+      listValue.getField("values").get.fieldType shouldBe new SpiList(new SpiClassRef("google.protobuf.Value"))
     }
   }
 

@@ -7,12 +7,14 @@ never the key material.
 
 Names only: a command that prints existing key material turns every list into a disclosure.
 
+[source,shell]
 ----
 akka models endpoints keys list ENDPOINT [flags]
 ----
 
 == Options
 
+[source,text]
 ----
   -h, --help             help for list
       --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
@@ -22,6 +24,7 @@ akka models endpoints keys list ENDPOINT [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

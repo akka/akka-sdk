@@ -9,6 +9,13 @@ In many cases, Akka takes care of streaming and is using end-to-end backpressure
 * Consumers process a stream of events. You implement a handler to process each event. Same approach when the source is an entity within the service, another service, or a message broker topic.
 * Consumers can produce events to other services or publish to a message broker topic. The downstream consumer or publisher defines the pace.
 
+NOTE: Streaming in the SDK means events processed through views, consumers and producers over durable event streams. It is built on the lower-level {url-libraries-streams}[Akka Streams] library, a framework of sources, flows and sinks. See <<_using_akka_streams>> for when to use that library directly.
+
+== Back-pressure
+
+A consumer reads events at the pace it can process them, while the events wait in the event journal or the broker topic, and an in-memory stream slows the sender to the receiver's pace. See xref:concepts:delivery-guarantees.adoc#streaming-and-back-pressure[] for how durable buffers and back-pressure work.
+
+
 == Using Akka Streams
 
 Sometimes, the built-in streaming capabilities mentioned above are not enough for what you need, and then you can use Akka Streams. A few examples where Akka Streams would be a good solution:

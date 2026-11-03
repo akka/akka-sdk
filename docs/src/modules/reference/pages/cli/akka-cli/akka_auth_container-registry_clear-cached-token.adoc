@@ -2,12 +2,14 @@
 
 Clear the cached Akka Container Registry access token.
 
+[source,shell]
 ----
 akka auth container-registry clear-cached-token [flags]
 ----
 
 == Options
 
+[source,text]
 ----
   -h, --help             help for clear-cached-token
       --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
@@ -16,6 +18,7 @@ akka auth container-registry clear-cached-token [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

@@ -10,12 +10,14 @@ This configuration will be applied to all instances of the service.
 By default the command runs in the primary region.
 Use --region to select another region, or --all-regions to run it in every region of the project.
 
+[source,shell]
 ----
 akka services logging unset-level [SERVICE_NAME] [LOGGER_NAME] [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
 
 > akka service logging unset-level my-service com.example.MyClass
@@ -24,6 +26,7 @@ akka services logging unset-level [SERVICE_NAME] [LOGGER_NAME] [flags]
 
 == Options
 
+[source,text]
 ----
       --all-regions      run the command on all regions
   -h, --help             help for unset-level
@@ -34,6 +37,7 @@ akka services logging unset-level [SERVICE_NAME] [LOGGER_NAME] [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

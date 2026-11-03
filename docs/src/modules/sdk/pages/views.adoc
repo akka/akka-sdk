@@ -12,6 +12,8 @@ Views can be defined from any of the following:
 * xref:topic-view[Messages received from subscribing to topics on a broker]
 * xref:consuming-producing.adoc#s2s-eventing[Events consumed from a different Akka service]
 
+A View serves queries from its own read model, separate from the entities that write the data, so the read side and the write side scale independently.
+
 Reference documentation covering the view query language syntax, query capabilities and how query results are mapped to Java types can be found in xref:reference:views/index.adoc[View reference].
 
 The remainder of this page describes:
@@ -32,7 +34,7 @@ A View Effect can either:
 * delete the view state
 * ignore the event or state change notification (and not update the view state)
 
-For additional details, refer to xref:concepts:declarative-effects.adoc[Declarative Effects].
+For additional details, refer to xref:concepts:components.adoc#_effects_what_the_component_declares[Effects].
 
 [#value-entity]
 == Creating a View from a Key Value Entity
@@ -359,9 +361,9 @@ WARNING: Views from topics cannot be rebuilt from the source messages, because i
 [#at-least-once-delivery]
 == Delivery semantics and deduplication
 
-All Views based on Event Sourced Entities, Key Value Entities and Workflows use exactly-once delivery semantics. It means that there is a build in deduplication mechanism based on xref:dev-best-practices.adoc#_sequence_number_tracking[sequence number] tracking.
+Changes are delivered to a View at least once. For Views based on Event Sourced Entities, Key Value Entities, Workflows or another Akka service, a built-in deduplication mechanism based on xref:dev-best-practices.adoc#_sequence_number_tracking[sequence number] tracking ensures that a redelivered change is not applied twice. For Views based on a topic, deduplicate in the `TableUpdater`. See xref:concepts:delivery-guarantees.adoc[] for the guarantees of each path.
 
-NOTE: For Views based on Key Value Entities, while the deduplication mechanism ensures exactly-once processing, it does not guarantee that all intermediate state changes will be delivered to the View. Due to the nature of Key Value Entities, only the latest state is guaranteed to be reflected in the View. If a Key Value Entity is updated multiple times in quick succession, some intermediate states may be skipped during restarts or rebalances.
+NOTE: For Views based on Key Value Entities, the deduplication mechanism does not guarantee that all intermediate state changes will be delivered to the View. Due to the nature of Key Value Entities, only the latest state is guaranteed to be reflected in the View. If a Key Value Entity is updated multiple times in quick succession, some intermediate states may be skipped during restarts or rebalances.
 
 == Testing the View
 

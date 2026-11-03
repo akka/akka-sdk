@@ -22,6 +22,9 @@ ThisBuild / makeBomIncludeDependencies := true
 // see Dependencies.jacksonModules
 ThisBuild / dependencyOverrides ++= Dependencies.jacksonModules
 
+// accept the jwt-json-common version the runtime selects over the one akka-http-jwt declares
+ThisBuild / libraryDependencySchemes += "com.github.jwt-scala" %% "jwt-json-common" % VersionScheme.Always
+
 lazy val checkRuntimeDependencyAlignment =
   taskKey[Unit]("Verify direct dependency versions against the versions the Akka Runtime resolves")
 
@@ -152,7 +155,11 @@ lazy val annotationProcessorTestProject: CompositeProject =
           "-processor",
           "akka.javasdk.tooling.processor.ComponentAnnotationProcessor",
           "-Aakka.javasdk.groupId=com.example",
-          "-Aakka.javasdk.artifactId=test"))
+          "-Aakka.javasdk.artifactId=test"),
+        Compile / javacOptions ++= {
+          if (sampleProject.base.getName == "library-descriptors") Seq("-Aakka.javasdk.componentLibrary=true")
+          else Seq.empty
+        })
   }
 
 lazy val akkaJavaSdkEnforcer =
@@ -166,9 +173,9 @@ lazy val akkaJavaSdkEnforcer =
       Compile / javacOptions ++= Seq("-encoding", "UTF-8", "--release", "11"),
       libraryDependencies ++= Seq(
         "org.apache.maven.enforcer" % "enforcer-api" % "3.6.3" % Provided,
-        "org.apache.maven" % "maven-core" % "3.9.16" % Provided,
+        "org.apache.maven" % "maven-core" % "3.10.0" % Provided,
         "javax.inject" % "javax.inject" % "1" % Provided,
-        Dependencies.junit5 % Test,
+        Dependencies.junitJupiter % Test,
         Dependencies.junitPlatformLauncher % Test,
         "net.aichler" % "jupiter-interface" % net.aichler.jupiter.sbt.Import.JupiterKeys.jupiterVersion.value % Test))
 
@@ -195,7 +202,8 @@ lazy val akkaJavaSdkParent =
           AkkaGrpcVersion,
           GoogleProtobufVersion,
           Dependencies.JacksonVersion,
-          Dependencies.JacksonAnnotationsVersion)
+          Dependencies.JacksonAnnotationsVersion,
+          Dependencies.JUnitJupiterVersion)
       })
 
 def updatePomVersion(
@@ -206,7 +214,8 @@ def updatePomVersion(
     akkaGrpcVersion: String,
     googleProtobufVersion: String,
     jacksonVersion: String,
-    jacksonAnnotationsVersion: String): Elem = {
+    jacksonAnnotationsVersion: String,
+    junitJupiterVersion: String): Elem = {
   def updateElements(seq: Seq[Node]): Seq[Node] = {
     seq.map {
       case version @ <version>{_}</version> =>
@@ -228,6 +237,8 @@ def updatePomVersion(
               <jackson.version>{jacksonVersion}</jackson.version>
             case <jackson-annotations.version>{_}</jackson-annotations.version> =>
               <jackson-annotations.version>{jacksonAnnotationsVersion}</jackson-annotations.version>
+            case <junit-jupiter.version>{_}</junit-jupiter.version> =>
+              <junit-jupiter.version>{junitJupiterVersion}</junit-jupiter.version>
             case other =>
               other
           }

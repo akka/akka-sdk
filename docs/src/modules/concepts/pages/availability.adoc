@@ -1,0 +1,34 @@
+= Availability and recovery
+:page-summary: Akka keeps services available through the loss of a node, a zone or a region by recovering state from durable events, spreading each region across availability zones, and replicating state between regions.
+:page-when-to-use: When you need to know what an Akka service survives, what can be lost in a regional outage, and which mechanism handles each kind of failure.
+:page-related: concepts:runtime.adoc, concepts:multi-region.adoc, deployment:production-readiness/choosing-your-environment.adoc
+:page-persona: operator-platform, operator-sre, builder-developer
+
+include::ROOT:partial$include.adoc[]
+
+Availability is a service's ability to continue responding when infrastructure fails. Recovery mechanisms differ for an instance, an availability zone, a region, and the platform's federation plane.
+
+== Failure scopes
+
+The runtime recovers failed component instances from persisted state on surviving nodes. Spreading a deployment across availability zones can protect it from the loss of one zone, provided its compute and storage configuration support that failure.
+
+A second region adds a replica outside the first region's failure boundary. Reads can continue from surviving replicas, but moving writes and traffic away from a failed region requires the documented failover procedure.
+
+A single-region deployment instead relies on backups when its entire region is lost. Backup configuration and ownership depend on the deployment option; in BYOK8s, the customer owns database backups and point-in-time recovery.
+
+Running applications can continue when the federation plane is unavailable, while management operations such as deployment are affected. Control-plane availability and application availability are separate concerns.
+
+== Recovery objectives and data loss
+
+The recovery time objective (RTO) states how long recovery may take. The recovery point objective (RPO) states how much recent data may be lost.
+
+Cross-region replication is asynchronous. A surviving region cannot recover writes it never received. If the failed region returns, its events can replicate later, but changes conflicting with writes made after failover are resolved according to the primary-region rules. Multi-region deployment therefore does not imply zero data loss.
+
+Choose zones and regions from the failures the workload must tolerate, its recovery objectives, residency requirements, and cost. Additional regions provide another recovery option, with additional infrastructure and replication traffic.
+
+== Next steps
+
+* xref:deployment:production-readiness/choosing-your-environment.adoc[] chooses availability, sizing, and residency.
+* xref:operations:regions/setup.adoc[] performs regional failover.
+* xref:deployment:production-readiness/disaster-recovery.adoc[] define recovery responsibilities and procedures.
+* xref:deployment:technical-overview.adoc[] explains platform boundaries and environment migration.

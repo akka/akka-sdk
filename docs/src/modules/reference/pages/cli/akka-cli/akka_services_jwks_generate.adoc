@@ -10,12 +10,14 @@ The generated JWKS secret contains the full key pair.
 The service uses the public key for validation.
 If you need to issue tokens signed by the generated private key, you can reference the same secret from your signing service.
 
+[source,shell]
 ----
 akka services jwks generate [SERVICE] [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
 > akka service jwks generate my-service --algorithm RS256 --key-id my-key --issuer https://example.com
 > akka service jwks generate my-service --algorithm ES256 --key-id signing-key --secret my-jwks
@@ -23,6 +25,7 @@ akka services jwks generate [SERVICE] [flags]
 
 == Options
 
+[source,text]
 ----
       --algorithm string                 The algorithm for the generated key (HMD5, HS224, HS256, HS384, HS512, RS256, RS384, RS512, ES256, ES384, ES512, EdDSA).
       --allowed-algorithms stringArray   List of algorithms to allow for this keyset.
@@ -40,6 +43,7 @@ akka services jwks generate [SERVICE] [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

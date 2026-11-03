@@ -6,12 +6,14 @@ Terminate a running workflow execution.
 
 The `akka service components workflows terminate` command terminates a running workflow for the specified service, workflow component and id.
 
+[source,shell]
 ----
 akka services components workflows terminate SERVICE_NAME COMPONENT_ID WORKFLOW_ID [flags]
 ----
 
 == Options
 
+[source,text]
 ----
   -f, --force            Skip the confirmation prompt.
   -h, --help             help for terminate
@@ -23,6 +25,7 @@ akka services components workflows terminate SERVICE_NAME COMPONENT_ID WORKFLOW_
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

@@ -4,7 +4,7 @@ What a period consumed, what it cost, and what one conversation cost
 
 == Synopsis
 
-Every figure is computed over the interaction records the capture chain published and the prices in force when each exchange was served.
+Every figure is computed over the model call records the capture chain published and the prices in force when each exchange was served.
 
 A window is whole UTC hours, `--from` inclusive and `--to` exclusive.
 The service refuses one it cannot answer and names what would clear it;
@@ -15,12 +15,14 @@ A figure with no value states why it has none and never reads as zero.
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for spend
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")
@@ -30,14 +32,13 @@ A figure with no value states why it has none and never reads as zero.
       --force                Skip the confirmation prompt
       --jq string            Filter the JSON output with a jq expression
       --json string          Output JSON with only these fields; --json= lists the fields a command offers
-      --no-color             Print without color, as NO_COLOR does
+      --no-color             Print without color or a redrawn progress line, as NO_COLOR does
   -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
       --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then a local dev-mode service, then http://localhost:9001)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----
@@ -49,6 +50,9 @@ A figure with no value states why it has none and never reads as zero.
 * link:akka_optimize_spend_conversations.html[akka optimize spend conversations]	 - Spend attributable to one conversation
 * link:akka_optimize_spend_get.html[akka optimize spend get]	 - What a period consumed and cost, divided as asked
 * link:akka_optimize_spend_info.html[akka optimize spend info]	 - Which service is answering at this address
+* link:akka_optimize_spend_recent.html[akka optimize spend recent]	 - The most recent model calls, newest first
+* link:akka_optimize_spend_series.html[akka optimize spend series]	 - A period in hour or day buckets, each what a read of it alone states
+* link:akka_optimize_spend_system-ids.html[akka optimize spend system-ids]	 - Every system id the service has seen, with its calls and its first and last hour
 
 [discrete]
 

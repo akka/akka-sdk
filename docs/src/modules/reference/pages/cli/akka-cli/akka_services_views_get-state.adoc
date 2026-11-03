@@ -6,12 +6,14 @@ Get view state.
 
 The `akka service views get-state` command gets the view state for a given subject.
 
+[source,shell]
 ----
 akka services views get-state SERVICE VIEW_ID TABLE (optional) SUBJECT [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
 
 > akka service views get-state customer-registry customer-by-name Alice
@@ -22,6 +24,7 @@ if the view has multiple tables, you must also provide the table name:
 
 == Options
 
+[source,text]
 ----
   -h, --help             help for get-state
       --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
@@ -31,6 +34,7 @@ if the view has multiple tables, you must also provide the table name:
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

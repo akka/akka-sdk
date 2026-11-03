@@ -9,12 +9,14 @@ The row marked DEFAULT is what a service gets when it is deployed without `--ins
 
 Optional `--region` and `--service` refine the resolution to a specific deployment region or service within the project.
 
+[source,shell]
 ----
 akka projects instance-types list [flags]
 ----
 
 == Options
 
+[source,text]
 ----
   -h, --help             help for list
       --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
@@ -25,6 +27,7 @@ akka projects instance-types list [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

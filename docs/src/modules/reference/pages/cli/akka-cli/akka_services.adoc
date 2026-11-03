@@ -8,12 +8,14 @@ The `akka services` commands are used to manage and modify the services in your 
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for services
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")
@@ -43,6 +45,7 @@ The `akka services` commands are used to manage and modify the services in your 
 * link:akka_services_get.html[akka services get]	 - Describe a specific service.
 * link:akka_services_jwks.html[akka services jwks]	 - Manage JWT keysets of a service.
 * link:akka_services_jwts.html[akka services jwts]	 - Manage JWT keys of a service.
+* link:akka_services_ledger.html[akka services ledger]	 - Inspect the ledger of a service.
 * link:akka_services_list.html[akka services list]	 - List all services.
 * link:akka_services_logging.html[akka services logging]	 - Change the log level configuration of a service.
 * link:akka_services_pause.html[akka services pause]	 - Pause a service, scaling it to zero instances.

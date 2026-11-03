@@ -10,18 +10,21 @@ This context will remain selected for subsequent commands.
 
 NOTE: You can also use the `--context` flag to specify a different context for an individual command.
 
+[source,shell]
 ----
 akka config use-context CONTEXT [flags]
 ----
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for use-context
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

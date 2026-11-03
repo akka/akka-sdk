@@ -1,0 +1,9 @@
+= Federation Plane and Application Plane
+:page-aliases: operations:technical-overview-image.adoc
+:page-layout: dense
+:page-breadcrumb: Akka / Deployment / How AAO works / Federation Plane and Application Plane
+:page-return-to: technical-overview.html
+:page-summary: Full-size diagram of the Akka Federation Plane and Application Planes.
+
+[.dense-image]
+image::deployment:aao-planes.svg[Federation Plane and Application Plane]

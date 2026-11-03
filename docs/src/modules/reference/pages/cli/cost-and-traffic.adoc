@@ -1,0 +1,93 @@
+= Cost and traffic commands
+:page-summary: The akka optimize commands for spend, pricing, and recorded captures.
+:page-persona: builder-ai-ml, operator
+:page-banner: inference
+
+include::ROOT:partial$include.adoc[]
+
+These commands cover what an organization spends on inference. Every command on this page is a subcommand of `akka optimize`. See xref:reference:cli/akka-cli/akka_optimize.adoc[akka optimize] for every command and flag. Most commands read the document from standard input when you pass `-f -`.
+
+== Spend
+
+`akka optimize spend` reports what a period consumed, what it cost, and what one conversation cost. The alias `spends` is accepted.
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `akka optimize spend get --from INSTANT --to INSTANT`
+| What a period consumed and cost, divided as asked.
+
+| `akka optimize spend compare --from INSTANT --to INSTANT --against-from INSTANT --against-to INSTANT`
+| Two periods, and the difference between them.
+
+| `akka optimize spend series --from INSTANT --to INSTANT --granularity hour\|day`
+| A period divided into UTC hours or days, each answered as a read of that hour or day alone.
+
+| `akka optimize spend recent --since INSTANT`
+| The most recent exchanges, newest first.
+
+| `akka optimize spend conversations list --from INSTANT --to INSTANT`
+| The conversations of a period that cost the most.
+
+| `akka optimize spend system-ids`
+| Every system id the service has seen, with how many exchanges named it and the first and the last hour in which one did.
+
+| `akka optimize spend info`
+| Which service is answering at this address.
+|===
+
+== Pricing catalog
+
+`akka optimize pricing-catalog` holds model prices as input and output rates per million tokens for each served name. A published version is never edited. The aliases `pricing-catalogs`, `catalog`, and `catalogs` are accepted.
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `akka optimize pricing-catalog get`
+| The prices in force now, or at an instant.
+
+| `akka optimize pricing-catalog apply -f FILE`
+| Publish a catalog version, or check one.
+
+| `akka optimize pricing-catalog versions list`
+| Every published version, newest first.
+|===
+
+== Captures
+
+`akka optimize captures` reads recorded interaction artifacts off a filesystem. The alias `capture` is accepted.
+
+These commands serve debugging and diagnostics. They read artifacts from a directory on disk, which is where a capture written during local development or a support investigation lands.
+
+[NOTE]
+====
+Captures recorded in production are stored in a location the CLI cannot reach in this version. The commands below read a filesystem directory only.
+====
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `akka optimize captures list DIRECTORY`
+| Every artifact in a directory, newest first.
+
+| `akka optimize captures show ARTIFACT`
+| One artifact, read forward.
+|===
+
+include::inference:partial$aao-inference-notice.adoc[]
+
+For pricing rules, unpriced traffic, reporting completeness, and attribution, see xref:inference:spend.adoc[Understanding inference costs]. For how the gateway records traffic, see xref:inference:capture-and-grading.adoc[Capture and grading].
+
+== See also
+
+* xref:inference:tracking-spend.adoc[]
+* xref:reference:cli/akka-cli/akka_optimize.adoc[akka optimize command reference]
+* xref:reference:cli/models.adoc[Model commands]
+* xref:reference:cli/routing.adoc[Routing commands]
+* xref:reference:cli/training.adoc[Training and evaluation commands]

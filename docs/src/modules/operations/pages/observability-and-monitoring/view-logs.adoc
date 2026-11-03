@@ -24,6 +24,13 @@ With a command window set to your project, use the `akka logs` command to view t
 ----
 akka logs <<service-name>>
 ----
++
+To stream new log lines as they arrive, add `--follow`. Use `--tail` to set how many existing lines the command fetches first:
++
+[source,command line]
+----
+akka logs <<service-name>> --follow --tail 50
+----
 
 == Exporting logs
 

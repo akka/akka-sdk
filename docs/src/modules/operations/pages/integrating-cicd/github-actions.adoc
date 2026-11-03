@@ -5,7 +5,7 @@ Use the Akka https://github.com/akka/setup-akka-cli-action[setup-akka-cli-action
 
 Use version `v1.1.0` or later of the action. This version adds support for authenticating with workload identity, described below.
 
-The action supports two authentication mechanisms, described in xref:integrating-cicd/index.adoc[Integrating with CI/CD tools]: workload identity with OIDC, and service tokens. Workload identity with OIDC is preferred, because it requires no stored credential in GitHub.
+The action supports two authentication mechanisms, described in xref:integrating-cicd/index.adoc[Authenticate CI/CD]: workload identity with OIDC, and service tokens. Workload identity with OIDC is preferred, because it requires no stored credential in GitHub.
 
 == Authenticate with workload identity
 
@@ -163,6 +163,6 @@ jobs:
 
 == See also
 
-- xref:integrating-cicd/index.adoc[Integrating with CI/CD tools]
+- xref:integrating-cicd/index.adoc[Authenticate CI/CD]
 - xref:reference:cli/akka-cli/akka_organizations_identity-providers_add_oauth.adoc[akka organizations identity-providers add oauth]
 - xref:reference:cli/akka-cli/akka_roles_add-binding.adoc[akka roles add-binding]

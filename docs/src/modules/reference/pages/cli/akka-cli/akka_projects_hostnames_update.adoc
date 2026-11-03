@@ -6,12 +6,14 @@ Update a hostname
 
 The `akka project hostname update _hostname_` command updates a hostname in a project.
 
+[source,shell]
 ----
 akka projects hostnames update NAME [flags]
 ----
 
 == Options
 
+[source,text]
 ----
       --global                Whether this should be a global hostname
   -h, --help                  help for update
@@ -24,6 +26,7 @@ akka projects hostnames update NAME [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

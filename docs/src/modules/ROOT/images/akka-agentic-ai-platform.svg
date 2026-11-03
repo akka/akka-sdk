@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 420" role="img" aria-labelledby="title desc" font-family="Helvetica, Arial, sans-serif">
+  <title id="title">The Akka Agentic AI Platform</title>
+  <desc id="desc">One platform in three layers. Define and govern: Akka Specify and Akka Verify. Build and run: Akka SDK. Models and compute: Akka Optimize.</desc>
+  <rect width="880" height="420" rx="12" fill="#111111"/>
+  <text x="440" y="44" text-anchor="middle" font-size="22" font-weight="700" fill="#ffffff">Akka Agentic AI Platform</text>
+
+  <text x="40" y="96" font-size="13" font-weight="700" fill="#ffce4a" letter-spacing="1">DEFINE AND GOVERN</text>
+  <rect x="40" y="106" width="392" height="76" rx="8" fill="#1f1f1f" stroke="#02a4a7" stroke-width="2"/>
+  <text x="236" y="140" text-anchor="middle" font-size="20" font-weight="700" fill="#ffffff">Akka Specify</text>
+  <text x="236" y="164" text-anchor="middle" font-size="13" fill="#cccccc">specifications, exit conditions, conformance</text>
+  <rect x="448" y="106" width="392" height="76" rx="8" fill="#1f1f1f" stroke="#02a4a7" stroke-width="2"/>
+  <text x="644" y="140" text-anchor="middle" font-size="20" font-weight="700" fill="#ffffff">Akka Verify</text>
+  <text x="644" y="164" text-anchor="middle" font-size="13" fill="#cccccc">evaluations, controls, evidence</text>
+
+  <text x="40" y="218" font-size="13" font-weight="700" fill="#ffce4a" letter-spacing="1">BUILD AND RUN</text>
+  <rect x="40" y="228" width="800" height="76" rx="8" fill="#1f1f1f" stroke="#02a4a7" stroke-width="2"/>
+  <text x="440" y="262" text-anchor="middle" font-size="20" font-weight="700" fill="#ffffff">Akka SDK</text>
+  <text x="440" y="286" text-anchor="middle" font-size="13" fill="#cccccc">agents, workflows, entities, views, endpoints, timers, consumers</text>
+
+  <text x="40" y="340" font-size="13" font-weight="700" fill="#ffce4a" letter-spacing="1">MODELS AND COMPUTE</text>
+  <rect x="40" y="350" width="800" height="50" rx="8" fill="#1f1f1f" stroke="#02a4a7" stroke-width="2"/>
+  <text x="440" y="381" text-anchor="middle" font-size="18" font-weight="700" fill="#ffffff">Akka Optimize<tspan font-size="13" font-weight="400" fill="#cccccc">   routing, serving, training</tspan></text>
+</svg>

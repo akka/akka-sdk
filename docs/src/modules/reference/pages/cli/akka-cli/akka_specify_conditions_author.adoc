@@ -11,12 +11,14 @@ An auditor a tool wrote does not run until its exact command is approved.
 Pass --consent-for to approve the commands as they are written, naming the system being ported.
 Give that only when you accepted the run at its outset: it is the consent that lets an unattended run proceed without stopping at each condition.
 
+[source,shell]
 ----
 akka specify conditions author [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   akka specify conditions author --file conditions.yaml
   akka specify conditions author --file conditions.yaml --consent-for redash
@@ -24,6 +26,7 @@ akka specify conditions author [flags]
 
 == Options
 
+[source,text]
 ----
       --consent-for string   approve the auditors as written, naming the system this run is porting
       --dir string           project directory (default: current)
@@ -33,6 +36,7 @@ akka specify conditions author [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

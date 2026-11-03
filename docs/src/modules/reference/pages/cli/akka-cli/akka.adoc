@@ -6,12 +6,14 @@ Akka control
 
 Welcome to the Akka CLI, for more information on its usage please visit the documentation https://doc.akka.io/index.html.
 
+[source,shell]
 ----
 akka [flags]
 ----
 
 == Options
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

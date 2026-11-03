@@ -18,18 +18,21 @@ Pass --consent-for to approve the new commands as they are written;
 without it each waits for its own approval.
 The consent given when the conditions were first written does not carry over, because it was given for commands that did not exist yet.
 
+[source,shell]
 ----
 akka specify conditions graduate [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   akka specify conditions graduate --file graduated.yaml
 ----
 
 == Options
 
+[source,text]
 ----
       --consent-for string   approve the rewritten auditors as written, naming the system this run is porting
       --dir string           project directory (default: current)
@@ -39,6 +42,7 @@ akka specify conditions graduate [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

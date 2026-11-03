@@ -648,7 +648,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.OpenAi.html[`Mode
 
 | model-name
 | String
-| The name of the model to use, e.g. "gemini-2.0-flash-001". See vendor documentation for a list of available models
+| The name of the model to use, e.g. "gemini-3.8-flash". See vendor documentation for a list of available models
 
 | api-key
 | String
@@ -660,7 +660,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.OpenAi.html[`Mode
 
 | location
 | String
-| Google Cloud region, e.g. "us-central1". Used together with `project-id`
+| Google Cloud location, e.g. `global`, or `us` or `eu` for the multi-region endpoints. Used together with `project-id`
 
 | base-url
 | Url
@@ -680,7 +680,11 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.OpenAi.html[`Mode
 
 | thinking-budget
 | Integer
-| Tokens to spend on thinking (0 to disable thinking)
+| Tokens to spend on thinking for Gemini 2.5 models (0 for the model default). Must be 0 for Gemini 3 models
+
+| thinking-level
+| String
+| Control thinking for Gemini 3 models, exact values depend on the specific model chosen, must be empty for 2.5 models. See Vertex AI docs for more details: https://docs.cloud.google.com/vertex-ai/generative-ai/docs/thinking
 
 | max-output-tokens
 | Integer
@@ -703,6 +707,16 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.OpenAi.html[`Mode
 | Additional HTTP headers to include in each request to the model API, as a list of `"name:value"` strings. Can also be set via `ADDITIONAL_VERTEX_AI_REQUEST_HEADERS_N` environment variables
 
 |===
+
+Example configuration for a Gemini 3 model, using application default credentials and a thinking level:
+
+[source,json,indent=0]
+.src/main/resources/application.conf
+----
+include::sdk:example$doc-snippets/src/main/resources/application.conf[tags=agent-model-config-vertex-ai]
+----
+
+Gemini 2.5 models use `thinking-budget` instead of `thinking-level`.
 
 See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.VertexAi.html[`ModelProvider.VertexAi`] for programmatic settings.
 
@@ -828,20 +842,29 @@ headers are the same for every instance of that agent.
 
 == Identity headers
 
-By default, the runtime adds two headers to each model request, so that a gateway or proxy in front of the
+By default, the runtime adds some headers to each model request, so that a gateway or proxy in front of the
 model API can attribute the request:
 
 [cols="1m,3"]
 |===
 | Header | Value
 
+| x-akka-system-id | The AI system the request is for. By default, the id of the project that the service belongs to
+| x-akka-service-id | The name of the service that made the request
 | x-akka-agent-id | The component id of the agent that made the request
 | x-akka-flow-id | The flow the request belongs to. When the request has no flow, the session id, or the instance id for an autonomous agent
+| x-akka-interaction-id | The id of the interaction the request belongs to
 
 |===
 
 The runtime leaves a header out when its value is blank, longer than 1024 characters, or not a legal
 header value. The runtime still sends the request.
+
+Every model request of one interaction carries the same `x-akka-interaction-id`, including each tool
+round and each retry attempt. When the xref:sdk:evaluators.adoc#_the_ledger_client[ledger] records the
+interaction, the value is the id of its record. Each service has its own ledger, so `x-akka-service-id`
+names the service whose ledger holds that record. In dev mode, `x-akka-service-id` is the value of
+`akka.javasdk.dev-mode.service-name`, which defaults to the artifact id of the Maven project.
 
 A request has a flow when the agent runs inside an autonomous-agent flow. For any other request, such as
 one from an agent that an endpoint or a workflow calls, `x-akka-flow-id` holds the session id or the
@@ -850,12 +873,30 @@ hosted model API too. A xref:sdk:sanitization.adoc[sanitizer] masks message cont
 it does not mask these ids. Do not put personal data in a session id or an instance id, or
 xref:model-provider-details.adoc#identity-headers-per-provider[turn the headers off] for that provider.
 
-Do not set `x-akka-agent-id` or `x-akka-flow-id` as an
+The project id groups all services of the project as one system. In dev mode, the runtime sends
+`local-dev-mode`. To name the system of a service yourself, set `x-akka-system-id` as an additional model
+request header. The runtime then sends that value in place of the project id:
+
+[source,hocon,indent=0]
+----
+akka.javasdk.agent.additional-model-request-headers = ["x-akka-system-id:billing-assistant"]
+----
+
+A provider section, a provider environment variable or a provider built in code with its own headers
+xref:model-provider-details.adoc#_additional_model_request_headers[replaces the global list], so set the
+header there too.
+
+Do not set `x-akka-service-id`, `x-akka-agent-id`, `x-akka-flow-id` or `x-akka-interaction-id` as an
 xref:model-provider-details.adoc#_additional_model_request_headers[additional model request header] while
 the identity headers are on. Depending on the provider, the request then carries both values or only the
 value from the runtime.
 
-Turn them off for every provider:
+The `identity-headers` setting also controls the W3C trace context. When the setting is on and
+xref:operations:observability-and-monitoring/observability-exports.adoc#activating_tracing[tracing] is on,
+the runtime adds the trace context of the agent to each model request. The setting is on by default, so with
+tracing on the runtime sends the trace context by default.
+
+Turn off the identity headers and the trace context for every provider:
 
 [source,hocon,indent=0]
 ----
@@ -878,7 +919,7 @@ A provider named in configuration takes the value from the section it resolves t
 takes the global value, because it has no section.
 
 Local AI does not send these headers. A custom provider builds its own chat model, so the runtime does not
-add these headers to its requests.
+add these headers to its requests. The runtime does not send the trace context to Bedrock.
 
 == Reference configurations
 The following is a list of the various reference configurations for each of the AI models

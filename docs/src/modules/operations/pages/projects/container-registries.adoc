@@ -15,7 +15,7 @@ The _Akka Container Registry (ACR)_ is available to all Akka users and supported
 
 Ensure the following prerequisites are met before continuing:
 
-- The current user must be logged into Akka.
+- The current user must be logged into Akka. See xref:getting-started:log-in.adoc[].
 - Docker must be installed and accessible for the current user.
 
 To verify your Akka login status, run `akka auth current-login`. (If not logged in, use `akka auth login`.)
@@ -64,6 +64,11 @@ gcp        us-east1    gcp-us-east1    acme           cde1044c-b973-4220-8f65-0f
 The Akka Container Registry is now ready for use. 
 
 See xref:operations:services/deploy-service.adoc[deploy and manage services] for further details on how to deploy a service.
+
+[#_registries_in_a_multi_region_project]
+== Registries in a multi-region project
+
+Container registries are regional in Akka. If you use xref:operations:projects/external-container-registries.adoc[], keep a container registry in or near each region of your project. If your container images are in only one place and that place becomes unavailable, your services cannot start new instances.
 
 == See also
 

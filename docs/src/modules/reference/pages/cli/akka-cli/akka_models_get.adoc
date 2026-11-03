@@ -10,12 +10,14 @@ Shows the model and, when it is not ready, the Ready condition's own reason: an 
 --wait polls until Ready is True or --wait-timeout passes.
 The first deployment of a model pulls the engine image and the checkpoint, so minutes are normal.
 
+[source,shell]
 ----
 akka models get NAME [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
 akka models get docs
 akka models get docs --wait --wait-timeout 15m
@@ -23,6 +25,7 @@ akka models get docs --wait --wait-timeout 15m
 
 == Options
 
+[source,text]
 ----
   -h, --help                    help for get
       --owner string            the owner of the project to use, needed if you have two projects with the same name from different owners
@@ -34,6 +37,7 @@ akka models get docs --wait --wait-timeout 15m
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

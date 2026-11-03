@@ -130,22 +130,25 @@ private[javasdk] final class TaskClientImpl(
         subscribed.success(Done)
         mat
       }
-      .map { reply =>
-        val notification = serializer.fromBytes(reply.payload)
-        notification match {
-          case completed: TaskNotification.Completed =>
-            log.debug("resultAsync: task [{}] completed via notification", taskId)
-            deserializeResultFromString(completed.result(), taskDefinition)
-          case failed: TaskNotification.Failed =>
-            log.debug("resultAsync: task [{}] failed via notification: {}", taskId, failed.reason())
-            throw new TaskException.Failed(taskId, failed.reason())
-          case cancelled: TaskNotification.Cancelled =>
-            log.debug("resultAsync: task [{}] cancelled via notification: {}", taskId, cancelled.reason())
-            throw new TaskException.Cancelled(taskId, cancelled.reason())
-          case other =>
-            throw new IllegalStateException(
-              s"Unexpected notification type for task [$taskId]: ${other.getClass.getName}")
-        }
+      .map(reply => serializer.fromBytes(reply.payload))
+      .filter {
+        case rejected: TaskNotification.ResultRejected =>
+          log.debug("resultAsync: task [{}] result rejected by [{}], waiting", taskId, rejected.ruleClassName())
+          false
+        case _ => true
+      }
+      .map {
+        case completed: TaskNotification.Completed =>
+          log.debug("resultAsync: task [{}] completed via notification", taskId)
+          deserializeResultFromString(completed.result(), taskDefinition)
+        case failed: TaskNotification.Failed =>
+          log.debug("resultAsync: task [{}] failed via notification: {}", taskId, failed.reason())
+          throw new TaskException.Failed(taskId, failed.reason())
+        case cancelled: TaskNotification.Cancelled =>
+          log.debug("resultAsync: task [{}] cancelled via notification: {}", taskId, cancelled.reason())
+          throw new TaskException.Cancelled(taskId, cancelled.reason())
+        case other =>
+          throw new IllegalStateException(s"Unexpected notification type for task [$taskId]: ${other.getClass.getName}")
       }
       .take(1)
       .runWith(Sink.head)(materializer)

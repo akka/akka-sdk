@@ -1,0 +1,203 @@
+= Model commands
+:page-aliases: reference:inference-cli/models.adoc
+:page-summary: The complete command reference for the akka models noun, covering accelerator pools, allocations, models, endpoints, API keys, and the akka optimize models governance record.
+:page-persona: builder-ai-ml, operator
+:page-banner: inference
+
+include::ROOT:partial$include.adoc[]
+
+The `akka models` commands deploy models in Akka's inference regions and serve them through the gateway. The `akka optimize models` commands record which models an organization sanctions. See xref:inference:index.adoc#serving[Serving models] for the tasks these commands support, and xref:reference:descriptors/model-descriptor.adoc[Model descriptor] for the file they apply.
+
+Every command supports `--help`. Most support `-o json` for output consumed by another program, and `--region` to act on a region other than the project's primary region. The singular alias `model` is accepted.
+
+[#pools]
+== Accelerator pools
+
+Every inference-capable region declares pools of accelerator devices. A pool name is a regional identifier only: two regions can name the same hardware differently. Compare the `PRODUCT` and `MIG PROFILE` columns, not the name, across regions. The alias `pool` is accepted.
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `akka models pools list`
+| List the accelerator pools available to the organization.
+
+| `akka models pools list --region REGION`
+| List the pools of one region. Repeat `--region` to list several.
+|===
+
+The listing is discovery only. The region decides how many devices a project can draw when it admits an allocation.
+
+[#allocations]
+== Accelerator allocations
+
+An accelerator allocation claims devices from a region's pools for the project. Models place onto an allocation's entries by name. The alias `allocation` is accepted.
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `akka models allocations list`
+| List the project's accelerator allocations in the region.
+
+| `akka models allocations get NAME`
+| Describe one accelerator allocation, entry by entry.
+|===
+
+`DEVICES` is what the entries ask for. `BOUND` is how many devices the region has bound to claims. An allocation is usable when `Ready` is `True` and the two values agree.
+
+[#models]
+== Models
+
+A model is one checkpoint served by an engine on an allocation entry.
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `akka models list`
+| List the project's models in the region.
+
+| `akka models get NAME`
+| Describe one model. When the model is not ready, this prints the reason from its `Ready` condition.
+
+| `akka models get NAME --wait`
+| Wait until the model is ready. `--wait-timeout` sets how long to wait, 10 minutes by default. The first deployment of a model pulls the engine image and the checkpoint, so several minutes are normal.
+|===
+
+[#descriptors]
+== Applying and deleting descriptors
+
+A model descriptor is multi-document YAML. Each document declares an `AcceleratorAllocation`, a `Model`, or a `ModelEndpoint`. When `-f` is omitted, both commands read the descriptor from standard input.
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `akka models apply -f FILE`
+| Create or update every resource the descriptor names, by name.
+
+| `akka models apply -f FILE --dry-run`
+| Run the region's full admission without persisting anything.
+
+| `akka models delete -f FILE`
+| Delete every resource the descriptor names. Endpoints are deleted first, then models, then allocations. A resource that is already absent is skipped, so the command is safe to repeat.
+
+| `akka models delete -f FILE --force`
+| Delete without asking for confirmation.
+|===
+
+The CLI checks the shape of the descriptor before it sends anything and reports every problem at once. Whether the devices fit the pool is decided by the region when it admits the change.
+
+`Service`, `Route`, and `Secret` resources belong to the project descriptor. Apply them with `akka projects apply`.
+
+[#endpoints]
+== Model endpoints
+
+A model endpoint serves one or more models through the gateway. The alias `endpoint` is accepted.
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `akka models endpoints list`
+| List the project's model endpoints in the region.
+
+| `akka models endpoints get NAME`
+| Describe one model endpoint. When the endpoint is not ready, this prints the reason.
+|===
+
+[#keys]
+== API keys
+
+An endpoint must name an `apiKeySecret`. Keys are stored as entries of that secret, one entry per client. The alias `key` is accepted.
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `akka models endpoints keys add ENDPOINT CLIENT`
+| Add an API key for one client. The key is printed once and cannot be read back.
+
+| `akka models endpoints keys list ENDPOINT`
+| List the clients that hold a key. The key values are never printed.
+
+| `akka models endpoints keys remove ENDPOINT CLIENT`
+| Remove one client's key. The secret remains, so requests without a valid key are refused.
+|===
+
+To rotate a key, add a key under a new client name, move the client to it, and then remove the old key.
+
+[WARNING]
+====
+`akka models delete` does not delete the secret an endpoint names. The keys remain valid for any endpoint that names the same secret. Delete the secret with `akka secrets delete` when the keys must be destroyed.
+====
+
+[#governance]
+== Model governance
+
+`akka optimize models` is the organization's model registry. It records which models are sanctioned and the conditions attached to them. The registry is an index, not a store: retiring an entry ends the sanction to use the model and does not delete the weights. The alias `model` is accepted.
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `akka optimize models list`
+| List the models in the registry.
+
+| `akka optimize models get NAME`
+| Show one registry entry.
+
+| `akka optimize models apply NAME -f FILE`
+| Register a model or update its metadata.
+
+| `akka optimize models promote NAME`
+| Promote a candidate to active.
+
+| `akka optimize models deprecate NAME`
+| Discourage new use of a model.
+
+| `akka optimize models retire NAME`
+| End the sanction to use a model.
+
+| `akka optimize models resolve NAME --action ACTION`
+| Resolve a decision on the model that owns it.
+
+| `akka optimize models signoff NAME --condition C`
+| Record human sign-off closing a risk condition.
+
+| `akka optimize models waive NAME --condition C`
+| Record a time-bound waiver on an open condition.
+
+| `akka optimize models strike NAME --condition C`
+| Turn off a condition that does not apply.
+
+| `akka optimize models conditions list NAME`
+| Every condition on a model and its state.
+
+| `akka optimize models attestations list NAME`
+| Every attestation recorded against a model.
+
+| `akka optimize models attestations create NAME -f FILE`
+| Record an externally run evaluation or report.
+
+| `akka optimize models actions list NAME`
+| What may be decided about this model, and how guarded each choice is.
+|===
+
+include::inference:partial$aao-inference-notice.adoc[]
+
+== See also
+
+* xref:inference:index.adoc#serving[Serving models]
+* xref:reference:descriptors/model-descriptor.adoc[Model descriptor]
+* xref:reference:cli/routing.adoc[Routing commands]
+* xref:reference:cli/cost-and-traffic.adoc[Cost and traffic commands]
+* xref:reference:cli/training.adoc[Training and evaluation commands]

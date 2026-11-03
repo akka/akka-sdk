@@ -17,12 +17,14 @@ Creating a snapshot cancels a pending time-to-live on an event sourced entity.
 The entity is then never deleted by TTL until it is written to again with one.
 The command asks you to confirm this before it runs.
 
+[source,shell]
 ----
 akka services components entities force-snapshot SERVICE_NAME COMPONENT_ID ENTITY_ID [flags]
 ----
 
 == Options
 
+[source,text]
 ----
       --all-regions      run the command in every region of the project
   -f, --force            Skip the confirmation prompt.
@@ -34,6 +36,7 @@ akka services components entities force-snapshot SERVICE_NAME COMPONENT_ID ENTIT
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

@@ -5,7 +5,6 @@
 package akka.javasdk.impl
 
 import java.lang.annotation.Annotation
-import java.lang.reflect.Field
 import java.lang.reflect.GenericArrayType
 import java.lang.reflect.Method
 import java.lang.reflect.Parameter
@@ -21,6 +20,7 @@ import akka.http.javadsl.model.HttpEntity
 import akka.http.javadsl.model.HttpRequest
 import akka.javasdk.annotations.Description
 import akka.javasdk.impl.reflection.Reflect
+import akka.javasdk.impl.serialization.JsonSerializer
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaArray
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaBoolean
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaDataType
@@ -29,6 +29,9 @@ import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaInteger
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaNumber
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaObject
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaString
+import com.fasterxml.jackson.databind.introspect.AnnotatedField
+import com.fasterxml.jackson.databind.introspect.AnnotatedMember
+import com.fasterxml.jackson.databind.introspect.AnnotatedMethod
 import com.google.protobuf.Descriptors
 import com.google.protobuf.GeneratedMessageV3
 import org.slf4j.LoggerFactory
@@ -63,8 +66,8 @@ private[impl] object JsonSchema {
       required = parameters.collect { case TypedParameter(name, _, _, true) => name }.sorted)
   }
 
-  def jsonSchemaFor(value: Class[_]): JsonSchemaDataType = {
-    jsonSchemaTypeFor(value, None, Set.empty)._1
+  def jsonSchemaFor(tpe: Type): JsonSchemaDataType = {
+    jsonSchemaTypeFor(tpe, None, Set.empty)._1
   }
 
   def typedParametersFor(method: Method): Seq[TypedParameter] = {
@@ -87,6 +90,7 @@ private[impl] object JsonSchema {
     TypedParameter(parameter.getName, genericType, schemaType, required)
   }
 
+  private def string(description: Option[String]) = new JsonSchemaString(description)
   private def number(description: Option[String]) = new JsonSchemaNumber(description)
   private def integer(description: Option[String]) = new JsonSchemaInteger(description)
   private def boolean(description: Option[String]) = new JsonSchemaBoolean(description)
@@ -94,7 +98,7 @@ private[impl] object JsonSchema {
   private final val typeNameMap: Map[String, Option[String] => JsonSchemaDataType] = Map(
     "short" -> integer,
     "byte" -> integer,
-    "char" -> integer,
+    "char" -> string, // Jackson writes a char as a one character string
     "int" -> integer,
     "long" -> integer,
     "double" -> number,
@@ -102,7 +106,7 @@ private[impl] object JsonSchema {
     "boolean" -> boolean,
     "java.lang.Short" -> integer,
     "java.lang.Byte" -> integer,
-    "java.lang.Char" -> integer,
+    "java.lang.Character" -> string,
     "java.lang.Integer" -> integer,
     "java.lang.Long" -> integer,
     "java.lang.Double" -> number,
@@ -117,8 +121,11 @@ private[impl] object JsonSchema {
     classOf[java.time.LocalDate],
     classOf[java.time.LocalDateTime],
     classOf[java.time.ZonedDateTime],
-    classOf[java.time.Duration] // example Jackson output "PT72H"
-  )
+    classOf[java.time.OffsetDateTime],
+    classOf[java.time.OffsetTime],
+    classOf[java.time.Duration], // example Jackson output "PT72H"
+    classOf[java.time.Period],
+    classOf[java.util.UUID])
 
   private def emptyObject(description: Option[String]) =
     new JsonSchemaObject(description, properties = Map.empty, required = Seq.empty)
@@ -173,13 +180,9 @@ private[impl] object JsonSchema {
 
             case _ =>
               // Note: for now the top level can only be a class
-              val properties = clazz.getDeclaredFields.toVector.map { field: Field =>
-                val description = field.getAnnotation(classOf[Description]) match {
-                  case null       => None
-                  case annotation => Some(annotation.value())
-                }
-
-                field.getName -> jsonSchemaTypeFor(field.getGenericType, description, seenTypes + clazz)
+              val properties = jacksonProperties(clazz).map { case (name, propertyType, member) =>
+                val description = Option(member.getAnnotation(classOf[Description])).map(_.value())
+                name -> jsonSchemaTypeFor(propertyType, description, seenTypes + clazz)
               }.toMap
 
               val jsObjectSchema = new JsonSchemaObject(
@@ -196,6 +199,27 @@ private[impl] object JsonSchema {
             (emptyObject(description), true)
         }
     }
+  }
+
+  // The properties Jackson writes for a class, by JSON name, with the generic type and the member carrying the
+  // annotations. Introspected with the SDK mapper configuration, so naming strategies, ignores, renames, getters
+  // and annotations inherited from superclasses or interfaces apply exactly as in serialization.
+  private def jacksonProperties(clazz: Class[_]): Seq[(String, Type, AnnotatedMember)] = {
+    val config = JsonSerializer.internalObjectMapper.getSerializationConfig
+    val beanDescription = config.introspect(config.constructType(clazz))
+    val ignoredNames = Option(config.getDefaultPropertyIgnorals(clazz, beanDescription.getClassInfo))
+      .map(_.findIgnoredForSerialization.asScala.toSet)
+      .getOrElse(Set.empty[String])
+
+    beanDescription.findProperties.asScala.toVector
+      .filter(property => property.couldSerialize && !ignoredNames(property.getName))
+      .map { property =>
+        val propertyType = property.getAccessor match {
+          case field: AnnotatedField   => field.getAnnotated.getGenericType
+          case getter: AnnotatedMethod => getter.getAnnotated.getGenericReturnType
+        }
+        (property.getName, propertyType, property.getPrimaryMember)
+      }
   }
 
   private def protobufFieldToJsonSchema(field: Descriptors.FieldDescriptor): JsonSchemaDataType = {

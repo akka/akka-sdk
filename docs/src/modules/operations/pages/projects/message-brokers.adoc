@@ -1,22 +1,27 @@
 = Configure message brokers
+:page-summary: A project can have one message broker configuration, which its services use for asynchronous messaging and integration with other systems. Akka supports Google Cloud Pub/Sub, several managed Kafka services, Azure Event Hubs and self-hosted Kafka.
+:page-when-to-use: When the services in a project consume from or produce to a message broker topic.
+:page-related: operations:projects/index.adoc, sdk:consuming-producing.adoc, sdk:running-locally.adoc
+:page-persona: operator-platform, builder-developer
+
 include::ROOT:partial$include.adoc[]
 
-Akka eventing integrates with _Google Cloud Pub/Sub_ and managed Kafka services such as _Confluent Cloud_, _Amazon Managed Streaming for Apache Kafka (Amazon MSK)_, _Aiven for Apache Kafka_, and _Azure Event Hubs_ to enable asynchronous messaging and integrations with other systems.
+Akka eventing integrates with _Google Cloud Pub/Sub_, managed Kafka services such as _Confluent Cloud_, _Amazon Managed Streaming for Apache Kafka (Amazon MSK)_ and _Aiven for Apache Kafka_, _Azure Event Hubs_, and self-hosted Kafka, to enable asynchronous messaging and integrations with other systems.
 
 Message brokers are configured at the Akka project level. A project can have one broker configuration. Akka eventing is independent of the broker technology.
 
-== Broker services
+== Supported brokers
 
-Follow the detailed steps to configure the desired message broker service for use with your Akka project:
+This is the list of message brokers that Akka supports. Follow the steps on the page for the broker you use:
 
-- xref:operations:projects/broker-google-pubsub.adoc[Google Pub/Sub]
-- xref:operations:projects/broker-confluent.adoc[Confluent Cloud]
-- xref:operations:projects/broker-aws-msk.adoc[Amazon MSK]
 - xref:operations:projects/broker-aiven.adoc[Aiven for Apache Kafka]
-- xref:operations:projects/broker-kafka.adoc[Self-hosted Kafka or another provider]
+- xref:operations:projects/broker-aws-msk.adoc[Amazon MSK]
 - xref:operations:projects/broker-azure-eventhubs.adoc[Azure Event Hubs]
+- xref:operations:projects/broker-confluent.adoc[Confluent Cloud]
+- xref:operations:projects/broker-google-pubsub.adoc[Google Pub/Sub]
+- xref:operations:projects/broker-kafka.adoc[Self-hosted Kafka or another provider]
 
-We continuously evaluate additional integrations for potential built-in support in Akka. If you have specific requirements, please contact us at mailto:support@akka.io[].
+If you need built-in support for a broker that is not listed, contact mailto:support@akka.io[].
 
 For running Akka services that integrate with a message broker locally, see xref:sdk:running-locally.adoc#_local_broker_support[running a service with broker support].
 

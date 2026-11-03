@@ -14,8 +14,9 @@ import akka.javasdk.ledger.LedgerClient;
 /**
  * An evaluator that fetches the interaction under evaluation from the real {@link LedgerClient}
  * injected by the runtime, records it into {@link LedgerEvalProbe}, and passes if the agent
- * produced a final response. Bound to {@link LedgerEvalAgent} via {@code akka.javasdk.evaluation}
- * config so the runtime triggers it for each of that agent's interactions.
+ * produced a final response, with the explanation from the key {@code explanation} of its
+ * configuration. Bound to {@link LedgerEvalAgent} via {@code akka.javasdk.evaluation} config so the
+ * runtime triggers it for each of that agent's interactions.
  */
 @Component(id = "ledger-eval-evaluator")
 public class LedgerBackedEvaluator extends Evaluator {
@@ -35,7 +36,7 @@ public class LedgerBackedEvaluator extends Evaluator {
     if (finalText.isEmpty()) {
       return effects().complete(Evaluation.failed("agent produced no final response text"));
     }
-    return effects()
-        .complete(Evaluation.passed("agent responded").withAttribute("finalText", finalText));
+    var explanation = context.config().getString("explanation");
+    return effects().complete(Evaluation.passed(explanation).withAttribute("finalText", finalText));
   }
 }

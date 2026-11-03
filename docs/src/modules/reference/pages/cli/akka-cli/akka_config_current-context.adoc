@@ -7,18 +7,21 @@ Show the current context.
 The command `akka config current-context` will display the name of your currently selected configuration context.
 A configuration context represents a set of configuration values intended to be used together - you may have several contexts, and switch between them with this command.
 
+[source,shell]
 ----
 akka config current-context [flags]
 ----
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for current-context
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

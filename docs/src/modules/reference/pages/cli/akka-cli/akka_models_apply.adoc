@@ -11,12 +11,14 @@ Model and ModelEndpoint follow.
 Apply is create-or-update by name.
 The region admits every change - device fit against the pool is decided there, not here - so --dry-run runs the server's full admission without persisting anything.
 
+[source,shell]
 ----
 akka models apply [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
 akka models apply -f allocation.yaml
 akka models apply -f allocation.yaml --region aws-us-east-2 --dry-run
@@ -25,6 +27,7 @@ cat allocation.yaml | akka models apply
 
 == Options
 
+[source,text]
 ----
       --dry-run          Run the region's admission without persisting anything.
   -f, --file string      The descriptor file; stdin when omitted.
@@ -36,6 +39,7 @@ cat allocation.yaml | akka models apply
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

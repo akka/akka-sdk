@@ -55,16 +55,26 @@ class ConsumerImplSpec
       throw new IllegalStateException("spike-16304: deliberate exception from consumer onEvent")
   }
 
-  private val componentDescriptor = ComponentDescriptor(
-    Map(
-      BytesPrimitive.fullName -> MethodInvoker(classOf[ThrowingConsumer].getMethods.find(_.getName == "onBytes").get)))
+  final class NullReturningConsumer extends Consumer {
+    def onBytes(bytes: Array[Byte]): Consumer.Effect = null
+  }
+
+  private def bytesDescriptor(consumerClass: Class[_ <: Consumer]) = ComponentDescriptor(
+    Map(BytesPrimitive.fullName -> MethodInvoker(consumerClass.getMethods.find(_.getName == "onBytes").get)))
 
   def create(unhandledExceptionReporter: () => Option[UnhandledExceptionReporting.Reporter] = () => None)
       : ConsumerImpl[ThrowingConsumer] =
+    create("throwing-consumer", classOf[ThrowingConsumer], () => new ThrowingConsumer, unhandledExceptionReporter)
+
+  def create[C <: Consumer](
+      componentId: String,
+      consumerClass: Class[C],
+      newConsumer: () => C,
+      unhandledExceptionReporter: () => Option[UnhandledExceptionReporting.Reporter]): ConsumerImpl[C] =
     new ConsumerImpl(
-      "throwing-consumer",
-      _ => new ThrowingConsumer,
-      classOf[ThrowingConsumer],
+      componentId,
+      _ => newConsumer(),
+      consumerClass,
       new ConsumerSource.EventSourcedEntitySource("dummy-source", startFromSnapshots = false),
       None,
       classicSystem,
@@ -73,7 +83,7 @@ class ConsumerImplSpec
       () => OpenTelemetry.noop().getTracer("test"),
       serializer,
       ignoreUnknown = false,
-      componentDescriptor,
+      bytesDescriptor(consumerClass),
       new RegionInfo(""),
       unhandledExceptionReporter)
 
@@ -91,6 +101,22 @@ class ConsumerImplSpec
       val reply =
         LoggingTestKit
           .error("Failure during handling message")
+          .expect {
+            service.handleMessage(throwingMessage).futureValue.asInstanceOf[SpiConsumer.ErrorEffect]
+          }
+
+      reply.error.description should startWith("Unexpected error")
+    }
+
+    "turn a null Effect from the handler into a failure response with a clear message" in {
+      val service = create("null-consumer", classOf[NullReturningConsumer], () => new NullReturningConsumer, () => None)
+
+      val reply =
+        LoggingTestKit
+          .custom { event =>
+            event.message.startsWith("Failure during handling message") &&
+            event.throwable.exists(_.getMessage.startsWith("Consumer [null-consumer] handler returned null"))
+          }
           .expect {
             service.handleMessage(throwingMessage).futureValue.asInstanceOf[SpiConsumer.ErrorEffect]
           }

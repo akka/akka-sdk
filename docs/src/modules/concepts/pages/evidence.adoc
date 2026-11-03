@@ -1,0 +1,38 @@
+= The ledger and evidence
+:page-summary: The ledger is the trace of what happened in an agentic system; each record in it is written by the runtime that acted, every record is kept, and records are chained so that a change to any of them shows.
+:page-when-to-use: When you need to know what Akka records about each interaction, how a record shows who acted and under what authority, and how evidence is kept for an auditor.
+:page-related: concepts:controls.adoc, concepts:governance-and-the-runtime.adoc, sdk:evaluators.adoc
+:page-persona: governance-compliance, governance-infosec, builder-developer, builder-ai-ml
+
+include::ROOT:partial$include.adoc[]
+
+The ledger records what an agentic system did. Evidence connects a control verdict to the records on which it was based, so a reviewer can examine why the control was considered satisfied or breached.
+
+== Records and authority
+
+An interaction record includes model and tool calls, token usage, and the outcome. It holds the text actually sent after applicable sanitization. Evaluation records add verdicts, explanations, and control identifiers.
+
+Records identify the workload that acted and relate interactions through their trace. The runtime also records the authority and configured controls associated with execution. Because it executes tool calls, it can distinguish a requested tool from one that actually ran.
+
+Captures are different: they hold input and output passing through the model gateway. They support analysis, grading, and training but do not replace the execution record.
+
+== Integrity and retention
+
+The ledger records interactions without sampling and chains records by hash. Changes to the chain are detectable; ordinary operational logs do not provide the same property.
+
+Evidence packs collect signed control evidence and supporting records for review. Retention follows the system's applicable requirements, and legal hold can retain records beyond their normal period. Storage grows with recorded traffic, and masked text cannot later reveal information that was removed before recording.
+
+== Runtime and external agents
+
+Akka agents supply runtime records. Agents built elsewhere can send OpenTelemetry traces or route model traffic through the gateway for assessment. Those inputs do not establish the same complete record of internal actions, workload authority, and side effects that the Akka runtime observes directly.
+
+Use operational telemetry to investigate performance and failures. Use the ledger to examine actions, controls, and evidence. A sampled trace is not a substitute for a complete interaction record.
+
+anchor:agents-built-elsewhere[]
+
+== Next steps
+
+* xref:sdk:evaluators.adoc#_the_ledger_client[The ledger client] reads records in code.
+* xref:controls.adoc[] explains verdict-producing mechanisms.
+* xref:operations:observability-and-monitoring/index.adoc[] compares telemetry and the ledger.
+* xref:ROOT:about/how-it-fits.adoc#_agents_built_elsewhere[Agents built elsewhere] explains integration boundaries.

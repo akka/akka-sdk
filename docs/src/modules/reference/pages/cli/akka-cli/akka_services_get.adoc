@@ -6,12 +6,14 @@ Describe a specific service.
 
 The `akka services get _service-name_` command shows the details of a given service, including versions,  container image, routes, and other runtime concerns.
 
+[source,shell]
 ----
 akka services get SERVICE [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
 
 > akka services get my-service
@@ -23,6 +25,7 @@ Image:          gcr.io/akka-public/value-entity-shopping-cart:0.0.4
 
 == Options
 
+[source,text]
 ----
       --all-regions      run the command on all regions
   -h, --help             help for get
@@ -34,6 +37,7 @@ Image:          gcr.io/akka-public/value-entity-shopping-cart:0.0.4
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

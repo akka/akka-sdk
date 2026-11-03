@@ -12,12 +12,14 @@ Keys with no issuer are grouped together into one keyset with no issuer configur
 
 The old JWT keys are removed from the service once migration completes.
 
+[source,shell]
 ----
 akka services jwks migrate [SERVICE] [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
 > akka service jwks migrate my-service
 > akka service jwks migrate my-service --secret-prefix my-prefix
@@ -25,6 +27,7 @@ akka services jwks migrate [SERVICE] [flags]
 
 == Options
 
+[source,text]
 ----
       --force-global           force an existing regional resource to be configured as a global resource
       --force-regional         force an existing global resource to be configured as a regional resource
@@ -37,6 +40,7 @@ akka services jwks migrate [SERVICE] [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

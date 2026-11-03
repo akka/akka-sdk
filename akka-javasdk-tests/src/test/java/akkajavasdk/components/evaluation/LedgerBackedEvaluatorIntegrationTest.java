@@ -88,5 +88,8 @@ public class LedgerBackedEvaluatorIntegrationTest extends TestKitSupport {
                 () -> getLedgerClient().getEvaluations(record.interactionId()),
                 found -> !found.isEmpty());
     assertThat(evaluations.getFirst().controlId()).hasValue("TEST-EV-01");
+    // the binding and the evaluator both set the key, and config() returns the value of the binding
+    assertThat(evaluations.getFirst().evaluation().orElseThrow().explanation())
+        .isEqualTo("agent responded, says the binding");
   }
 }

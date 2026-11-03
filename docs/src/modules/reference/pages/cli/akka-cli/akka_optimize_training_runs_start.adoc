@@ -6,11 +6,11 @@ Start a training run from a plan file
 
 Start a training run from a JSON or YAML plan file.
 
-The plan descriptor specifies the workload, base model, and config:
+The plan descriptor specifies the training project, base model, and config:
 
- { "kind": "run", "workload": "...", "baseModel": "...", "config": { "dataset": "..." } }
+ { "kind": "run", "project": "...", "baseModel": "...", "config": { "dataset": "..." } }
 
-The dataset must already be registered by hash or name using "datasets create".
+The dataset is a registry reference, registered first with "registry datasets register".
 
 Each submission provisions compute resources and initiates a new training run.
 Submitting an existing plan starts an additional run with that configuration.
@@ -18,33 +18,43 @@ Confirmation is requested before starting the run unless --force is specified.
 The plan is validated against the service before confirmation is requested, and with --dry-run.
 When no confirmation is requested, the service validates the plan on the start request itself.
 
+--dry-run shows the row lengths of a supervised run's datasets against its maxSeqLength, from a dataset analysis already done for the run's base model, or from a prepared dataset's own record.
+Where no analysis is done, it names the command that starts one.
+A dry run starts none.
+
+--dry-run names the run only when the plan states a submissionId.
+The service derives the run id from the submission id, and each start without one generates its own.
+
 --show-resolved, with --dry-run, prints the config and execution a submission of this plan would train under, every default filled in.
 
+[source,shell]
 ----
 akka optimize training runs start -f PLAN [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Start a training run from a plan file
-  akka-optimize training runs start -f plan.json
+  akka optimize training runs start -f plan.json
 
   # Validate the plan without starting a run
-  akka-optimize training runs start -f plan.json --dry-run
+  akka optimize training runs start -f plan.json --dry-run
 
   # See what a plan resolves to, with every default filled in
-  akka-optimize training runs start -f plan.json --dry-run --show-resolved
+  akka optimize training runs start -f plan.json --dry-run --show-resolved
 
   # Start a run and wait for completion
-  akka-optimize training runs start -f plan.json --wait --exit-status
+  akka optimize training runs start -f plan.json --wait --exit-status
 
   # Submit a plan from standard input
-  cat plan.json | akka-optimize training runs start -f -
+  cat plan.json | akka optimize training runs start -f -
 ----
 
 == Options
 
+[source,text]
 ----
       --dry-run         Validate the plan against the service without starting anything
       --exit-status     Exit with a non-zero status if execution fails or is cancelled. Requires --wait
@@ -56,6 +66,7 @@ akka optimize training runs start -f PLAN [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")
@@ -65,14 +76,13 @@ akka optimize training runs start -f PLAN [flags]
       --force                Skip the confirmation prompt
       --jq string            Filter the JSON output with a jq expression
       --json string          Output JSON with only these fields; --json= lists the fields a command offers
-      --no-color             Print without color, as NO_COLOR does
+      --no-color             Print without color or a redrawn progress line, as NO_COLOR does
   -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
       --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then a local dev-mode service, then http://localhost:9001)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----

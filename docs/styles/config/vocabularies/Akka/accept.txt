@@ -1,9 +1,9 @@
 AAO
 accessor
+[Aa]ccessors
 Ack
 ACLs
 ACRs
-[Aa]ccessors
 actuals
 addons?
 Adoptium
@@ -17,7 +17,6 @@ Aider
 AILuminate
 Aiven
 [Aa]kka
-Akkademy
 allowedAlgorithms
 allowlist
 [Aa]llowlist(ed|ing)?
@@ -62,6 +61,7 @@ browsable
 Buildah
 bulkheaded
 burstable
+byAttribute
 byClassifier
 CA
 CA's
@@ -321,6 +321,7 @@ Okta
 [Oo]llama
 onboarding
 onFailure
+onUnmapped
 [Oo]pen[Aa]i
 (?i)OpenID
 OpenTelemetry
@@ -393,6 +394,7 @@ recompiles
 recoverability
 recurse
 redeliveries
+redkit
 Redpanda
 reflows
 refreshInterval
@@ -565,6 +567,7 @@ validator
 valueFrom
 Velero
 vendored
+verl
 versionHistory
 versionLabel
 viewport

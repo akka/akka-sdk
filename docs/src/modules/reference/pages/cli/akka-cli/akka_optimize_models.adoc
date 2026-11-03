@@ -1,23 +1,27 @@
 = akka optimize models
 
-The corporate model registry
+Models in the registry, with what training, routing and pricing know about them
 
 == Synopsis
 
-Every model the organization uses, whatever its origin.
+A model is a version in the registry.
+A read adds what the services that own each fact know about it: the trainer's run, evaluations and endpoints, the gateway router's destinations, rules and manifest, and the price portfolio holds for its served names.
 
-The registry is an index, not a store: an entry points at where a model resides and carries the governance around it.
-Retiring an entry ends the sanction to use the model;
-it does not touch the weights.
+The registry must answer.
+A part whose service does not answer within 10s, or within --timeout where you state one, is shown as unavailable, and the read still succeeds.
+
+Register a model version and move its aliases with `registry models`.
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for models
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")
@@ -27,14 +31,13 @@ it does not touch the weights.
       --force                Skip the confirmation prompt
       --jq string            Filter the JSON output with a jq expression
       --json string          Output JSON with only these fields; --json= lists the fields a command offers
-      --no-color             Print without color, as NO_COLOR does
+      --no-color             Print without color or a redrawn progress line, as NO_COLOR does
   -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
       --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then a local dev-mode service, then http://localhost:9001)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----
@@ -42,19 +45,10 @@ it does not touch the weights.
 == SEE ALSO
 
 * link:akka_optimize.html[akka optimize]	 - Own your intelligence: cost, models, training and routing
-* link:akka_optimize_models_actions.html[akka optimize models actions]	 - The decisions available on a model
-* link:akka_optimize_models_apply.html[akka optimize models apply]	 - Register a model or update its metadata
-* link:akka_optimize_models_attestations.html[akka optimize models attestations]	 - Evaluations and reports recorded against a model
-* link:akka_optimize_models_conditions.html[akka optimize models conditions]	 - What a model must satisfy before it may serve
-* link:akka_optimize_models_deprecate.html[akka optimize models deprecate]	 - Discourage new use of a model
-* link:akka_optimize_models_get.html[akka optimize models get]	 - One registry entry
-* link:akka_optimize_models_list.html[akka optimize models list]	 - List the portfolio
-* link:akka_optimize_models_promote.html[akka optimize models promote]	 - Promote a candidate to active
-* link:akka_optimize_models_resolve.html[akka optimize models resolve]	 - Resolve a decision on the model that owns it
-* link:akka_optimize_models_retire.html[akka optimize models retire]	 - End the sanction to use a model
-* link:akka_optimize_models_signoff.html[akka optimize models signoff]	 - Human sign-off closing a risk condition
-* link:akka_optimize_models_strike.html[akka optimize models strike]	 - Turn off a condition that does not apply
-* link:akka_optimize_models_waive.html[akka optimize models waive]	 - Time-bound waiver on an open condition
+* link:akka_optimize_models_deprecate.html[akka optimize models deprecate]	 - Mark a model version for replacement
+* link:akka_optimize_models_get.html[akka optimize models get]	 - One model version, with its training, serving, routing and price
+* link:akka_optimize_models_list.html[akka optimize models list]	 - Every model version, and the served names no version accounts for
+* link:akka_optimize_models_retire.html[akka optimize models retire]	 - End the use of a model version
 
 [discrete]
 

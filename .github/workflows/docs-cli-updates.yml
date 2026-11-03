@@ -2,6 +2,11 @@ name: Update CLI docs
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: CLI version to document
+        type: string
+        default: latest
 
 jobs:
   gen-cli-docs:
@@ -31,13 +36,17 @@ jobs:
 
     - name: Install Akka CLI and create the CLI docs
       id: install-cli
+      env:
+        REQUESTED_CLI_VERSION: ${{ inputs.version }}
       run: |
-        export CLI_INSTALL_PATH=$HOME/.akka/bin
-        export PATH=${PATH}:${CLI_INSTALL_PATH}
-        mkdir -p ${CLI_INSTALL_PATH}
+        [[ "$REQUESTED_CLI_VERSION" == latest || "$REQUESTED_CLI_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(\.[0-9]+)?$ ]] || { echo 'Invalid CLI version' >&2; exit 1; }
+        export CLI_INSTALL_PATH="$HOME/.akka/bin"
+        export PATH="${CLI_INSTALL_PATH}:${PATH}"
+        mkdir -p "${CLI_INSTALL_PATH}"
         chmod +x docs/src-static/install-cli.sh
-        docs/src-static/install-cli.sh --force --prefix=${CLI_INSTALL_PATH}
+        docs/src-static/install-cli.sh --force --prefix="${CLI_INSTALL_PATH}" --version="$REQUESTED_CLI_VERSION"
         CLI_VERSION=$(akka version)
+        echo "version=${CLI_VERSION}" >> "$GITHUB_OUTPUT"
         echo "setting CLI version to ${CLI_VERSION}"
         sed -i.bak -E "s/^AKKA_CLI_VERSION := .*/AKKA_CLI_VERSION := ${CLI_VERSION}/" Makefile
         rm Makefile.bak
@@ -49,7 +58,7 @@ jobs:
       # https://github.com/peter-evans/create-pull-request/releases
       uses: peter-evans/create-pull-request@v8.0.0
       with:
-        title: "docs: akka CLI docs"
+        title: "docs: akka CLI ${{ steps.install-cli.outputs.version }} docs"
         branch-suffix: short-commit-hash
         body: |
           Latest Akka CLI help texts

@@ -1,0 +1,36 @@
+= From risk to controls
+:page-summary: The controls of an agentic system are derived from its risk, which the risk envelope of its specification and a risk survey describe; accepted controls become a signed bundle that the runtime enforces and that changes are reviewed against.
+:page-when-to-use: When you need to understand where the controls of a system come from, who accepts them, and how they stay current as the system and its regulations change.
+:page-related: concepts:controls.adoc, concepts:evidence.adoc, concepts:spec-driven-development.adoc
+:page-persona: governance-compliance, governance-infosec, builder-ai-ml
+
+include::ROOT:partial$include.adoc[]
+
+Risk assessment identifies the obligations a system must meet. The controls selected from it need to account for the system's decisions, data, users, and jurisdictions.
+
+== From assessment to accepted controls
+
+The specification's risk envelope describes what could go wrong and where the system operates. A risk survey adds information about decisions, affected people, data, and applicable rules.
+
+Akka derives proposed controls from that assessment and groups them by their regulation, framework, or corporate standard. An obligation can require different controls in different jurisdictions. Derivation proposes a response; the people who own the risk decide what to accept, waive, or reject.
+
+Accepted controls form a versioned, signed bundle for the system. A waiver records who accepted an exception, why, and for how long. The control identifier connects the obligation to its runtime mechanism and evidence.
+
+== Reviewing the running system
+
+Verdicts show whether controls held, with evidence behind each result. Compliance over time requires both the configured controls and their observed behavior, not merely a successful deployment.
+
+Review the controls when prompts, tools, models, or requirements change, when applicable rules change, at scheduled intervals, or when runtime behavior drifts. Drift is a signal to investigate, not a verdict by itself. An accepted change produces a new bundle version.
+
+Runtime controls and development exit conditions have different purposes. Controls govern running behavior; exit conditions decide whether a change is ready. A release gate can require relevant safety checks, linking the two.
+
+== Limits and trade-offs
+
+An assessment cannot derive an obligation it did not identify. External agents can supply traffic for evaluation and evidence, but controls that intercept their internal actions require execution on the Akka runtime.
+
+== Next steps
+
+* xref:spec-driven-development.adoc#specification[] describes the risk envelope.
+* xref:controls.adoc[] compares control mechanisms.
+* xref:evidence.adoc[] explains verdicts and signed evidence.
+* xref:reference:specify/catalog/agentic-ai-safety.adoc[] lists candidate development exit conditions.

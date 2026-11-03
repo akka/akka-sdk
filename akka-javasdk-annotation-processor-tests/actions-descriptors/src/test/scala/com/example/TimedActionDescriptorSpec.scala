@@ -22,6 +22,8 @@ class TimedActionDescriptorSpec extends AnyWordSpec with Matchers {
 
       val kalixService = config.getString("akka.javasdk.service-setup")
       kalixService should be("com.example.Setup")
+
+      config.getBoolean("akka.javasdk.service") shouldBe true
     }
   }
 }

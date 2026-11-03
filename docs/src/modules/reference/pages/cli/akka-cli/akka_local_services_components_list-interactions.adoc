@@ -6,12 +6,14 @@ List interactions from the Agent for the given service and Agent id.
 
 The `akka local service components list-interactions` command lists interactions from the Agent for the given service and Agent id
 
+[source,shell]
 ----
 akka local services components list-interactions SERVICE_NAME AGENT_ID [flags]
 ----
 
 == Options
 
+[source,text]
 ----
   -h, --help             help for list-interactions
       --last duration    Fetch interactions from the last N duration (e.g., 1h for last hour, 168h for last week) (default 1h0m0s)
@@ -22,6 +24,7 @@ akka local services components list-interactions SERVICE_NAME AGENT_ID [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

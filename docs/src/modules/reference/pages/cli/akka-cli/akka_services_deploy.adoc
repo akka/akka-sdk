@@ -11,18 +11,21 @@ For production use cases, we recommend deploying through a service descriptor, u
 NOTE: If using a private image repository, you will need Docker credentials to be set up in order for Akka to be able to pull from your images.
 For more info see `akka docker`
 
+[source,shell]
 ----
 akka services deploy SERVICE IMAGE [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
 akka services deploy my-service my-repo/my-service-image
 ----
 
 == Options
 
+[source,text]
 ----
       --aws-workload-identity-role-arn string          The role ARN to use for AWS workload identity
       --classic                                        deploys an Akka service using the previous Java/Scala Protobuf SDK.
@@ -44,6 +47,7 @@ akka services deploy my-service my-repo/my-service-image
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

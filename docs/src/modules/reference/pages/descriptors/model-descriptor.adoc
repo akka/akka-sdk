@@ -1,25 +1,20 @@
 = Model Descriptor reference
-:page-summary: The model descriptor declares the model deployments, the accelerators they run on, the secrets they need, and the hostnames that expose them.
+:page-summary: The model descriptor declares the accelerator allocations, the models that run on them, and the endpoints that serve those models.
 :page-persona: builder-ai-ml, operator
 :page-banner: inference
 
 include::ROOT:partial$include.adoc[]
 
-The model descriptor is the YAML applied by `akka models apply` to an inference cluster. It declares model deployments, the accelerators they run on, the secrets they need, and the hostnames that expose them. See xref:inference:serving/index.adoc[Serving models] for the tasks these resources support.
+The model descriptor is the YAML applied by `akka models apply` to a project's region. It declares the accelerator allocations that the project claims, the models that run on them, and the endpoints that serve those models. See xref:inference:index.adoc#serving[Serving models] for the tasks these resources support.
 
-Two commands check a descriptor without deploying it:
-
-[source, shell]
-----
-akka models validate -f models.yaml
-----
+To check a descriptor against the region without persisting anything, add `--dry-run`:
 
 [source, shell]
 ----
 akka models apply -f models.yaml --dry-run
 ----
 
-`validate` checks the file alone. `--dry-run` also checks it against the cluster and persists nothing.
+The CLI checks the shape of the descriptor before it sends anything and reports every problem at once. The region then decides whether the descriptor is admitted, including whether the requested devices fit the pool.
 
 [#envelope]
 == Document envelope
@@ -30,7 +25,7 @@ A descriptor is a multi-document YAML file. Documents are separated by a line st
 |===
 |Field |Type |Description
 
-|*resource*        |string _required_ |One of `Secret`, `Accelerator`, `ModelDeployment`, `InferenceRoute`.
+|*resource*        |string _required_ |One of `AcceleratorAllocation`, `Model`, `ModelEndpoint`.
 |*resourceVersion* |string _required_ |Must be `v1`.
 |*metadata.name*   |string _required_ |Resource name. See <<naming-rules>>.
 |*spec*            |object _required_ |Shape depends on `resource`.
@@ -38,370 +33,290 @@ A descriptor is a multi-document YAML file. Documents are separated by a line st
 
 Specs are parsed strictly. An unrecognized field is an error rather than a value that is silently ignored, so a mistyped field name fails the file instead of quietly changing behavior.
 
-Validation reports every problem it finds, not only the first.
+A descriptor cannot contain a `Service`, `Route`, or `Secret`. Those resources belong to the project descriptor. Create them with `akka projects apply`, `akka routes`, or `akka secrets`.
 
 [#naming-rules]
 == Naming rules
 
-`metadata.name`, served model names, adapter names, and accelerator references all follow the same rules:
+`metadata.name` and the names of allocation entries must be valid DNS labels:
 
 * lowercase alphanumeric characters and dashes, matching `[a-z0-9]([-a-z0-9]*[a-z0-9])?`
-* 42 characters maximum
+* 63 characters maximum
 
-The cap is lower than the DNS label limit of 63 because the operator derives object names from yours by adding suffixes, and those derived names have to fit.
+The platform derives object names from yours by adding suffixes, such as `-engine` for the service that a model answers on, and the derived names have to fit the same limit.
 
 [#apply-order]
 == Apply order
 
 Applying a descriptor writes resources in dependency order, so nothing refers to an object that does not exist yet:
 
-. Secrets
-. Accelerators
-. Cache volume claims, then model deployments
-. Inference routes
+. Accelerator allocations
+. Models
+. Model endpoints
 
-Routes come last because a route names deployments. A route applied before its models still works, because exposure resolves continuously rather than only at apply time.
+`akka models apply` creates or updates each resource by name, and prints whether it was created, updated, or unchanged. `akka models delete` runs in the reverse order.
 
-Apply is authoritative for what it names. An existing resource has its spec set from the descriptor. Labels and annotations added by other tools are preserved, and the values in the descriptor win where both set the same key.
+[#accelerator-allocation]
+== AcceleratorAllocation
 
-Two resources are never mutated once they exist:
-
-* *Accelerators*, whose shape is immutable on the server.
-* *Cache volume claims*, which may hold a pre-warmed cache. Most of a claim's spec is immutable in any case.
-
-[#secret]
-== Secret
-
-Creates a secret on the inference cluster. Values are written as plain strings, which keeps the YAML readable.
+An accelerator allocation partitions the region's finite accelerator capacity to your project. The region declares which pools exist, you allocate devices from a pool, and the region fits models within the allocation.
 
 [source, yaml]
 ----
-resource: Secret
+resource: AcceleratorAllocation
 resourceVersion: v1
 metadata:
-  name: hf-token
+  name: tutorial
 spec:
-  type: generic
-  data:
-    token: hf_xxxxxxxxxxxxxxxxxxxx
+  allocations:
+    - name: gpu
+      acceleratorPool: POOL_NAME
+      devices: 1
 ----
+
+Each allocated device becomes one standing claim, named from the entry name and the device index. A claim is allocated to exactly one project, so projects cannot share a device.
 
 [cols="1,1,2"]
 |===
 |Field |Type |Description
 
-|*spec.type* |string _required_ |Only `generic` is supported on an inference cluster.
-|*spec.data* |map _required_    |At least one key. Keys match `[-._a-zA-Z0-9]+`.
+|*spec.allocations*                    |list _required_ |The device counts that your project holds, one entry per allocation name. At least one entry. Two entries can draw on the same pool under different names.
+|*spec.allocations[].name*             |string _required_ |The name of the entry, and what a model's `placement.allocation` refers to. Keep it the same in every region, so that one descriptor deploys everywhere. Unique across every allocation in the descriptor.
+|*spec.allocations[].acceleratorPool*  |string _required_ |A pool that the region declares, for example `l4`. A pool name is a regional identifier, so the same hardware can have another name in another region. `akka models pools list` shows the pools.
+|*spec.allocations[].devices*          |integer _required_ |The number of whole devices from the pool that are allocated to the project. The minimum is 1.
 |===
 
-`akka models export` masks secret values with `NOT EXPORTED`. Applying an exported file unedited fails validation rather than overwriting a live secret with the mask. Replace the value, or delete the document and create the secret ahead of time.
+[#model]
+== Model
 
-[#accelerator]
-== Accelerator
-
-An accelerator carves the platform's device inventory into capacity a model deployment can be placed on. Devices are platform inventory, and an accelerator is how a project claims a slice of it. Run `akka models devices list` to see the devices available in a region.
+A model is one checkpoint served by an engine on a device of an allocation.
 
 [source, yaml]
 ----
-resource: Accelerator
+resource: Model
 resourceVersion: v1
 metadata:
-  name: l4-dedicated
+  name: assistant
 spec:
-  device: l4
-  tenancy: dedicated
-----
-
-[cols="1,1,2"]
-|===
-|Field |Type |Description
-
-|*spec.device*            |string _required_  |Device kind from platform inventory, for example `l4`.
-|*spec.tenancy*           |string             |`dedicated` or `shared`. Defaults to `dedicated`.
-|*spec.devicesPerReplica* |integer            |Devices each replica claims. Defaults to `1`.
-|*spec.shared.maxModels*  |integer            |How many models split one device. Required when tenancy is `shared`, minimum 2.
-|===
-
-=== Dedicated tenancy
-
-Each model gets whole devices. This is the default.
-
-Setting `devicesPerReplica` above 1 requires a node holding that many devices, and the deployment's parallelism factors have to multiply to exactly that number.
-
-=== Shared tenancy
-
-Several models split one device's memory. Every model placed on a shared accelerator has to state its `engine.memoryPercent`. A member that does not declare its share is sized against the whole card and runs out of memory after a full weight download.
-
-`spec.shared` is only valid when `tenancy` is `shared`, and `maxModels` has to be at least 2. One model per device is dedicated tenancy, not shared.
-
-A shared accelerator cannot set `devicesPerReplica` above 1. It splits one device between models rather than claiming several.
-
-[source, yaml]
-----
-resource: Accelerator
-resourceVersion: v1
-metadata:
-  name: l4-shared
-spec:
-  device: l4
-  tenancy: shared
-  shared:
-    maxModels: 3
-----
-
-[#modeldeployment]
-== ModelDeployment
-
-One serving engine running one model.
-
-[source, yaml]
-----
-resource: ModelDeployment
-resourceVersion: v1
-metadata:
-  name: agent
-spec:
-  model: google/gemma-3-4b-it
-  servedModelName: agent
-  replicas: 1
-  placement:
-    accelerator: l4-dedicated
+  model: mistralai/Ministral-3-3B-Instruct-2512
+  source:
+    type: huggingface
+    huggingface:
+      secretRef: hf-token
+      revision: COMMIT_SHA
   engine:
-    maxModelLen: 16384
-    memoryPercent: 90
+    type: vllm
+    vllm:
+      checkpointFormat: mistral
+      toolCalling:
+        parser: mistral
+  placement:
+    allocation: gpu
+    device: 0
+  serving:
+    contextLength: 8192
 ----
+
+The schema only grows. The region refuses a field that it does not implement yet.
 
 [cols="1,1,2"]
 |===
 |Field |Type |Description
 
-|*spec.model*                 |string _required_ |Checkpoint to serve, for example `google/gemma-3-4b-it`.
-|*spec.servedModelName*       |string            |Name clients send in the OpenAI `model` field. Defaults to `metadata.name`.
-|*spec.replicas*              |integer           |Engine count, minimum 1. Each replica needs its own device.
-|*spec.placement.accelerator* |string _required_ |Accelerator to run on.
+|*spec.model*     |string _required_ |The checkpoint to serve, passed to the model server as it is written, for example `google/gemma-3-4b-it`.
+|*spec.task*      |string |What the engine serves: `generate` or `embed`. The default is `generate`.
+|*spec.source*    |object _required_ |Where the weights come from. See <<model-source>>.
+|*spec.engine*    |object _required_ |The model server. See <<model-engine>>.
+|*spec.placement* |object _required_ |The device that the model runs on. See <<model-placement>>.
+|*spec.serving*   |object |The serving limits. See <<model-serving>>.
+|*spec.loraAdapters* |list |LoRA adapters served next to the base model. See <<model-adapters>>.
+|*spec.replicas*  |integer |The number of engine replicas. The only accepted value is `1`, which is also the default.
+|*spec.workloadIdentity* |object |The cloud identity that the engine pod runs as, set on the model's own service account as it is for a service. An adapter fetched from a bucket with native credentials authenticates as this identity. The `akka` member is not supported on a model.
 |===
 
-There is no path that lets the scheduler pick the hardware. `placement.accelerator` is required because the hardware a model runs on is part of how it behaves, and a model that lands on whatever device is free has its performance decided by the scheduler. The first sign of that is a latency change nobody asked for.
+[#model-source]
+=== spec.source
 
-[#engine]
+[cols="1,1,2"]
+|===
+|Field |Type |Description
+
+|*type*                         |string _required_ |The source provider. Only `huggingface` is supported.
+|*`huggingface`*                |object _required_ when `type` is `huggingface` |The Hugging Face source.
+|*huggingface.revision*         |string _required_ |The full 40-character commit SHA, in lowercase hexadecimal, that the weights are pinned to. A branch or tag name is refused, because it moves under a running model. Requests cannot override the revision.
+|*huggingface.secretRef*        |string |The name of the project secret that holds the token for gated checkpoints. The secret stores the token under the key `token`.
+|*cache*                        |object |Persist the weights across restarts.
+|*cache.sizeGiB*                |integer _required_ with `cache` |The size of the cache volume in GiB. The minimum is 1.
+|===
+
+[#model-engine]
 === spec.engine
 
 [cols="1,1,2"]
 |===
 |Field |Type |Description
 
-|*maxModelLen*         |integer |Maximum context length, prompt and output combined.
-|*memoryPercent*       |integer |Share of device memory the engine may use, 1 to 100.
-|*quantization*        |string  |`none`, `fp8`, `awq`, `gptq`, or `bitsandbytes`.
-|*textOnly*            |boolean |Drop the vision tower on a multimodal checkpoint.
-|*checkpointFormat*    |string  |`auto` or `mistral`.
-|*toolCalling.enabled* |boolean |Enable function calling.
-|*toolCalling.parser*  |string  |Parser for the model's tool-call syntax.
+|*type*         |string _required_ |The model server. Only `vllm` is supported. It cannot change for the lifetime of the model.
+|*`vllm`*       |object _required_ when `type` is `vllm` |The vLLM settings. Every field is optional, and a field that is absent or `auto` keeps the engine default.
+|*vllm.dtype*   |string |The data type of the weights and activations: `auto`, `bfloat16`, `float16`, or `float32`.
+|*vllm.quantization* |string |The weight quantization method: `fp8`, `awq`, `awq_marlin`, `gptq`, `gptq_marlin`, `compressed-tensors`, `bitsandbytes`, `modelopt`, or `gguf`. Leave it out to let the engine detect a pre-quantized checkpoint.
+|*vllm.kvCacheDtype* |string |The data type of the KV cache: `auto`, `fp8`, `fp8_e4m3`, or `fp8_e5m2`.
+|*vllm.checkpointFormat* |string |The checkpoint layout: `hf` or `mistral`.
+|*vllm.chatTemplateRef* |string |The name of the project secret whose `template` key holds the chat template, for fine-tuned checkpoints.
+|*vllm.toolCalling.parser* |string |Enables OpenAI tool calls with the named parser. One of `hermes`, `mistral`, `llama3_json`, `llama4_json`, `llama4_pythonic`, `pythonic`, `granite`, `granite-20b-fc`, `internlm`, `jamba`, `deepseek_v3`, `xlam`, `qwen3_coder`, `kimi_k2`, `glm45`, `phi4_mini_json`, or `gemma4`.
+|*vllm.extraArgs* |list of strings |Arguments appended to the engine command line, last and verbatim. The region refuses the flags that the platform owns: the model, port, served name, memory fraction, adapters, and parallelism.
 |===
 
-Always set `maxModelLen` explicitly. Some checkpoints declare a default of 262144, and the engine sizes a KV cache for it.
-
-`memoryPercent` is required when the deployment is placed on a shared accelerator, where it has to fit inside the model's share of the device.
-
-`textOnly` returns the vision tower's memory to the KV cache. The engine then cannot accept images at all, so it is only correct for a multimodal checkpoint used for text.
-
-`checkpointFormat: mistral` selects the Mistral-native tokenizer, config, and weight formats. Without it, a Mistral-native checkpoint is read along the standard path and its files are parsed incorrectly. It is never inferred from the model name.
-
-`toolCalling.parser` is required when `enabled` is true, and cannot be set when it is false. Valid names come from the serving engine the platform pins rather than from the CLI, so the value is only checked for shape: lowercase alphanumeric with dashes or underscores. Common values are `pythonic`, `mistral`, and `hermes`.
-
-Choose the parser deliberately. The engine does not verify that a parser matches the model, and the wrong one starts healthy and returns tool calls as prose.
-
-[#parallelism]
-=== spec.parallelism
+[#model-placement]
+=== spec.placement
 
 [cols="1,1,2"]
 |===
 |Field |Type |Description
 
-|*tensor*   |integer |Splits the model across devices on one node.
-|*pipeline* |integer |Splits layers, and may cross nodes.
-|*data*     |integer |Runs independent copies of the tensor-parallel group.
+|*allocation* |string _required_ |The name of an entry in your project's `AcceleratorAllocation`. It is your own name for the allocation and is the same in every region.
+|*device*     |integer |The index of the device within that entry that the model runs on. The minimum and default are `0`. Models that give the same index share the physical device.
+|*memoryGiB*  |integer |The engine's device-memory budget on that device, in GiB. The minimum is 1. When absent, the model takes the whole device less the type's headroom.
 |===
 
-The factors multiply to the number of devices one replica uses. Unset factors count as 1. When the accelerator sets `devicesPerReplica` above 1, the product has to equal it exactly.
-
-[#adapters]
-=== spec.adapters
-
-LoRA adapters served from the base model. Each adapter is addressable as its own model name, so one deployment can answer to several names.
-
-[source, yaml]
-----
-adapters:
-  - name: agent-support
-    path: s3://acme-adapters/support/
-----
+[#model-serving]
+=== spec.serving
 
 [cols="1,1,2"]
 |===
 |Field |Type |Description
 
-|*name* |string _required_ |Model name clients use. Must be unique and must not collide with `servedModelName`.
-|*path* |string _required_ |URI with a scheme, for example `s3://bucket/path`.
+|*`contextLength`*        |integer |The maximum number of tokens per sequence, prompt and completion together. The device-memory budget must hold at least one sequence of this length, or the engine refuses to start. When absent, the engine uses the checkpoint's own maximum. The minimum is 1.
+|*maxConcurrentRequests*  |integer |The maximum number of requests scheduled at once. The minimum is 1.
+|*resources*              |object |The CPU and memory of the engine container, applied as both request and limit. When absent, the region default applies. The device is never listed here.
 |===
 
-Which schemes can be fetched is the operator's decision, so the CLI only checks that a scheme is present.
+[#model-adapters]
+=== spec.loraAdapters
 
-[#source]
-=== spec.source
-
-Where weights come from and how they are cached.
-
-[source, yaml]
-----
-source:
-  huggingFaceTokenSecret: hf-token/token
-  cache:
-    enabled: true
-    size: 100Gi
-----
+Adapters are static. Changing the set restarts the engine.
 
 [cols="1,1,2"]
 |===
 |Field |Type |Description
 
-|*huggingFaceTokenSecret* |string  |Reference in `secret-name/key` form, for gated checkpoints.
-|*cache.enabled*          |boolean |Persist weights and compiled artifacts across restarts.
-|*cache.size*             |string  |Volume size, required when the cache is enabled.
+|*name*   |string _required_ |The name that clients send in the `model` field to reach the adapter. Unique across the project's routing table.
+|*model*  |string _required_ |The adapter checkpoint, for example `acme/scorecard-adapter`. For an adapter in object storage it only describes the adapter.
+|*rank*   |integer _required_ |The LoRA rank of the adapter. The minimum is 1. The engine computes its maximum rank from the declared ranks.
+|*source.type* |string _required_ |`huggingface` or `objectStorage`.
+|*source.huggingface* |object |For `huggingface`: `revision` and `secretRef`, as for the base model.
+|*source.objectStorage.bucket* |string _required_ |For `objectStorage`: the logical name of a bucket of the project, not the physical bucket name. 1 to 42 characters, matching the naming rules.
+|*source.objectStorage.path*   |string _required_ |For `objectStorage`: the object key prefix of the adapter directory. It holds `adapter_config.json` and `adapter_model.safetensors`. 1 to 1024 characters.
+|*source.objectStorage.sha256* |string _required_ |For `objectStorage`: the SHA-256 of `adapter_model.safetensors` as 64 lowercase hexadecimal characters. The fetch fails when the weights do not match.
 |===
 
-`cache.size` is a Kubernetes quantity, for example `100Gi`. An ephemeral cache pays the compilation cost on every restart.
+[#model-endpoint]
+== ModelEndpoint
 
-The referenced secret has to be declared in the same descriptor or already exist in the namespace. Apply checks this before writing anything.
-
-[#inferenceroute]
-== InferenceRoute
-
-Exposes model deployments on a hostname.
-
-The unit is the hostname, not the deployment. One host serves many models, and clients choose between them with the `model` field of the request body, so a single base URL works with any OpenAI SDK.
+A model endpoint serves one or more models behind one address, and clients choose between them with the OpenAI `model` field. The endpoint knows nothing about public hostnames. Internet exposure is a project route whose backend is the endpoint.
 
 [source, yaml]
 ----
-resource: InferenceRoute
+resource: ModelEndpoint
 resourceVersion: v1
 metadata:
-  name: acme
+  name: assistant-endpoint
 spec:
-  host: models.acme.example.com
   models:
-    - name: agent
-    - name: docs
-----
-
-[source, python]
-----
-client = OpenAI(base_url="https://models.acme.example.com/v1")
-client.chat.completions.create(model="agent", ...)
-client.chat.completions.create(model="docs", ...)
+    - name: assistant
+  apiKeySecret: assistant-keys
 ----
 
 [cols="1,1,2"]
 |===
 |Field |Type |Description
 
-|*spec.host*          |string _required_ |Hostname already registered on the project.
-|*spec.models[].name* |string _required_ |Name of a `ModelDeployment`, unique within the route.
+|*spec.models*         |list _required_   |The models that the endpoint serves. At least one.
+|*spec.models[].name*  |string _required_ |The name of a `Model` in the project.
+|*spec.apiKeySecret*   |string _required_ |The name of the project secret whose entries are the accepted API keys. The endpoint is reachable by anything that can reach the gateway, so it must never be silently open. `akka models endpoints keys add` fills the secret.
 |===
 
-Two projects may both serve a model called `agent`. Their hostnames differ, so served names do not need to be globally unique.
-
-The names clients send are the deployments' own served names, adapters included, so one `models` entry can answer to several names.
-
-Registering a hostname is a separate step, with DNS verified and a certificate issued. The CLI checks only that `spec.host` looks like a hostname. Whether the project owns it is the platform's answer, so a descriptor that validates locally can still be refused on the cluster with `host is not configured on project`.
-
-A hostname the platform generated needs nothing further. A hostname you supplied carries its own certificate and gets its own listener.
+A project can serve at most 64 endpoints. The region refuses the endpoint that would exceed that number.
 
 [#cross-document-rules]
 == Cross-document rules
 
-Checked across the whole file:
+Checked by the CLI across the whole file:
 
-* Names must not repeat within a resource kind.
-* Served model names must not collide across deployments, counting adapter names. Requests for a duplicated name would be ambiguous.
-* A deployment placed on a shared accelerator declared in the same file has to set `engine.memoryPercent`.
-* A deployment's parallelism factors have to multiply to the accelerator's `devicesPerReplica` when that is above 1.
+* `metadata.name` must be present and must not repeat within a resource kind.
+* Allocation entry names must not repeat across every allocation in the descriptor.
+* Every allocation entry has an `acceleratorPool` and at least one device.
+* A model has `spec.model`, `spec.source.type`, a pinned `revision` in `spec.source`, `spec.engine.type`, and `spec.placement.allocation`.
+* An endpoint lists at least one model and names an `apiKeySecret`.
 
-Placement rules are only checked in the file when the accelerator is declared there too. An accelerator that exists only on the cluster is checked at apply time.
+[#admission]
+== What the region checks
 
-[#apply-checks]
-== What apply checks against the cluster
+The CLI does not check anything that depends on the region. When you apply, the region admits or refuses the change. It checks, among other things:
 
-Before writing anything, apply verifies:
+* Whether the devices that an allocation asks for fit the pool, and whether the allocation exceeds what the project can draw.
+* Whether a model sets only values that the region accepts. A model runs one replica, does not use the `akka` workload identity, and does not pass flags that the platform owns in `extraArgs`.
+* Whether adapter names are unique across the project's routing table.
+* Whether the fields of a model are ones that the region implements.
 
-* Served model names do not collide with deployments already in the namespace that are not part of this descriptor.
-* Every referenced secret is declared in the descriptor or already exists.
-* Every referenced accelerator is declared in the descriptor or already exists.
-
-These need the cluster, so `akka models validate` cannot do them. Use `--dry-run` to run them without persisting.
+Use `--dry-run` to run these checks without persisting anything.
 
 [#complete-example]
 == Complete example
 
 [source, yaml]
 ----
-resource: Secret
+resource: AcceleratorAllocation
 resourceVersion: v1
 metadata:
-  name: hf-token
+  name: tutorial
 spec:
-  type: generic
-  data:
-    token: hf_xxxxxxxxxxxxxxxxxxxx
+  allocations:
+    - name: gpu
+      acceleratorPool: POOL_NAME
+      devices: 1
 ---
-resource: Accelerator
+resource: Model
 resourceVersion: v1
 metadata:
-  name: l4-dedicated
+  name: assistant
 spec:
-  device: l4
-  tenancy: dedicated
----
-resource: ModelDeployment
-resourceVersion: v1
-metadata:
-  name: agent
-spec:
-  model: google/gemma-3-4b-it
-  servedModelName: agent
-  replicas: 1
-  placement:
-    accelerator: l4-dedicated
-  engine:
-    maxModelLen: 16384
-    memoryPercent: 90
-    toolCalling:
-      enabled: true
-      parser: pythonic
+  model: mistralai/Ministral-3-3B-Instruct-2512
   source:
-    huggingFaceTokenSecret: hf-token/token
-    cache:
-      enabled: true
-      size: 100Gi
+    type: huggingface
+    huggingface:
+      secretRef: hf-token
+      revision: COMMIT_SHA
+  engine:
+    type: vllm
+    vllm:
+      checkpointFormat: mistral
+      toolCalling:
+        parser: mistral
+  placement:
+    allocation: gpu
+    device: 0
+  serving:
+    contextLength: 8192
 ---
-resource: InferenceRoute
+resource: ModelEndpoint
 resourceVersion: v1
 metadata:
-  name: acme
+  name: assistant-endpoint
 spec:
-  host: models.acme.example.com
   models:
-    - name: agent
+    - name: assistant
+  apiKeySecret: assistant-keys
 ----
 
 == Resources that belong elsewhere
 
-Devices cannot be created from a descriptor. They are platform inventory. See xref:inference:serving/reviewing-hardware.adoc[Reviewing available hardware].
+Accelerator pools cannot be created from a descriptor. They are regional inventory. See xref:inference:serving/allocating-hardware.adoc#_reviewing_the_available_pools[Reviewing available hardware].
 
 include::inference:partial$aao-inference-notice.adoc[]
 
 == See also
 
-* xref:inference:serving/index.adoc[Serving models]
-* xref:reference:inference-cli/models.adoc[Model commands]
+* xref:inference:index.adoc#serving[Serving models]
+* xref:reference:cli/models.adoc[Model commands]
 * xref:reference:descriptors/index.adoc[Descriptors]

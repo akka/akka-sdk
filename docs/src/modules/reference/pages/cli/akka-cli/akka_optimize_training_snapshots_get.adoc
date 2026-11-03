@@ -6,32 +6,36 @@ Show one committed snapshot
 
 Display one snapshot, by full ID or by an unambiguous prefix.
 
-The report covers where the snapshot came from, which artifact kinds it holds, the manifest digest identifying each kind's bytes, the engine that wrote them, and the model shape they were written for.
+The report covers where the snapshot came from, which artifact kinds it holds and how large each one is, the manifest digest identifying each kind's bytes, the engine that wrote them, and the model shape they were written for.
 A branch is checked against those values, so this is what a refused branch is read against.
 
+[source,shell]
 ----
 akka optimize training snapshots get SNAPSHOT [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Display a snapshot
-  akka-optimize training snapshots get 3f2a9c71bd04
+  akka optimize training snapshots get 3f2a9c71bd04
 
   # Extract the weights manifest digest using jq
-  akka-optimize training snapshots get 3f2a9c71bd04 \
+  akka optimize training snapshots get 3f2a9c71bd04 \
     --jq '.artifacts[] | select(.kind=="weights") | .manifestDigest'
 ----
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for get
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")
@@ -41,14 +45,13 @@ akka optimize training snapshots get SNAPSHOT [flags]
       --force                Skip the confirmation prompt
       --jq string            Filter the JSON output with a jq expression
       --json string          Output JSON with only these fields; --json= lists the fields a command offers
-      --no-color             Print without color, as NO_COLOR does
+      --no-color             Print without color or a redrawn progress line, as NO_COLOR does
   -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
       --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then a local dev-mode service, then http://localhost:9001)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----

@@ -9,12 +9,14 @@ The same key in _other_ config contexts will not be affected.
 
 A common use of this command is to establish a specific project as the "current project" by using `akka config set project _my-project_`.
 
+[source,shell]
 ----
 akka config set KEY VALUE [flags]
 ----
 
 == Options
 
+[source,text]
 ----
   -h, --help           help for set
       --owner string   the owner of the project to use, needed if you have two projects with the same name from different owners
@@ -22,6 +24,7 @@ akka config set KEY VALUE [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

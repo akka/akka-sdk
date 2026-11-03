@@ -1,43 +1,51 @@
 = akka optimize training base-models get
 
-Display one allowed base model, its selection status, and its admitted runs
+Display one allowed base model, its selection status, and its measurements
 
 == Synopsis
 
-Display admission and selection status for an allowed entry, and the runs this deployment admits over it.
+Display admission and selection status for an allowed entry, and the training measurements for it.
 
-BASE_MODEL takes the repository, the entry ID, the model ID a run names, or an unambiguous prefix of either ID.
+BASE_MODEL takes the repository, the entry ID or an unambiguous prefix of it, or the registry version a selection registered, such as qwen/qwen3-8b:v1.
 
 STATUS is admission: PENDING while the repository is being read, AVAILABLE once it can be used, and UNSUPPORTED, UNAVAILABLE or WITHDRAWN where it cannot.
 SELECTION is PREPARING, FETCHING or READY, and is absent where nobody has selected it.
 
-"Runs this deployment admits" lists every method, precision, and GPU count a run may request.
+"Measured training envelopes" lists measured methods, precisions, device counts and sequence lengths.
+Advisory catalogs admit runs outside these measurements with a warning that the run may run out of device memory.
+Strict catalogs require a measured envelope.
+Use "training base-models envelopes" to see every measured envelope and the catalog's mode.
+
 GPU MEMORY PER GPU is the memory of each GPU.
 HOST MEMORY PER NODE is the memory of the node that holds those GPUs.
-A run outside every row is refused.
+Host memory stays a hard limit.
 
+[source,shell]
 ----
 akka optimize training base-models get BASE_MODEL [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Display an entry
-  akka-optimize training base-models get Qwen/Qwen3-8B
+  akka optimize training base-models get Qwen/Qwen3-8B
 
-  # Or by the start of the model ID a run names
-  akka-optimize training base-models get 328e7df1beb3
+  # Or by the registry version a run names
+  akka optimize training base-models get qwen/qwen3-8b:v1
 ----
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for get
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")
@@ -47,14 +55,13 @@ akka optimize training base-models get BASE_MODEL [flags]
       --force                Skip the confirmation prompt
       --jq string            Filter the JSON output with a jq expression
       --json string          Output JSON with only these fields; --json= lists the fields a command offers
-      --no-color             Print without color, as NO_COLOR does
+      --no-color             Print without color or a redrawn progress line, as NO_COLOR does
   -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
       --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then a local dev-mode service, then http://localhost:9001)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----

@@ -14,10 +14,12 @@ import akkajavasdk.components.eventsourcedentities.protobuf.ProtobufCustomerEnti
 import akkajavasdk.components.keyvalueentities.protobuf.ProtobufCustomerKvEntity;
 import akkajavasdk.components.views.protobuf.ProtobufCustomerStateView;
 import akkajavasdk.components.views.protobuf.ProtobufCustomersByNameView;
+import akkajavasdk.protocol.SerializationTestProtos.CustomerStateList;
 import akkajavasdk.protocol.SerializationTestProtos.CustomersByCreationTimeQuery;
 import akkajavasdk.protocol.SerializationTestProtos.SimpleMessage;
 import akkajavasdk.protocol.SerializationTestProtos.Status;
 import com.google.protobuf.util.Timestamps;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
@@ -134,6 +136,135 @@ public class ProtobufViewIntegrationTest extends TestKitSupport {
   }
 
   @Test
+  public void shouldStoreProtobufStateWithUnsetOptionalFieldsInView() {
+    var entityId = "view-proto-unset-1";
+    var message = SimpleMessage.newBuilder().setText("ProtoState Unset Fields").build();
+
+    // createFromProtobuf leaves created_at, nickname, review_date, contact and preferred_email
+    // unset
+    componentClient
+        .forKeyValueEntity(entityId)
+        .method(ProtobufCustomerKvEntity::createFromProtobuf)
+        .invoke(message);
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(20, TimeUnit.of(SECONDS))
+        .untilAsserted(
+            () -> {
+              var result =
+                  componentClient
+                      .forView()
+                      .method(ProtobufCustomerStateView::getCustomerByName)
+                      .invoke(message);
+              assertThat(result.getCustomerId()).isEqualTo(entityId);
+              assertThat(result.hasCreatedAt()).isFalse();
+              assertThat(result.hasNickname()).isFalse();
+              assertThat(result.hasReviewDate()).isFalse();
+            });
+  }
+
+  @Test
+  public void shouldQueryViewOnPresenceFields() {
+    var fullId = "view-proto-presence-full";
+    var bareId = "view-proto-presence-bare";
+    componentClient
+        .forKeyValueEntity(fullId)
+        .method(ProtobufCustomerKvEntity::createWithPresenceFields)
+        .invoke(
+            new ProtobufCustomerKvEntity.CreateWithPresenceFieldsCommand(
+                "Presence Full", "presence-nick", "presence@example.com"));
+    // createFromProtobuf leaves created_at, nickname, review_date, contact and preferred_email
+    // unset
+    componentClient
+        .forKeyValueEntity(bareId)
+        .method(ProtobufCustomerKvEntity::createFromProtobuf)
+        .invoke(SimpleMessage.newBuilder().setText("Presence Bare").build());
+
+    // Wait until both entities are in the view, so that the "doesNotContain" checks below cannot
+    // pass only because an entity is not indexed yet.
+    for (var name : List.of("Presence Full", "Presence Bare")) {
+      Awaitility.await()
+          .ignoreExceptions()
+          .atMost(20, TimeUnit.of(SECONDS))
+          .untilAsserted(
+              () -> {
+                var result =
+                    componentClient
+                        .forView()
+                        .method(ProtobufCustomerStateView::getCustomerByName)
+                        .invoke(SimpleMessage.newBuilder().setText(name).build());
+                assertThat(result.getName()).isEqualTo(name);
+              });
+    }
+
+    var view = componentClient.forView();
+    var nicknameParam = SimpleMessage.newBuilder().setText("presence-nick").build();
+    var preferredEmailParam = SimpleMessage.newBuilder().setText("presence@example.com").build();
+
+    // Optional message field.
+    var withoutReviewDate =
+        ids(view.method(ProtobufCustomerStateView::getCustomersWithoutReviewDate).invoke());
+    assertThat(withoutReviewDate).contains(bareId).doesNotContain(fullId);
+    var withReviewDate =
+        ids(view.method(ProtobufCustomerStateView::getCustomersWithReviewDate).invoke());
+    assertThat(withReviewDate).contains(fullId).doesNotContain(bareId);
+
+    // Optional scalar field.
+    var withoutNickname =
+        ids(view.method(ProtobufCustomerStateView::getCustomersWithoutNickname).invoke());
+    assertThat(withoutNickname).contains(bareId).doesNotContain(fullId);
+    var byNickname =
+        ids(view.method(ProtobufCustomerStateView::getCustomersByNickname).invoke(nicknameParam));
+    assertThat(byNickname).containsExactly(fullId);
+
+    // Message field without the optional keyword.
+    var withoutContact =
+        ids(view.method(ProtobufCustomerStateView::getCustomersWithoutContact).invoke());
+    assertThat(withoutContact).contains(bareId).doesNotContain(fullId);
+
+    // Oneof member.
+    var withoutPreferredEmail =
+        ids(view.method(ProtobufCustomerStateView::getCustomersWithoutPreferredEmail).invoke());
+    assertThat(withoutPreferredEmail).contains(bareId).doesNotContain(fullId);
+    var byPreferredEmail =
+        ids(
+            view.method(ProtobufCustomerStateView::getCustomersByPreferredEmail)
+                .invoke(preferredEmailParam));
+    assertThat(byPreferredEmail).containsExactly(fullId);
+  }
+
+  @Test
+  public void shouldConstructNestedProtobufMessageInQueryResult() {
+    var entityId = "view-proto-construct-1";
+    var message = SimpleMessage.newBuilder().setText("Construct Alice").build();
+    componentClient
+        .forKeyValueEntity(entityId)
+        .method(ProtobufCustomerKvEntity::createFromProtobuf)
+        .invoke(message);
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(20, TimeUnit.of(SECONDS))
+        .untilAsserted(
+            () -> {
+              var view = componentClient.forView();
+
+              // SELECT * AS customer
+              var customer =
+                  view.method(ProtobufCustomerStateView::getCustomerAsNestedMessage)
+                      .invoke(message);
+              assertThat(customer.getCustomer().getCustomerId()).isEqualTo(entityId);
+
+              // SELECT (name, email) AS contact
+              var contact =
+                  view.method(ProtobufCustomerStateView::getCustomerContact).invoke(message);
+              assertThat(contact.getContact().getName()).isEqualTo("Construct Alice");
+              assertThat(contact.getContact().getEmail()).isEqualTo("from-protobuf@test.com");
+            });
+  }
+
+  @Test
   public void shouldQueryViewWithTimestampParameter() {
     var beforeAll = Timestamps.fromMillis(System.currentTimeMillis() - 1000);
 
@@ -178,5 +309,9 @@ public class ProtobufViewIntegrationTest extends TestKitSupport {
     assertThat(emptyResult.getCustomersList())
         .extracting(c -> c.getName())
         .doesNotContain("TS Alice", "TS Bob");
+  }
+
+  private static List<String> ids(CustomerStateList list) {
+    return list.getCustomersList().stream().map(c -> c.getCustomerId()).toList();
   }
 }

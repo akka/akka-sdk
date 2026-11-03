@@ -181,11 +181,14 @@ object GuardrailProviderSpec {
       case _                                    => ""
     }
 
-  private def agentResponseContext(response: String): SpiGuardrail.AgentResponseContext =
+  private def agentResponseContext(
+      response: String,
+      thinking: Option[String] = None,
+      attributes: Map[String, AnyRef] = Map.empty): SpiGuardrail.AgentResponseContext =
     new SpiGuardrail.AgentResponseContext(
       response = response,
-      thinking = None,
-      attributes = Map.empty,
+      thinking = thinking,
+      attributes = attributes,
       agentId = "model-agent",
       sessionId = "session-1",
       modelName = "test-model",
@@ -894,6 +897,38 @@ class GuardrailProviderSpec
       conversation.newMessages().asScala.toSeq shouldBe Seq(toolResult)
     }
 
+    // FIXME: TestModelProvider cannot return thinking or attributes, see https://github.com/lightbend/akka-runtime/issues/5999
+    "expose the thinking and attributes of an AiMessage to a ModelCallGuardrail" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "capturing model guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$CapturingModelCallGuard"
+              agents = ["model-agent"]
+              category = MODEL_POLICY
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      val spiGuardrail = provider.agentGuardrails("model-agent", role = None).guardrails.modelCallGuardrails.head
+
+      val messages = Seq(
+        spiUserMessage("first question"),
+        new SpiAgent.ContextMessage.AiMessage(
+          "thinking reply",
+          Seq.empty,
+          Some("my reasoning"),
+          Map("signature" -> "abc")))
+
+      Await.result(spiGuardrail.decide(modelCallContext(messages)), 3.seconds) shouldBe a[SpiGuardrail.Allow]
+
+      val aiMessage = capturedModelCallContext.messages().get(1).asInstanceOf[Message.AiMessage]
+      aiMessage.thinking() shouldBe java.util.Optional.of("my reasoning")
+      aiMessage.attributes() shouldBe java.util.Map.of("signature", "abc")
+    }
+
     "expose the user message as the new messages on the first model call" in {
       val cfg = ConfigFactory
         .parseString(s"""
@@ -973,6 +1008,12 @@ class GuardrailProviderSpec
               category = MODEL_POLICY
               report-only = true
             }
+            "fail-open guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$EchoingResponseGuard"
+              agents = ["fail-open-agent"]
+              category = MODEL_POLICY
+              fail-mode = fail-open
+            }
           }
         """)
         .withFallback(config)
@@ -984,6 +1025,7 @@ class GuardrailProviderSpec
       error("blocking-agent", streaming = true) shouldBe defined
       error("blocking-agent", streaming = false) shouldBe empty
       error("report-only-agent", streaming = true) shouldBe empty
+      error("fail-open-agent", streaming = true) shouldBe defined
       error("unguarded-agent", streaming = true) shouldBe empty
     }
 
@@ -1233,7 +1275,7 @@ class GuardrailProviderSpec
       val cfg = ConfigFactory
         .parseString(s"""
           akka.javasdk.agent.guardrails {
-            "capturing model guard" {
+            "capturing response guard" {
               class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$CapturingResponseGuard"
               agents = ["model-agent"]
               category = MODEL_POLICY
@@ -1250,6 +1292,39 @@ class GuardrailProviderSpec
       val ctx = capturedResponseContext
       ctx.reply().text() shouldBe "just text"
       ctx.reply().toolCallRequests() shouldBe empty
+      ctx.reply().thinking() shouldBe java.util.Optional.empty()
+      ctx.reply().attributes() shouldBe empty
+    }
+
+    "expose the thinking and attributes of the agent reply" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "capturing response guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$CapturingResponseGuard"
+              agents = ["model-agent"]
+              category = MODEL_POLICY
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      val spiGuardrail = provider.agentGuardrails("model-agent", role = None).guardrails.agentResponseGuardrails.head
+
+      val context = agentResponseContext("just text", Some("my reasoning"), Map("signature" -> "abc"))
+      Await.result(spiGuardrail.decide(context), 3.seconds) shouldBe a[SpiGuardrail.Allow]
+
+      val reply = capturedResponseContext.reply()
+      reply.thinking() shouldBe java.util.Optional.of("my reasoning")
+      reply.attributes() shouldBe java.util.Map.of("signature", "abc")
+    }
+
+    "default thinking and attributes to empty in the AiMessage two-argument constructor" in {
+      val aiMessage = new Message.AiMessage("text", java.util.List.of())
+
+      aiMessage.thinking() shouldBe java.util.Optional.empty()
+      aiMessage.attributes() shouldBe empty
     }
 
     "map a Decision.Fail to a Fail with its reason and cause" in {
@@ -1627,6 +1702,140 @@ class GuardrailProviderSpec
       myGuard.implementationClass shouldBe classOf[MyGuard].getName
       myGuard.reportOnly shouldBe true
       myGuard.config.getString("control-id") shouldBe "AI-GR-01"
+    }
+
+    "pass the fail mode of a ModelCallGuardrail" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "open model guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyModelCallGuard"
+              agents = ["model-agent"]
+              category = MODEL_POLICY
+              fail-mode = fail-open
+            }
+          }
+        """)
+        .withFallback(config)
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+
+      val g = provider.agentGuardrails("model-agent", role = None)
+      g.guardrails.modelCallGuardrails.head.settings.failMode shouldBe SpiGuardrail.FailMode.FailOpen
+    }
+
+    "pass the fail mode of a ToolCallGuardrail" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "open tool guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyToolGuard"
+              agents = ["tool-agent"]
+              category = TOOL_POLICY
+              fail-mode = fail-open
+            }
+          }
+        """)
+        .withFallback(config)
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+
+      val spiGuardrail = provider.agentGuardrails("tool-agent", role = None).toolCallGuardrails("some-tool").head
+      spiGuardrail.settings.failMode shouldBe SpiGuardrail.FailMode.FailOpen
+    }
+
+    "pass the fail mode of a ModelCallSimilarityGuard" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "open similarity guard" {
+              class = "akka.javasdk.agent.ModelCallSimilarityGuard"
+              agents = ["similarity-agent"]
+              category = JAILBREAK
+              fail-mode = fail-open
+              threshold = 0.8
+              bad-examples-resource-dir = "guardrail/jailbreak"
+            }
+          }
+        """)
+        .withFallback(config)
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+
+      val g = provider.agentGuardrails("similarity-agent", role = None)
+      val spiGuard = g.guardrails.modelCallGuardrails.head.asInstanceOf[SpiGuardrail.SimilarityGuard]
+      spiGuard.settings.failMode shouldBe SpiGuardrail.FailMode.FailOpen
+    }
+
+    "warn from validate when a report-only guardrail defines fail-mode" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "observing model guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyModelCallGuard"
+              agents = ["model-agent"]
+              category = MODEL_POLICY
+              report-only = true
+              fail-mode = fail-open
+            }
+          }
+        """)
+        .withFallback(config)
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+
+      LoggingTestKit
+        .warn(
+          "Guardrail [observing model guard] sets fail-mode, but fail-mode has no effect while report-only is true.")
+        .expect(provider.validate())
+    }
+
+    "not warn from validate when a blocking guardrail defines fail-mode" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "open model guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyModelCallGuard"
+              agents = ["model-agent"]
+              category = MODEL_POLICY
+              fail-mode = fail-open
+            }
+          }
+        """)
+        .withFallback(config)
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+
+      LoggingTestKit.warn("sets fail-mode").withOccurrences(0).expect(provider.validate())
+    }
+
+    "pass the fail mode to the configured guardrails" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "open model guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$MyModelCallGuard"
+              agents = ["model-agent"]
+              category = MODEL_POLICY
+              fail-mode = fail-open
+            }
+          }
+        """)
+        .withFallback(config)
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+
+      val entries = provider.spiGuardrails(_ => Set.empty)
+
+      entries.find(_.name == "open model guard").get.failMode shouldBe SpiGuardrail.FailMode.FailOpen
+      entries.find(_.name == "my guard").get.failMode shouldBe SpiGuardrail.FailMode.FailClosed
+    }
+
+    "throw from validate when a TextGuardrail defines fail-mode" in {
+      val cfg = ConfigFactory
+        .parseString("""
+          akka.javasdk.agent.guardrails."my guard".fail-mode = fail-open
+        """)
+        .withFallback(config)
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+
+      intercept[IllegalArgumentException] {
+        provider.validate()
+      }.getMessage should include("[my guard] must not define fail-mode")
     }
 
     "bind a ModelCallSimilarityGuard as a model-call SpiGuardrail.SimilarityGuard" in {

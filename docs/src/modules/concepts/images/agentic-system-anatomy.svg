@@ -1,0 +1,136 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 510" role="img" aria-labelledby="title desc" font-family="Helvetica, Arial, sans-serif">
+  <title id="title">Anatomy of an agentic system</title>
+  <desc id="desc">Goals: create a plan and execute steps that work toward achieving a goal; a strategy (adversarial teaming, multi-step analysis) feeds a planner and supervisors for orchestration, agent spawn and task execution. Controls: govern what agents may do, inline and after the interaction; a control is an obligation plus the mechanism that meets it. An agent that self-assesses its confidence and runs internal evaluation is checked by the five control types: guardrail, sanitizer, eval, human and gate. Adaptation: a system that continuously alters goals and behaviors as its world model improves; an adapter takes environment feedback, human feedback and history, adjusts goals and improves the world model, and updates the planner, agents and controls. Coordination: participants are coordinated through dynamic orchestration adjusted by the supervisor. State: evolving goals require shared data and memory: goals and sub-goals, world model, plans and execution progress, communication logs and history, learning and experience, resource usage. Registry: list available resources, tools, actions and access controls: actions and tasks, verification criteria and results, resource allocation and availability.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#cccccc"/>
+    </marker>
+  </defs>
+  <rect width="880" height="510" rx="12" fill="#111111"/>
+
+  <!-- Left column: Goals, Controls, Adaptation -->
+  <g font-size="14" fill="#ffffff">
+    <text x="40" y="52" font-size="13" font-weight="700" fill="#ffce4a" letter-spacing="1">GOALS</text>
+    <text x="40" y="76">Create a plan and execute steps</text>
+    <text x="40" y="96">that work toward achieving a goal.</text>
+
+    <text x="40" y="214" font-size="13" font-weight="700" fill="#ffce4a" letter-spacing="1">CONTROLS</text>
+    <text x="40" y="238">Govern what agents may do,</text>
+    <text x="40" y="258">inline and after the interaction.</text>
+    <text x="40" y="284" font-size="13" fill="#cccccc">A control is an obligation plus</text>
+    <text x="40" y="302" font-size="13" fill="#cccccc">the mechanism that meets it.</text>
+
+    <text x="40" y="374" font-size="13" font-weight="700" fill="#ffce4a" letter-spacing="1">ADAPTATION</text>
+    <text x="40" y="398">A system that continuously alters</text>
+    <text x="40" y="418">goals and behaviors as its world</text>
+    <text x="40" y="438">model improves.</text>
+  </g>
+
+  <!-- Right column: Coordination, State, Registry -->
+  <g font-size="14" fill="#ffffff">
+    <text x="626" y="52" font-size="13" font-weight="700" fill="#ffce4a" letter-spacing="1">COORDINATION</text>
+    <text x="626" y="76">Participants are coordinated</text>
+    <text x="626" y="96">through <tspan fill="#ffce4a" font-weight="700">dynamic orchestration</tspan></text>
+    <text x="626" y="116">adjusted by the supervisor.</text>
+
+    <text x="626" y="176" font-size="13" font-weight="700" fill="#ffce4a" letter-spacing="1">STATE</text>
+    <text x="626" y="200">Evolving goals require shared</text>
+    <text x="626" y="220">data and memory:</text>
+    <g font-size="13" fill="#cccccc">
+      <text x="634" y="242">1. Goals &amp; sub-goals</text>
+      <text x="634" y="261">2. World model</text>
+      <text x="634" y="280">3. Plans and execution progress</text>
+      <text x="634" y="299">4. Communication logs &amp; history</text>
+      <text x="634" y="318">5. Learning &amp; experience</text>
+      <text x="634" y="337">6. Resource usage</text>
+    </g>
+
+    <text x="626" y="384" font-size="13" font-weight="700" fill="#ffce4a" letter-spacing="1">REGISTRY</text>
+    <text x="626" y="408">List available resources, tools,</text>
+    <text x="626" y="428">actions, and access controls:</text>
+    <g font-size="13" fill="#cccccc">
+      <text x="634" y="450">1. Action &amp; tasks</text>
+      <text x="634" y="469">2. Verification criteria &amp; results</text>
+      <text x="634" y="488">3. Resource allocation &amp; availability</text>
+    </g>
+  </g>
+
+  <!-- Center row 1: strategy, planner, supervisors -->
+  <g font-size="13" text-anchor="middle">
+    <rect x="290" y="36" width="310" height="52" rx="6" fill="#1f1f1f" stroke="#02a4a7" stroke-width="2"/>
+    <text x="445" y="56" fill="#ffce4a" font-weight="700">strategy</text>
+    <text x="370" y="78" fill="#ffffff">adversarial teaming</text>
+    <text x="522" y="78" fill="#ffffff">multi-step analysis</text>
+
+    <rect x="290" y="96" width="310" height="28" rx="6" fill="#1f1f1f" stroke="#02a4a7" stroke-width="2"/>
+    <text x="445" y="115" fill="#ffce4a" font-weight="700">planner</text>
+
+    <rect x="290" y="132" width="150" height="62" rx="6" fill="#1f1f1f" stroke="#02a4a7" stroke-width="2"/>
+    <text x="365" y="151" fill="#ffce4a" font-weight="700">supervisor</text>
+    <text x="365" y="169" fill="#ffffff">orchestration</text>
+    <text x="365" y="186" fill="#ffffff">agent spawn</text>
+
+    <rect x="450" y="132" width="150" height="62" rx="6" fill="#1f1f1f" stroke="#02a4a7" stroke-width="2"/>
+    <text x="525" y="151" fill="#ffce4a" font-weight="700">supervisor</text>
+    <text x="525" y="175" fill="#ffffff">task exec</text>
+  </g>
+
+  <!-- Center row 2: agent and the five control types -->
+  <g font-size="13" text-anchor="middle">
+    <rect x="290" y="224" width="96" height="104" rx="6" fill="#1f1f1f" stroke="#02a4a7" stroke-width="2"/>
+    <text x="338" y="246" fill="#ffce4a" font-weight="700">agent</text>
+    <text x="338" y="276" fill="#ffffff">self-assess</text>
+    <text x="338" y="294" fill="#ffffff">confidence</text>
+    <text x="338" y="312" fill="#ffffff">internal eval</text>
+
+    <line x1="386" y1="276" x2="468" y2="276" stroke="#cccccc" stroke-width="1.5"/>
+    <text x="427" y="268" fill="#cccccc">checked by</text>
+    <line x1="468" y1="231" x2="468" y2="322" stroke="#cccccc" stroke-width="1.5"/>
+    <line x1="468" y1="231" x2="498" y2="231" stroke="#cccccc" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <line x1="468" y1="254" x2="498" y2="254" stroke="#cccccc" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <line x1="468" y1="277" x2="498" y2="277" stroke="#cccccc" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <line x1="468" y1="300" x2="498" y2="300" stroke="#cccccc" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <line x1="468" y1="322" x2="498" y2="322" stroke="#cccccc" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <rect x="500" y="221" width="100" height="20" rx="5" fill="#1f1f1f" stroke="#02a4a7" stroke-width="2"/>
+    <text x="550" y="236" fill="#ffce4a" font-weight="700">guardrail</text>
+    <rect x="500" y="244" width="100" height="20" rx="5" fill="#1f1f1f" stroke="#02a4a7" stroke-width="2"/>
+    <text x="550" y="259" fill="#ffce4a" font-weight="700">sanitizer</text>
+    <rect x="500" y="267" width="100" height="20" rx="5" fill="#1f1f1f" stroke="#02a4a7" stroke-width="2"/>
+    <text x="550" y="282" fill="#ffce4a" font-weight="700">eval</text>
+    <rect x="500" y="290" width="100" height="20" rx="5" fill="#1f1f1f" stroke="#02a4a7" stroke-width="2"/>
+    <text x="550" y="305" fill="#ffce4a" font-weight="700">human</text>
+    <rect x="500" y="312" width="100" height="20" rx="5" fill="#1f1f1f" stroke="#02a4a7" stroke-width="2"/>
+    <text x="550" y="327" fill="#ffce4a" font-weight="700">gate</text>
+  </g>
+
+  <!-- Center row 3: adapter -->
+  <g font-size="13">
+    <text x="382" y="374" text-anchor="end" fill="#cccccc">env feedback</text>
+    <line x1="292" y1="380" x2="402" y2="380" stroke="#cccccc" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <text x="382" y="414" text-anchor="end" fill="#cccccc">human feedback</text>
+    <line x1="292" y1="420" x2="402" y2="420" stroke="#cccccc" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <text x="382" y="454" text-anchor="end" fill="#cccccc">history</text>
+    <line x1="292" y1="460" x2="402" y2="460" stroke="#cccccc" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <rect x="404" y="358" width="92" height="118" rx="6" fill="#1f1f1f" stroke="#02a4a7" stroke-width="2"/>
+    <g text-anchor="middle">
+      <text x="450" y="380" fill="#ffce4a" font-weight="700">adapter</text>
+      <text x="450" y="410" fill="#ffffff">goal adjust</text>
+      <text x="450" y="440" fill="#ffffff">world model</text>
+      <text x="450" y="457" fill="#ffffff">improve</text>
+    </g>
+
+    <line x1="496" y1="380" x2="510" y2="380" stroke="#cccccc" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <line x1="496" y1="417" x2="510" y2="417" stroke="#cccccc" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <line x1="496" y1="454" x2="510" y2="454" stroke="#cccccc" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <g text-anchor="middle">
+      <rect x="512" y="368" width="88" height="24" rx="5" fill="#1f1f1f" stroke="#02a4a7" stroke-width="2"/>
+      <text x="556" y="385" fill="#ffce4a" font-weight="700">planner</text>
+      <rect x="512" y="405" width="88" height="24" rx="5" fill="#1f1f1f" stroke="#02a4a7" stroke-width="2"/>
+      <text x="556" y="422" fill="#ffce4a" font-weight="700">agents</text>
+      <rect x="512" y="442" width="88" height="24" rx="5" fill="#1f1f1f" stroke="#02a4a7" stroke-width="2"/>
+      <text x="556" y="459" fill="#ffce4a" font-weight="700">controls</text>
+    </g>
+  </g>
+</svg>

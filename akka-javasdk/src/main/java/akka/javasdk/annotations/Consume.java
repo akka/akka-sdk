@@ -60,6 +60,10 @@ public @interface Consume {
      *   <li>if ignoreUnknown is true the event is discarded
      *   <li>if false, an Exception is raised
      * </ul>
+     *
+     * <p>Be aware that true also turns off the build-time check that every event type has a
+     * matching method. If you add an event type to the entity later, this class discards those
+     * events without an error and never processes them.
      */
     boolean ignoreUnknown() default false;
   }
@@ -107,6 +111,9 @@ public @interface Consume {
      *   <li>if ignoreUnknown is true the event is discarded
      *   <li>if false, an Exception is raised
      * </ul>
+     *
+     * <p>Be aware that this class then also discards message types that the producer adds later,
+     * before this class has a method for them, and never processes those messages.
      */
     boolean ignoreUnknown() default false;
   }
@@ -153,6 +160,9 @@ public @interface Consume {
      *   <li>if ignoreUnknown is true the event is discarded
      *   <li>if false, an Exception is raised
      * </ul>
+     *
+     * <p>Be aware that this class then also discards message types that the producer adds later,
+     * before this class has a method for them, and never processes those messages.
      */
     boolean ignoreUnknown() default false;
   }

@@ -4,11 +4,12 @@ version: ~
 nav:
 - modules/ROOT/nav.adoc
 - modules/getting-started/nav.adoc
-- modules/concepts/nav.adoc
 - modules/sdk/nav.adoc
 - modules/testing/nav.adoc
+- modules/deployment/nav.adoc
 - modules/operations/nav.adoc
 - modules/inference/nav.adoc
 - modules/optimize/nav.adoc
+- modules/concepts/nav.adoc
 - modules/reference/nav.adoc
 - modules/libraries/nav.adoc

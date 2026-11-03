@@ -62,7 +62,7 @@ AkkaPlatformSdk sdk = AkkaPlatformSdk.create();
 
 ==== Refresh token: Automatic fallback to the Akka CLI
 
-If `AKKA_TOKEN` is not set and the `akka` CLI is installed and logged in, the SDK runs `akka config get refresh-token` (and `akka config get api-server-host` for non-default installations) automatically. No code changes are needed.
+If `AKKA_TOKEN` is not set and the `akka` CLI is installed and xref:getting-started:log-in.adoc[logged in], the SDK runs `akka config get refresh-token` (and `akka config get api-server-host` for non-default installations) automatically. No code changes are needed.
 
 ==== Refresh token: Programmatic
 
@@ -273,4 +273,4 @@ Page through `ListProjects` using the `next_page_token` field in the response un
 
 - link:{url-platform-api-repo}[`akka/platform-api`,window="_blank"] on GitHub, for the full schemas, the Java client source, and release notes
 - xref:services/workload-identity.adoc[]
-- xref:cli/using-cli.adoc[]
+- xref:reference:cli/command-map.adoc[]

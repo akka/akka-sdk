@@ -1,0 +1,8 @@
+= AAO on Azure architecture
+:page-layout: dense
+:page-breadcrumb: Akka / Deployment / BYOC / Azure / AAO on Azure architecture
+:page-return-to: byoc-azure.html
+:page-summary: Full-size diagram of the default Akka Automated Operations architecture on Azure.
+
+[.dense-image]
+image::deployment:aao-azure-default.png[AAO on Azure: default architecture]

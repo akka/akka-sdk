@@ -11,6 +11,7 @@ import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.http.javadsl.model.HttpHeader
 import akka.http.javadsl.model.headers.RawHeader
 import akka.javasdk.agent.ModelProvider
+import akka.runtime.sdk.spi.SpiAgent
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigException
 import com.typesafe.config.ConfigFactory
@@ -234,6 +235,18 @@ class ModelProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike w
     "load defaults from config for vertex-ai" in {
       val m = ModelProvider.VertexAi.fromConfig(defaultConfig.getConfig("akka.javasdk.agent.vertex-ai"))
       m shouldBe ModelProvider.vertexAi()
+    }
+
+    "pass the vertex-ai thinking level from config on to the runtime" in {
+      val cfg = ConfigFactory
+        .parseString("""thinking-level = "LOW" """)
+        .withFallback(defaultConfig.getConfig("akka.javasdk.agent.vertex-ai"))
+      val m = ModelProvider.VertexAi.fromConfig(cfg)
+      m shouldBe ModelProvider.vertexAi().withThinkingLevel("LOW")
+
+      val spi = AgentImpl.toSpiModelProvider(m, config, "myagent").asInstanceOf[SpiAgent.ModelProvider.VertexAi]
+      spi.thinkingLevel shouldBe "LOW"
+      spi.thinkingBudget shouldBe 0
     }
 
     "load defaults from config for mistral-ai" in {

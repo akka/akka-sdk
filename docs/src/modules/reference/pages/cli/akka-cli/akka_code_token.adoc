@@ -6,18 +6,21 @@ The token command allow you to provision a resolver for Akka dependency download
 
 The `akka code token` command helps you to provision a resolver for downloading Akka dependencies.
 
+[source,shell]
 ----
 akka code token [flags]
 ----
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for token
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

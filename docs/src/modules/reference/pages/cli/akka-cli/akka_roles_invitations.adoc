@@ -8,12 +8,14 @@ The command `akka role invitations _subcommand_` manages invitations to user rol
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for invitations
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

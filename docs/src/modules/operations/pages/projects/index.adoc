@@ -1,4 +1,9 @@
 = Projects
+:page-summary: A project is where you deploy Akka services. It belongs to one organization, runs in one or more regions, and holds the registries, secrets, network policies and message broker that its services use.
+:page-when-to-use: When you create a project or set up the resources that the services in a project share.
+:page-related: operations:projects/create-project.adoc, operations:projects/message-brokers.adoc, operations:services/index.adoc
+:page-persona: operator-platform
+
 include::ROOT:partial$include.adoc[]
 
 Akka services are deployed to _Projects_ within an xref:operations:organizations/index.adoc[organization].
@@ -11,18 +16,13 @@ Akka services are deployed to _Projects_ within an xref:operations:organizations
 * A project is located in one or more regions.
 * The services in a project are each packaged as container images for deployment.
 
-== Topics
+== What a project holds
 
-*** xref:operations:projects/create-project.adoc[]
-*** xref:operations:projects/manage-project-access.adoc[]
-*** xref:operations:projects/container-registries.adoc[]
-**** xref:operations:projects/external-container-registries.adoc[]
-*** xref:operations:projects/message-brokers.adoc[]
-**** xref:operations:projects/broker-aiven.adoc[Aiven for Kafka]
-**** xref:operations:projects/broker-aws-msk.adoc[AWS MSK Kafka]
-**** xref:operations:projects/broker-confluent.adoc[Confluent Cloud]
-**** xref:operations:projects/broker-google-pubsub.adoc[Google Pub/Sub]
-**** xref:operations:projects/broker-kafka.adoc[Self-hosted Kafka]
-**** xref:operations:projects/broker-azure-eventhubs.adoc[Azure Event Hubs]
-*** xref:operations:projects/secrets.adoc[]
-*** xref:operations:projects/network-policies.adoc[]
+Start with xref:operations:projects/create-project.adoc[]. The resources that the services in a project share are set up per project:
+
+* Container registries, where the images of your services are kept.
+* Secrets, which your services read at runtime.
+* A network policy, which controls the traffic between your services and anything outside the project.
+* A message broker, which your services use for eventing. The supported brokers are listed on xref:operations:projects/message-brokers.adoc[].
+
+Access to a project is managed on xref:operations:projects/manage-project-access.adoc[].

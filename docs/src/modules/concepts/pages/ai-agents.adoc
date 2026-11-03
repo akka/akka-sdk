@@ -1,102 +1,39 @@
-= AI agents
+= Agents
 :page-aliases: concepts:ai-concepts-video.adoc
-:page-summary: Foundational concepts for building AI Agents in Akka — tokens, prompts, session memory, orchestration, and evaluation.
-:page-when-to-use: When you need to build AI agents that are production-grade, resilient, cost-controlled, and composable across teams and workflows.
-:page-related: xref:concepts:ai-orchestration-patterns.adoc[], xref:concepts:distributed-systems.adoc[], xref:sdk:autonomous-agents.adoc[]
-:page-prerequisites: Familiarity with LLMs, prompts, and basic distributed systems concepts.
-:page-persona: Architect, Tech Lead, AI/ML Engineer
+:page-summary: An agent is a component that calls an AI model to perform a task, with session memory, tools and governance supplied by the runtime.
+:page-when-to-use: When you decide how a model fits into your service, which agent component to use, and what the runtime does for each model call.
+:page-related: concepts:agent-memory.adoc, concepts:tools-and-protocols.adoc, concepts:ai-orchestration-patterns.adoc
+:page-persona: builder-developer, builder-ai-ml
 
 include::ROOT:partial$include.adoc[]
 
-AI agents are components that integrate with AI to perceive their environment, make decisions, and take actions toward a specific goal. Agents can have varying degrees of human intervention from none (completely autonomous) to requiring a human to approve each action the agent takes.
+An agent uses an AI model to perform a task, with tools to act on the result and memory to provide context. The Akka runtime executes the declared model and tool interactions and applies configured controls.
 
-== Overview
+== Two execution models
 
-In Akka, an AI Agent is a lightweight, single-purpose component that interacts with one or more AI models to accomplish a discrete goal.
+A request-based *Agent* handles a command and returns a response. The interaction can include tool calls before the model produces its final answer. Use it for focused request-and-response behavior or as a step in a workflow whose sequence is defined in code.
 
-Use AI Agents in Akka when you need to:
+An *Autonomous Agent* works on typed tasks in a durable decision loop. The model selects its next action until it produces a result, reports failure, or reaches an iteration limit. Tasks have identities and results that clients can inspect independently of the running agent.
 
-* Interact with models as part of a larger application.
-* Compose multiple Agents under platform-mediated coordination: a Workflow supervisor when the orchestration steps are fixed in code, or an xref:sdk:autonomous-agents.adoc[Autonomous Agent] when the model should decide which agent runs next through delegation, handoff, teams, or moderation.
-* Maintain session memory, context, and audit trails across Agent interactions.
-* Enforce cost controls, governance policies, and risk boundaries on model usage.
+Choose between them based on who decides the sequence: your code or the model. Autonomous Agents also provide coordination capabilities for delegation, handoff, teams, and moderation. They already persist task progress; a workflow is useful when it owns additional process steps, not merely as a durability wrapper.
 
-Agents relate to other Akka components in a direct way: xref:concepts:ai-orchestration-patterns.adoc[Workflows or Autonomous Agent coordination capabilities] orchestrate Agents, xref:concepts:state-model.adoc[Entities] store the durable state Agents depend on, and xref:concepts:ai-orchestration-patterns.adoc[agent-to-agent communication] connects Agents to each other and to external systems via protocols like MCP, A2A, and ACP.
+== Context, tools, and controls
 
-== Tokens and streaming
+A model sees the prompt and context supplied for each call. Session memory supplies interaction history. Tools retrieve domain data or perform actions; the runtime executes them after any applicable tool-call checks.
 
-Agents interact with AI, most commonly in the form of Large Language Models (LLMs). LLMs are what is known as _predictive text_. This means that every word streamed to the agent is actually just the next word predicted to be in the output. Regardless of platform or language, agents need the ability to stream tokens bi-directionally.
+Structured output constrains the response shape, but does not establish that its content is correct. Guardrails control permitted actions and replies. Evaluators assess behavior against quality criteria, before release and on live traffic.
 
-If your agent consumes an LLM as a service, you could be paying some amount of money per bundle of tokens. In cases like this, it is crucial to ensure that you have control over how frequently and how many tokens the agent "spends."
+== Limits and trade-offs
 
-== Different types of AI
+Model calls add latency and token cost, and similar inputs can produce different results. Bound tool use and iterations, keep context focused, and evaluate the complete interaction rather than one exact response. More autonomy also means more possible execution paths to test.
 
-LLMs are everywhere these days and it is impossible to escape all of their related news. It would be easy to assume that all agents interact with LLMs whether they are self-hosted or provided as an external service. This idea does a disservice to the rest of machine learning and AI in particular.
+anchor:_foundational_ai_concepts_video[]
 
-As you develop your teams of collaborative agents, keep in mind that not everything needs to be an LLM and look for opportunities to use smaller, more efficient, task-specific models. This can not only save you money, but can improve the overall performance of your application.
+== Next steps
 
-== Prompts, session memory, and context
+* xref:sdk:agents.adoc[] and xref:sdk:autonomous-agents.adoc[] implement the two models.
+* xref:sdk:agents/prompt.adoc[] configures prompts and templates.
+* xref:agent-memory.adoc[], xref:tools-and-protocols.adoc[], and xref:ai-orchestration-patterns.adoc[] explain the related concepts.
+* xref:testing:evaluation/index.adoc[] tests agent behavior.
 
-Agents interact with LLMs through prompts. A prompt is the input to an LLM in the form of natural language text. The quality and detail of your agents' prompts can make the difference between a great application experience and a terrible one. The prompt sent to an LLM typically tells the model the role it is supposed to play, how it should respond (e.g. you can tell a model to respond with JSON).
-
-Take a look at the following sample prompt:
-
-[source]
-----
-You are a friendly and cheerful question answerer.
-Answer the question based on the context below.
-Keep the answer short and concise. Respond "Unsure about answer"
-if not sure about the answer.
-
-If asked for a single item and multiple pieces of information
-are acceptable answers, choose one at random.
-
-Context:
- Here is a summary of all the action movies you know of. Each one is rated from 1 to 5 stars.
-
-Question:
-  What is the most highly rated action movie?
-----
-
-Everything except the **question** above would have been supplied by the agent. Working with and honing prompts is such an important activity in agentic development that a whole new discipline called link:https://www.promptingguide.ai/[prompt engineering] has sprung up around it.
-
-The context in the preceding prompt is how agents can augment the knowledge of an LLM. This is how Retrieval Augmented Generation (RAG) works. Agents can participate in sessions where the conversation history is stored. You see this in action whenever you use an AI assistant and it shows you a history of all of your chats. Session management and persistence is a task every agent developer needs to tackle.
-
-== Agent orchestration and collaboration
-
-Each agent should do _one thing_. Agents should have a single goal and they can use any form of knowledge and model inference to accomplish that goal. However, real applications rarely do only one thing. One of the super powers of agents is in _collaboration_.
-
-There are protocols and standards rapidly evolving for ways agents can communicate with each other directly, but agents also benefit from indirect communication.
-
-Whether you have 1 agent or 50, you still need to handle things like recovery from network failure, timeouts, failure responses, broken streams, and much more. Even for individual agents you need an orchestrator if you want that agent to be resilient at scale. With dozens of agents working together with shared and isolated sessions, they need to be managed by supervisors.
-
-Akka offers two forms of supervision, both running on the Akka runtime with the same durable-execution, retry, and audit guarantees. A xref:sdk:workflows.adoc[Workflow] supervises agents from outside, with explicit steps written by the developer; this is the right choice when the orchestration sequence is fixed in code. An xref:sdk:autonomous-agents.adoc[Autonomous Agent] supervises through declared coordination capabilities (delegation, handoff, teams, moderation), with the framework driving the loop and the model deciding which agent runs next; this is the right choice when the orchestration sequence itself is a model judgment.
-
-For more detail on orchestration, check out the xref:concepts:ai-orchestration-patterns.adoc[agentic orchestration patterns] section.
-
-== Agent evaluation
-
-The answers your agents get from models are _non-deterministic_. They can seem random at times. Since you cannot predict the model output you cannot use traditional testing practices. Instead, you need to do what is called **evaluation**. Evaluation involves iteratively refining a prompt.
-
-Submit the prompt to the model and get an answer back. Then, use _another model_ to derive metrics from that response like confidence ratings. This is often called the "LLM-as-judge" pattern.
-
-Rather than a unit test, you often have entire suites of evaluation runs where you submit a large number of prompts, derive analytics and metrics from the replies, and then score the model-generated data as a whole. This is tricky because you can very easily have an evaluation run that has a high confidence score but still somehow manages to contain link:https://www.ibm.com/think/topics/ai-hallucinations[hallucinations].
-
-== Foundational AI Concepts (video)
-
-Vectors, embeddings, and Retrieval-Augmented Generation (RAG) are core concepts behind modern AI systems, especially those involving large language models (LLMs). Whether you are just beginning your journey into AI or brushing up on terminology that is increasingly appearing in development workflows, this is a great place to start.
-
-The following video is an informal walkthrough of foundational AI concepts that underpin tools like ChatGPT, RAG, and semantic search.
-
-video::mWpCnptTTPQ[youtube,width=560,height=315]
-
-Topics covered in the video include:
-
-- What vectors are and why they are foundational to AI
-- How embeddings turn human input into machine-readable vectors
-- The role of vector distance and similarity metrics (e.g., Euclidean vs. cosine)
-- How vector databases support semantic search
-- The RAG pattern for enriching LLM prompts
-- Why prompt structure, token count, and caching all matter
-- How concepts like agency and stateful workflows connect to agentic AI and Akka
-
+* xref:ROOT:resources.adoc#_foundational_ai_concepts[Foundational AI concepts video] introduces embeddings and retrieval.

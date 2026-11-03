@@ -1,0 +1,42 @@
+= Memory and context
+:page-summary: Agent memory is the durable history and knowledge that the runtime adds to a model call, so an agent keeps its context across interactions without code to store it.
+:page-when-to-use: When you decide what an agent remembers, which agents share a history, how to keep a model's context small, and where long-lived knowledge lives.
+:page-related: sdk:agents/memory.adoc, concepts:ai-agents.adoc, concepts:state-model.adoc
+:page-persona: builder-developer, builder-ai-ml
+
+include::ROOT:partial$include.adoc[]
+
+Agent memory supplies history and knowledge to later model calls. A model does not remember earlier requests unless that information is included again as context.
+
+== Session history and domain knowledge
+
+Session memory holds the history of related interactions, identified by a session ID. The runtime stores and loads it using durable entities, so a conversation can continue after a restart. Agents using the same session can share history, with filters controlling which entries each agent sees.
+
+Domain knowledge, such as customer preferences or product data, belongs in your application's entities, views, and external data sources. Tools retrieve relevant information and add it to the current request. Retrieval-augmented generation uses this approach to supply knowledge outside the model's training data.
+
+Long-term memory carries knowledge across sessions, users, and agents. It is distinct from the history of one conversation and from the domain data your application owns.
+
+== Keeping context useful
+
+More history increases token cost and can make important information harder for a model to identify. Limit or filter the entries supplied to each call. Compaction replaces older history with a shorter representation, trading detail for a smaller context. Sequence-aware compaction preserves messages added while the summary was being prepared.
+
+When splitting work across agents, choose context boundaries deliberately:
+
+* *Focus*: include what the current task needs.
+* *Relevance*: remove obsolete intermediate work.
+* *Isolation*: keep unrelated concerns separate.
+* *Independence*: avoid sharing earlier reasoning when you want diverse answers.
+
+An Autonomous Agent has private execution history. Delegation, handoff, teams, and moderation share different subsets of it; they do not automatically share every model interaction.
+
+== Limits and trade-offs
+
+Shared sessions need limits on growth and duration. Summaries lose detail, and masked entries remain masked for later readers. Session history is not a replacement for the ledger's interaction records. Cross-region memory also follows replication semantics.
+
+anchor:_context_management[]
+
+== Next steps
+
+* xref:sdk:agents/memory.adoc[] configures filtering, compaction, interception, and replication.
+* xref:sdk:autonomous-agents/capabilities.adoc#_what_crosses_an_agent_boundary[Context across agent boundaries] describes each capability.
+* xref:getting-started:ask-akka-agent/rag.adoc[] retrieves external knowledge.

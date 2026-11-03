@@ -20,7 +20,7 @@ New installs start in *À la carte* mode. To use Enforced, switch first:
 
 == Prerequisites
 
-* Complete xref:getting-started:set-up-dev-env.adoc#_set_up_your_ai_harness[Set up your AI harness] -- install the Akka Specify Plugin and run `/akka:setup`.
+* Complete xref:getting-started:set-up-ai-install.adoc[Install using your AI harness], or xref:getting-started:set-up-harness.adoc[manually set up your AI harness]. Either way, the Akka Specify Plugin is installed.
 * An https://platform.openai.com/api-keys[OpenAI API key, window="new"], required only for this tutorial's generated agent -- not for installing the Akka Specify Plugin. The application code calls OpenAI directly, independently of your AI coding assistant. Set `OPENAI_API_KEY` in your environment before starting your assistant; on Mac/Linux use `export` so child processes inherit it.
 
 [#enforced]
@@ -78,7 +78,7 @@ PROJECT
 rollup — product: 3✓ 4○ 0✗   project: 3✓ 3○ 0✗   process: 0✓ 4○ 0✗
 ----
 
-Every condition is in one of three xref:reference:specify/exit-condition-states.adoc[states]: `open`, `green`, or `red`. An `open` condition carries a reason: `needs-user-action` (a person on this project can move it forward) or `blocked-outside-project` (a required tool is missing, or a receipt from an external system is required). The two locked (🔒) process-integrity conditions -- `PROC-AUDITOR-COVERAGE` and `PROC-ADEQUACY-REVIEWED` -- are always on and cannot be struck; they make the verification apparatus check itself. See xref:sdk:enforced-mode.adoc#dod-types[Definition-of-Done types] for what each tier covers.
+Every condition is in one of three xref:reference:specify/exit-condition-states.adoc[states]: `open`, `green`, or `red`. An `open` condition carries a reason: `needs-user-action` (a person on this project can move it forward) or `blocked-outside-project` (a required tool is missing, or the policy has no auditor mapped to the condition). The two locked (🔒) process-integrity conditions -- `PROC-AUDITOR-COVERAGE` and `PROC-ADEQUACY-REVIEWED` -- are always on and cannot be struck; they make the verification apparatus check itself. See xref:sdk:enforced-mode.adoc#dod-types[Definition-of-Done types] for what each tier covers.
 
 === Answer the open conditions
 

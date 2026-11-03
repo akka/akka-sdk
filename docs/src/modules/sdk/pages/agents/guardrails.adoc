@@ -19,7 +19,7 @@ This distinction matters: bolt-on governance fails because it depends on develop
 When governance lives in the runtime, it cannot be bypassed, forgotten, or misconfigured by individual teams.
 
 This architecture directly supports regulatory frameworks such as the **EU AI Act**, which requires that high-risk AI systems embed risk controls into their design rather than relying on after-the-fact auditing.
-Because every guardrail evaluation is recorded in logs, metrics, and traces, you get an auditable compliance trail without extra instrumentation.
+Every guardrail decision is a record in the ledger and is also reported in logs, metrics, and traces, so you get an auditable compliance trail without extra instrumentation. See xref:concepts:evidence.adoc[].
 
 NOTE: For protecting sensitive information like PII, see xref:sdk:sanitization.adoc[Sanitization].
 
@@ -28,7 +28,7 @@ NOTE: For protecting sensitive information like PII, see xref:sdk:sanitization.a
 A guardrail implements one of three interfaces. The interface sets where the runtime evaluates the guardrail:
 
 * link:{attachmentsdir}/api/akka/javasdk/agent/ModelCallGuardrail.html[`ModelCallGuardrail`] evaluates the input to each model call. The runtime evaluates it before the first model call. It evaluates the guardrail again before each later call that sends tool results back to the model.
-* link:{attachmentsdir}/api/akka/javasdk/agent/AgentResponseGuardrail.html[`AgentResponseGuardrail`] evaluates the agent's final reply, once per interaction.
+* link:{attachmentsdir}/api/akka/javasdk/agent/AgentResponseGuardrail.html[`AgentResponseGuardrail`] evaluates the agent's final reply, once per interaction. On an autonomous agent, it also evaluates the message of each `broadcast`, `direct`, and `submit_turn` tool call.
 * link:{attachmentsdir}/api/akka/javasdk/agent/ToolCallGuardrail.html[`ToolCallGuardrail`] evaluates a function tool call or an MCP tool call before the runtime runs the tool. It sees the tool name and the raw JSON arguments.
 
 A guardrail class implements exactly one of these interfaces.
@@ -54,11 +54,12 @@ A deny fails the stream. See <<Handling a denied interaction>>.
 All three return a link:{attachmentsdir}/api/akka/javasdk/agent/Decision.html[`Decision`]:
 
 * `Decision.Allow`: the guardrail found nothing wrong and the call proceeds.
-* `Decision.Deny`: the call must not proceed. The runtime returns the `reason` to the user as the failure message. The `report-only` setting decides whether the runtime aborts the interaction or only records the denial (see <<_configuring_guardrails>>).
-* `Decision.Fail`: the evaluation itself failed and reached no verdict. The runtime passes the `reason` and the `cause` to the interaction's failure handling, as the message and the cause of a `Guardrail.GuardrailException`. The runtime treats three cases as `Decision.Fail`: throwing from `decide`, returning a failed `CompletionStage` from `decideAsync`, and returning `null`.
+* `Decision.Deny`: the call must not proceed. The `report-only` setting controls the outcome (see <<_configuring_guardrails>>). If false, the runtime aborts the interaction. If true, it only records the denial. On abort, the runtime returns the `reason` to the user as the failure message.
+* `Decision.Fail`: the evaluation itself failed and reached no verdict. The `fail-mode` setting decides whether the interaction continues (see <<_configuring_guardrails>>). With `fail-mode = fail-closed`, the default, the runtime aborts the interaction. The runtime passes the `reason` and the `cause` to the failure handling as the message and cause of a `Guardrail.GuardrailException`. With `fail-mode = fail-open`, the interaction continues. The runtime treats three cases as `Decision.Fail`: throwing from `decide`, returning a failed `CompletionStage` from `decideAsync`, and returning `null`.
 
 The runtime reports a `Deny` or `Fail` with a null or blank `reason` as "no reason given".
 The runtime applies no timeout to a guardrail. An interaction waits forever if its guardrail never completes.
+A guardrail that never completes is not a `Decision.Fail`, so `fail-mode` has no effect on it.
 
 == Implementing an agent response guardrail
 
@@ -76,6 +77,14 @@ include::example$doc-snippets/src/main/java/com/example/guardrail/ProfanityRespo
 <4> Return `Decision.Deny` to reject the reply, with a reason surfaced to the user.
 <5> Return `Decision.Allow` to let the reply through.
 
+The reply also carries the model's thinking in `thinking()` and the values set by the model provider in `attributes()`.
+Both are empty when the model returns none.
+The keys and the value types of `attributes()` are provider-specific.
+
+On an autonomous agent, for a call to the built-in `broadcast`, `direct`, or `submit_turn` tool, `text()` holds the message or response argument.
+`thinking()` and `attributes()` come from the model reply that requested the tool call.
+The runtime does not evaluate the guardrail on the other built-in tools, such as `provide_prompt` and `complete_task`.
+
 `decide` may block, because the runtime evaluates guardrails on virtual threads. To compose futures instead, override `decideAsync`. The default `decideAsync` delegates to `decide`.
 
 == Implementing a model call guardrail
@@ -85,7 +94,13 @@ Its `CallContext` holds the `systemMessage()`, all `messages()` in the conversat
 On the first model call, `newMessages()` holds the user message.
 On each later call, it holds the tool results that the runtime sends back to the model.
 
-Each message is a `Guardrail.Message` that keeps its origin: a `UserMessage`, an `AiMessage`, or a `ToolCallResponse`.
+Each message is a `Guardrail.Message` that keeps its origin: a `UserMessage`, an `AiMessage`, or a `ToolCallResponse`. Each `AiMessage` carries the model's thinking in `thinking()` and provider-specific values in `attributes()`.
+A guardrail receives an image or PDF in the form the runtime sends it to the model.
+An image or PDF that the runtime loads, from an `object://` URI or with a content loader, arrives as bytes in an `ImageBytesMessageContent` or a `PdfBytesMessageContent`.
+Inline bytes that a tool returns arrive the same way.
+An image or PDF that the model fetches itself stays a URI.
+Session memory does not store inline bytes, so an inline image or PDF from an earlier request arrives as the text `[image]` or `[pdf]`.
+Do not modify the bytes. Other guardrails read the same array.
 `ToolCallResponse.isError()` is true when the MCP server reported the result as an error, or when the runtime turned a failed tool call into an error result.
 When the model calls several tools at once, each result is a separate `ToolCallResponse`:
 
@@ -140,7 +155,8 @@ akka.javasdk.agent.guardrails {
     agent-roles = ["worker"]                                // <4>
     category = TOXIC                                        // <5>
     report-only = false                                     // <6>
-    search-for = "bad stuff"                                // <7>
+    fail-mode = fail-closed                                 // <7>
+    search-for = "bad stuff"                                // <8>
   }
 
   "tool result injection guard" {
@@ -153,7 +169,7 @@ akka.javasdk.agent.guardrails {
     class = "com.example.guardrail.PaymentToolGuard"
     agents = ["*"]
     category = POLICY
-    tools = ["transferFunds"]                               // <8>
+    tools = ["transferFunds"]                               // <9>
   }
 }
 ----
@@ -162,9 +178,10 @@ akka.javasdk.agent.guardrails {
 <3> Enable this guardrail for agents with these component ids.
 <4> Enable this guardrail for agents with these roles.
 <5> The type of validation, such as PII and TOXIC.
-<6> If the guardrail denies, the runtime either aborts the interaction or lets it continue. In both cases, the runtime records the result in logs, metrics, and traces.
-<7> An application-specific property, read by the guardrail from its `GuardrailContext`.
-<8> Optional, for a `ToolCallGuardrail` only. Restricts the guardrail to the named tools. Without it, the guardrail sees every tool call on the selected agents. For a function tool, use `ClassName_methodName`, or the `name` set in `@FunctionTool`. For an MCP tool, use the name on the MCP server. The filter matches by name only, so it also matches a tool with the same name from another origin. Use `origin()` to tell them apart.
+<6> If the guardrail denies or fails, the runtime either aborts the interaction or lets it continue. With `report-only = true`, the runtime lets it continue, regardless of `fail-mode`. In every case, the runtime records the result in the ledger and reports it in logs, metrics, and traces.
+<7> Sets what happens when the evaluation fails with `Decision.Fail`. `fail-closed` aborts the interaction. `fail-open` lets it continue. The default is `fail-closed`. The setting applies only when `report-only` is false.
+<8> An application-specific property, read by the guardrail from its `GuardrailContext`.
+<9> Optional, for a `ToolCallGuardrail` only. Restricts the guardrail to the named tools. Without it, the guardrail sees every tool call on the selected agents. For a function tool, use `ClassName_methodName`, or the `name` set in `@FunctionTool`. For an MCP tool, use the name on the MCP server. The filter matches by name only, so it also matches a tool with the same name from another origin. Use `origin()` to tell them apart.
 
 The `class` property sets the implementation class. The class must implement `ModelCallGuardrail`, `AgentResponseGuardrail`, or `ToolCallGuardrail`, be public, and have a public constructor. The constructor may take a link:{attachmentsdir}/api/akka/javasdk/agent/GuardrailContext.html[`GuardrailContext`] parameter, which holds the name and the config section of the guardrail. The `ProfanityResponseGuard` example reads its `search-for` property this way.
 
@@ -222,8 +239,11 @@ For such an agent, a deny fails the stream.
 The error message names the guardrail, its category, and the reason.
 The error type is not `Guardrail.GuardrailException`.
 
-With `report-only = true`, a `Deny` is recorded in logs, metrics, and traces but the interaction continues.
-A `Decision.Fail` with `report-only = true` lets the interaction continue. The runtime logs a warning and records the error.
+With `report-only = true`, a `Deny` is recorded in the ledger and reported in logs, metrics, and traces, but the interaction continues.
+With `report-only = true` or `fail-mode = fail-open`, a `Decision.Fail` lets the interaction continue.
+The user does not see the `reason`.
+The runtime logs the `reason` as a warning in the service log. The log code is `AK-01210` for `report-only = true` and `AK-01213` for `fail-mode = fail-open`.
+The runtime also records the failure in metrics, traces, and the xref:sdk:evaluators.adoc#_the_ledger_client[ledger].
 
 == Similarity guardrail
 

@@ -2,12 +2,19 @@
 
 Create an invitation
 
+== Synopsis
+
+Invite a user by email to join the organization with a built in organization role.
+For more details, see https://doc.akka.io/operations/security/organization-role-bindings.html#manage-invitations .
+
+[source,shell]
 ----
 akka organizations invitations create --email EMAIL --role ROLE [flags]
 ----
 
 == Options
 
+[source,text]
 ----
       --email string          The email of the invited user
   -h, --help                  help for create
@@ -17,6 +24,7 @@ akka organizations invitations create --email EMAIL --role ROLE [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

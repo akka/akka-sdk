@@ -2,12 +2,14 @@
 
 Update project attributes such as name and description.
 
+[source,shell]
 ----
 akka projects update PROJECT --name NEW-NAME --description NEW-DESCRIPTION [flags]
 ----
 
 == Options
 
+[source,text]
 ----
       --description string   The new description for the project.
   -h, --help                 help for update
@@ -16,6 +18,7 @@ akka projects update PROJECT --name NEW-NAME --description NEW-DESCRIPTION [flag
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

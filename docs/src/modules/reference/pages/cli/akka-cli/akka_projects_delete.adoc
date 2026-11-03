@@ -9,18 +9,21 @@ If the project still has running services, you will need to delete them first.
 
 TIP: Use `akka projects list` to identify a project.
 
+[source,shell]
 ----
 akka projects delete PROJECT [flags]
 ----
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for delete
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

@@ -46,6 +46,7 @@ import akka.javasdk.client.ComponentClient
 import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.ErrorHandling.BadRequestException
+import akka.javasdk.impl.ForwardCompat.knownOr
 import akka.javasdk.impl.HandlerNotFoundException
 import akka.javasdk.impl.JsonSchema
 import akka.javasdk.impl.MetadataImpl
@@ -386,7 +387,8 @@ private[impl] object AgentImpl {
           temperature = p.temperature,
           topP = p.topP,
           thinkingBudget = p.thinkingBudget,
-          maxOutputTokens = p.maxOutputTokens)
+          maxOutputTokens = p.maxOutputTokens,
+          thinkingLevel = p.thinkingLevel)
       case p: ModelProvider.Custom =>
         new SpiAgent.ModelProvider.Custom(
           providerName = p.getClass.getName,
@@ -504,12 +506,14 @@ private[impl] object AgentImpl {
 
   private[agent] def fromSpiDetailLevel(
       level: SpiAgent.ImageMessageContent.DetailLevel): ImageMessageContent.DetailLevel =
-    level match {
-      case SpiAgent.ImageMessageContent.Low       => ImageMessageContent.DetailLevel.LOW
-      case SpiAgent.ImageMessageContent.Medium    => ImageMessageContent.DetailLevel.MEDIUM
-      case SpiAgent.ImageMessageContent.High      => ImageMessageContent.DetailLevel.HIGH
-      case SpiAgent.ImageMessageContent.UltraHigh => ImageMessageContent.DetailLevel.ULTRA_HIGH
-      case SpiAgent.ImageMessageContent.Auto      => ImageMessageContent.DetailLevel.AUTO
+    knownOr(ImageMessageContent.DetailLevel.AUTO) {
+      level match {
+        case SpiAgent.ImageMessageContent.Low       => ImageMessageContent.DetailLevel.LOW
+        case SpiAgent.ImageMessageContent.Medium    => ImageMessageContent.DetailLevel.MEDIUM
+        case SpiAgent.ImageMessageContent.High      => ImageMessageContent.DetailLevel.HIGH
+        case SpiAgent.ImageMessageContent.UltraHigh => ImageMessageContent.DetailLevel.ULTRA_HIGH
+        case SpiAgent.ImageMessageContent.Auto      => ImageMessageContent.DetailLevel.AUTO
+      }
     }
 
   private[agent] def toSpiMessageContent(messageContent: MessageContent): SpiAgent.MessageContent =
@@ -585,7 +589,7 @@ private[impl] object AgentImpl {
     case img: SpiAgent.ImageBytesMessageContent =>
       new MessageContent.ImageBytesMessageContent(
         img.bytes.toArrayUnsafe(),
-        java.util.Optional.of(img.mimeType),
+        Option(img.mimeType).filter(_.nonEmpty).toJava,
         fromSpiDetailLevel(img.detailLevel))
 
     case pdf: SpiAgent.PdfBytesMessageContent =>
@@ -1043,7 +1047,7 @@ private[impl] final class AgentImpl(
     @nowarn("msg=deprecated")
     def convert(thw: Throwable): Throwable = thw match {
       case exc: SpiAgentException =>
-        try {
+        knownOr[Throwable](new RuntimeException(exc.getMessage, exc.cause)) {
           exc.reason match {
             case ModelFailure              => new ModelException(exc.getMessage)
             case RateLimitFailure          => new RateLimitException(exc.getMessage)
@@ -1073,10 +1077,6 @@ private[impl] final class AgentImpl(
             case OutputParsingFailure => exc.cause
 
           }
-        } catch {
-          case _: MatchError =>
-            // to cover SPI evolution, new reasons may not exist in the SDK
-            new RuntimeException(exc.getMessage, exc.cause)
         }
       case other => other // unknown and thus unmapped
     }

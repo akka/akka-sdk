@@ -8,6 +8,7 @@
 include::ROOT:partial$include.adoc[]
 
 Evaluation runs an agent through a set of eval cases and checks each reply, and the tool calls behind it, with evaluators.
+This section covers evaluation in tests. xref:concepts:evaluation.adoc[] explains how it relates to evaluation on recorded and live traffic.
 
 == Overview
 
@@ -96,4 +97,4 @@ The API documentation is at link:{attachmentsdir}/testkit/akka/javasdk/testkit/e
 * xref:testing:evaluation/getting-started.adoc[]
 * xref:testing:evaluation/adversarial.adoc[]
 * xref:sdk:agents/testing.adoc[]
-* xref:sdk:agents/llm_eval.adoc[]
+* xref:sdk:evaluators.adoc[]

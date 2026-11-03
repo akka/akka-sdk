@@ -7,18 +7,21 @@ Set the service config for a service.
 The `akka service set-config` command sets the service config for a service.
 The service config contains HOCON configuration that overrides the service's application.conf.
 
+[source,shell]
 ----
 akka services set-config SERVICE [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   akka service set-config my-service --service-config my-config
 ----
 
 == Options
 
+[source,text]
 ----
       --force-global            force an existing regional resource to be configured as a global resource
       --force-regional          force an existing global resource to be configured as a regional resource
@@ -31,6 +34,7 @@ akka services set-config SERVICE [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

@@ -133,6 +133,18 @@ message CustomerState {
   Status status = 4;
   repeated string tags = 5;
   google.protobuf.Timestamp created_at = 6;
+  optional string nickname = 7;
+  optional google.protobuf.Timestamp review_date = 8;
+  ContactInfo contact = 9;
+  oneof preferred_contact {
+    string preferred_email = 10;
+    string preferred_phone = 11;
+  }
+}
+
+// Nested message in the customer state, used to cover presence of a message field in views
+message ContactInfo {
+  string phone = 1;
 }
 
 // Query parameter message exercising google.protobuf.Timestamp as a view query input
@@ -143,6 +155,22 @@ message CustomersByCreationTimeQuery {
 // List wrapper used as the return type of a view query
 message CustomerStateList {
   repeated CustomerState customers = 1;
+}
+
+// Singular nested message used as the return type of a view query, constructed from SELECT * AS customer
+message CustomerStateResult {
+  CustomerState customer = 1;
+}
+
+// Contact fields projected by a view query
+message CustomerContact {
+  string name = 1;
+  string email = 2;
+}
+
+// Singular nested message used as the return type of a view query, constructed from SELECT (name, email) AS contact
+message CustomerContactResult {
+  CustomerContact contact = 1;
 }
 
 // ======================================

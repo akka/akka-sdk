@@ -6,7 +6,7 @@ Wait for a base model to finish being prepared
 
 Wait until an entry is admitted and its selection has settled.
 
-BASE_MODEL takes the repository, the entry ID, the model ID a run names, or an unambiguous prefix of either ID.
+BASE_MODEL takes the repository, the entry ID or an unambiguous prefix of it, or the registry version a selection registered.
 
 The wait ends once the selection reads READY, which it reaches whether the weights were cached or not: a model whose weights could not be warmed is still usable and its first job pays the download.
 What actually happened is in the record this prints, under Weights.
@@ -20,22 +20,25 @@ Preparation continues in the cluster.
 --timeout bounds the wait.
 By default there is no deadline.
 
+[source,shell]
 ----
 akka optimize training base-models wait BASE_MODEL [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   # Wait for a selection to settle
-  akka-optimize training base-models wait Qwen/Qwen3-8B
+  akka optimize training base-models wait Qwen/Qwen3-8B
 
   # Give up watching after ten minutes
-  akka-optimize training base-models wait Qwen/Qwen3-8B --timeout 10m
+  akka optimize training base-models wait Qwen/Qwen3-8B --timeout 10m
 ----
 
 == Options
 
+[source,text]
 ----
   -h, --help               help for wait
       --timeout duration   Maximum time to wait for the entry; zero waits without a deadline
@@ -43,6 +46,7 @@ akka optimize training base-models wait BASE_MODEL [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")
@@ -52,13 +56,12 @@ akka optimize training base-models wait BASE_MODEL [flags]
       --force                Skip the confirmation prompt
       --jq string            Filter the JSON output with a jq expression
       --json string          Output JSON with only these fields; --json= lists the fields a command offers
-      --no-color             Print without color, as NO_COLOR does
+      --no-color             Print without color or a redrawn progress line, as NO_COLOR does
   -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
       --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then a local dev-mode service, then http://localhost:9001)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----

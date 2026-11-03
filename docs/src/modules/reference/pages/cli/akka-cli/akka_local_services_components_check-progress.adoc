@@ -1,0 +1,76 @@
+= akka local services components check-progress
+
+Check if a view or consumer has caught up with a watermark.
+
+== Synopsis
+
+The `akka local service components check-progress` command compares the progress of a view or consumer with a watermark.
+The command fails when the component has not caught up.
+
+For a Kalix service COMPONENT_ID is the view id, or the gRPC service name of a view or of an action with subscriptions.
+
+A watermark of the service's own entities is taken as part of the check.
+That covers views and consumers of entities in the same service.
+
+For a service to service consumer take the watermark on the producing service with `akka local service components get-watermark` and pass it with `--watermark`.
+Pass one watermark file per producing service when a view has sources from several services.
+Entity types in the watermark that the component does not consume are ignored.
+
+Timestamps are only comparable within one region.
+A watermark from another region is not used.
+Run the check in every region of interest with a watermark from that region.
+
+Sources that cannot be verified are listed and do not count towards the result.
+These are topic sources and sources without a matching watermark.
+The command fails when no source could be verified.
+
+Events committed late, within the backtracking window of the event queries before the watermark, can still arrive after the check.
+When that matters, run the check again once the backtracking window plus the behind-current-time of the event queries has passed since the watermark was taken.
+
+[source,shell]
+----
+akka local services components check-progress SERVICE_NAME COMPONENT_ID [flags]
+----
+
+== Examples
+
+[source,shell]
+----
+akka local service components check-progress my-service my-view
+akka local service components check-progress my-service my-consumer --watermark upstream-watermark.json
+----
+
+== Options
+
+[source,text]
+----
+  -h, --help                    help for check-progress
+      --owner string            the owner of the project to use, needed if you have two projects with the same name from different owners
+      --project string          project to use if not using the default configured project
+      --region string           region to use if project has more than one region
+      --watermark stringArray   A watermark JSON file from a producing service, or - for standard input. Can be given several times.
+----
+
+== Options inherited from parent commands
+
+[source,text]
+----
+      --cache-file string   location of cache file (default "~/.akka/cache.yaml")
+      --config string       location of config file (default "~/.akka/config.yaml")
+      --context string      configuration context to use
+      --disable-prompt      Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                            This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+  -o, --output string       set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string    the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet               set quiet output (helpful when used as part of a script)
+      --timeout duration    client command timeout (default 10s)
+      --use-grpc-web        use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose             set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_local_services_components.html[akka local services components]	 - Inspect components of a service.
+
+[discrete]
+

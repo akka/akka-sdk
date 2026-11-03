@@ -55,7 +55,6 @@ Access these documentation files for detailed patterns:
 - `akka-context/sdk/agents/streaming.html.md` - Streaming model responses with agents
 - `akka-context/sdk/agents/orchestrating.html.md` - Orchestrating multiple agents through Workflows
 - `akka-context/sdk/agents/guardrails.html.md` - Constraining and controlling agent behavior with guardrails
-- `akka-context/sdk/agents/llm_eval.html.md` - Evaluating and judging the responses from models
 - `akka-context/sdk/agents/testing.html.md` - Testing request-based agents
 
 **Autonomous Agents (durable model-driven processes with typed tasks and multi-agent coordination):**
@@ -79,6 +78,8 @@ Access these documentation files for detailed patterns:
 - `akka-context/sdk/grpc-endpoints.html.md` - Protocol buffer APIs
 - `akka-context/sdk/mcp-endpoints.html.md` - Exposing tools, resources, and prompts to MCP clients
 - `akka-context/sdk/timed-actions.html.md` - Scheduling and timers
+- `akka-context/sdk/evaluators.html.md` - Evaluators that judge agent interactions, bound to agents in configuration
+- `akka-context/sdk/evaluators/examples.html.md` - Example evaluators that ask a judge agent for a toxicity, summary, or hallucination verdict
 - `akka-context/sdk/setup-and-dependency-injection.html.md` - Service bootstrap and dependency injection
 
 **Cross-cutting concerns:**
@@ -355,6 +356,13 @@ public Effect<Done> charge(ChargeCommand command) {
 }
 ```
 
+### Read-only Entity and Workflow Handlers
+
+Entity and workflow command handlers MUST return an effect. Use `ReadOnlyEffect<T>`
+for handlers that only read state or reply.
+Use `Effect<T>` for state changes or entity reads requiring the latest state from
+the primary region. Multi-region reads using `ReadOnlyEffect<T>` can lag behind.
+
 ### View Event Handler (from ESE)
 
 ```java
@@ -543,7 +551,7 @@ public class AgentTeamWorkflow extends Workflow<AgentTeamWorkflow.State> {
       .thenReply(Done.getInstance());
   }
 
-  public Effect<String> getAnswer() {
+  public ReadOnlyEffect<String> getAnswer() {
     if (currentState() == null || currentState().answer.isEmpty()) {
       return effects().error("Workflow not completed");
     }
@@ -860,6 +868,8 @@ public class MyEndpointIntegrationTest extends TestKitSupport {
 - Use `@McpTool` parameter types other than primitives, boxed primitives, or `String` → unsupported; mark optional parameters `Optional<T>`
 
 ✅ **DO:**
+- Use `ReadOnlyEffect<T>` for entity and workflow read-only command handlers; keep `Effect<T>` for entity reads requiring primary-region consistency
+- Consumer and View event handlers MUST return an `Effect`; Event Sourced Entity event handlers return the updated state
 - Use Java records for immutable data
 - Add `@TypeName` to all events
 - Validate in domain objects, return effects in entities
@@ -918,6 +928,7 @@ Before presenting code, verify:
 - [ ] State uses immutable records
 
 **Entity**
+- [ ] Read-only handlers return `ReadOnlyEffect<T>` unless primary-region consistency is required; state-changing handlers return `Effect<T>`
 - [ ] Inject `EventSourcedEntityContext` if needed, `emptyState()` uses injected context
 
 **View**
@@ -928,10 +939,14 @@ Before presenting code, verify:
 **Workflow**
 - [ ] **STOP: Did you read `workflows.html.md` BEFORE writing any code?** (Required for first workflow in session)
 - [ ] Uses `settings()` with `WorkflowSettings` (NOT `definition()`)
-- [ ] Command handlers accept 0 or 1 parameter and return `Effect<T>`
+- [ ] Command handlers accept 0 or 1 parameter; read-only handlers return `ReadOnlyEffect<T>`, state-changing handlers return `Effect<T>`
 - [ ] Step methods accept 0 or 1 parameter and return `StepEffect` (NOT `Effect`)
 - [ ] Uses method references for step names (e.g., `TransferWorkflow::withdrawStep`)
 - [ ] Uses `stepEffects()` in steps, `effects()` in command handlers
+
+**Consumer**
+- [ ] Every handler path returns an Effect, never `null`; use `effects().ignore()` for events the consumer does not act on
+- [ ] The handler does not catch an exception and return `effects().ignore()` unless losing the message is acceptable. A thrown exception stalls the consumer until a fixed version is deployed, so the message is not lost
 
 **Endpoint**
 - [ ] Has `@Acl` annotation

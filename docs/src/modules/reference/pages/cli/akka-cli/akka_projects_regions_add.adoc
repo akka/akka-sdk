@@ -6,12 +6,14 @@ Add a region to the project
 
 The `akka project regions add` command will add a region to your project.
 
+[source,shell]
 ----
 akka projects regions add [flags]
 ----
 
 == Options
 
+[source,text]
 ----
   -h, --help             help for add
       --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
@@ -20,6 +22,7 @@ akka projects regions add [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

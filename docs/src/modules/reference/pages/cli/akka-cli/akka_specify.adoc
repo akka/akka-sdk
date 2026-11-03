@@ -9,12 +9,14 @@ Use 'akka specify init' to create a new project with all the resources needed fo
 
 == Options
 
+[source,text]
 ----
   -h, --help   help for specify
 ----
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

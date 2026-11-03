@@ -17,7 +17,6 @@
 **** xref:sdk:agents/orchestrating.adoc[Multi-agent orchestration]
 **** xref:sdk:agents/guardrails.adoc[Guardrails]
 **** xref:sdk:agents/classifiers.adoc[Classifiers]
-**** xref:sdk:agents/llm_eval.adoc[LLM evaluation]
 **** xref:sdk:agents/testing.adoc[Testing]
 
 *** xref:sdk:autonomous-agents.adoc[Autonomous Agents]
@@ -63,4 +62,5 @@
 *** xref:sdk:running-locally.adoc[]
 *** xref:sdk:running-with-broker.adoc[]
 *** xref:sdk:local-cluster.adoc[]
+** xref:sdk:architecture-model.adoc[]
 ** xref:sdk:dev-best-practices.adoc[]

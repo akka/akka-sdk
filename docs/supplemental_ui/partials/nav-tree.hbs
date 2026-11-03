@@ -1,0 +1,25 @@
+{{#if navigation.length}}
+<ul class="nav-list p-0 m-0 ml-2 font-light font-sans dark:text-akka-gray-300">
+  {{#each navigation}}
+  {{!-- Unlisted generated CLI command pages select their command group so its sidebar path stays open. --}}
+  <li class="mt-2 nav-item{{#if (or (eq ./url @root.page.url) (cliNavCurrent ./url @root.page.url))}} is-current-page{{/if}}" data-depth="{{or ../level 0}}">
+
+    {{#if ./content}}
+    {{#if ./items.length}}
+    <button class="nav-item-toggle border-none outline-none">
+    </button>
+    {{/if}}
+    {{#if ./url}}
+    <a data-context="Docs - Navigation - Sidebar" class="nav-link leading-5" href="
+      {{~#if (eq ./urlType 'internal')}}{{{relativize ./url}}}
+      {{~else}}{{{./url}}}{{~/if}}">{{{./content}}}</a>
+    {{else}}
+    <span class="nav-text leading-5">{{{./content}}}</span>
+    {{/if}}
+    {{/if}}
+
+{{> nav-tree navigation=./items level=(increment ../level)}}
+  </li>
+  {{/each}}
+</ul>
+{{/if}}

@@ -8,12 +8,14 @@ List the log levels configuration.
 By default the command runs in the primary region.
 Use --region to select another region, or --all-regions to list the configuration of every region of the project.
 
+[source,shell]
 ----
 akka services logging list [SERVICE_NAME] [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
 
 > akka service logging list my-service
@@ -22,6 +24,7 @@ akka services logging list [SERVICE_NAME] [flags]
 
 == Options
 
+[source,text]
 ----
       --all-regions      run the command on all regions
   -h, --help             help for list
@@ -32,6 +35,7 @@ akka services logging list [SERVICE_NAME] [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

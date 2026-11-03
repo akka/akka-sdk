@@ -17,20 +17,23 @@ That stream, not this command's text, is the contract a script should read.
 The experiment's whole record follows the terminal line once it is done, formatted like any other command's -o json output -- pretty-printed and not one line.
 Use -o json-compact, or read it with "jq -c .", if a script reads this command's stdout line by line.
 
+[source,shell]
 ----
 akka optimize eval experiments wait EXPERIMENT [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
-  akka-optimize eval experiments wait exp-ed745d2f
-  akka-optimize eval experiments wait exp-ed745d2f --timeout 30m --exit-status
-  akka-optimize eval experiments wait exp-ed745d2f -o json | jq -c .
+  akka optimize eval experiments wait exp-ed745d2f
+  akka optimize eval experiments wait exp-ed745d2f --timeout 30m --exit-status
+  akka optimize eval experiments wait exp-ed745d2f -o json | jq -c .
 ----
 
 == Options
 
+[source,text]
 ----
       --exit-status        exit non-zero if it does not complete, or completes with a gate that did not hold
   -h, --help               help for wait
@@ -39,6 +42,7 @@ akka optimize eval experiments wait EXPERIMENT [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string    location of cache file (default "~/.akka/cache.yaml")
       --config string        location of config file (default "~/.akka/config.yaml")
@@ -48,13 +52,12 @@ akka optimize eval experiments wait EXPERIMENT [flags]
       --force                Skip the confirmation prompt
       --jq string            Filter the JSON output with a jq expression
       --json string          Output JSON with only these fields; --json= lists the fields a command offers
-      --no-color             Print without color, as NO_COLOR does
+      --no-color             Print without color or a redrawn progress line, as NO_COLOR does
   -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
       --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
-      --trainer-url string   Trainer service URL (default http://localhost:9001, or TRAINER_URL)
-      --url string           Optimize service URL (default http://localhost:9010, or OPTIMIZE_URL)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then a local dev-mode service, then http://localhost:9001)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----

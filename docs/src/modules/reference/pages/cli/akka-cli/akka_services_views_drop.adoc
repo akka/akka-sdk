@@ -6,12 +6,14 @@ Delete the data for an inactive view.
 
 The `akka service view drop` command triggers the deletion of the data for views that are no longer active.
 
+[source,shell]
 ----
 akka services views drop SERVICE VIEW_NAME [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
 
 > akka service views drop customer-registry CustomerByName
@@ -20,6 +22,7 @@ The data for view 'CustomerByName' of service 'customer-registry' has successful
 
 == Options
 
+[source,text]
 ----
   -h, --help             help for drop
       --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
@@ -29,6 +32,7 @@ The data for view 'CustomerByName' of service 'customer-registry' has successful
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")

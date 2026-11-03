@@ -13,12 +13,14 @@ Configure in Claude Desktop or VS Code:
 
 {     "mcpServers": {       "akka": {         "command": "akka",         "args": ["mcp", "serve"]       }     }   }
 
+[source,shell]
 ----
 akka mcp serve [flags]
 ----
 
 == Examples
 
+[source,shell]
 ----
   akka mcp serve                              # all toolsets, stdio
   akka mcp serve --toolsets projects,services  # only these toolsets
@@ -27,6 +29,7 @@ akka mcp serve [flags]
 
 == Options
 
+[source,text]
 ----
   -h, --help              help for serve
       --toolsets string   Comma-separated list of toolsets to enable (default: all). Available: projects, services, routes, descriptor, sdd, local, build, git, backoffice, browser, exit-conditions
@@ -34,6 +37,7 @@ akka mcp serve [flags]
 
 == Options inherited from parent commands
 
+[source,text]
 ----
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")
