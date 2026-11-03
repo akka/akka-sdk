@@ -1,0 +1,46 @@
+= akka organizations role-bindings
+
+Manage organization role bindings.
+
+== Synopsis
+
+The `akka organizations role-bindings` commands manage the role bindings of an organization.
+A role binding grants a role in the organization, either one of the built in roles or one of the organization's custom roles (see `akka organizations roles`), to a principal.
+Principals include users, groups, Akka services and workload identities, so the role bindings of an organization are not just its users.
+To view users with pending invitations run `akka organizations invitations list`.
+
+For more details, see https://doc.akka.io/operations/security/organization-role-bindings.html .
+
+== Options
+
+[source,text]
+----
+  -h, --help   help for role-bindings
+----
+
+== Options inherited from parent commands
+
+[source,text]
+----
+      --cache-file string   location of cache file (default "~/.akka/cache.yaml")
+      --config string       location of config file (default "~/.akka/config.yaml")
+      --context string      configuration context to use
+      --disable-prompt      Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                            This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+  -o, --output string       set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string    the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet               set quiet output (helpful when used as part of a script)
+      --timeout duration    client command timeout (default 10s)
+      --use-grpc-web        use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose             set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_organizations.html[akka organizations]	 - Manage your organizations on Akka
+* link:akka_organizations_role-bindings_add.html[akka organizations role-bindings add]	 - Add a role binding to the organization.
+* link:akka_organizations_role-bindings_delete.html[akka organizations role-bindings delete]	 - Delete a role binding from the organization.
+* link:akka_organizations_role-bindings_list.html[akka organizations role-bindings list]	 - List all role bindings in the organization.
+
+[discrete]
+

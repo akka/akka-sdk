@@ -19,8 +19,9 @@ akka local start [flags]
 
 [source,text]
 ----
-  -h, --help          help for start
-  -p, --port uint16   HTTP port for the local console. (default 9889)
+      --allowed-origin strings   Another origin the console may be opened at, such as a tunnel's (repeatable).
+  -h, --help                     help for start
+  -p, --port uint16              HTTP port for the local console. (default 9889)
 ----
 
 == Options inherited from parent commands

@@ -9,6 +9,8 @@ The command `akka roles add-binding` grants a user access to a project.
 The user may be referenced by either their user ID, username, or email.
 If using username or email, the user must already be a member either of the project or the project's owning organization, otherwise the user may be invited by their email address.
 
+For more details, see https://doc.akka.io/operations/security/project-role-bindings.html .
+
 [source,shell]
 ----
 akka roles add-binding [flags]

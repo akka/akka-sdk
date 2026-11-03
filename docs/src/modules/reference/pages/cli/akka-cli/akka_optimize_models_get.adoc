@@ -1,21 +1,41 @@
 = akka optimize models get
 
-One registry entry
+One model version, with its training, serving, routing and price
+
+== Synopsis
+
+Read a model version from the registry, with what each other service knows about it:
+
+training  the run that produced it, its dataset, and the newest score per dataset and grader   serving   the trainer's endpoints that serve it, and the name a request calls it by   routing   the destination records that name it, the rules that send to them, and the             manifest in force where it sends to one   price     the pricing catalog version in force, and its entry for each of the served names
+
+A part whose service does not answer within 10s, or within --timeout where you state one, is shown as unavailable, and the command still succeeds.
+-o json prints each part as its service answered it.
+
+A reference is one string: NS/NAME for the named artifact, NS/NAME:v2 for a version, NS/NAME:serving for the version an alias points at, and NS/NAME@sha256:...
+for a version by digest.
+NS/NAME where a version is wanted is the newest version.
 
 [source,shell]
 ----
-akka optimize models get NAME [flags]
+akka optimize models get NS/NAME[:REF] [flags]
+----
+
+== Examples
+
+[source,shell]
+----
+  # Read one version
+  akka optimize models get triage/classifier:v2
+
+  # Read the version an alias points at, as JSON
+  akka optimize models get triage/classifier:serving -o json
 ----
 
 == Options
 
 [source,text]
 ----
-  -h, --help      help for get
-      --history   how its conditions were closed
-      --lineage   what produced it
-      --reports   recorded evaluations and attestations
-      --usage     where the model is referenced today
+  -h, --help   help for get
 ----
 
 == Options inherited from parent commands
@@ -30,21 +50,20 @@ akka optimize models get NAME [flags]
       --force                Skip the confirmation prompt
       --jq string            Filter the JSON output with a jq expression
       --json string          Output JSON with only these fields; --json= lists the fields a command offers
-      --no-color             Print without color, as NO_COLOR does
+      --no-color             Print without color or a redrawn progress line, as NO_COLOR does
   -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
       --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
-      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then a local dev-mode service, then http://localhost:9001)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----
 
 == SEE ALSO
 
-* link:akka_optimize_models.html[akka optimize models]	 - The corporate model registry
+* link:akka_optimize_models.html[akka optimize models]	 - Models in the registry, with what training, routing and pricing know about them
 
 [discrete]
 

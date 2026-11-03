@@ -18,8 +18,11 @@ The child stops at this budget, so an override document cannot set epochs or max
 
 --restore selects the snapshot artifact and state policy:
 
+ auto           restore the training state where the snapshot holds it and the branch changes
+                nothing a trainingState branch cannot carry, and the weights otherwise. The
+                result names the mode chosen and why. This is the default.
  weights        load adapter weights; reset the optimizer, schedule, RNG, data position and
-                engine step. This is the default.
+                engine step.
  trainingState  restore adapter weights, optimizer, RNG, data position and engine step; replace
                 the saved schedule with one spanning the child budget at the child learning rate.
 
@@ -33,8 +36,14 @@ The service rejects every other field, even when its value equals the parent's.
 This mode requires the same method and a snapshot that holds its training state.
 For reinforcement learning with a positive klBeta, it is unavailable when the producer started from inherited adapter weights.
 
-For a reinforcement child restored from weights, set klBeta to 0.
-With a positive klBeta, the penalty is measured against the base model instead of the adapter that the child inherited.
+A reinforcement child restored from weights with a positive klBeta measures the penalty against a frozen copy of the adapter it inherited.
+The deployment can do this only on one GPU, and only where its catalog admits it there.
+Otherwise, Optimize refuses the branch and says to set klBeta to 0.
+
+To train a dpo child from a supervised run, restore from weights and set method to dpo and dataset to a preference dataset in --overrides.
+The child measures its rewards against the adapter it inherited and trains on one GPU.
+It trains at the dpo default learning rate unless --overrides sets one.
+It does not inherit the parent's data or loss policy, memory settings, engine settings, weight precision or flex attention.
 
 --dry-run asks the service to validate and resolve the request without creating a submission, retaining the source snapshot or claiming a device.
 The preview does not reserve the source.
@@ -81,7 +90,7 @@ akka optimize training runs branch PARENT --snapshot SNAPSHOT --steps N [flags]
       --exit-status            Exit non-zero if preparation or the child run fails; requires --wait
   -h, --help                   help for branch
   -f, --overrides string       Override document path, or '-' for standard input
-      --restore string         Snapshot artifact to restore: weights or trainingState (default "weights")
+      --restore string         Snapshot artifact to restore: auto, weights or trainingState (default "auto")
       --snapshot string        Source snapshot ID or unambiguous prefix
       --steps int              Additional optimizer updates allowed for the child run
       --submission-id string   Submission token to reuse after an uncertain response
@@ -100,14 +109,13 @@ akka optimize training runs branch PARENT --snapshot SNAPSHOT --steps N [flags]
       --force                Skip the confirmation prompt
       --jq string            Filter the JSON output with a jq expression
       --json string          Output JSON with only these fields; --json= lists the fields a command offers
-      --no-color             Print without color, as NO_COLOR does
+      --no-color             Print without color or a redrawn progress line, as NO_COLOR does
   -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
       --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
-      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then a local dev-mode service, then http://localhost:9001)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----

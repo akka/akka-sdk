@@ -6,6 +6,7 @@ Manage workload identity providers for your organization on Akka
 
 The `akka organizations identity-providers` commands manage the workload identity providers for organizations in Akka.
 Workload identity providers enable third party cloud services to authenticate as Akka principals without needing to synchronise credentials, by validating inbound JWTs issued by a trusted OIDC issuer.
+To grant roles to the workloads that a provider authenticates, see https://doc.akka.io/operations/security/organization-role-bindings.html#add-a-role-binding-for-a-workload-identity .
 
 == Options
 

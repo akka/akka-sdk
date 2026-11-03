@@ -1,17 +1,35 @@
 = akka optimize models retire
 
-End the sanction to use a model
+End the use of a model version
+
+== Synopsis
+
+Retire a model version in the registry, recording you, the time and the reason.
+Retire is final.
+
+The reference names a version number.
+The command reads the version first, and refuses an alias, latest, a digest and a version the registry does not hold before it asks anything.
+The gateway router then refuses a routing write that makes the version newly reachable.
+A route that reaches it now keeps serving, so the command lists each destination record, rule and manifest that still reaches it: beside the question, or on stderr after the move when no question is put.
 
 [source,shell]
 ----
-akka optimize models retire NAME [flags]
+akka optimize models retire NS/NAME:vN --reason TEXT [flags]
+----
+
+== Examples
+
+[source,shell]
+----
+  akka optimize models retire triage/classifier:v1 --reason "fails the safety evaluation"
 ----
 
 == Options
 
 [source,text]
 ----
-  -h, --help   help for retire
+  -h, --help            help for retire
+      --reason string   Why, recorded on the version
 ----
 
 == Options inherited from parent commands
@@ -26,21 +44,20 @@ akka optimize models retire NAME [flags]
       --force                Skip the confirmation prompt
       --jq string            Filter the JSON output with a jq expression
       --json string          Output JSON with only these fields; --json= lists the fields a command offers
-      --no-color             Print without color, as NO_COLOR does
+      --no-color             Print without color or a redrawn progress line, as NO_COLOR does
   -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
       --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
       --timeout duration     client command timeout (default 10s)
-      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9001)
-      --url string           Optimize service URL (default OPTIMIZE_URL, then AKKA_OPTIMIZE_URL, then http://localhost:9010)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then a local dev-mode service, then http://localhost:9001)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output
 ----
 
 == SEE ALSO
 
-* link:akka_optimize_models.html[akka optimize models]	 - The corporate model registry
+* link:akka_optimize_models.html[akka optimize models]	 - Models in the registry, with what training, routing and pricing know about them
 
 [discrete]
 

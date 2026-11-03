@@ -1,0 +1,64 @@
+= akka organizations role-bindings add
+
+Add a role binding to the organization.
+
+== Synopsis
+
+Bind a role to a principal in the organization, granting the principal the permissions of the role.
+The principal can be a user, a group, an Akka service or a workload identity.
+The role is either a built in organization role, specified with --role, or a custom role of the organization, specified with --custom-role.
+
+For more details, see https://doc.akka.io/operations/security/organization-role-bindings.html .
+
+[source,shell]
+----
+akka organizations role-bindings add --user-id USER_ID (--role ROLE | --custom-role CUSTOM_ROLE_ID) [flags]
+----
+
+== Options
+
+[source,text]
+----
+      --custom-role string                 The id of the custom role of the organization to bind.
+      --email string                       The email. Use to grant a role to a user identified by the given email address.
+      --group string                       The group. Use to grant a role to a group in the specified organization with this name.
+      --group-org string                   The name or id of the organization that owns the group, if not the organization this binding is being added to.
+  -h, --help                               help for add
+      --identity-provider string           The id of the workload identity provider that --workload-identity-subject or --workload-identity-claim refers to.
+      --identity-provider-org string       The name or id of the organization that owns the workload identity provider, if not the organization that owns this role binding (or the project it belongs to).
+      --organization string                name or ID for organization
+      --role string                        The built in role to bind, for example superuser.
+      --service string                     The Akka service name. Use to grant a role to an Akka service.
+      --service-project string             The name or id of the project that the service specified by --service belongs to.
+      --service-project-owner string       The owner of the project specified by --service-project, needed if you have two projects with the same name from different owners.
+      --service-region string              The region the service specified by --service is running in. Only needed if the project has more than one region.
+      --service-region-group               Grant the role to the service specified by --service in every region belonging to the project's region group, rather than to a single region.
+      --user-id string                     The user ID. Use to grant a role to a user identified by their given UUID.
+      --username string                    The username. Use to grant a role to a user identified by the given username.
+      --workload-identity-claim string     A claim of a workload identity JWT, in the form claim-name=claim-value. Use to grant a role to any workload authenticated with this claim via a workload identity provider.
+      --workload-identity-subject string   The subject claim of a workload identity JWT. Use to grant a role to any workload authenticated with this subject via a workload identity provider.
+----
+
+== Options inherited from parent commands
+
+[source,text]
+----
+      --cache-file string   location of cache file (default "~/.akka/cache.yaml")
+      --config string       location of config file (default "~/.akka/config.yaml")
+      --context string      configuration context to use
+      --disable-prompt      Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                            This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+  -o, --output string       set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string    the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet               set quiet output (helpful when used as part of a script)
+      --timeout duration    client command timeout (default 10s)
+      --use-grpc-web        use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose             set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_organizations_role-bindings.html[akka organizations role-bindings]	 - Manage organization role bindings.
+
+[discrete]
+

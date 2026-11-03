@@ -6,6 +6,7 @@ Manage authentication for your organization on Akka
 
 The `akka organizations auth` commands manage the authentication for organizations in Akka.
 For example, you can configure your organization to use OpenID Connect (OIDC) for authentication.
+For details, see https://doc.akka.io/operations/security/oidc-setup.html .
 
 == Options
 
