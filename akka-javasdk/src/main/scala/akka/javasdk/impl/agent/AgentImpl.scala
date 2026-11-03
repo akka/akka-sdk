@@ -1007,6 +1007,10 @@ private[impl] final class AgentImpl(
             new ToolCallRequest(req.id, req.name, req.arguments)
           }.asJava
 
+          val attributes = res.attributes.asJava
+          val keptAttributes = ModelAttributes.keepStringValues(attributes)
+          ModelAttributes.logDroppedAttributes(componentId, sessionId, attributes, keptAttributes)
+
           new AiMessage(
             res.timestamp,
             res.content,
@@ -1014,7 +1018,7 @@ private[impl] final class AgentImpl(
             requests,
             res.thinking.toJava,
             toSessionTokenUsage(res.tokenUsage),
-            res.attributes.asJava)
+            keptAttributes)
 
         case res: SpiAgent.ToolCallResponse =>
           AgentImpl.toSessionToolCallResponse(

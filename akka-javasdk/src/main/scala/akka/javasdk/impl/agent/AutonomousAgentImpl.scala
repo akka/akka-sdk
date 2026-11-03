@@ -370,14 +370,14 @@ private[impl] final class AutonomousAgentImpl(
             sessionMemoryClient.addInteraction(
               sessionId,
               new UserMessage(now, text, componentId, u.sanitized),
-              toSessionMessages(now, messages.tail, tokenUsage).asJava)
+              toSessionMessages(sessionId, now, messages.tail, tokenUsage).asJava)
 
           case u: SpiAgent.ContextMessage.UserMessage =>
             val contents = u.contents.map(AgentImpl.toSessionMemoryContent)
             sessionMemoryClient.addInteraction(
               sessionId,
               new MultimodalUserMessage(now, contents.asJava, componentId, u.sanitized),
-              toSessionMessages(now, messages.tail, tokenUsage).asJava)
+              toSessionMessages(sessionId, now, messages.tail, tokenUsage).asJava)
 
           case _ =>
             // No user message — partial interaction (e.g. tool call responses
@@ -385,7 +385,7 @@ private[impl] final class AutonomousAgentImpl(
             sessionMemoryClient.addInteraction(
               sessionId,
               null.asInstanceOf[UserMessage],
-              toSessionMessages(now, messages, tokenUsage).asJava)
+              toSessionMessages(sessionId, now, messages, tokenUsage).asJava)
         }
       }
       Done
@@ -500,6 +500,7 @@ private[impl] final class AutonomousAgentImpl(
     TaskAttachment.fromMessageContent(AgentImpl.fromSpiMessageContent(mc))
 
   private def toSessionMessages(
+      sessionId: String,
       now: Instant,
       messages: Seq[SpiAgent.ContextMessage],
       tokenUsage: TokenUsage): Seq[SessionMessage] =
@@ -508,7 +509,12 @@ private[impl] final class AutonomousAgentImpl(
         val toolCallRequests = m.toolRequests.map { req =>
           new ToolCallRequest(req.id, req.name, req.arguments)
         }.asJava
-        new AiMessage(now, m.content, componentId, toolCallRequests, m.thinking.toJava, tokenUsage, m.attributes.asJava)
+
+        val attributes = m.attributes.asJava
+        val keptAttributes = ModelAttributes.keepStringValues(attributes)
+        ModelAttributes.logDroppedAttributes(componentId, sessionId, attributes, keptAttributes)
+
+        new AiMessage(now, m.content, componentId, toolCallRequests, m.thinking.toJava, tokenUsage, keptAttributes)
 
       case m: SpiAgent.ContextMessage.ToolCallResponseMessage =>
         AgentImpl.toSessionToolCallResponse(
