@@ -26,7 +26,12 @@ Akka provides native integration with 10 LLM providers. You configure a model in
 
 You can plug in any model by implementing the `ModelProvider.Custom` interface. This involves the underlying LangChain4J `ChatModel` and optionally `StreamingChatModel` implementations.
 
+== Decision models
+
+A decision model answers a fixed set of questions about a state with probabilities instead of generated text. The SDK provides the `DecisionModelClient` for calling decision models from any component. See xref:sdk:decision-models.adoc[].
+
 == See also
 
 * xref:sdk:agents.adoc[Agents] — how Agents interact with AI models
+* xref:sdk:decision-models.adoc[Decision models] — the `DecisionModelClient` and decision model providers
 * xref:sdk:model-provider-details.adoc[Model provider details] — full configuration reference for each provider

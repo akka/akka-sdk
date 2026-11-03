@@ -11,6 +11,7 @@ Akka runs on the JVM. All integrations use industry-standard Java APIs and clien
 LLM providers are supported natively — 9 providers built into the SDK: Anthropic, OpenAI, Google AI Gemini, Google Cloud Vertex AI, AWS Bedrock, Ollama, LocalAI, Hugging Face, plus custom providers via the `ModelProvider.Custom` interface.
 
 * xref:sdk:agents.adoc[Agents] — how Agents interact with AI models
+* xref:sdk:decision-models.adoc[Decision models] — answer fixed questions with probabilities instead of generated text
 * xref:sdk:model-provider-details.adoc[Model provider details] — configuration for each provider
 
 == Data & knowledge

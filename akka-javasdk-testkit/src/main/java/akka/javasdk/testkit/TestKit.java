@@ -24,6 +24,8 @@ import akka.javasdk.agent.ClassifierClient;
 import akka.javasdk.agent.ModelProvider;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
+import akka.javasdk.decision.DecisionModelClient;
+import akka.javasdk.decision.DecisionModelProvider;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.grpc.GrpcClientProvider;
 import akka.javasdk.http.HttpClient;
@@ -277,7 +279,8 @@ public class TestKit {
             new HashMap<>(),
             new HashMap<>(),
             Collections.emptyList(),
-            false);
+            false,
+            Optional.empty());
 
     /** The name of this service when deployed. */
     public final String serviceName;
@@ -323,6 +326,12 @@ public class TestKit {
 
     public final List<ObjectStorageBucketConfig> objectStorageBuckets;
 
+    /**
+     * The provider that answers every {@link DecisionModelClient} request in the test, see {@link
+     * #withDecisionModelProvider(DecisionModelProvider)}.
+     */
+    public final Optional<DecisionModelProvider> decisionModelProvider;
+
     public enum EventingSupport {
       /**
        * This is the default type used and allows the testing eventing integrations without an
@@ -358,7 +367,8 @@ public class TestKit {
         Map<String, Function<HttpRequest, HttpResponse>> httpMocks,
         Map<String, Map<Class<? extends AkkaGrpcClient>, AkkaGrpcClient>> grpcMocks,
         List<ObjectStorageBucketConfig> objectStorageBuckets,
-        boolean ephemeralPort) {
+        boolean ephemeralPort,
+        Optional<DecisionModelProvider> decisionModelProvider) {
       this.serviceName = serviceName;
       this.aclEnabled = aclEnabled;
       this.eventingSupport = eventingSupport;
@@ -372,6 +382,7 @@ public class TestKit {
       this.grpcMocks = grpcMocks;
       this.objectStorageBuckets = objectStorageBuckets;
       this.ephemeralPort = ephemeralPort;
+      this.decisionModelProvider = decisionModelProvider;
     }
 
     /**
@@ -397,7 +408,8 @@ public class TestKit {
           httpMocks,
           grpcMocks,
           objectStorageBuckets,
-          ephemeralPort);
+          ephemeralPort,
+          decisionModelProvider);
     }
 
     /**
@@ -419,7 +431,8 @@ public class TestKit {
           httpMocks,
           grpcMocks,
           objectStorageBuckets,
-          ephemeralPort);
+          ephemeralPort,
+          decisionModelProvider);
     }
 
     /**
@@ -441,7 +454,8 @@ public class TestKit {
           httpMocks,
           grpcMocks,
           objectStorageBuckets,
-          ephemeralPort);
+          ephemeralPort,
+          decisionModelProvider);
     }
 
     /**
@@ -479,7 +493,8 @@ public class TestKit {
           httpMocks,
           grpcMocks,
           objectStorageBuckets,
-          true);
+          true,
+          decisionModelProvider);
     }
 
     /** Mock the incoming messages flow from a KeyValueEntity. */
@@ -499,7 +514,8 @@ public class TestKit {
           httpMocks,
           grpcMocks,
           objectStorageBuckets,
-          ephemeralPort);
+          ephemeralPort,
+          decisionModelProvider);
     }
 
     /** Mock the incoming events flow from an EventSourcedEntity. */
@@ -519,7 +535,8 @@ public class TestKit {
           httpMocks,
           grpcMocks,
           objectStorageBuckets,
-          ephemeralPort);
+          ephemeralPort,
+          decisionModelProvider);
     }
 
     /** Mock the incoming state updates flow from a Workflow. */
@@ -538,7 +555,8 @@ public class TestKit {
           httpMocks,
           grpcMocks,
           objectStorageBuckets,
-          ephemeralPort);
+          ephemeralPort,
+          decisionModelProvider);
     }
 
     /**
@@ -558,7 +576,8 @@ public class TestKit {
           httpMocks,
           grpcMocks,
           objectStorageBuckets,
-          ephemeralPort);
+          ephemeralPort,
+          decisionModelProvider);
     }
 
     /** Mock the incoming events flow from a Topic. */
@@ -576,7 +595,8 @@ public class TestKit {
           httpMocks,
           grpcMocks,
           objectStorageBuckets,
-          ephemeralPort);
+          ephemeralPort,
+          decisionModelProvider);
     }
 
     /** Mock the outgoing events flow for a Topic. */
@@ -594,7 +614,8 @@ public class TestKit {
           httpMocks,
           grpcMocks,
           objectStorageBuckets,
-          ephemeralPort);
+          ephemeralPort,
+          decisionModelProvider);
     }
 
     /**
@@ -615,7 +636,8 @@ public class TestKit {
           httpMocks,
           grpcMocks,
           objectStorageBuckets,
-          ephemeralPort);
+          ephemeralPort,
+          decisionModelProvider);
     }
 
     public Settings withEventingSupport(EventingSupport eventingSupport) {
@@ -632,7 +654,8 @@ public class TestKit {
           httpMocks,
           grpcMocks,
           objectStorageBuckets,
-          ephemeralPort);
+          ephemeralPort,
+          decisionModelProvider);
     }
 
     /**
@@ -653,7 +676,8 @@ public class TestKit {
           httpMocks,
           grpcMocks,
           objectStorageBuckets,
-          ephemeralPort);
+          ephemeralPort,
+          decisionModelProvider);
     }
 
     /**
@@ -682,7 +706,8 @@ public class TestKit {
           httpMocks,
           grpcMocks,
           objectStorageBuckets,
-          ephemeralPort);
+          ephemeralPort,
+          decisionModelProvider);
     }
 
     /**
@@ -703,7 +728,8 @@ public class TestKit {
           httpMocks,
           grpcMocks,
           objectStorageBuckets,
-          ephemeralPort);
+          ephemeralPort,
+          decisionModelProvider);
     }
 
     /**
@@ -725,7 +751,8 @@ public class TestKit {
           httpMocks,
           grpcMocks,
           objectStorageBuckets,
-          ephemeralPort);
+          ephemeralPort,
+          decisionModelProvider);
     }
 
     /**
@@ -749,7 +776,8 @@ public class TestKit {
           httpMocks,
           grpcMocks,
           objectStorageBuckets,
-          ephemeralPort);
+          ephemeralPort,
+          decisionModelProvider);
     }
 
     /**
@@ -773,7 +801,31 @@ public class TestKit {
           httpMocks,
           grpcMocks,
           objectStorageBuckets,
-          ephemeralPort);
+          ephemeralPort,
+          decisionModelProvider);
+    }
+
+    /**
+     * Answer every {@link DecisionModelClient} request in the test with this provider, for example
+     * a {@link TestDecisionModelProvider}. It replaces the configured provider and any provider
+     * that the service passes to {@link DecisionModelClient#model(DecisionModelProvider)}.
+     */
+    public Settings withDecisionModelProvider(DecisionModelProvider decisionModelProvider) {
+      return new Settings(
+          serviceName,
+          aclEnabled,
+          eventingSupport,
+          mockedEventing,
+          dependencyProvider,
+          additionalConfig,
+          disabledComponents,
+          overrideDisabledComponents,
+          modelProvidersByAgentId,
+          httpMocks,
+          grpcMocks,
+          objectStorageBuckets,
+          ephemeralPort,
+          Optional.of(decisionModelProvider));
     }
 
     /**
@@ -809,7 +861,8 @@ public class TestKit {
           newHttpMocks,
           grpcMocks,
           objectStorageBuckets,
-          ephemeralPort);
+          ephemeralPort,
+          decisionModelProvider);
     }
 
     /**
@@ -835,7 +888,8 @@ public class TestKit {
           httpMocks,
           grpcMocks,
           newBuckets,
-          ephemeralPort);
+          ephemeralPort,
+          decisionModelProvider);
     }
 
     /**
@@ -878,7 +932,8 @@ public class TestKit {
           httpMocks,
           newGrpcMocks,
           objectStorageBuckets,
-          ephemeralPort);
+          ephemeralPort,
+          decisionModelProvider);
     }
 
     @Override
@@ -1127,6 +1182,8 @@ public class TestKit {
               startupContext
                   .overrideModelProvider()
                   .setModelProviderForAgent(agentId, modelProvider));
+      settings.decisionModelProvider.ifPresent(
+          provider -> startupContext.overrideDecisionModelProvider().set(provider));
 
       // The runtime completes this with the address it bound, or fails it with the reason it
       // could not. It can also stay pending, when the runtime hangs before it gets as far as
