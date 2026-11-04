@@ -27,11 +27,13 @@ public sealed interface FlowRecord
    * one block for each record, in the order of the list:
    *
    * <ul>
-   *   <li>An {@link InteractionRecord} starts with a line that names the agent component id, and
-   *       the task name and iteration number when the interaction has a {@link TaskContext}. The
-   *       lines of {@link InteractionRecord#transcript()} follow, with one difference: the {@code
-   *       System:} line is written the first time a system message appears for an agent component
-   *       id, and again only when it differs from the last one written for that agent component id.
+   *   <li>An {@link InteractionRecord} starts with a line that names the agent component id. When
+   *       the interaction has a {@link TaskContext}, the line also names the instance id, the task
+   *       name, the task id and the iteration number. Activity lines name the same instance id and
+   *       task id. The lines of {@link InteractionRecord#transcript()} follow, with one difference:
+   *       the {@code System:} line is written the first time a system message appears for an agent
+   *       component id, and again only when it differs from the last one written for that agent
+   *       component id.
    *   <li>An {@link ActivityRecord} is one line for each event. Each line names the agent component
    *       id and the instance id. A typed event writes its fields, and {@link
    *       ActivityRecord.Event.Other} writes its kind.
@@ -84,9 +86,13 @@ public sealed interface FlowRecord
         .ifPresent(
             task ->
                 header
+                    .append(", instance ")
+                    .append(task.agentInstanceId())
                     .append(", task ")
                     .append(task.taskName())
-                    .append(", iteration ")
+                    .append(" (id ")
+                    .append(task.taskId())
+                    .append("), iteration ")
                     .append(task.iterationNumber()));
     return header.append(":\n").append(record.transcript(withSystemMessage)).toString();
   }
