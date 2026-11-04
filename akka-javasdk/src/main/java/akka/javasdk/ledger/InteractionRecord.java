@@ -48,7 +48,8 @@ public record InteractionRecord(
     List<ToolCallResponse> toolCallResponses,
     Optional<TaskContext> taskContext,
     Optional<Failure> failure,
-    Instant timestamp) {
+    Instant timestamp)
+    implements FlowRecord {
 
   /** Whether this interaction was produced by an agent running as part of a flow. */
   public boolean isFlowInteraction() {

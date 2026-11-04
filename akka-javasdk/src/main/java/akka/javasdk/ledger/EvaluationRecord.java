@@ -34,7 +34,8 @@ public record EvaluationRecord(
     Subject subject,
     Map<String, String> attributes,
     Outcome outcome,
-    Instant timestamp) {
+    Instant timestamp)
+    implements FlowRecord {
 
   /**
    * @deprecated Use the constructor with a {@link Subject} and the attributes.

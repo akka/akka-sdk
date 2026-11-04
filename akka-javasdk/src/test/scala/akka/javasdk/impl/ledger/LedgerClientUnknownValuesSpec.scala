@@ -9,16 +9,19 @@ import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 import java.time.Duration
 import java.time.Instant
+import java.util.Optional
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
 import scala.reflect.ClassTag
 
+import akka.javasdk.ledger.ActivityRecord
 import akka.javasdk.ledger.EvaluationRecord
 import akka.javasdk.ledger.Failure
 import akka.javasdk.ledger.GuardrailDecisionRecord
 import akka.javasdk.ledger.InteractionMetadata
+import akka.javasdk.ledger.InteractionRecord
 import akka.runtime.sdk.spi.SpiLedger
 import akka.runtime.sdk.spi.{ LedgerClient => SpiLedgerClient }
 import org.scalatest.matchers.should.Matchers
@@ -83,8 +86,50 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
       new SpiLedger.ToolOrigin.RemoteMcp("https://mcp.example.com"),
       new GuardrailDecisionRecord.ToolOrigin.RemoteMcp("https://mcp.example.com")))
 
-  // The SPI traits are sealed, so the spec cannot extend them. Each one compiles to an interface, and the only
-  // abstract method, the explanation of a decision, reads as empty.
+  private val activityEvents = Table[SpiLedger.ActivityEvent, ActivityRecord.Event](
+    ("spi", "public"),
+    (new SpiLedger.ActivityEvent.TaskAssigned("task-1"), new ActivityRecord.Event.TaskAssigned("task-1")),
+    (
+      new SpiLedger.ActivityEvent.TaskStarted("task-1", "research", 5),
+      new ActivityRecord.Event.TaskStarted("task-1", "research", 5)),
+    (
+      new SpiLedger.ActivityEvent.TaskCompleted("task-1", "summary", 3),
+      new ActivityRecord.Event.TaskCompleted("task-1", "summary", 3)),
+    (
+      new SpiLedger.ActivityEvent.TaskFailed("task-1", "failed", 5),
+      new ActivityRecord.Event.TaskFailed("task-1", "failed", 5)),
+    (
+      new SpiLedger.ActivityEvent.TaskCancelled("task-1", "cancelled", 0),
+      new ActivityRecord.Event.TaskCancelled("task-1", "cancelled", 0)),
+    (
+      new SpiLedger.ActivityEvent.TaskResultRejected("task-1", "rejected", 2),
+      new ActivityRecord.Event.TaskResultRejected("task-1", "rejected", 2)),
+    (
+      new SpiLedger.ActivityEvent.IterationFailed(Some("task-1"), Some(2), "failed"),
+      new ActivityRecord.Event.IterationFailed("failed", Optional.of("task-1"), Optional.of(2))),
+    (
+      new SpiLedger.ActivityEvent.DelegationStarted(Seq("worker-agent"), Seq("worker-1"), 1, Seq("subtask-1")),
+      new ActivityRecord.Event.DelegationStarted(
+        Seq("worker-agent").asJava,
+        1,
+        Seq("subtask-1").asJava,
+        Seq("worker-1").asJava)),
+    (
+      new SpiLedger.ActivityEvent.DelegationResolved(1, 0, Seq("subtask-1"), Seq.empty),
+      new ActivityRecord.Event.DelegationResolved(1, 0, Seq("subtask-1").asJava, Seq.empty[String].asJava)),
+    (
+      new SpiLedger.ActivityEvent.HandoffStarted("task-1", "specialist-agent"),
+      new ActivityRecord.Event.HandoffStarted("task-1", "specialist-agent")),
+    (
+      new SpiLedger.ActivityEvent.HandoffReceived("task-1", "triage-agent", "triage-1"),
+      new ActivityRecord.Event.HandoffReceived("task-1", "triage-agent", "triage-1")),
+    (new SpiLedger.ActivityEvent.Other("worker_task_received"), new ActivityRecord.Event.Other("worker_task_received")))
+
+  // The kind that an activity event of a newer runtime reads with.
+  private val newerEventKind = "agent_paused"
+
+  // The SPI traits are sealed, so the spec cannot extend them. Each one compiles to an interface. Its only abstract
+  // method, the explanation of a decision or the kind of an activity event, reads as empty or as newerEventKind.
   private def unknownValue[T <: AnyRef](implicit tag: ClassTag[T]): T = {
     val name = s"unknown ${tag.runtimeClass.getSimpleName}"
     val handler: InvocationHandler = (proxy: AnyRef, method: Method, args: Array[AnyRef]) =>
@@ -93,6 +138,7 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
         case "hashCode"    => Int.box(System.identityHashCode(proxy))
         case "toString"    => name
         case "explanation" => ""
+        case "kind"        => newerEventKind
         case other         => throw new UnsupportedOperationException(other)
       }
     Proxy.newProxyInstance(tag.runtimeClass.getClassLoader, Array(tag.runtimeClass), handler).asInstanceOf[T]
@@ -163,10 +209,20 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
       toolCall = Some(new SpiLedger.GuardrailToolCall(toolCallId = None, toolName = "refund", origin = toolOrigin)),
       timestamp = Instant.EPOCH)
 
+  private def spiActivityRecord(events: SpiLedger.ActivityEvent*): SpiLedger.ActivityRecord =
+    new SpiLedger.ActivityRecord(
+      recordId = "activity-1",
+      agentComponentId = "coordinator-agent",
+      agentInstanceId = "coordinator-1",
+      flowId = "flow-1",
+      events = events,
+      timestamp = Instant.EPOCH)
+
   private def ledgerClient(
       interaction: SpiLedger.InteractionRecord,
       evaluations: Seq[SpiLedger.EvaluationRecord],
-      guardrailDecisions: Seq[SpiLedger.GuardrailDecisionRecord] = Seq.empty): LedgerClientImpl = {
+      guardrailDecisions: Seq[SpiLedger.GuardrailDecisionRecord] = Seq.empty,
+      flowPage: SpiLedger.FlowPage = new SpiLedger.FlowPage(Seq.empty, None)): LedgerClientImpl = {
     val spiLedgerClient = new SpiLedgerClient {
       override def getInteraction(interactionId: String): Future[SpiLedger.InteractionRecord] =
         Future.successful(interaction)
@@ -207,7 +263,7 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
         Future.successful(guardrailDecisions)
 
       override def getFlowRecords(flowId: String, fromPosition: Long, limit: Int): Future[SpiLedger.FlowPage] =
-        Future.successful(new SpiLedger.FlowPage(Seq.empty, fromPosition, hasMore = false))
+        Future.successful(flowPage)
     }
     new LedgerClientImpl(spiLedgerClient, ExecutionContext.parasitic)
   }
@@ -261,6 +317,17 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
       forAll(failModes) { (spiFailMode, publicFailMode) =>
         val record = LedgerClientImpl.toGuardrailDecisionRecord(spiGuardrailDecisionRecord(failMode = spiFailMode))
         record.failMode() shouldBe publicFailMode
+      }
+    }
+
+    "keep the mapping and the kind of every known activity event" in {
+      activityEvents
+        .map(_._2.getClass)
+        .toSet shouldBe classOf[ActivityRecord.Event].getPermittedSubclasses.toSet
+      forAll(activityEvents) { (spiEvent, publicEvent) =>
+        val event = LedgerClientImpl.toActivityRecord(spiActivityRecord(spiEvent)).events().get(0)
+        event shouldBe publicEvent
+        event.kind() shouldBe spiEvent.kind
       }
     }
 
@@ -341,9 +408,38 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
           failMode = SpiLedger.GuardrailFailMode.Unspecified,
           toolOrigin = SpiLedger.ToolOrigin.Unspecified))
     }
+
+    "read an activity event that the SDK does not know as other, with the kind of the event" in {
+      val unknown = unknownValue[SpiLedger.ActivityEvent]
+      forAll(activityEvents) { (known, _) => unknown should not be known }
+
+      val record = LedgerClientImpl.toActivityRecord(
+        spiActivityRecord(new SpiLedger.ActivityEvent.TaskAssigned("task-1"), unknown))
+
+      record.events().asScala.toSeq shouldBe Seq(
+        new ActivityRecord.Event.TaskAssigned("task-1"),
+        new ActivityRecord.Event.Other(newerEventKind))
+    }
   }
 
   "The ledger client" should {
+
+    "leave a flow record that the SDK does not know out of the page, and keep the next position" in {
+      val client = ledgerClient(
+        spiInteractionRecord(),
+        Seq.empty,
+        flowPage = new SpiLedger.FlowPage(
+          Seq(
+            spiInteractionRecord(),
+            unknownValue[SpiLedger.FlowRecord],
+            spiActivityRecord(new SpiLedger.ActivityEvent.TaskAssigned("task-1"))),
+          Some(4L)))
+
+      val page = client.getFlowRecords("flow-1")
+
+      page.records().asScala.map(_.getClass) shouldBe Seq(classOf[InteractionRecord], classOf[ActivityRecord])
+      page.nextPosition() shouldBe Optional.of(4L)
+    }
 
     "read the interactions and the guardrail decisions of a session that hold values the SDK does not know" in {
       val client = ledgerClient(

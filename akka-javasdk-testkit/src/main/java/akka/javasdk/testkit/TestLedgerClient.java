@@ -4,33 +4,59 @@
 
 package akka.javasdk.testkit;
 
+import akka.javasdk.ledger.ActivityRecord;
 import akka.javasdk.ledger.EvaluationRecord;
+import akka.javasdk.ledger.FlowPage;
+import akka.javasdk.ledger.FlowRecord;
 import akka.javasdk.ledger.GuardrailDecisionRecord;
 import akka.javasdk.ledger.InteractionRecord;
 import akka.javasdk.ledger.LedgerClient;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 /**
  * An in-memory {@link LedgerClient} for unit tests.
  *
  * <p>Seed it with {@link InteractionRecord}s via {@link #seed(InteractionRecord)}, with {@link
- * EvaluationRecord}s via {@link #seed(EvaluationRecord)}, or with {@link GuardrailDecisionRecord}s
- * via {@link #seed(GuardrailDecisionRecord)}, and pass it to the component under test (for example
- * an {@link akka.javasdk.evaluation.Evaluator} constructed by an {@link EvaluatorTestKit}) to
- * assert it fetches and uses them, with no database.
+ * EvaluationRecord}s via {@link #seed(EvaluationRecord)}, with {@link GuardrailDecisionRecord}s via
+ * {@link #seed(GuardrailDecisionRecord)}, or with {@link ActivityRecord}s via {@link
+ * #seed(ActivityRecord)}, and pass it to the component under test (for example an {@link
+ * akka.javasdk.evaluation.Evaluator} constructed by an {@link EvaluatorTestKit}) to assert it
+ * fetches and uses them, with no database.
+ *
+ * <p>The records of a flow, as {@link #getFlowRecords(String)} returns them, are the seeded
+ * interactions, guardrail decisions and activity records with that flow id, and the seeded
+ * evaluations of the seeded interactions with that flow id. They come oldest timestamp first, and
+ * records with the same timestamp come in the order they were seeded. A position is the 1-based
+ * index of a record in that order. A page holds at most 100 records.
  */
 public final class TestLedgerClient implements LedgerClient {
+
+  private static final int FLOW_PAGE_LIMIT = 100;
 
   private final ConcurrentMap<String, InteractionRecord> records = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, EvaluationRecord> evaluations = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, GuardrailDecisionRecord> guardrailDecisions =
       new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, ActivityRecord> activities = new ConcurrentHashMap<>();
+
+  // The order in which the records were seeded, which orders the records of a flow with the same
+  // timestamp. A record that is seeded again takes its new place.
+  private final AtomicLong seedCount = new AtomicLong();
+  private final Map<FlowRecord, Long> seedOrder =
+      Collections.synchronizedMap(new IdentityHashMap<>());
 
   /** Create an empty in-memory ledger client. */
   public static TestLedgerClient create() {
@@ -46,6 +72,7 @@ public final class TestLedgerClient implements LedgerClient {
    */
   public TestLedgerClient seed(InteractionRecord record) {
     records.put(record.interactionId(), record);
+    seedOrder.put(record, seedCount.getAndIncrement());
     return this;
   }
 
@@ -77,6 +104,7 @@ public final class TestLedgerClient implements LedgerClient {
    */
   public TestLedgerClient seed(EvaluationRecord record) {
     evaluations.put(record.evaluationId(), record);
+    seedOrder.put(record, seedCount.getAndIncrement());
     return this;
   }
 
@@ -161,6 +189,7 @@ public final class TestLedgerClient implements LedgerClient {
    */
   public TestLedgerClient seed(GuardrailDecisionRecord record) {
     guardrailDecisions.put(record.recordId(), record);
+    seedOrder.put(record, seedCount.getAndIncrement());
     return this;
   }
 
@@ -176,5 +205,67 @@ public final class TestLedgerClient implements LedgerClient {
   public CompletionStage<List<GuardrailDecisionRecord>> getGuardrailDecisionsAsync(
       String interactionId) {
     return CompletableFuture.completedFuture(getGuardrailDecisions(interactionId));
+  }
+
+  /**
+   * Seed an activity record, keyed by its {@link ActivityRecord#recordId()}. Replaces any existing
+   * record with the same id.
+   *
+   * @param record the record to seed
+   * @return this client, for chaining
+   */
+  public TestLedgerClient seed(ActivityRecord record) {
+    activities.put(record.recordId(), record);
+    seedOrder.put(record, seedCount.getAndIncrement());
+    return this;
+  }
+
+  @Override
+  public FlowPage getFlowRecords(String flowId) {
+    return getFlowRecords(flowId, 0);
+  }
+
+  @Override
+  public FlowPage getFlowRecords(String flowId, long fromPosition) {
+    if (flowId.isEmpty()) {
+      throw new IllegalArgumentException("The flow id must not be empty");
+    }
+    var inFlow = Optional.of(flowId);
+    var interactions =
+        records.values().stream().filter(record -> record.flowId().equals(inFlow)).toList();
+    var interactionIds =
+        interactions.stream().map(InteractionRecord::interactionId).collect(Collectors.toSet());
+
+    var flowRecords = new ArrayList<FlowRecord>(interactions);
+    guardrailDecisions.values().stream()
+        .filter(record -> record.flowId().equals(inFlow))
+        .forEach(flowRecords::add);
+    activities.values().stream()
+        .filter(record -> record.flowId().equals(flowId))
+        .forEach(flowRecords::add);
+    evaluations.values().stream()
+        .filter(record -> interactionIds.contains(record.interactionId()))
+        .forEach(flowRecords::add);
+    flowRecords.sort(Comparator.comparing(FlowRecord::timestamp).thenComparingLong(seedOrder::get));
+
+    // position 0 reads from the start, as position 1 does
+    var from = (int) Math.min(Math.max(fromPosition, 1) - 1, flowRecords.size());
+    var to = Math.min(from + FLOW_PAGE_LIMIT, flowRecords.size());
+    var nextPosition = to < flowRecords.size() ? Optional.of(to + 1L) : Optional.<Long>empty();
+    return new FlowPage(List.copyOf(flowRecords.subList(from, to)), nextPosition);
+  }
+
+  @Override
+  public CompletionStage<FlowPage> getFlowRecordsAsync(String flowId) {
+    return getFlowRecordsAsync(flowId, 0);
+  }
+
+  @Override
+  public CompletionStage<FlowPage> getFlowRecordsAsync(String flowId, long fromPosition) {
+    try {
+      return CompletableFuture.completedFuture(getFlowRecords(flowId, fromPosition));
+    } catch (IllegalArgumentException e) {
+      return CompletableFuture.failedFuture(e);
+    }
   }
 }
