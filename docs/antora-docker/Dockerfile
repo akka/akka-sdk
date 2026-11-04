@@ -1,8 +1,7 @@
-FROM antora/antora:3.1.15
+FROM antora/antora:3.2.1
 
-# "Alpine Linux v3.11"
 RUN npm install -g @antora/lunr-extension@1.0.0-alpha.13
-RUN npm install -g @antora/site-generator@3.1.15
+RUN npm install -g @antora/site-generator@3.2.1
 RUN npm install -g asciidoc-link-check@1.0.18
 RUN npm install -g @asciidoctor/tabs@1.0.0-beta.6
 RUN npm install -g @sntke/antora-mermaid-extension@0.0.13
