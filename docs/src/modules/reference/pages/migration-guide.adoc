@@ -20,7 +20,7 @@ The evaluation runner of the TestKit no longer has its own evaluators and judges
 | `EvalCase.of(id, command)`. The bound evaluators judge every case.
 
 | `EvalCase<C>` with the command type, for example `List<EvalCase<String>>`
-| `EvalCase<C, V>` with the command type and the reply type of the command handler. A case without an expected reply is an `EvalCase<C, Object>`, for example `List<EvalCase<String, Object>>`, and runs against a handler with any reply type. `EvalCase.of(id, command, expected)` declares a case with an expected reply, see xref:testing:evaluation/getting-started.adoc#expected-reply[Cases with an expected reply].
+| `EvalCase<C, V>` with the command type and the reply type of the command handler. A case without an expected reply is an `EvalCase<C, Object>`, for example `List<EvalCase<String, Object>>`, and runs against a handler with any reply type. `EvalCase.of(id, command, expected)` declares a case with an expected reply. See xref:testing:evaluation/getting-started.adoc#expected-reply[Cases with an expected reply].
 
 | `Experiment` returned by `agent(...)`
 | `Experiment<V>` with the reply type of the command handler. `grade(Grader<V>)` compares the reply of an attempt with the expected reply of its case.

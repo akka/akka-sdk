@@ -26,10 +26,10 @@ import akka.javasdk.evaluation.Evaluation;
 public interface Grader<V> {
 
   /**
-   * Compares the reply with the expected reply.
+   * Compares the actual reply with the expected reply.
    *
-   * @param expected the expected reply of the case
-   * @param reply the value the agent's command handler returned
+   * @param expected the expected reply of the case, not null
+   * @param reply the value the agent's command handler returned, not null
    * @return the verdict, with the explanation the report prints and optionally a score and a label.
    *     A thrown exception is recorded as a failed result with the exception as the detail.
    */

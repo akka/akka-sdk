@@ -47,8 +47,10 @@ public final class Gate {
   }
 
   /**
-   * Every case must pass in every run, with every result passed. An inconclusive attempt fails the
-   * gate. The gate that applies when none is given.
+   * Requires every case to pass in every run, with every result passed. An inconclusive attempt
+   * fails the gate. The gate that applies when none is given.
+   *
+   * @return a gate that requires all cases to pass
    */
   public static Gate allCasesShouldPass() {
     return new Gate(
@@ -66,10 +68,15 @@ public final class Gate {
   }
 
   /**
-   * The share of attempts that passed must be at least {@code minimumRate}. An inconclusive attempt
-   * counts against the rate.
+   * Requires the share of attempts that passed to be at least {@code minimumRate}. An inconclusive
+   * attempt counts against the rate.
+   *
+   * @param minimumRate the minimum pass rate, between 0.0 and 1.0
+   * @return a gate that checks the overall attempt pass rate
+   * @throws IllegalArgumentException when {@code minimumRate} is not between 0.0 and 1.0
    */
   public static Gate passRateShouldBeAtLeast(double minimumRate) {
+    requireRate(minimumRate);
     return new Gate(
         (results, runs) -> {
           var passed = results.stream().filter(CaseResult::passed).count();
@@ -88,21 +95,27 @@ public final class Gate {
   }
 
   /**
-   * The pass rate of one evaluator, over the attempts where it was conclusive, must be at least
-   * {@code minimumRate}. An inconclusive or not applicable result is left out. Fails when the
+   * Requires the pass rate of one evaluator, over the attempts where it was conclusive, to be at
+   * least {@code minimumRate}. An inconclusive or not applicable result is left out. Fails when the
    * evaluator judged no attempt.
    *
    * @param evaluatorClass the evaluator component class, annotated with {@link Component}
+   * @param minimumRate the minimum pass rate, between 0.0 and 1.0
+   * @return a gate that checks the evaluator's pass rate
+   * @throws IllegalArgumentException when {@code evaluatorClass} is null or lacks {@link
+   *     Component}, or when {@code minimumRate} is not between 0.0 and 1.0
    */
   public static Gate passRateShouldBeAtLeast(Class<?> evaluatorClass, double minimumRate) {
     return passRateShouldBeAtLeast(componentId(evaluatorClass), minimumRate);
   }
 
   /**
-   * The reply of every attempt must match the expected reply of its case: every {@link
-   * ExperimentRunner#EXPECTED} result passed. An attempt without a reply to compare, because the
+   * Requires the reply of every attempt to match the expected reply of its case. Every {@link
+   * ExperimentRunner#EXPECTED} result must pass. An attempt without a reply to compare, because the
    * agent call failed or returned no value, fails the gate. Fails when no case has an expected
    * reply.
+   *
+   * @return a gate that requires all expected replies to match
    */
   public static Gate expectedShouldPass() {
     return new Gate(
@@ -138,16 +151,21 @@ public final class Gate {
   }
 
   /**
-   * The share of the attempts whose reply matches the expected reply of its case must be at least
-   * {@code minimumRate}, over the attempts where the comparison ran: an attempt without a reply to
-   * compare, because the agent call failed or returned no value, is left out. Fails when no case
-   * has an expected reply.
+   * Requires the share of the attempts whose reply matches the expected reply of its case to be at
+   * least {@code minimumRate}, over the attempts where the comparison ran. An attempt without a
+   * reply to compare, because the agent call failed or returned no value, is excluded. Fails when
+   * no case has an expected reply.
+   *
+   * @param minimumRate the minimum pass rate, between 0.0 and 1.0
+   * @return a gate that checks the expected reply pass rate
+   * @throws IllegalArgumentException when {@code minimumRate} is not between 0.0 and 1.0
    */
   public static Gate expectedPassRateShouldBeAtLeast(double minimumRate) {
     return passRateShouldBeAtLeast(ExperimentRunner.EXPECTED, minimumRate);
   }
 
   private static Gate passRateShouldBeAtLeast(String evaluator, double minimumRate) {
+    requireRate(minimumRate);
     return new Gate(
         (results, runs) -> {
           var evalResults =
@@ -191,9 +209,11 @@ public final class Gate {
   }
 
   /**
-   * No attempt may have a failed {@link ExperimentRunner#TARGET} or {@link
-   * ExperimentRunner#GUARDRAIL} result. In an evaluation, an enforcing denial that stopped the
-   * interaction fails the gate. In an attack, it does not.
+   * Requires that no agent call failed: no attempt may have a failed {@link
+   * ExperimentRunner#TARGET} or {@link ExperimentRunner#GUARDRAIL} result. In an evaluation, an
+   * enforcing denial that stopped the interaction fails the gate. In an attack, it does not.
+   *
+   * @return a gate that fails when any attempt has a failed target or guardrail result
    */
   public static Gate targetShouldNotFail() {
     return new Gate(
@@ -218,10 +238,12 @@ public final class Gate {
   }
 
   /**
-   * The named guardrail must deny nothing in any attempt. For a guardrail that must stay silent on
-   * legitimate traffic.
+   * Requires the named guardrail to deny nothing in any attempt. For a guardrail that must stay
+   * silent on legitimate traffic.
    *
    * @param name the configured name of the guardrail
+   * @return a gate that fails if the named guardrail denies any attempt
+   * @throws IllegalArgumentException when {@code name} is null or blank
    */
   public static Gate guardrailShouldNotDeny(String name) {
     requireGuardrailName(name);
@@ -235,10 +257,12 @@ public final class Gate {
   }
 
   /**
-   * The named guardrail must deny in every attempt. For a guardrail that must catch an attack every
-   * case carries.
+   * Requires the named guardrail to deny in every attempt. For a guardrail that must catch an
+   * attack every case carries.
    *
    * @param name the configured name of the guardrail
+   * @return a gate that fails if the named guardrail allows any attempt
+   * @throws IllegalArgumentException when {@code name} is null or blank
    */
   public static Gate guardrailShouldDeny(String name) {
     requireGuardrailName(name);
@@ -297,6 +321,12 @@ public final class Gate {
         });
   }
 
+  private static void requireRate(double minimumRate) {
+    if (!(minimumRate >= 0.0 && minimumRate <= 1.0))
+      throw new IllegalArgumentException(
+          "minimum rate must be between 0.0 and 1.0, was " + minimumRate);
+  }
+
   private static void requireGuardrailName(String name) {
     if (name == null || name.isBlank())
       throw new IllegalArgumentException("guardrail name required");
@@ -310,7 +340,13 @@ public final class Gate {
                     && decision.decision() == GuardrailDecisionRecord.Decision.DENY);
   }
 
-  /** Both must hold. */
+  /**
+   * Combines this gate with another gate, requiring both to pass.
+   *
+   * @param other the gate to combine with this one
+   * @return a compound gate requiring both gates to pass
+   * @throws IllegalArgumentException when {@code other} is null
+   */
   public Gate and(Gate other) {
     if (other == null) throw new IllegalArgumentException("gate required");
     return new Gate(

@@ -58,22 +58,44 @@ public record EvalCase<C, V>(String id, C command, Optional<V> expected) {
     if (expected == null) throw new IllegalArgumentException("expected required");
   }
 
-  /** A case without an expected reply. */
+  /**
+   * Creates a case without an expected reply.
+   *
+   * @param <C> the command handler parameter type
+   * @param <V> the command handler reply type
+   * @param id unique within the experiment; names the case in the report
+   * @param command the command sent to the agent
+   * @return the evaluation case
+   * @throws IllegalArgumentException when {@code id} is null or blank, or {@code command} is null
+   *     or blank text
+   */
   public static <C, V> EvalCase<C, V> of(String id, C command) {
     return new EvalCase<>(id, command, Optional.empty());
   }
 
   /**
-   * A case with an expected reply.
+   * Creates a case with an expected reply.
    *
+   * @param <C> the command handler parameter type
+   * @param <V> the command handler reply type
+   * @param id unique within the experiment; names the case in the report
+   * @param command the command sent to the agent
    * @param expected the reply the agent is expected to give, not null
+   * @return the evaluation case
+   * @throws IllegalArgumentException when {@code id} is null or blank, {@code command} is null or
+   *     blank text, or {@code expected} is null
    */
   public static <C, V> EvalCase<C, V> of(String id, C command, V expected) {
     if (expected == null) throw new IllegalArgumentException("expected reply required");
     return new EvalCase<>(id, command, Optional.of(expected));
   }
 
-  /** The command as text: a String command as is, any other command as JSON. */
+  /**
+   * Returns the command formatted as text: a String command as is, or any other command encoded as
+   * JSON.
+   *
+   * @return the command as text
+   */
   public String commandText() {
     return asText(command);
   }

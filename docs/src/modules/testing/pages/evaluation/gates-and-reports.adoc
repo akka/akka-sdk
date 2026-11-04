@@ -16,7 +16,9 @@ A report is the result of one run.
 
 An attempt is one case in one run.
 Its results are the xref:sdk:evaluators.adoc#outcomes[outcomes] of the evaluators bound to the agent, one per evaluator. A failed agent call is a failed result named `target`. A guardrail denial that stopped the interaction is a result named `guardrail` instead. It passes in an attack and fails in an evaluation. See xref:testing:evaluation/adversarial.adoc#denials[How an attack judges a guardrail denial]. An evaluator that recorded nothing within the evaluation timeout is inconclusive. The timeout is 10 seconds unless the experiment sets another with `evaluationTimeout(Duration)`.
-A case with an xref:testing:evaluation/getting-started.adoc#expected-reply[expected reply] adds the result named `expected`: the comparison of the reply with the expected reply, which passes or fails, and is inconclusive when the agent call failed or returned no value.
+A case with an xref:testing:evaluation/getting-started.adoc#expected-reply[expected reply] adds a result named `expected`.
+This result compares the actual reply with the expected reply.
+It passes or fails, and is inconclusive if the agent call failed or returned no value.
 An attempt with an `expected` result and no bound evaluator passes or fails on that result alone.
 
 The verdict of the attempt follows from the results of all its evaluators.
@@ -63,7 +65,7 @@ A link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Gate.html[Gate] is a c
 | The reply of every attempt matches the expected reply of its case: every `expected` result passed. An attempt without a reply to compare, because the agent call failed or returned no value, fails the gate. The gate fails when no case has an expected reply.
 
 | `Gate.expectedPassRateShouldBeAtLeast(minimumRate)`
-| The share of the `expected` results that passed is at least `minimumRate`, over the attempts where the comparison ran. An attempt without a reply to compare is left out. The gate fails when no case has an expected reply.
+| The share of the `expected` results that passed is at least `minimumRate`, over the attempts where the comparison ran. An attempt without a reply to compare is excluded. The gate fails when no case has an expected reply.
 
 | `Gate.guardrailShouldNotDeny(name)`
 | The named guardrail denied nothing in any attempt. For a guardrail that must stay silent on legitimate traffic.

@@ -21,6 +21,8 @@ import java.util.List;
 public class StructuredSupportAgent extends Agent {
 
   /**
+   * The structured reply of the support assistant.
+   *
    * @param customerId who asked
    * @param text the answer
    */

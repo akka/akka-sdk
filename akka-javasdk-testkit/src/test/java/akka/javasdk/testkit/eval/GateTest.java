@@ -358,6 +358,23 @@ class GateTest {
   }
 
   @Test
+  void aMinimumRateOutsideZeroToOneIsRejected() {
+    for (var rate : new double[] {-0.1, 1.1, Double.NaN}) {
+      assertThatThrownBy(() -> Gate.passRateShouldBeAtLeast(rate))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("between 0.0 and 1.0");
+      assertThatThrownBy(() -> Gate.passRateShouldBeAtLeast(QualityEvaluator.class, rate))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("between 0.0 and 1.0");
+      assertThatThrownBy(() -> Gate.expectedPassRateShouldBeAtLeast(rate))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("between 0.0 and 1.0");
+    }
+    Gate.passRateShouldBeAtLeast(0.0);
+    Gate.passRateShouldBeAtLeast(1.0);
+  }
+
+  @Test
   void anEvaluatorWithoutAComponentAnnotationIsRejected() {
     assertThatThrownBy(() -> Gate.passRateShouldBeAtLeast(Object.class, 0.5))
         .isInstanceOf(IllegalArgumentException.class)

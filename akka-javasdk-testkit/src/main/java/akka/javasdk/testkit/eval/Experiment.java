@@ -19,49 +19,69 @@ import java.time.Duration;
 @DoNotInherit
 public interface Experiment<V> {
 
-  /** The gate {@link #run} checks. Without a gate every case must pass. */
+  /**
+   * Sets the gate {@link #run} checks. Without a gate every case must pass.
+   *
+   * @param gate the gate condition to satisfy
+   * @return this experiment builder
+   * @throws IllegalArgumentException when {@code gate} is null
+   */
   Experiment<V> gate(Gate gate);
 
   /**
-   * How the reply of an attempt is compared with the expected reply of its case. Without a grader
-   * the runner compares them with {@link Object#equals}, which suits a mocked model or a typed
-   * reply. The result of the comparison is the {@link ExperimentRunner#EXPECTED} result of the
-   * attempt, next to the verdicts of the bound evaluators, and the gate and the report treat it
+   * Sets how the reply of an attempt is compared with the expected reply of its case. Without a
+   * grader the runner compares them with {@link Object#equals}, which suits a mocked model or a
+   * typed reply. The result of the comparison is the {@link ExperimentRunner#EXPECTED} result of
+   * the attempt, next to the verdicts of the bound evaluators, and the gate and the report treat it
    * like an evaluator verdict.
    *
    * <p>The grader is not called when the agent call failed or returned no value. The {@link
    * ExperimentRunner#EXPECTED} result is then inconclusive.
    *
-   * @throws IllegalArgumentException when no case has an expected reply
+   * @param grader the grader to evaluate the expected reply against the actual reply
+   * @return this experiment builder
+   * @throws IllegalArgumentException when no case has an expected reply, or {@code grader} is null
    */
   Experiment<V> grade(Grader<V> grader);
 
   /**
-   * The name the report carries, see {@link EvalReport#name}. It names the report file, so it must
-   * be usable as a file name on every platform: not blank, at most 200 characters, and without
+   * Sets the name the report carries, see {@link EvalReport#name}. It names the report file, so it
+   * must be usable as a file name on every platform: not blank, at most 200 characters, and without
    * {@code < > : " / \ | ? *} or control characters. Without a name the report is named after the
    * test method that called {@link #run}, for example {@code SupportAgentEvalTest.qualityGate}.
    *
+   * @param name the report name
+   * @return this experiment builder
    * @throws IllegalArgumentException when the name is not usable as a file name
    */
   Experiment<V> name(String name);
 
   /**
-   * The directory {@link #run} writes the report file to, see {@link EvalReport#reportFile}.
+   * Sets the directory {@link #run} writes the report file to, see {@link EvalReport#reportFile}.
    * Without one the report goes to {@code target/eval-reports} under the working directory.
+   *
+   * @param directory the directory to write the report file to
+   * @return this experiment builder
+   * @throws IllegalArgumentException when {@code directory} is null
    */
   Experiment<V> reportDirectory(Path directory);
 
-  /** {@link #run} writes no report file. */
+  /**
+   * Disables writing a report file on {@link #run}.
+   *
+   * @return this experiment builder
+   */
   Experiment<V> withoutReportFile();
 
   /**
-   * How long an attempt waits for the ledger to hold its interaction and one evaluation per bound
-   * evaluator, {@link ExperimentRunner#DEFAULT_EVALUATION_TIMEOUT} unless set. An evaluator without
-   * an evaluation at the timeout is inconclusive on that attempt. Raise it for a judge that calls a
-   * real model or for a durable evaluator with slow steps.
+   * Sets how long an attempt waits for the ledger to hold its interaction and one evaluation per
+   * bound evaluator, {@link ExperimentRunner#DEFAULT_EVALUATION_TIMEOUT} unless set. An evaluator
+   * without an evaluation at the timeout is inconclusive on that attempt. Raise it for a judge that
+   * calls a real model or for a durable evaluator with slow steps.
    *
-   * @param timeout positive
+   * @param timeout duration to wait, must be positive
+   * @return this experiment builder
+   * @throws IllegalArgumentException when {@code timeout} is null, zero, or negative
    */
   Experiment<V> evaluationTimeout(Duration timeout);
 
@@ -75,13 +95,17 @@ public interface Experiment<V> {
    * a failure rate below one in {@code times}. The stubs and the runtime are not reset between
    * runs, so a stub or an evaluator must not depend on state an attempt writes.
    *
-   * @param times at least 1
+   * @param times number of times to run each case, at least 1
+   * @return this experiment builder
+   * @throws IllegalArgumentException when {@code times} is less than 1
    */
   Experiment<V> repeat(int times);
 
   /**
    * Runs all cases, checks the gate and writes the report file. Does not throw on a failed gate;
    * assert on the report.
+   *
+   * @return the evaluation report
    */
   EvalReport run();
 }

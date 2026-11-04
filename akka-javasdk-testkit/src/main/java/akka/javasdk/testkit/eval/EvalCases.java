@@ -45,14 +45,16 @@ public final class EvalCases {
   private EvalCases() {}
 
   /**
-   * Reads the cases of a file without expected replies.
+   * Reads cases from a JSON Lines file without expected replies.
    *
+   * @param <C> the command type
    * @param file the JSON Lines file
    * @param commandType the command type of the agent's command handler, {@code String.class} for a
    *     handler that takes the user message
    * @return the cases in file order
-   * @throws IllegalArgumentException when a line is not a case: no id, no command, a command that
-   *     does not decode into the type, an id a previous line uses, or an {@code expected} field
+   * @throws IllegalArgumentException when {@code file} is null, {@code commandType} is null, or a
+   *     line is not a case: missing id, missing command, a command that does not decode into the
+   *     type, an id a previous line uses, or an {@code expected} field
    * @throws UncheckedIOException when the file cannot be read
    */
   public static <C> List<EvalCase<C, Object>> readJsonLines(Path file, Class<C> commandType) {
@@ -60,15 +62,18 @@ public final class EvalCases {
   }
 
   /**
-   * Reads the cases of a file with expected replies.
+   * Reads cases from a JSON Lines file with expected replies.
    *
+   * @param <C> the command type
+   * @param <V> the reply type
    * @param file the JSON Lines file
    * @param commandType the command type of the agent's command handler, {@code String.class} for a
    *     handler that takes the user message
    * @param replyType the reply type of the agent's command handler, {@code String.class} for a
    *     handler that replies with the model text
    * @return the cases in file order
-   * @throws IllegalArgumentException when a line is not a case: no id, no command, no expected
+   * @throws IllegalArgumentException when {@code file} is null, {@code commandType} is null, {@code
+   *     replyType} is null, or a line is not a case: missing id, missing command, missing expected
    *     reply, a command or an expected reply that does not decode into its type, or an id a
    *     previous line uses
    * @throws UncheckedIOException when the file cannot be read
@@ -90,14 +95,16 @@ public final class EvalCases {
   }
 
   /**
-   * Reads the cases of a classpath resource without expected replies, for example a file under
-   * {@code src/test/resources}.
+   * Reads cases from a classpath resource without expected replies, for example a file under {@code
+   * src/test/resources}.
    *
+   * @param <C> the command type
    * @param resource the resource name, as {@link ClassLoader#getResourceAsStream} takes it
    * @param commandType the command type of the agent's command handler, {@code String.class} for a
    *     handler that takes the user message
    * @return the cases in file order
-   * @throws IllegalArgumentException when the resource does not exist or a line is not a case
+   * @throws IllegalArgumentException when {@code resource} is null or blank, {@code commandType} is
+   *     null, the resource does not exist, or a line is not a case
    * @throws UncheckedIOException when the resource cannot be read
    */
   public static <C> List<EvalCase<C, Object>> readJsonLinesResource(
@@ -106,16 +113,19 @@ public final class EvalCases {
   }
 
   /**
-   * Reads the cases of a classpath resource with expected replies, for example a file under {@code
+   * Reads cases from a classpath resource with expected replies, for example a file under {@code
    * src/test/resources}.
    *
+   * @param <C> the command type
+   * @param <V> the reply type
    * @param resource the resource name, as {@link ClassLoader#getResourceAsStream} takes it
    * @param commandType the command type of the agent's command handler, {@code String.class} for a
    *     handler that takes the user message
    * @param replyType the reply type of the agent's command handler, {@code String.class} for a
    *     handler that replies with the model text
    * @return the cases in file order
-   * @throws IllegalArgumentException when the resource does not exist or a line is not a case
+   * @throws IllegalArgumentException when {@code resource} is null or blank, {@code commandType} is
+   *     null, {@code replyType} is null, the resource does not exist, or a line is not a case
    * @throws UncheckedIOException when the resource cannot be read
    */
   public static <C, V> List<EvalCase<C, V>> readJsonLinesResource(

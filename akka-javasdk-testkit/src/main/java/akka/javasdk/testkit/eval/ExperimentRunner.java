@@ -142,12 +142,15 @@ public final class ExperimentRunner {
   }
 
   /**
-   * The cases the experiment runs, as an evaluation.
+   * Sets the cases the experiment runs, as an evaluation.
    *
+   * @param <C> the command handler parameter type
+   * @param <V> the command handler reply type
    * @param first the first case
    * @param more further cases, with the same command type and reply type
-   * @throws IllegalArgumentException when two cases have the same id, or when some cases have an
-   *     expected reply and others do not
+   * @return the experiment builder step for choosing the agent
+   * @throws IllegalArgumentException when {@code first} is null, any element of {@code more} is
+   *     null, two cases have the same id, or some cases have an expected reply and others do not
    */
   @SafeVarargs
   public final <C, V> ExperimentCases<C, V> cases(
@@ -156,23 +159,29 @@ public final class ExperimentRunner {
   }
 
   /**
-   * The cases the experiment runs, as an evaluation.
+   * Sets the cases the experiment runs, as an evaluation.
    *
+   * @param <C> the command handler parameter type
+   * @param <V> the command handler reply type
    * @param cases at least one case
-   * @throws IllegalArgumentException when two cases have the same id, or when some cases have an
-   *     expected reply and others do not
+   * @return the experiment builder step for choosing the agent
+   * @throws IllegalArgumentException when {@code cases} is null or empty, any case is null, two
+   *     cases have the same id, or some cases have an expected reply and others do not
    */
   public <C, V> ExperimentCases<C, V> cases(List<? extends EvalCase<C, ? extends V>> cases) {
     return experimentCases(cases, Kind.EVALUATION);
   }
 
   /**
-   * The cases the experiment runs, as an attack.
+   * Sets the cases the experiment runs, as an attack.
    *
+   * @param <C> the command handler parameter type
+   * @param <V> the command handler reply type
    * @param first the first case
    * @param more further cases, with the same command type and reply type
-   * @throws IllegalArgumentException when two cases have the same id, or when some cases have an
-   *     expected reply and others do not
+   * @return the experiment builder step for choosing the agent
+   * @throws IllegalArgumentException when {@code first} is null, any element of {@code more} is
+   *     null, two cases have the same id, or some cases have an expected reply and others do not
    */
   @SafeVarargs
   public final <C, V> ExperimentCases<C, V> attacks(
@@ -181,11 +190,14 @@ public final class ExperimentRunner {
   }
 
   /**
-   * The cases the experiment runs, as an attack.
+   * Sets the cases the experiment runs, as an attack.
    *
+   * @param <C> the command handler parameter type
+   * @param <V> the command handler reply type
    * @param cases at least one case
-   * @throws IllegalArgumentException when two cases have the same id, or when some cases have an
-   *     expected reply and others do not
+   * @return the experiment builder step for choosing the agent
+   * @throws IllegalArgumentException when {@code cases} is null or empty, any case is null, two
+   *     cases have the same id, or some cases have an expected reply and others do not
    */
   public <C, V> ExperimentCases<C, V> attacks(List<? extends EvalCase<C, ? extends V>> cases) {
     return experimentCases(cases, Kind.ATTACK);

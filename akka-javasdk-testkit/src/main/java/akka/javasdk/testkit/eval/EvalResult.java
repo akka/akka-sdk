@@ -39,18 +39,46 @@ public record EvalResult(String evaluator, Verdict verdict, String detail) {
     if (detail == null) throw new IllegalArgumentException("detail required");
   }
 
+  /**
+   * Creates a passing evaluation result.
+   *
+   * @param evaluator the evaluator component id
+   * @param detail the explanation and optional score
+   * @return the passing result
+   */
   public static EvalResult pass(String evaluator, String detail) {
     return new EvalResult(evaluator, Verdict.PASS, detail);
   }
 
+  /**
+   * Creates a failing evaluation result.
+   *
+   * @param evaluator the evaluator component id
+   * @param detail the explanation of the failure
+   * @return the failing result
+   */
   public static EvalResult fail(String evaluator, String detail) {
     return new EvalResult(evaluator, Verdict.FAIL, detail);
   }
 
+  /**
+   * Creates an inconclusive evaluation result.
+   *
+   * @param evaluator the evaluator component id
+   * @param detail why the evaluator reached no verdict
+   * @return the inconclusive result
+   */
   public static EvalResult inconclusive(String evaluator, String detail) {
     return new EvalResult(evaluator, Verdict.INCONCLUSIVE, detail);
   }
 
+  /**
+   * Creates a not applicable evaluation result.
+   *
+   * @param evaluator the evaluator component id
+   * @param detail why the evaluator found nothing to evaluate
+   * @return the not applicable result
+   */
   public static EvalResult notApplicable(String evaluator, String detail) {
     return new EvalResult(evaluator, Verdict.NOT_APPLICABLE, detail);
   }
