@@ -12,6 +12,7 @@ import akka.javasdk.CommandException;
 import akka.javasdk.DependencyProvider;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.AgentRegistry;
+import akka.javasdk.agent.Guardrail;
 import akka.javasdk.agent.MessageContent;
 import akka.javasdk.agent.ToolCallGuardrail;
 import akka.javasdk.testkit.TestKit;
@@ -25,6 +26,7 @@ import akkajavasdk.components.MyException;
 import akkajavasdk.components.mcp.TestMcpEndpoint;
 import akkajavasdk.protocol.SerializationTestProtos.SimpleMessage;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -856,6 +858,69 @@ public class AgentIntegrationTest extends TestKitSupport {
     assertThat(result.response()).isEqualTo("Today is 2025-01-01");
     assertThat(RecordingModelCallGuard.newMessageTypesBySession.get(sessionId))
         .containsExactly(List.of("UserMessage"), List.of("ToolCallResponse"));
+  }
+
+  @Test
+  public void shouldExposeThinkingAndAttributesToResponseGuardrail() {
+    // given
+    testModelProvider
+        .whenMessage(s -> s.equals("think about it"))
+        .reply(
+            new AiResponse("thought through")
+                .withThinking("final thinking")
+                .withAttributes(Map.of("final-key", "final-value")));
+
+    // when
+    var sessionId = newSessionId();
+    var result =
+        componentClient
+            .forAgent()
+            .inSession(sessionId)
+            .method(NonBlockingGuardrailsTestAgent::ask)
+            .invoke("think about it");
+
+    // then
+    assertThat(result.response()).isEqualTo("thought through");
+    var reply = RecordingResponseGuard.replyBySession.get(sessionId);
+    assertThat(reply.thinking()).contains("final thinking");
+    assertThat(reply.attributes()).containsExactlyEntriesOf(Map.of("final-key", "final-value"));
+  }
+
+  @Test
+  public void shouldExposeThinkingAndAttributesToModelCallGuardrail() {
+    // given
+    testModelProvider
+        .whenMessage(s -> s.equals("what day is it, thinking?"))
+        .reply(
+            new AiResponse(
+                    new ToolInvocationRequest("NonBlockingGuardrailsTestAgent_getDateOfToday", ""))
+                .withThinking("I need the date")
+                .withAttributes(Map.of("tool-key", "tool-value")));
+    testModelProvider
+        .whenToolResult(result -> result.content().equals("2025-01-01"))
+        .thenReply(result -> new AiResponse("Today is " + result.content()));
+
+    // when
+    var sessionId = newSessionId();
+    var result =
+        componentClient
+            .forAgent()
+            .inSession(sessionId)
+            .method(NonBlockingGuardrailsTestAgent::ask)
+            .invoke("what day is it, thinking?");
+
+    // then
+    assertThat(result.response()).isEqualTo("Today is 2025-01-01");
+
+    var aiMessages = RecordingModelCallGuard.aiMessagesBySession.get(sessionId);
+    assertThat(aiMessages).hasSize(1);
+
+    var aiMessage = aiMessages.getFirst();
+    assertThat(aiMessage.toolCallRequests())
+        .extracting(Guardrail.Message.AiMessage.ToolCallRequest::name)
+        .containsExactly("NonBlockingGuardrailsTestAgent_getDateOfToday");
+    assertThat(aiMessage.thinking()).contains("I need the date");
+    assertThat(aiMessage.attributes()).containsExactlyEntriesOf(Map.of("tool-key", "tool-value"));
   }
 
   @Test

@@ -273,6 +273,8 @@ You can use this for other things than jailbreak attempt detection.
 
 Guardrails run in integration tests the same way they run in production. Configure the guardrail in `src/test/resources/application.conf`, run the agent with `TestKitSupport`, and use a `TestModelProvider` to produce text that triggers or passes the guardrail. A denied interaction surfaces as a `GuardrailException`, which the agent handles as shown in <<Handling a denied interaction>>.
 
+To test a guardrail that reads `thinking()` or `attributes()` of a `Guardrail.Message.AiMessage`, reply with a `TestModelProvider.AiResponse` built with `withThinking` and `withAttributes`. Both methods apply to a text reply and to a tool request reply.
+
 == See also
 
 * xref:sdk:agents/classifiers.adoc[]: classifiers score or label text, and a guardrail can consult one to reach a decision.
