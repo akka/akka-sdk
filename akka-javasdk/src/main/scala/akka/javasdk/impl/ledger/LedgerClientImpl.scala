@@ -224,10 +224,10 @@ private[ledger] object LedgerClientImpl {
           new ActivityRecord.Event.IterationFailed(e.reason, e.taskId.toJava, e.iterationNumber.map(Int.box).toJava)
         case e: SpiLedger.ActivityEvent.DelegationStarted =>
           new ActivityRecord.Event.DelegationStarted(
-            e.workerComponentIds.asJava,
+            e.workers.map(_.componentId).asJava,
             e.delegationCount,
             e.subtaskIds.asJava,
-            e.workerInstanceIds.asJava)
+            e.workers.map(_.instanceId).asJava)
         case e: SpiLedger.ActivityEvent.DelegationResolved =>
           new ActivityRecord.Event.DelegationResolved(
             e.succeeded,
@@ -237,7 +237,7 @@ private[ledger] object LedgerClientImpl {
         case e: SpiLedger.ActivityEvent.HandoffStarted =>
           new ActivityRecord.Event.HandoffStarted(e.taskId, e.targetComponentId)
         case e: SpiLedger.ActivityEvent.HandoffReceived =>
-          new ActivityRecord.Event.HandoffReceived(e.taskId, e.sourceComponentId, e.sourceInstanceId)
+          new ActivityRecord.Event.HandoffReceived(e.taskId, e.source.componentId, e.source.instanceId)
         case e: SpiLedger.ActivityEvent.Other =>
           new ActivityRecord.Event.Other(e.kind)
       }
