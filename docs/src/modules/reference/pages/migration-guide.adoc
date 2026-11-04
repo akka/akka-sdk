@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-== SDK 3.7.1
+== SDK 3.7.2
 
 [#migrating-from-the-evalkit-evaluators]
 === Migrating from the EvalKit evaluators
@@ -11,7 +11,7 @@ The evaluation runner of the TestKit no longer has its own evaluators and judges
 
 [cols="1,1"]
 |===
-| SDK 3.7.0 | SDK 3.7.1
+| SDK 3.7.1 | SDK 3.7.2
 
 | `Evaluators.replyShouldNotContain`, `shouldCallTool`, `shouldNotCallTools`, `replyShouldNotContainPaymentCard` and the other built-in evaluators
 | An `Evaluator` component in `src/test/java` that reads the interaction from the ledger, bound to the agent with `TestKit.Settings.withAdditionalConfig`
