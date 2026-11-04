@@ -228,7 +228,8 @@ public class FlowRecordTest {
             new ActivityRecord.Event.DelegationResolved(
                 2, 1, List.of("subtask-1", "subtask-2"), List.of("subtask-3")),
             // a delegation to a request-based agent, as the ledger records it
-            new ActivityRecord.Event.DelegationStarted(List.of(), 1, List.of(), List.of()),
+            new ActivityRecord.Event.DelegationStarted(
+                List.of("fact-check-agent"), 1, List.of(), List.of("")),
             new ActivityRecord.Event.DelegationResolved(0, 1, List.of(), List.of()),
             new ActivityRecord.Event.HandoffStarted("task-6", "specialist-agent"),
             new ActivityRecord.Event.HandoffReceived("task-7", "triage-agent", "triage-1"),
@@ -251,7 +252,7 @@ public class FlowRecordTest {
                 + " (reviewer-1)], subtasks [subtask-1, subtask-2]",
             prefix
                 + "delegations resolved, 2 succeeded [subtask-1, subtask-2], 1 failed [subtask-3]",
-            prefix + "started 1 delegation",
+            prefix + "started 1 delegation to [fact-check-agent]",
             prefix + "delegations resolved, 0 succeeded, 1 failed",
             prefix + "task task-6 handed off to specialist-agent",
             prefix + "received task task-7 in a handoff from triage-agent (triage-1)",

@@ -178,7 +178,7 @@ public sealed interface FlowRecord
       var instanceId = i < event.workerInstanceIds().size() ? event.workerInstanceIds().get(i) : "";
       workers.add(agent(event.workerComponentIds().get(i), instanceId));
     }
-    // a delegation to a request-based agent has no subtask, and the ledger lists no worker for it
+    // a worker that is a request-based agent has an empty instance id and no subtask
     return "started "
         + event.delegationCount()
         + (event.delegationCount() == 1 ? " delegation" : " delegations")
