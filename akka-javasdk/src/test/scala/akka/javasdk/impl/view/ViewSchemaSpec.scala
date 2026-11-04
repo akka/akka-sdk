@@ -113,9 +113,15 @@ class ViewSchemaSpec extends AnyWordSpec with Matchers {
       fieldTypes("int64_value") shouldBe SpiLong
     }
 
-    "map protobuf wrapper types used directly to their primitive type" in {
-      ViewSchema(classOf[com.google.protobuf.StringValue]) shouldBe SpiString
-      ViewSchema(classOf[com.google.protobuf.Int32Value]) shouldBe SpiInteger
+    "reject protobuf wrapper types used directly as row or query type" in {
+      intercept[IllegalArgumentException](
+        ViewSchema(classOf[com.google.protobuf.StringValue])).getMessage should include("google.protobuf.StringValue")
+      intercept[IllegalArgumentException](ViewSchema.forQuery(classOf[com.google.protobuf.Int64Value]))
+    }
+
+    "reject protobuf map fields" in {
+      intercept[IllegalArgumentException](ViewSchema(classOf[numbers.NumberProtos.Int64Map])).getMessage should include(
+        "numbers.Int64Map.values")
     }
 
     "map protobuf integer types to a type that holds their JSON value" in {
@@ -206,11 +212,9 @@ class ViewSchemaSpec extends AnyWordSpec with Matchers {
 
       val childrenType = result.asInstanceOf[SpiClass].getField("children").get.fieldType
       childrenType shouldBe a[SpiList]
-      val childrenEntry = childrenType.asInstanceOf[SpiList].valueType.asInstanceOf[SpiClass]
-      childrenEntry.name shouldBe "protoconsumer.TreeNode.ChildrenEntry"
 
       val value =
-        childrenEntry.getField("value").get.fieldType.asInstanceOf[SpiOptional].valueType.asInstanceOf[SpiClass]
+        childrenType.asInstanceOf[SpiList].valueType.asInstanceOf[SpiClass]
       value.name shouldBe "protoconsumer.TreeValue"
       value.getField("node").get.fieldType shouldBe new SpiOptional(new SpiClassRef("protoconsumer.TreeNode"))
 

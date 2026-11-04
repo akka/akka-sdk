@@ -37,9 +37,9 @@ message SiblingChild {
   string name = 1;
 }
 
-// Recursive through a map entry, a oneof and a repeated field
+// Recursive through a oneof and a repeated field
 message TreeNode {
-  map<string, TreeValue> children = 1;
+  repeated TreeValue children = 1;
 }
 
 message TreeValue {

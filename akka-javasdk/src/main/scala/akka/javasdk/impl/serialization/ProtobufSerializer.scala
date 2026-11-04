@@ -16,7 +16,6 @@ import akka.util.ByteString
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
-import com.fasterxml.jackson.databind.node.BigIntegerNode
 import com.fasterxml.jackson.databind.node.LongNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.google.protobuf.Descriptors
@@ -125,7 +124,7 @@ object ProtobufSerializer {
 
   /**
    * Serialize a protobuf message to JSON for a view row or view query parameters. Unlike [[toBytesAsJson]], 64-bit
-   * integers are JSON numbers rather than strings, because views index them as numbers.
+   * integers are JSON numbers rather than strings. Fails if a `uint64` or `fixed64` value is above `Long.MaxValue`.
    */
   def toBytesAsViewJson(value: GeneratedMessageV3): BytesPayload = {
     if (value == null) throw new NullPointerException("Serialized value is null")
@@ -145,7 +144,7 @@ object ProtobufSerializer {
 
   private def has64BitIntegers(descriptor: Descriptors.Descriptor): Boolean = {
     def loop(current: Descriptors.Descriptor, seen: Set[Descriptors.Descriptor]): Boolean =
-      if (isWellKnownType(current)) is64BitWrapper(current)
+      if (isSpecialType(current)) is64BitWrapper(current)
       else
         current.getFields.asScala.exists { field =>
           is64BitInteger(field) ||
@@ -158,15 +157,15 @@ object ProtobufSerializer {
   private def is64BitInteger(field: Descriptors.FieldDescriptor): Boolean =
     field.getJavaType == JavaType.LONG
 
-  private def isWellKnownType(descriptor: Descriptors.Descriptor): Boolean =
-    descriptor.getFile.getPackage == "google.protobuf"
+  private def isSpecialType(descriptor: Descriptors.Descriptor): Boolean =
+    ProtobufJsonTypes.SpecialTypes.contains(descriptor.getFullName)
 
   private def is64BitWrapper(descriptor: Descriptors.Descriptor): Boolean =
-    descriptor.getFullName == "google.protobuf.Int64Value" || descriptor.getFullName == "google.protobuf.UInt64Value"
+    ProtobufJsonTypes.LongWrapperTypes.contains(descriptor.getFullName)
 
   private def longsAsNumbers(json: JsonNode, descriptor: Descriptors.Descriptor): JsonNode =
-    if (isWellKnownType(descriptor)) {
-      // well-known types have their own JSON form, of those only the 64-bit wrappers print a long
+    if (isSpecialType(descriptor)) {
+      // of the types with their own JSON form, only the 64-bit wrappers print a long
       if (is64BitWrapper(descriptor)) longAsNumber(json, descriptor.findFieldByName("value"))
       else json
     } else
@@ -200,7 +199,8 @@ object ProtobufSerializer {
 
   private def fieldValue(json: JsonNode, field: Descriptors.FieldDescriptor): JsonNode =
     if (is64BitInteger(field)) longAsNumber(json, field)
-    else if (field.getJavaType == JavaType.MESSAGE) longsAsNumbers(json, field.getMessageType)
+    else if (field.getJavaType == JavaType.MESSAGE && has64BitIntegers(field.getMessageType))
+      longsAsNumbers(json, field.getMessageType)
     else json
 
   private def longAsNumber(json: JsonNode, field: Descriptors.FieldDescriptor): JsonNode =
@@ -208,7 +208,11 @@ object ProtobufSerializer {
     else
       field.getType match {
         case Descriptors.FieldDescriptor.Type.UINT64 | Descriptors.FieldDescriptor.Type.FIXED64 =>
-          BigIntegerNode.valueOf(new java.math.BigInteger(json.asText))
+          val value = new java.math.BigInteger(json.asText)
+          if (value.bitLength > 63)
+            throw new IllegalArgumentException(
+              s"Value [$value] of field [${field.getFullName}] is above Long.MaxValue, not supported in views")
+          LongNode.valueOf(value.longValueExact)
         case _ => LongNode.valueOf(json.asText.toLong)
       }
 

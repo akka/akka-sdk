@@ -54,7 +54,7 @@ final class Serializer(val objectMapper: ObjectMapper) {
   }
 
   /**
-   * Serialize a value to JSON bytes, even if it's a protobuf message.
+   * Serialize a value to JSON bytes, even if it is a protobuf message.
    */
   def toBytesAsJson(value: Any): BytesPayload = {
     value match {
@@ -65,7 +65,7 @@ final class Serializer(val objectMapper: ObjectMapper) {
   }
 
   /**
-   * Serialize a value to JSON bytes for a view row or view query parameters, even if it's a protobuf message.
+   * Serialize a value to JSON bytes for a view row or view query parameters, even if it is a protobuf message.
    */
   def toBytesAsViewJson(value: Any): BytesPayload = {
     value match {
