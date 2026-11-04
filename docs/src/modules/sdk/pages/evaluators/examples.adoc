@@ -152,7 +152,7 @@ Bind it to an agent that answers from the results of its tools, for example an a
 ----
 include::example$doc-snippets/src/main/java/com/example/evaluator/HallucinationJudgeEvaluator.java[tags=all;!prompt]
 ----
-<1> A tool call without a recorded result has an empty response, so the evaluator leaves it out.
+<1> The evaluator keeps the tool calls with the status `COMPLETED`. The response of a failed call is an error text, and a call that the runtime did not run or that has no result has an empty response.
 <2> Each line of the reference text holds the name of a tool and the result of its call.
 <3> Without a tool result, the judge has nothing to check the reply against, so the evaluator returns `inconclusive`.
 
