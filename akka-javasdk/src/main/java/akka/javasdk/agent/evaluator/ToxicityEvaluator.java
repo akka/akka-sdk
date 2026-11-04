@@ -29,7 +29,8 @@ import java.util.Locale;
  * @deprecated Write an {@link akka.javasdk.evaluation.Evaluator} component that calls a judge agent
  *     of your own to judge if a text is racist, biased or toxic.
  */
-@Deprecated(since = "3.7.1")
+@Deprecated(since = "3.7.1", forRemoval = true)
+@SuppressWarnings("removal")
 @Component(
     id = ToxicityEvaluator.COMPONENT_ID,
     name = "Toxicity Evaluator Agent",
