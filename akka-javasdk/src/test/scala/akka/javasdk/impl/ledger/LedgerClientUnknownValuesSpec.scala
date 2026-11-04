@@ -430,7 +430,7 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
 
   "The ledger client" should {
 
-    "leave a flow record that the SDK does not know out of the page, and keep the next position" in {
+    "leave a flow record that the SDK does not know out of the page, and keep the positions" in {
       val client = ledgerClient(
         spiInteractionRecord(),
         Seq.empty,
@@ -446,6 +446,7 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
 
       page.records().asScala.map(_.getClass) shouldBe Seq(classOf[InteractionRecord], classOf[ActivityRecord])
       page.nextPosition() shouldBe Optional.of(4L)
+      page.continuationPosition() shouldBe 4L
     }
 
     "read the interactions and the guardrail decisions of a session that hold values the SDK does not know" in {

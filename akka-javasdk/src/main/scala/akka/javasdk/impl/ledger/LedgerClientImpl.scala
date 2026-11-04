@@ -182,7 +182,10 @@ private[ledger] object LedgerClientImpl {
     }
 
   def toFlowPage(page: SpiLedger.FlowPage): FlowPage =
-    new FlowPage(page.records.flatMap(toFlowRecord).asJava, page.nextPosition.map(Long.box).toJava)
+    new FlowPage(
+      page.records.flatMap(toFlowRecord).asJava,
+      page.nextPosition.map(Long.box).toJava,
+      page.continuationPosition)
 
   // A record of a class that this SDK does not know is left out of the page. Only the class decides this. A value
   // inside a known record that this SDK cannot read fails the read, as it does in the other reads.

@@ -359,7 +359,7 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
 
   "Reading the records of a flow" should {
 
-    "map a page of each of the four kinds to the public records, in order, with its next position" in {
+    "map a page of each of the four kinds to the public records, in order, with its positions" in {
       val interaction = spiInteractionRecord()
       val activity = spiActivityRecord(new SpiLedger.ActivityEvent.TaskAssigned("task-1"))
       val decision = spiGuardrailDecisionRecord(controlId = None, toolCall = None)
@@ -381,6 +381,7 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
         LedgerClientImpl.toGuardrailDecisionRecord(decision),
         LedgerClientImpl.toEvaluationRecord(evaluation))
       page.nextPosition() shouldEqual Optional.of(5L)
+      page.continuationPosition() shouldEqual 5L
     }
 
     "map an empty last page" in {
@@ -390,6 +391,7 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
 
       page.records().isEmpty shouldBe true
       page.nextPosition() shouldEqual Optional.empty()
+      page.continuationPosition() shouldEqual 5L
     }
 
     "ask for position 0 in the forms without a position, and for a limit of 100 in every form" in {
