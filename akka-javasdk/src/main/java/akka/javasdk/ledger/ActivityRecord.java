@@ -136,11 +136,12 @@ public record ActivityRecord(
     }
 
     /**
-     * The agent sent subtasks to workers. The two worker lists have one entry for each worker, in
-     * the same order.
+     * The agent started delegations to workers. A delegation to an autonomous agent is a subtask,
+     * and the three lists have one entry for each subtask, in the same order. For a delegation to a
+     * request-based agent, the three lists are empty and only {@link #delegationCount()} counts it.
      *
      * @param workerComponentIds the component ids of the workers
-     * @param delegationCount the number of subtasks
+     * @param delegationCount the number of delegations that started
      * @param subtaskIds the ids of the subtasks
      * @param workerInstanceIds the instance ids of the workers
      */
@@ -157,10 +158,11 @@ public record ActivityRecord(
     }
 
     /**
-     * The subtasks of a delegation resolved.
+     * The delegations of the agent resolved. The counts include a delegation to a request-based
+     * agent, and the subtask id lists leave it out.
      *
-     * @param succeeded the number of subtasks that succeeded
-     * @param failed the number of subtasks that failed
+     * @param succeeded the number of delegations that succeeded
+     * @param failed the number of delegations that failed
      * @param succeededSubtaskIds the ids of the subtasks that succeeded
      * @param failedSubtaskIds the ids of the subtasks that failed
      */

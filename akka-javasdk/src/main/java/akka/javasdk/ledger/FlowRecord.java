@@ -142,14 +142,14 @@ public sealed interface FlowRecord
               + withText(e.reason());
       case ActivityRecord.Event.DelegationStarted e -> delegationStarted(e);
       case ActivityRecord.Event.DelegationResolved e ->
-          "delegation resolved, "
+          "delegations resolved, "
               + e.succeeded()
               + " succeeded"
-              + withList(e.succeededSubtaskIds())
+              + withList(e.succeededSubtaskIds(), " ")
               + ", "
               + e.failed()
               + " failed"
-              + withList(e.failedSubtaskIds());
+              + withList(e.failedSubtaskIds(), " ");
       case ActivityRecord.Event.HandoffStarted e ->
           "task " + e.taskId() + " handed off to " + e.targetComponentId();
       case ActivityRecord.Event.HandoffReceived e ->
@@ -169,11 +169,12 @@ public sealed interface FlowRecord
       var instanceId = i < event.workerInstanceIds().size() ? event.workerInstanceIds().get(i) : "";
       workers.add(agent(event.workerComponentIds().get(i), instanceId));
     }
-    return "delegation started with "
+    // a delegation to a request-based agent has no subtask, and the ledger lists no worker for it
+    return "started "
         + event.delegationCount()
-        + (event.delegationCount() == 1 ? " subtask" : " subtasks")
-        + withList(event.subtaskIds())
-        + (workers.isEmpty() ? "" : " to " + String.join(", ", workers));
+        + (event.delegationCount() == 1 ? " delegation" : " delegations")
+        + withList(workers, " to ")
+        + withList(event.subtaskIds(), ", subtasks ");
   }
 
   private static String guardrailDecisionLine(GuardrailDecisionRecord record) {
@@ -202,7 +203,7 @@ public sealed interface FlowRecord
     return text == null || text.isEmpty() ? "" : ": " + text;
   }
 
-  private static String withList(List<String> ids) {
-    return ids.isEmpty() ? "" : " " + ids;
+  private static String withList(List<String> items, String prefix) {
+    return items.isEmpty() ? "" : prefix + items;
   }
 }

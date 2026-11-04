@@ -139,8 +139,8 @@ public class FlowRecordTest {
             Input: Research quantum computing
             Response: Delegating.
 
-            Activity of agent coordinator-agent, instance coordinator-1: delegation started \
-            with 1 subtask [subtask-1] to worker-agent (worker-1)
+            Activity of agent coordinator-agent, instance coordinator-1: started 1 delegation \
+            to [worker-agent (worker-1)], subtasks [subtask-1]
 
             Guardrail no-refunds, boundary BEFORE_TOOL_CALL, tool RefundTools_refund, \
             decision DENY: refunds are not allowed
@@ -209,6 +209,9 @@ public class FlowRecordTest {
                 List.of("worker-1", "reviewer-1")),
             new ActivityRecord.Event.DelegationResolved(
                 2, 1, List.of("subtask-1", "subtask-2"), List.of("subtask-3")),
+            // a delegation to a request-based agent, as the ledger records it
+            new ActivityRecord.Event.DelegationStarted(List.of(), 1, List.of(), List.of()),
+            new ActivityRecord.Event.DelegationResolved(0, 1, List.of(), List.of()),
             new ActivityRecord.Event.HandoffStarted("task-6", "specialist-agent"),
             new ActivityRecord.Event.HandoffReceived("task-7", "triage-agent", "triage-1"),
             new ActivityRecord.Event.Other("worker_task_received"));
@@ -226,10 +229,12 @@ public class FlowRecordTest {
             prefix + "iteration 4 of task task-5 failed: rate limited",
             prefix + "iteration failed: model unavailable",
             prefix
-                + "delegation started with 2 subtasks [subtask-1, subtask-2] to worker-agent"
-                + " (worker-1), reviewer-agent (reviewer-1)",
+                + "started 2 delegations to [worker-agent (worker-1), reviewer-agent"
+                + " (reviewer-1)], subtasks [subtask-1, subtask-2]",
             prefix
-                + "delegation resolved, 2 succeeded [subtask-1, subtask-2], 1 failed [subtask-3]",
+                + "delegations resolved, 2 succeeded [subtask-1, subtask-2], 1 failed [subtask-3]",
+            prefix + "started 1 delegation",
+            prefix + "delegations resolved, 0 succeeded, 1 failed",
             prefix + "task task-6 handed off to specialist-agent",
             prefix + "received task task-7 in a handoff from triage-agent (triage-1)",
             prefix + "event worker_task_received");
