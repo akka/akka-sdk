@@ -53,7 +53,9 @@ public final class TestLedgerClient implements LedgerClient {
   private final ConcurrentMap<String, ActivityRecord> activities = new ConcurrentHashMap<>();
 
   // The order in which the records were seeded, which orders the records of a flow with the same
-  // timestamp. A record that is seeded again takes its new place.
+  // timestamp. A record that is seeded again takes its new place. A seed writes the order before
+  // the record, so a flow read that runs during a seed finds the order of every record it reads.
+  // Replaced records stay in the map.
   private final AtomicLong seedCount = new AtomicLong();
   private final Map<FlowRecord, Long> seedOrder =
       Collections.synchronizedMap(new IdentityHashMap<>());
@@ -71,8 +73,8 @@ public final class TestLedgerClient implements LedgerClient {
    * @return this client, for chaining
    */
   public TestLedgerClient seed(InteractionRecord record) {
-    records.put(record.interactionId(), record);
     seedOrder.put(record, seedCount.getAndIncrement());
+    records.put(record.interactionId(), record);
     return this;
   }
 
@@ -103,8 +105,8 @@ public final class TestLedgerClient implements LedgerClient {
    * @return this client, for chaining
    */
   public TestLedgerClient seed(EvaluationRecord record) {
-    evaluations.put(record.evaluationId(), record);
     seedOrder.put(record, seedCount.getAndIncrement());
+    evaluations.put(record.evaluationId(), record);
     return this;
   }
 
@@ -188,8 +190,8 @@ public final class TestLedgerClient implements LedgerClient {
    * @return this client, for chaining
    */
   public TestLedgerClient seed(GuardrailDecisionRecord record) {
-    guardrailDecisions.put(record.recordId(), record);
     seedOrder.put(record, seedCount.getAndIncrement());
+    guardrailDecisions.put(record.recordId(), record);
     return this;
   }
 
@@ -215,8 +217,8 @@ public final class TestLedgerClient implements LedgerClient {
    * @return this client, for chaining
    */
   public TestLedgerClient seed(ActivityRecord record) {
-    activities.put(record.recordId(), record);
     seedOrder.put(record, seedCount.getAndIncrement());
+    activities.put(record.recordId(), record);
     return this;
   }
 
