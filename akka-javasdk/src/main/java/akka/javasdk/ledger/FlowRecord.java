@@ -36,7 +36,10 @@ public sealed interface FlowRecord
    *       id and the instance id. A typed event writes its fields, and {@link
    *       ActivityRecord.Event.Other} writes its kind.
    *   <li>A {@link GuardrailDecisionRecord} is one line with the guardrail name, the boundary, the
-   *       tool name when there is one, the decision and the explanation.
+   *       tool name when there is one, the decision and the explanation. The line says {@code
+   *       report only} when the decision did not stop the interaction because the guardrail only
+   *       reports. For a {@link GuardrailDecisionRecord.Decision#FAIL} of a guardrail that does not
+   *       only report, the line gives the fail mode.
    *   <li>An {@link EvaluationRecord} is left out, so a judge does not read the verdicts of other
    *       evaluators.
    * </ul>
@@ -184,11 +187,14 @@ public sealed interface FlowRecord
             .append(", boundary ")
             .append(record.boundary());
     record.toolCall().ifPresent(toolCall -> sb.append(", tool ").append(toolCall.toolName()));
-    return sb.append(", decision ")
-        .append(record.decision())
-        .append(withText(record.explanation()))
-        .append("\n")
-        .toString();
+    sb.append(", decision ").append(record.decision());
+    // the fail mode has no effect for a guardrail that only reports
+    if (record.reportOnly()) {
+      sb.append(", report only");
+    } else if (record.decision() == GuardrailDecisionRecord.Decision.FAIL) {
+      sb.append(", fail mode ").append(record.failMode());
+    }
+    return sb.append(withText(record.explanation())).append("\n").toString();
   }
 
   private static String agent(String componentId, String instanceId) {
