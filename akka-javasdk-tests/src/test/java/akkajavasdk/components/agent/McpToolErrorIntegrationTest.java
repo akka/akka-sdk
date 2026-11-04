@@ -4,6 +4,7 @@
 
 package akkajavasdk.components.agent;
 
+import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.COMPLETE_TASK;
 import static akka.javasdk.testkit.TestModelProvider.AutonomousAgentTools.completeTask;
 import static akkajavasdk.components.agent.RequestRecordingModelProvider.messagesOf;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -11,6 +12,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import akka.javasdk.agent.SessionMemoryEntity;
 import akka.javasdk.agent.SessionMessage;
 import akka.javasdk.agent.SessionMessage.ToolCallResponse;
+import akka.javasdk.ledger.InteractionRecord;
+import akka.javasdk.ledger.ToolCall;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
@@ -24,6 +27,7 @@ import akkajavasdk.components.agent.autonomous.TestTasks;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
@@ -32,8 +36,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
- * Covers the error flag of a failed MCP tool call, from the MCP server through a tool interceptor
- * and session memory, and back to the model in a later request.
+ * Covers the error flag of a failed MCP tool call, from the MCP server through a tool interceptor,
+ * session memory and the ledger, and back to the model in a later request.
  */
 @ExtendWith(Junit5LogCapturing.class)
 public class McpToolErrorIntegrationTest extends TestKitSupport {
@@ -89,6 +93,7 @@ public class McpToolErrorIntegrationTest extends TestKitSupport {
     assertThat(RecordingMcpToolInterceptor.seen("mcp-tool-error-test-agent"))
         .contains(new SeenResponse("mcp-tool-error-test-agent", "fail", true));
     assertErrorResultStored(sessionId);
+    assertErrorResultRecorded("mcp-tool-error-test-agent", sessionId);
 
     askRequestAgent(sessionId, "anything else?");
 
@@ -106,6 +111,7 @@ public class McpToolErrorIntegrationTest extends TestKitSupport {
     assertThat(RecordingMcpToolInterceptor.seen("mcp-tool-error-streaming-test-agent"))
         .contains(new SeenResponse("mcp-tool-error-streaming-test-agent", "fail", true));
     assertErrorResultStored(sessionId);
+    assertErrorResultRecorded("mcp-tool-error-streaming-test-agent", sessionId);
 
     askStreamingAgent(sessionId, "anything else?");
 
@@ -133,6 +139,12 @@ public class McpToolErrorIntegrationTest extends TestKitSupport {
     assertThat(RecordingMcpToolInterceptor.seen("mcp-tool-error-autonomous-agent"))
         .contains(new SeenResponse("mcp-tool-error-autonomous-agent", "fail", true));
     assertErrorResultStored(agentId);
+    var interaction = assertErrorResultRecorded("mcp-tool-error-autonomous-agent", agentId);
+    // the agent acts on the capability tool call after the interaction
+    assertThat(interaction.toolCalls(COMPLETE_TASK))
+        .singleElement()
+        .extracting(ToolCall::status)
+        .isEqualTo(ToolCall.Status.PENDING);
 
     runAutonomousTask(agentId, "second task");
 
@@ -207,6 +219,28 @@ public class McpToolErrorIntegrationTest extends TestKitSupport {
                               .startsWith(RecordingMcpToolInterceptor.PREFIX);
                           assertThat(response.isError()).isTrue();
                         }));
+  }
+
+  /** The recorded interaction with the call of the failing tool, which has an error result. */
+  private InteractionRecord assertErrorResultRecorded(String agentComponentId, String sessionId) {
+    var interaction =
+        Awaitility.await()
+            .atMost(10, TimeUnit.SECONDS)
+            .until(
+                () ->
+                    getLedgerClient().getInteractions(agentComponentId, sessionId).stream()
+                        .filter(recorded -> !recorded.toolCalls("fail").isEmpty())
+                        .findFirst(),
+                Optional::isPresent)
+            .get();
+    assertThat(interaction.toolCalls("fail"))
+        .singleElement()
+        .satisfies(
+            call -> {
+              assertThat(call.status()).isEqualTo(ToolCall.Status.FAILED);
+              assertThat(call.response()).startsWith(RecordingMcpToolInterceptor.PREFIX);
+            });
+    return interaction;
   }
 
   private List<SessionMessage> storedHistory(String sessionId) {
