@@ -25,4 +25,4 @@ Start with xref:operations:projects/create-project.adoc[]. The resources that th
 * A network policy, which controls the traffic between your services and anything outside the project.
 * A message broker, which your services use for eventing. The supported brokers are listed on xref:operations:projects/message-brokers.adoc[].
 
-Access to a project is managed on xref:operations:projects/manage-project-access.adoc[].
+Access to a project is managed with xref:operations:security/project-role-bindings.adoc[project role bindings] and, for custom roles, xref:operations:security/organization-role-bindings.adoc[organization role bindings]. See xref:operations:security/index.adoc[].

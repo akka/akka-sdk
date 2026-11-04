@@ -1,0 +1,13 @@
+= Roles
+:page-summary: The built-in roles and the permissions that each one grants.
+:page-when-to-use: When you choose a built-in role to bind, or compare what the built-in roles grant.
+:page-related: reference:rbac/permissions.adoc, operations:security/index.adoc, operations:security/organization-role-bindings.adoc, operations:security/project-role-bindings.adoc
+:page-persona: operator-platform
+
+include::ROOT:partial$include.adoc[]
+
+A role is a named group of permissions. Grant a role to a principal with a role binding. The table lists the built-in roles. The xref:rbac/permissions.adoc[Permissions] page describes each permission.
+
+Use the search box to filter by any part of the role name. The search ignores case.
+
+include::partial$rbac/roles-table.adoc[]
