@@ -39,8 +39,9 @@ import java.util.stream.Collectors;
  * <p>The records of a flow, as {@link #getFlowRecords(String)} returns them, are the seeded
  * interactions, guardrail decisions and activity records with that flow id, and the seeded
  * evaluations of the seeded interactions with that flow id. They come oldest timestamp first, and
- * records with the same timestamp come in the order they were seeded. A position is the 1-based
- * index of a record in that order. A page holds at most 100 records.
+ * records with the same timestamp come in the order they were seeded. A page holds at most 100
+ * records. A position is the 1-based index of a record in that order. The ledger uses other values,
+ * so pass a position only back to {@link #getFlowRecords(String, long)}.
  */
 public final class TestLedgerClient implements LedgerClient {
 

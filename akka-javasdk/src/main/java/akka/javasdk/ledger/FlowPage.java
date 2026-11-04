@@ -12,6 +12,7 @@ import java.util.Optional;
  *
  * @param records the records of the page, in the order they were recorded
  * @param nextPosition where the next page starts, for {@link LedgerClient#getFlowRecords(String,
- *     long)}; empty when the flow held no further record when it was read
+ *     long)}; empty when the flow held no further record when it was read. The value is not a count
+ *     or an index of the records.
  */
 public record FlowPage(List<FlowRecord> records, Optional<Long> nextPosition) {}
