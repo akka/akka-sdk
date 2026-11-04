@@ -55,6 +55,36 @@ public class FlowRecordTest {
     return new ModelResponse("m1", content, 10, 5, "", List.of());
   }
 
+  private static GuardrailDecisionRecord decision(
+      String name,
+      GuardrailDecisionRecord.Boundary boundary,
+      Optional<String> toolName,
+      GuardrailDecisionRecord.Decision decision,
+      String explanation,
+      boolean reportOnly,
+      GuardrailDecisionRecord.FailMode failMode) {
+    return new GuardrailDecisionRecord(
+        "guardrail-" + name,
+        "coordinator-agent",
+        "interaction-1",
+        "session-1",
+        Optional.of("flow-1"),
+        name,
+        Optional.empty(),
+        "policy",
+        boundary,
+        decision,
+        explanation,
+        reportOnly,
+        failMode,
+        Duration.ZERO,
+        toolName.map(
+            tool ->
+                new GuardrailDecisionRecord.ToolCall(
+                    Optional.empty(), tool, new GuardrailDecisionRecord.ToolOrigin.FunctionTool())),
+        Instant.EPOCH);
+  }
+
   private static ActivityRecord activity(ActivityRecord.Event... events) {
     return new ActivityRecord(
         "activity-1",
@@ -92,27 +122,14 @@ public class FlowRecordTest {
             List.of(),
             Optional.empty());
     var decision =
-        new GuardrailDecisionRecord(
-            "guardrail-1",
-            "coordinator-agent",
-            coordinator.interactionId(),
-            "session-1",
-            Optional.of("flow-1"),
+        decision(
             "no-refunds",
-            Optional.empty(),
-            "policy",
             GuardrailDecisionRecord.Boundary.BEFORE_TOOL_CALL,
+            Optional.of("RefundTools_refund"),
             GuardrailDecisionRecord.Decision.DENY,
             "refunds are not allowed",
             false,
-            GuardrailDecisionRecord.FailMode.FAIL_CLOSED,
-            Duration.ZERO,
-            Optional.of(
-                new GuardrailDecisionRecord.ToolCall(
-                    Optional.empty(),
-                    "RefundTools_refund",
-                    new GuardrailDecisionRecord.ToolOrigin.FunctionTool())),
-            Instant.EPOCH);
+            GuardrailDecisionRecord.FailMode.FAIL_CLOSED);
     var evaluation =
         new EvaluationRecord(
             "evaluation-1",
@@ -238,6 +255,54 @@ public class FlowRecordTest {
             prefix + "task task-6 handed off to specialist-agent",
             prefix + "received task task-7 in a handoff from triage-agent (triage-1)",
             prefix + "event worker_task_received");
+  }
+
+  @Test
+  public void writesWhetherAGuardrailDecisionOnlyReportsAndTheFailModeOfAFailure() {
+    var transcript =
+        FlowRecord.transcript(
+            List.of(
+                decision(
+                    "no-refunds",
+                    GuardrailDecisionRecord.Boundary.BEFORE_TOOL_CALL,
+                    Optional.of("refund"),
+                    GuardrailDecisionRecord.Decision.DENY,
+                    "refunds are not allowed",
+                    true,
+                    GuardrailDecisionRecord.FailMode.FAIL_CLOSED),
+                decision(
+                    "pii",
+                    GuardrailDecisionRecord.Boundary.BEFORE_MODEL_CALL,
+                    Optional.empty(),
+                    GuardrailDecisionRecord.Decision.FAIL,
+                    "classifier unavailable",
+                    false,
+                    GuardrailDecisionRecord.FailMode.FAIL_OPEN),
+                decision(
+                    "pii",
+                    GuardrailDecisionRecord.Boundary.BEFORE_MODEL_CALL,
+                    Optional.empty(),
+                    GuardrailDecisionRecord.Decision.FAIL,
+                    "timeout",
+                    true,
+                    GuardrailDecisionRecord.FailMode.FAIL_CLOSED),
+                decision(
+                    "tone",
+                    GuardrailDecisionRecord.Boundary.BEFORE_AGENT_RESPONSE,
+                    Optional.empty(),
+                    GuardrailDecisionRecord.Decision.ALLOW,
+                    "",
+                    false,
+                    GuardrailDecisionRecord.FailMode.FAIL_CLOSED)));
+
+    assertThat(transcript.lines().filter(line -> !line.isEmpty()).toList())
+        .containsExactly(
+            "Guardrail no-refunds, boundary BEFORE_TOOL_CALL, tool refund, decision DENY, report"
+                + " only: refunds are not allowed",
+            "Guardrail pii, boundary BEFORE_MODEL_CALL, decision FAIL, fail mode FAIL_OPEN:"
+                + " classifier unavailable",
+            "Guardrail pii, boundary BEFORE_MODEL_CALL, decision FAIL, report only: timeout",
+            "Guardrail tone, boundary BEFORE_AGENT_RESPONSE, decision ALLOW");
   }
 
   @Test
