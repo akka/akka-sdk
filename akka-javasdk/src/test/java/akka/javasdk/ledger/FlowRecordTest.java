@@ -151,7 +151,8 @@ public class FlowRecordTest {
     assertThat(transcript)
         .isEqualTo(
             """
-            Interaction of agent coordinator-agent, task research, iteration 1:
+            Interaction of agent coordinator-agent, instance coordinator-1, task research \
+            (id task-1), iteration 1:
             System: You coordinate research.
             Input: Research quantum computing
             Response: Delegating.
