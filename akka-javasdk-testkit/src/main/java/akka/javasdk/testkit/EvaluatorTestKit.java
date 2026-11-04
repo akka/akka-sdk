@@ -25,7 +25,7 @@ import java.util.function.Supplier;
  *
  * <p>Call {@code evaluate(...)} to execute the evaluator handler against a {@link Subject} and
  * assert on the returned {@link EvaluatorResult}. If the evaluator reads configuration, supply it
- * using {@link #withConfig(Config)}.
+ * using {@link #withConfig(Config)}; the configuration is empty by default.
  *
  * @param <E> the type of evaluator under test
  */
@@ -57,7 +57,8 @@ public class EvaluatorTestKit<E extends Evaluator> {
    * Returns a copy of this testkit that exposes the given configuration to the evaluator.
    *
    * <p>The evaluator accesses this configuration through {@link
-   * akka.javasdk.evaluation.EvaluationContext#config()}.
+   * akka.javasdk.evaluation.EvaluationContext#config()}. In a running service this is the binding
+   * that the runtime used for the agent, with the evaluator entry as fallback.
    *
    * @param config configuration provided to the evaluation context
    * @return a copy of this testkit with the specified configuration
@@ -70,8 +71,8 @@ public class EvaluatorTestKit<E extends Evaluator> {
    * Runs the evaluator against the given subject using {@link #DEFAULT_EVALUATION_ID} and empty
    * attributes.
    *
-   * @param subject the subject to evaluate; must not be null
-   * @return the evaluation result containing the outcome effect
+   * @param subject the subject to evaluate
+   * @return the result of the evaluation
    */
   public EvaluatorResult evaluate(Subject subject) {
     return evaluate(subject, DEFAULT_EVALUATION_ID, Map.of());
@@ -81,22 +82,23 @@ public class EvaluatorTestKit<E extends Evaluator> {
    * Runs the evaluator against the given subject using the specified evaluation ID and empty
    * attributes.
    *
-   * @param subject the subject to evaluate; must not be null
-   * @param evaluationId the evaluation ID; must not be null
-   * @return the evaluation result containing the outcome effect
+   * @param subject the subject to evaluate
+   * @param evaluationId the evaluation ID
+   * @return the result of the evaluation
    */
   public EvaluatorResult evaluate(Subject subject, String evaluationId) {
     return evaluate(subject, evaluationId, Map.of());
   }
 
   /**
-   * Runs the evaluator against the given subject with trigger attributes, using {@link
+   * Runs the evaluator against the given subject with trigger attributes, as an evaluation started
+   * through {@link akka.javasdk.client.EvaluatorClient} carries them, using {@link
    * #DEFAULT_EVALUATION_ID}.
    *
-   * @param subject the subject to evaluate; must not be null
+   * @param subject the subject to evaluate
    * @param attributes trigger attributes exposed through {@link
    *     akka.javasdk.evaluation.EvaluationContext#attributes()}; must not be null
-   * @return the evaluation result containing the outcome effect
+   * @return the result of the evaluation
    */
   public EvaluatorResult evaluate(Subject subject, Map<String, String> attributes) {
     return evaluate(subject, DEFAULT_EVALUATION_ID, attributes);
@@ -104,13 +106,14 @@ public class EvaluatorTestKit<E extends Evaluator> {
 
   /**
    * Runs the evaluator against the given subject with the specified evaluation ID and trigger
-   * attributes.
+   * attributes, as an evaluation started through {@link akka.javasdk.client.EvaluatorClient}
+   * carries them.
    *
-   * @param subject the subject to evaluate; must not be null
-   * @param evaluationId the evaluation ID; must not be null
+   * @param subject the subject to evaluate
+   * @param evaluationId the evaluation ID
    * @param attributes trigger attributes exposed through {@link
    *     akka.javasdk.evaluation.EvaluationContext#attributes()}; must not be null
-   * @return the evaluation result containing the outcome effect
+   * @return the result of the evaluation
    */
   public EvaluatorResult evaluate(
       Subject subject, String evaluationId, Map<String, String> attributes) {

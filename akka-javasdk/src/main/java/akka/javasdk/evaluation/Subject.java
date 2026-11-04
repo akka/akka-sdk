@@ -50,11 +50,12 @@ public sealed interface Subject {
    * One run of a workflow, evaluated as a whole rather than as an individual agent interaction.
    *
    * <p>Interactions to evaluate can be passed as trigger attributes when starting the evaluation,
-   * or read from workflow state. If reading workflow state, ensure the relevant state was persisted
-   * in an earlier step before the evaluation starts.
+   * or read from workflow state. The evaluation can start before the workflow step that starts it
+   * is persisted, so the evaluator reads only what earlier steps persisted.
    *
    * @param workflowId the ID of the workflow instance
-   * @param workflowComponentId the component ID of the workflow
+   * @param workflowComponentId the component ID of the workflow, since a workflow ID is unique per
+   *     workflow type only
    */
   record Workflow(String workflowId, String workflowComponentId) implements Subject {}
 }

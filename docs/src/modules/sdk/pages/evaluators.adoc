@@ -57,7 +57,7 @@ For an evaluation that can take longer, use a xref:_durable_evaluators[durable e
 
 A criterion that has no exact answer, such as whether a reply is helpful, needs a model. xref:sdk:evaluators/examples.adoc[] shows evaluators that ask a judge agent for the verdict, starting with xref:sdk:evaluators/examples.adoc#judging[Scoring a reply against a criterion].
 
-The link:{attachmentsdir}/api/akka/javasdk/evaluation/Subject.html[`Subject`] in the link:{attachmentsdir}/api/akka/javasdk/evaluation/EvaluationContext.html[`EvaluationContext`] is a sealed interface with two implementations. `Subject.Interaction` carries `agentComponentId()`, useful when one evaluator is bound to several agents, and `flowId()` when the agent ran inside an autonomous-agent flow. `Subject.Workflow` names a <<workflow-run,workflow run>>. An evaluator switches over the subject to handle each type.
+The link:{attachmentsdir}/api/akka/javasdk/evaluation/Subject.html[`Subject`] in the link:{attachmentsdir}/api/akka/javasdk/evaluation/EvaluationContext.html[`EvaluationContext`] is a sealed interface with two implementations. `Subject.Interaction` carries `agentComponentId()`, useful when one evaluator is bound to several agents, and `flowId()` when the agent ran inside an autonomous-agent flow. `Subject.Workflow` names a <<workflow-run,workflow run>>. An evaluator that handles both kinds switches over the subject.
 
 === Recording the verdict
 
@@ -273,7 +273,7 @@ The evaluation can start before the runtime persists the step that calls `startE
 
 The evaluation ID is derived from the evaluator, the subject, and the trigger attributes. A retried step that calls `startEvaluation` again with identical arguments receives the same ID.
 The runtime delivers the trigger at least once. For an `Evaluator`, each repeated call runs the evaluator again and records another run under that ID. A retried step can therefore run the evaluator twice.
-In contrast, a durable evaluator runs once per ID while its instance exists. A repeated call returns the ID immediately without rerunning.
+In contrast, a durable evaluator runs once per ID while its instance exists. A repeated call returns the ID without running anything.
 To evaluate the same subject again intentionally, for example after updating a prompt, pass a distinct trigger attribute such as the prompt version.
 
 The evaluator reads the subject and the trigger attributes from the `EvaluationContext`:
@@ -290,7 +290,7 @@ include::example$doc-snippets/src/main/java/com/example/evaluator/AgentTeamRunEv
 <5> The final response of the last agent call represents the answer of the run.
 <6> Verdict attributes, separate from trigger attributes. The ledger records the verdict under the workflow run with both attribute sets.
 
-Because no agent binding applies to evaluations started on request, `config()` returns the configuration entry of the evaluator alone.
+The `config()` of such an evaluation is the evaluator entry of the configuration, since no agent binding applies to a workflow run.
 The ledger lists the evaluations of a run by the workflow component id and the workflow id:
 
 [source,java,indent=0]
@@ -299,7 +299,7 @@ The ledger lists the evaluations of a run by the workflow component id and the w
 include::example$doc-snippets/src/main/java/com/example/evaluator/LedgerUsage.java[tag=workflow-evaluations]
 ----
 
-An endpoint can start an evaluation the same way, for example to evaluate a recorded interaction again after a prompt change. The subject is then a `Subject.Interaction`, and a trigger attribute such as the prompt version gives the repeated evaluation its own id.
+An endpoint can start an evaluation the same way, for example to evaluate a recorded interaction again after a prompt change. The subject is then a `Subject.Interaction`, and a trigger attribute such as the prompt version gives the repeated evaluation its own id. The `config()` of that evaluation is the binding of the agent, as it is when the runtime starts the evaluation.
 
 [#_the_ledger_client]
 == The ledger client

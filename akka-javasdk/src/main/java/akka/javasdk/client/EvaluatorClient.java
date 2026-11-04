@@ -19,7 +19,8 @@ import java.util.concurrent.CompletionStage;
  * or from an endpoint to evaluate a recorded interaction again.
  *
  * <p>The evaluation ID is deterministically derived from the evaluator, the subject, and the
- * attributes. Repeated calls with identical arguments return the same evaluation ID:
+ * attributes. Repeated calls with identical arguments return the same evaluation ID. The runtime
+ * delivers the trigger at least once:
  *
  * <ul>
  *   <li>For an {@code Evaluator}, each repeated call triggers another evaluation and records each
@@ -39,8 +40,9 @@ public interface EvaluatorClient {
   /**
    * Starts an evaluation of the given subject.
    *
-   * <p>The evaluation runs asynchronously in the background. Its outcome is recorded in the ledger
-   * under the returned evaluation ID; see {@link
+   * <p>The evaluation runs asynchronously in the background and can start before the workflow step
+   * that calls this method is persisted. Persist the result to evaluate in an earlier step. The
+   * outcome is recorded in the ledger under the returned evaluation ID; see {@link
    * akka.javasdk.ledger.LedgerClient#getEvaluation(String)}.
    *
    * <p>Blocks the calling thread until the evaluation is durably queued. Safe to call on a virtual
@@ -53,8 +55,9 @@ public interface EvaluatorClient {
    * @return the generated evaluation ID
    * @throws NullPointerException if {@code subject} or {@code attributes} is null
    * @throws IllegalArgumentException if no evaluator matches this client component ID, if the
-   *     subject has an empty or oversized ID (> 256 characters), if an attribute key is empty, or
-   *     if total attribute keys and values exceed 8192 characters
+   *     subject has an empty ID or component ID, if either is longer than 256 characters or holds a
+   *     null character, if an attribute key is empty, or if total attribute keys and values exceed
+   *     8192 characters
    * @throws IllegalStateException if evaluators or the ledger are disabled, or if this evaluator
    *     has {@code enabled = false} in its configuration
    */
