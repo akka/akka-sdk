@@ -54,9 +54,9 @@ flowchart TB
 ----
 
 A case whose agent call throws fails with a result named `target`.
-A case with an expected reply has one more result, named `expected`: the runner compares the reply with the expected reply, with `equals` or with a `Grader` the test supplies. See xref:testing:evaluation/getting-started.adoc#expected-reply[Cases with an expected reply].
 It does not abort the batch.
 When a guardrail denial stops the interaction, the result is named `guardrail`, not `target`. It passes when the cases run as an attack, see xref:testing:evaluation/adversarial.adoc#denials[How an attack judges a guardrail denial].
+A case with an expected reply has one more result, named `expected`: the runner compares the reply with the expected reply, with `equals` or with a `Grader` the test supplies. See xref:testing:evaluation/getting-started.adoc#expected-reply[Cases with an expected reply].
 An evaluator that records no evaluation within the evaluation timeout is inconclusive on that case.
 
 == The parts of an evaluation

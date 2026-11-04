@@ -101,7 +101,8 @@ public final class Gate {
   /**
    * The reply of every attempt must match the expected reply of its case: every {@link
    * ExperimentRunner#EXPECTED} result passed. An attempt without a reply to compare, because the
-   * agent call failed, fails the gate. Fails when no case has an expected reply.
+   * agent call failed or returned no value, fails the gate. Fails when no case has an expected
+   * reply.
    */
   public static Gate expectedShouldPass() {
     return new Gate(
@@ -110,24 +111,37 @@ public final class Gate {
             return Verdict.fail("no case has an expected reply, so the replies cannot be compared");
           var mismatched =
               failedCases(
+                  results, runs, result -> expectedVerdict(result, EvalResult.Verdict.FAIL));
+          var withoutReply =
+              failedCases(
                   results,
                   runs,
-                  result ->
-                      result.evalResults().stream()
-                          .anyMatch(
-                              evalResult ->
-                                  evalResult.evaluator().equals(ExperimentRunner.EXPECTED)
-                                      && evalResult.verdict() != EvalResult.Verdict.PASS));
-          return mismatched.isEmpty()
-              ? Verdict.pass("every reply matches the expected reply")
-              : Verdict.fail("the reply does not match the expected reply on " + mismatched);
+                  result -> expectedVerdict(result, EvalResult.Verdict.INCONCLUSIVE));
+          if (mismatched.isEmpty() && withoutReply.isEmpty()) {
+            return Verdict.pass("every reply matches the expected reply");
+          }
+          var details = new ArrayList<String>();
+          if (!mismatched.isEmpty())
+            details.add("the reply does not match the expected reply on " + mismatched);
+          if (!withoutReply.isEmpty())
+            details.add("no reply to compare with the expected reply on " + withoutReply);
+          return Verdict.fail(String.join(", ", details));
         });
+  }
+
+  private static boolean expectedVerdict(CaseResult result, EvalResult.Verdict verdict) {
+    return result.evalResults().stream()
+        .anyMatch(
+            evalResult ->
+                evalResult.evaluator().equals(ExperimentRunner.EXPECTED)
+                    && evalResult.verdict() == verdict);
   }
 
   /**
    * The share of the attempts whose reply matches the expected reply of its case must be at least
    * {@code minimumRate}, over the attempts where the comparison ran: an attempt without a reply to
-   * compare, because the agent call failed, is left out. Fails when no case has an expected reply.
+   * compare, because the agent call failed or returned no value, is left out. Fails when no case
+   * has an expected reply.
    */
   public static Gate expectedPassRateShouldBeAtLeast(double minimumRate) {
     return passRateShouldBeAtLeast(ExperimentRunner.EXPECTED, minimumRate);

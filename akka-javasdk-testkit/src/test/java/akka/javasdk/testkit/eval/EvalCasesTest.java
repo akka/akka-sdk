@@ -122,6 +122,32 @@ class EvalCasesTest {
   }
 
   @Test
+  void readsAFileWithExpectedReplies(@TempDir Path dir) throws Exception {
+    var file = dir.resolve("graded-cases.jsonl");
+    Files.writeString(
+        file,
+        """
+        {"id": "refund", "command": "I want my money back", "expected": {"tool": "open-refund"}}
+        {"id": "status", "command": "Where is o_42?", "expected": {"tool": "track-order"}}
+        """);
+
+    assertThat(EvalCases.readJsonLines(file, String.class, Route.class))
+        .containsExactly(
+            EvalCase.of("refund", "I want my money back", new Route("open-refund")),
+            EvalCase.of("status", "Where is o_42?", new Route("track-order")));
+  }
+
+  @Test
+  void aFileWithAnExpectedReplyIsRefusedWithoutAReplyType(@TempDir Path dir) throws Exception {
+    var file = dir.resolve("graded-cases.jsonl");
+    Files.writeString(file, "{\"id\": \"c\", \"command\": \"q\", \"expected\": \"r\"}\n");
+
+    assertThatThrownBy(() -> EvalCases.readJsonLines(file, String.class))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("has an expected reply, but the cases are read without a reply type");
+  }
+
+  @Test
   void readsAClasspathResourceWithExpectedReplies() {
     var cases =
         EvalCases.readJsonLinesResource(

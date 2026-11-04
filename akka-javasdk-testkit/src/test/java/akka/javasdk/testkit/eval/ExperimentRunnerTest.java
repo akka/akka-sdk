@@ -1060,6 +1060,30 @@ class ExperimentRunnerTest {
   }
 
   @Test
+  void aReplyTypeWithoutEqualsIsNamedAsTheCauseWhenBothSidesReadTheSame() {
+    var detail =
+        ExperimentRunner.equality()
+            .grade(new Routed("open-refund"), new Routed("open-refund"))
+            .explanation();
+
+    assertThat(detail)
+        .isEqualTo(
+            "expected {\"tool\":\"open-refund\"}, the reply is {\"tool\":\"open-refund\"}. The"
+                + " two read the same but are not equal: the reply type does not define equals,"
+                + " or a component of it does not. Define equals on the reply type, or compare the"
+                + " replies with a Grader");
+  }
+
+  /** A reply type without equals: two instances with the same field are never equal. */
+  static final class Routed {
+    public final String tool;
+
+    Routed(String tool) {
+      this.tool = tool;
+    }
+  }
+
+  @Test
   void aGraderDecidesHowTheReplyIsComparedAndItsScoreIsInTheDetail() {
     var result =
         experiment(
@@ -1304,15 +1328,22 @@ class ExperimentRunnerTest {
 
   @Test
   void anAgentWithoutABindingIsDescribedWithTheAgentsTheConfigurationBinds() {
-    assertThat(bindings().describeUnbound(List.of("billing-agent")))
+    assertThat(bindings().describeUnbound(List.of("billing-agent"), false))
         .contains(
             "No evaluator is bound to agent [support-agent], so every attempt is inconclusive"
                 + " unless the gate reads only the guardrail decisions or the agent call. The"
                 + " configuration binds evaluators to the agents [billing-agent], under"
                 + " akka.javasdk.evaluation.evaluators.<evaluator>.agents.");
-    assertThat(bindings().describeUnbound(List.of()).orElseThrow())
+    assertThat(bindings().describeUnbound(List.of("billing-agent"), true))
+        .contains(
+            "No evaluator is bound to agent [support-agent], so only the comparison with the"
+                + " expected reply judges every attempt. The configuration binds evaluators to the"
+                + " agents [billing-agent], under akka.javasdk.evaluation.evaluators.<evaluator>"
+                + ".agents.");
+    assertThat(bindings().describeUnbound(List.of(), false).orElseThrow())
         .contains("The configuration binds no evaluator to any agent");
-    assertThat(bindings(QUALITY).describeUnbound(List.of())).isEmpty();
+    assertThat(bindings(QUALITY).describeUnbound(List.of(), false)).isEmpty();
+    assertThat(bindings(QUALITY).describeUnbound(List.of(), true)).isEmpty();
   }
 
   // ---- repeated runs

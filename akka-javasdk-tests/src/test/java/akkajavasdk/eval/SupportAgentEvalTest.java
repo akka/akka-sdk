@@ -19,6 +19,7 @@ import akka.javasdk.testkit.eval.Gate;
 import akkajavasdk.components.agent.eval.AccountSupportAgent;
 import akkajavasdk.components.agent.eval.CrmClient;
 import akkajavasdk.components.agent.eval.Customer;
+import akkajavasdk.components.agent.eval.StructuredSupportAgent;
 import akkajavasdk.components.agent.eval.SupportAgent;
 import akkajavasdk.components.agent.eval.Ticket;
 import java.util.List;
@@ -41,7 +42,8 @@ import org.junit.jupiter.api.Test;
  *
  * <p>{@link AccountSupportAgent} is the same assistant with a command handler that takes a record.
  * Its cases carry that record, so the customer asking is part of the case rather than of the
- * question text.
+ * question text. {@link StructuredSupportAgent} replies with a record, so its cases carry one as
+ * the expected reply.
  *
  * <p>The model is mocked too, by a {@link TestModelProvider} that behaves like a competent one: it
  * looks a customer up when the question names one, reads their tickets when the question asks for
@@ -56,11 +58,14 @@ public class SupportAgentEvalTest extends TestKitSupport {
   private static final String OPEN_TICKETS = "SupportAgent_openTickets";
   private static final String ACCOUNT_GET_CUSTOMER = "AccountSupportAgent_getCustomer";
   private static final String ACCOUNT_OPEN_TICKETS = "AccountSupportAgent_openTickets";
+  private static final String STRUCTURED_GET_CUSTOMER = "StructuredSupportAgent_getCustomer";
+  private static final String STRUCTURED_OPEN_TICKETS = "StructuredSupportAgent_openTickets";
 
   private static final Pattern CUSTOMER_ID = Pattern.compile("cust_\\d+");
 
   private final TestModelProvider supportModel = new TestModelProvider();
   private final TestModelProvider accountModel = new TestModelProvider();
+  private final TestModelProvider structuredModel = new TestModelProvider();
   private final CannedCrmClient crm = new CannedCrmClient();
 
   private ExperimentRunner experimentRunner;
@@ -71,16 +76,19 @@ public class SupportAgentEvalTest extends TestKitSupport {
         .withDependencyProvider(dependencies())
         .withModelProvider(SupportAgent.class, supportModel)
         .withModelProvider(AccountSupportAgent.class, accountModel)
+        .withModelProvider(StructuredSupportAgent.class, structuredModel)
         .withAdditionalConfig(
             """
             akka.javasdk.evaluation.evaluators {
               tool-use.agents {
                 support-agent { trigger = interaction, trigger-on-failure = true }
                 account-support-agent { trigger = interaction }
+                structured-support-agent { trigger = interaction }
               }
               reply-grounding.agents {
                 support-agent { trigger = interaction }
                 account-support-agent { trigger = interaction }
+                structured-support-agent { trigger = interaction }
               }
             }
             """);
@@ -133,6 +141,9 @@ public class SupportAgentEvalTest extends TestKitSupport {
     // from the command.
     accountModel.reset();
     scriptTheModel(accountModel, ACCOUNT_GET_CUSTOMER, ACCOUNT_OPEN_TICKETS);
+
+    structuredModel.reset();
+    scriptTheModel(structuredModel, STRUCTURED_GET_CUSTOMER, STRUCTURED_OPEN_TICKETS);
   }
 
   private static void scriptTheModel(
@@ -340,6 +351,58 @@ public class SupportAgentEvalTest extends TestKitSupport {
         .isEqualTo("Customer cust_7 asks: What am I waiting on?");
     assertThat(result.describe())
         .contains("PASS tool-use: looked the customer up and read their tickets");
+  }
+
+  @Test
+  public void aReplyOfTheHandlersOwnTypeIsComparedAsAValue() {
+    var question = new AccountSupportAgent.Question("cust_7", "What am I waiting on?");
+    var answer =
+        new StructuredSupportAgent.Answer(
+            "cust_7", "Grace Hopper has one open ticket: card declined at checkout.");
+
+    var equal =
+        experimentRunner
+            .cases(EvalCase.of("tickets-as-a-record", question, answer))
+            .agent(StructuredSupportAgent::answer)
+            .run()
+            .results()
+            .getFirst();
+    assertThat(equal.passed()).withFailMessage(equal::describe).isTrue();
+    assertThat(equal.describe()).contains("PASS expected: the reply equals the expected reply");
+
+    // The grader receives the reply as the handler's type, not as its text.
+    var graded =
+        experimentRunner
+            .cases(EvalCase.of("tickets-as-a-record", question, answer))
+            .agent(StructuredSupportAgent::answer)
+            .grade(
+                (expected, actual) ->
+                    actual.customerId().equals(expected.customerId())
+                            && actual.text().contains("card declined")
+                        ? Evaluation.passed("answers the caller about the ticket")
+                        : Evaluation.failed("answers someone else, or not about the ticket"))
+            .gate(Gate.expectedShouldPass())
+            .run();
+    assertThat(graded.passed()).withFailMessage(graded::render).isTrue();
+
+    var wrong =
+        experimentRunner
+            .cases(
+                EvalCase.of(
+                    "tickets-as-a-record",
+                    question,
+                    new StructuredSupportAgent.Answer("cust_7", "Nothing is open.")))
+            .agent(StructuredSupportAgent::answer)
+            .run()
+            .results()
+            .getFirst();
+    assertThat(wrong.failed()).isTrue();
+    assertThat(wrong.describe())
+        .contains(
+            "FAIL expected: expected {\"customerId\":\"cust_7\",\"text\":\"Nothing is open.\"},"
+                + " the reply is {\"customerId\":\"cust_7\",\"text\":\""
+                + answer.text()
+                + "\"}");
   }
 
   @Test

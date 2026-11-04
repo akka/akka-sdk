@@ -129,9 +129,16 @@ record EvaluatorBindings(String agentComponentId, List<Binding> bindings) {
   /**
    * Why no evaluator is bound, with the agents the configuration does bind. Empty when an evaluator
    * is bound.
+   *
+   * @param graded whether the cases carry an expected reply, so the comparison judges the attempts
    */
-  Optional<String> describeUnbound(List<String> boundAgentComponentIds) {
+  Optional<String> describeUnbound(List<String> boundAgentComponentIds, boolean graded) {
     if (!bindings.isEmpty()) return Optional.empty();
+    var consequence =
+        graded
+            ? "so only the comparison with the expected reply judges every attempt. "
+            : "so every attempt is inconclusive unless the gate reads only the guardrail"
+                + " decisions or the agent call. ";
     var others =
         boundAgentComponentIds.isEmpty()
             ? "The configuration binds no evaluator to any agent under"
@@ -140,10 +147,6 @@ record EvaluatorBindings(String agentComponentId, List<Binding> bindings) {
                 + boundAgentComponentIds
                 + ", under akka.javasdk.evaluation.evaluators.<evaluator>.agents.";
     return Optional.of(
-        "No evaluator is bound to agent ["
-            + agentComponentId
-            + "], so every attempt is inconclusive unless the gate reads only the guardrail"
-            + " decisions or the agent call. "
-            + others);
+        "No evaluator is bound to agent [" + agentComponentId + "], " + consequence + others);
   }
 }

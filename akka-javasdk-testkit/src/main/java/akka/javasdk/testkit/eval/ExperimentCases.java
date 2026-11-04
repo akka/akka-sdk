@@ -27,7 +27,9 @@ public interface ExperimentCases<C, V> {
    * runs with evaluate every attempt.
    *
    * @param method the agent's command handler, for example {@code SupportAgent::ask}
-   * @param <R> the reply type of the command handler, which must be the reply type of the cases
+   * @param <R> the reply type of the command handler. It is the reply type of the cases, or a
+   *     subtype of it. Cases without an expected reply have {@code Object} as their reply type and
+   *     accept a handler with any reply type.
    * @throws IllegalArgumentException when an evaluator is bound to the agent with a sampling ratio
    *     below 1.0, since the experiment waits for every bound evaluator on every attempt
    */

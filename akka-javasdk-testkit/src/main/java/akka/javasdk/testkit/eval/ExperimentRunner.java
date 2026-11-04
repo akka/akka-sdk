@@ -248,8 +248,9 @@ public final class ExperimentRunner {
 
     // The bindings are checked here, before any case runs: a binding to an evaluator id without a
     // component would leave every attempt waiting for the timeout, and an agent without a binding
-    // would leave every attempt inconclusive without saying why, unless the cases carry an expected
-    // reply, whose comparison can pass the attempt on its own.
+    // would leave every attempt inconclusive without saying why. With an expected reply the
+    // comparison judges the attempt on its own, and the warning still shows a binding to a
+    // misspelled agent id.
     @Override
     public <A extends Agent, R extends V> Experiment<V> agent(
         Function2<A, C, Agent.Effect<R>> method) {
@@ -259,11 +260,9 @@ public final class ExperimentRunner {
       bindings.requireEvaluatorComponents(
           AgentEvaluatorBindings.evaluatorComponentIds(
               Thread.currentThread().getContextClassLoader()));
-      if (!graded()) {
-        bindings
-            .describeUnbound(AgentEvaluatorBindings.boundAgentComponentIds(config))
-            .ifPresent(log::warn);
-      }
+      bindings
+          .describeUnbound(AgentEvaluatorBindings.boundAgentComponentIds(config), graded())
+          .ifPresent(log::warn);
       return target(
           new AgentTarget<>(testKit.getComponentClient(), method),
           testKit.getLedgerClient(),
@@ -302,16 +301,25 @@ public final class ExperimentRunner {
     }
   }
 
-  /** The grader that applies without {@link Experiment#grade}: the two replies must be equal. */
+  /**
+   * The grader that applies without {@link Experiment#grade}: the two replies must be equal. When
+   * the two replies read the same as text but are not equal, the detail names a missing {@code
+   * equals} as the cause.
+   */
   static <V> Grader<V> equality() {
-    return (expected, reply) ->
-        expected.equals(reply)
-            ? Evaluation.passed("the reply equals the expected reply")
-            : Evaluation.failed(
-                "expected "
-                    + EvalCase.asText(expected)
-                    + ", the reply is "
-                    + EvalCase.asText(reply));
+    return (expected, reply) -> {
+      if (expected.equals(reply)) return Evaluation.passed("the reply equals the expected reply");
+      var expectedText = EvalCase.asText(expected);
+      var replyText = EvalCase.asText(reply);
+      var detail = "expected " + expectedText + ", the reply is " + replyText;
+      if (expectedText.equals(replyText)) {
+        detail +=
+            ". The two read the same but are not equal: the reply type does not define equals, or"
+                + " a component of it does not. Define equals on the reply type, or compare the"
+                + " replies with a Grader";
+      }
+      return Evaluation.failed(detail);
+    };
   }
 
   private static void requirePositive(Duration evaluationTimeout) {

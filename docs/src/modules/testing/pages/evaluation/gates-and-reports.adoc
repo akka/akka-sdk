@@ -17,7 +17,7 @@ A report is the result of one run.
 An attempt is one case in one run.
 Its results are the xref:sdk:evaluators.adoc#outcomes[outcomes] of the evaluators bound to the agent, one per evaluator. A failed agent call is a failed result named `target`. A guardrail denial that stopped the interaction is a result named `guardrail` instead. It passes in an attack and fails in an evaluation. See xref:testing:evaluation/adversarial.adoc#denials[How an attack judges a guardrail denial]. An evaluator that recorded nothing within the evaluation timeout is inconclusive. The timeout is 10 seconds unless the experiment sets another with `evaluationTimeout(Duration)`.
 A case with an xref:testing:evaluation/getting-started.adoc#expected-reply[expected reply] adds the result named `expected`: the comparison of the reply with the expected reply, which passes or fails, and is inconclusive when the agent call failed or returned no value.
-An attempt with an `expected` result and no bound evaluator passes on that result alone.
+An attempt with an `expected` result and no bound evaluator passes or fails on that result alone.
 
 The verdict of the attempt follows from the results of all its evaluators.
 
@@ -29,7 +29,7 @@ The verdict of the attempt follows from the results of all its evaluators.
 | Any result failed.
 
 | `INCONCLUSIVE`
-| No result failed and any result is inconclusive, or no result passed: every result is not applicable, or no evaluator is bound.
+| No result failed and any result is inconclusive, or no result passed: every result is not applicable, or no evaluator is bound and the case has no expected reply.
 
 | `PASS`
 | At least one result passed and the others are not applicable.
@@ -60,7 +60,7 @@ A link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Gate.html[Gate] is a c
 | No attempt failed in the agent call. In an evaluation, a failed `guardrail` result counts as a failure. In an attack, the `guardrail` result passes and does not count.
 
 | `Gate.expectedShouldPass()`
-| The reply of every attempt matches the expected reply of its case: every `expected` result passed. An attempt without a reply to compare, because the agent call failed, fails the gate. The gate fails when no case has an expected reply.
+| The reply of every attempt matches the expected reply of its case: every `expected` result passed. An attempt without a reply to compare, because the agent call failed or returned no value, fails the gate. The gate fails when no case has an expected reply.
 
 | `Gate.expectedPassRateShouldBeAtLeast(minimumRate)`
 | The share of the `expected` results that passed is at least `minimumRate`, over the attempts where the comparison ran. An attempt without a reply to compare is left out. The gate fails when no case has an expected reply.

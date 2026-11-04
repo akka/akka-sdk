@@ -5,11 +5,14 @@
 package akka.javasdk.testkit.eval;
 
 /**
- * One evaluator's result on one attempt, read from the evaluation the evaluator recorded in the
- * ledger. This is what a {@link ExperimentRunner.CaseResult} holds.
+ * One result on one attempt: an evaluator's verdict, read from the evaluation the evaluator
+ * recorded in the ledger, or a result of the runner. This is what a {@link
+ * ExperimentRunner.CaseResult} holds.
  *
- * @param evaluator the component id of the evaluator, or {@link ExperimentRunner#TARGET} or {@link
- *     ExperimentRunner#GUARDRAIL} for a result the runner reports itself
+ * @param evaluator the component id of the evaluator, {@link ExperimentRunner#TARGET} or {@link
+ *     ExperimentRunner#GUARDRAIL} for a result the runner reports itself, or {@link
+ *     ExperimentRunner#EXPECTED} for the comparison of the reply with the expected reply of the
+ *     case
  * @param verdict the verdict
  * @param detail the explanation and the score the evaluator gave, or why there is no verdict
  */

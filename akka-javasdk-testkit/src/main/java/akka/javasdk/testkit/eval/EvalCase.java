@@ -33,6 +33,15 @@ import java.util.Optional;
  * the reply type, {@code EvalCase<String, Object>}, so it runs against an agent with any reply
  * type.
  *
+ * <p>When the handler replies with a sealed interface and the expected reply is one of its
+ * subtypes, give {@link ExperimentRunner#cases} the type arguments, so the reply type of the
+ * experiment is the interface and not the subtype:
+ *
+ * <pre>{@code
+ * runner.<String, Reply>cases(EvalCase.of("refund", "I want my money back", new OpenRefund()))
+ *     .agent(Router::route);
+ * }</pre>
+ *
  * @param <C> the command handler's parameter type
  * @param <V> the command handler's reply type
  * @param id unique within the experiment; names the case in the report

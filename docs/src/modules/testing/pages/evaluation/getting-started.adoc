@@ -226,7 +226,9 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentEvalI
 <3> The gate on the comparison, see xref:testing:evaluation/gates-and-reports.adoc#gates[Gates].
 <4> The comparison is the result named `expected` of the attempt, next to the verdicts of the bound evaluators.
 
-Without `grade(...)` the runner compares the two replies with Java `equals` method.
+Without `grade(...)` the runner compares the two replies with the Java `equals` method. A record defines it. A reply class that does not define `equals`, or a record with an array component, never compares equal, so give such a reply type an `equals` method or compare the replies with a `Grader`.
+
+When the command handler replies with a sealed interface and the expected reply is one of its subtypes, give `cases(...)` the type arguments, so the reply type of the experiment is the interface and not the subtype: `experimentRunner.<String, Reply>cases(EvalCase.of("refund", "I want my money back", new OpenRefund())).agent(Router::route)`.
 
 [#mocked]
 == Running the cases with a mocked model

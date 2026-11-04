@@ -117,7 +117,8 @@ class GateTest {
 
     assertThat(report.passed()).isFalse();
     assertThat(report.render())
-        .contains("the reply does not match the expected reply on [c3 (run 1)]")
+        .contains("no reply to compare with the expected reply on [c3 (run 1)]")
+        .doesNotContain("does not match")
         .contains("expected 1/1 (1 inconclusive)");
   }
 
