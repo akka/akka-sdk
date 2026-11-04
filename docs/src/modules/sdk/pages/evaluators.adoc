@@ -309,7 +309,7 @@ The ledger is the log of recorded agent interactions and their evaluations. It i
 A link:{attachmentsdir}/api/akka/javasdk/ledger/LedgerClient.html[`LedgerClient`] fetches records from it. It can be injected into any component, but in practice it is mainly evaluators that use it.
 
 An evaluator of an interaction of an autonomous agent can read the flow of that interaction, with the flow id from `Subject.Interaction.flowId()`.
-The flow holds the interactions of its agents and their activity, such as task results, iterations, delegation and handoff.
+The flow holds the interactions of its agents and their activity, such as task outcomes, iterations, delegation and handoff.
 `getFlowRecords` returns the records of the flow in the order the runtime recorded them, at most 100 in a page:
 
 [source,java,indent=0]
