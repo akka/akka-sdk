@@ -15,9 +15,9 @@ import java.util.Optional;
  * @param name the name of the tool that was called
  * @param arguments the arguments passed to the tool, as a JSON string
  * @param response the result of the call as text when the status is {@link Status#COMPLETED}, and
- *     the error text that the runtime sent to the model when the status is {@link Status#FAILED}.
- *     Empty for {@link Status#NOT_RUN}, {@link Status#PENDING} and {@link Status#NO_RESULT}. For
- *     {@link Status#UNSPECIFIED}, the recorded result, or empty when the ledger has none.
+ *     the error text when the status is {@link Status#FAILED}. Empty for {@link Status#NOT_RUN},
+ *     {@link Status#PENDING} and {@link Status#NO_RESULT}. For {@link Status#UNSPECIFIED}, the
+ *     recorded result, or empty when the ledger has none.
  * @param status what became of the call
  */
 public record ToolCall(String id, String name, String arguments, String response, Status status) {
@@ -39,8 +39,10 @@ public record ToolCall(String id, String name, String arguments, String response
      */
     COMPLETED,
     /**
-     * The call has an error result. The tool returned one, or an autonomous agent sent the failure
-     * of the call to the model as the result. {@code response} holds the error text.
+     * The call has an error result. The tool returned one, or an autonomous agent turned the
+     * failure of the call into one, for example a tool that throws or a tool name that does not
+     * exist. {@code response} holds the error text. A call of a failed interaction can have this
+     * status. The runtime then may not have sent the error text to the model.
      */
     FAILED,
     /**
@@ -58,9 +60,11 @@ public record ToolCall(String id, String name, String arguments, String response
     PENDING,
     /**
      * The interaction ended before the call had a result, because the tool round failed or the
-     * caller cancelled a streamed reply while the tool round ran. When a call of a tool round fails
-     * or a guardrail blocks it, every call of the round has this status, also a call that completed
-     * and a capability tool call. The tool can have run.
+     * caller cancelled a streamed reply while the tool round ran. The tool can have run. When a
+     * guardrail blocks a call of a tool round, every call of the round has this status, also a call
+     * that completed and a capability tool call. The same holds when a tool fails on a single reply
+     * or a streamed reply. An autonomous agent records a tool that fails as {@link #FAILED}
+     * instead, and keeps the results of the other calls of the round.
      */
     NO_RESULT
   }
@@ -87,10 +91,13 @@ public record ToolCall(String id, String name, String arguments, String response
   }
 
   /**
-   * The result recorded for the call, decoded from its JSON as the given type. Empty when the
-   * ledger has no result for the call, for example when a guardrail denied the call.
+   * The response of the call, decoded from its JSON as the given type. Empty when the response is
+   * empty, for example when a guardrail denied the call or the tool returned an empty result. The
+   * method decodes the response whatever the status, and the response of a {@link Status#FAILED}
+   * call is the error text.
    *
-   * @throws IllegalArgumentException when the result does not decode as the type
+   * @throws IllegalArgumentException when the response does not decode as the type, for example the
+   *     error text of a failed call
    */
   public <T> Optional<T> responseAs(Class<T> type) {
     if (response == null || response.isBlank()) return Optional.empty();
