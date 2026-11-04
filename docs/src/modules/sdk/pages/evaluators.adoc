@@ -24,7 +24,7 @@ The same evaluators judge an agent in a test: xref:testing:evaluation/index.adoc
 Two kinds of evaluator exist:
 
 * `Evaluator` handles one interaction in a single `evaluate` call. Use it when the evaluation completes in one step, for example a single judge call.
-* xref:_durable_evaluators[`DurableEvaluator`] runs the evaluation as a sequence of steps with durable state, and resumes from the last completed step after a restart. Use it when the evaluation needs several calls or waits on an external party.
+* xref:_durable_evaluators[`DurableEvaluator`] runs the evaluation as a sequence of steps with durable state, and resumes from the last completed step after a restart. Use it when the evaluation needs several calls.
 
 Both kinds are bound to agents the same way and record the same kind of result.
 
@@ -195,7 +195,7 @@ NOTE: Evaluators typically call a model, so each evaluation has a cost. In a hig
 
 For an evaluation that runs in several steps and must survive restarts, extend link:{attachmentsdir}/api/akka/javasdk/evaluation/DurableEvaluator.html[`DurableEvaluator`] instead of `Evaluator`.
 Each evaluation runs as its own durable instance. The instance keeps a state of your choice across its steps and, if it is stopped for any reason, resumes from the last completed step.
-Use it for composed evaluations that accumulate results from several judge calls, or for evaluations that wait on an external party such as human review.
+Use it for composed evaluations that accumulate results from several judge calls.
 
 A durable evaluator starts in `onEvaluation(EvaluationContext)` and progresses through step methods. Each step is a method that returns `Effect`, and an effect either transitions to the next step or finishes the evaluation.
 The example has one step, which judges the interaction:

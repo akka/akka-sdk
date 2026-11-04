@@ -15,8 +15,8 @@ import java.util.Optional;
  *
  * <p>Use a DurableEvaluator instead of an {@link Evaluator} when the evaluation is long-running or
  * needs durable, multi-step execution, for example composed evaluations that accumulate state
- * across several judge calls, or evaluations that wait on human review. Each evaluation runs as its
- * own durable instance: if it is stopped for any reason, it resumes from the last completed step.
+ * across several judge calls. Each evaluation runs as its own durable instance: if it is stopped
+ * for any reason, it resumes from the last completed step.
  *
  * <p>Like an {@link Evaluator}, a DurableEvaluator is bound to one or more agents through
  * configuration under {@code akka.javasdk.evaluation.evaluators}, keyed by the evaluator's
