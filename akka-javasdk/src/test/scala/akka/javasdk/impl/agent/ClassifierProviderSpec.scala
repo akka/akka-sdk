@@ -15,6 +15,7 @@ import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.jdk.CollectionConverters._
 
 import akka.actor.testkit.typed.scaladsl.LogCapturing
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
@@ -97,6 +98,45 @@ object ClassifierProviderSpec {
       client.classify("toxicity", input)
   }
 
+  // Composes the classifiers named in its `members` config, like the documented ensemble.
+  class MembersEnsembleClassifier(context: ClassifierContext, client: ClassifierClient) extends Classifier {
+    private val members = context.config().getStringList("members").asScala.toList
+    override def classify(input: String): Classification = {
+      members.foreach(name => client.classify(name, input))
+      Classification.label(s"${context.name()}:$input")
+    }
+  }
+
+  private val cycleConfig = ConfigFactory.parseString(s"""
+    akka.javasdk.agent.classifiers {
+      "ensemble-a" {
+        class = "akka.javasdk.impl.agent.ClassifierProviderSpec$$MembersEnsembleClassifier"
+        members = ["ensemble-b"]
+      }
+      "ensemble-b" {
+        class = "akka.javasdk.impl.agent.ClassifierProviderSpec$$MembersEnsembleClassifier"
+        members = ["ensemble-a"]
+      }
+      "self" {
+        class = "akka.javasdk.impl.agent.ClassifierProviderSpec$$MembersEnsembleClassifier"
+        members = ["self"]
+      }
+      "diamond-top" {
+        class = "akka.javasdk.impl.agent.ClassifierProviderSpec$$MembersEnsembleClassifier"
+        members = ["diamond-left", "diamond-right"]
+      }
+      "diamond-left" {
+        class = "akka.javasdk.impl.agent.ClassifierProviderSpec$$MembersEnsembleClassifier"
+        members = ["no-context"]
+      }
+      "diamond-right" {
+        class = "akka.javasdk.impl.agent.ClassifierProviderSpec$$MembersEnsembleClassifier"
+        members = ["no-context"]
+      }
+      "no-context" { class = "akka.javasdk.impl.agent.ClassifierProviderSpec$$NoContextClassifier" }
+    }
+    """)
+
   // Overrides the async variant instead of the sync one -- the poweruser shape. classify throwing
   // proves the SDK only ever invokes classifyAsync.
   class AsyncOnlyClassifier extends Classifier {
@@ -170,12 +210,16 @@ object ClassifierProviderSpec {
   private def wireClassifier(
       client: => ClassifierClient)(clz: Class[Classifier], context: ClassifierContext): Classifier =
     try {
-      try clz.getConstructor(classOf[ClassifierClient]).newInstance(client)
+      try clz.getConstructor(classOf[ClassifierContext], classOf[ClassifierClient]).newInstance(context, client)
       catch {
         case _: NoSuchMethodException =>
-          try clz.getConstructor(classOf[ClassifierContext]).newInstance(context)
+          try clz.getConstructor(classOf[ClassifierClient]).newInstance(client)
           catch {
-            case _: NoSuchMethodException => clz.getConstructor().newInstance()
+            case _: NoSuchMethodException =>
+              try clz.getConstructor(classOf[ClassifierContext]).newInstance(context)
+              catch {
+                case _: NoSuchMethodException => clz.getConstructor().newInstance()
+              }
           }
       }
     } catch {
@@ -318,6 +362,33 @@ class ClassifierProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecL
       val provider = newProvider(system, cfg)
       val result = provider.client.classifyAsync("ensemble", "hi").toCompletableFuture.get(3, TimeUnit.SECONDS)
       result.label() shouldBe java.util.Optional.of("classified:hi")
+    }
+
+    "fail a call that cycles through two classifiers with the chain in the message" in {
+      val provider = newProvider(system, cycleConfig)
+      intercept[IllegalStateException] {
+        provider.client.classify("ensemble-a", "x")
+      }.getMessage shouldBe "Classifier cycle detected: ensemble-a -> ensemble-b -> ensemble-a"
+
+      val failure = intercept[java.util.concurrent.ExecutionException] {
+        provider.client.classifyAsync("ensemble-b", "x").toCompletableFuture.get(3, TimeUnit.SECONDS)
+      }
+      failure.getCause shouldBe an[IllegalStateException]
+      failure.getCause.getMessage shouldBe "Classifier cycle detected: ensemble-b -> ensemble-a -> ensemble-b"
+    }
+
+    "fail a classifier that lists itself as a member" in {
+      val provider = newProvider(system, cycleConfig)
+      intercept[IllegalStateException] {
+        provider.client.classify("self", "x")
+      }.getMessage shouldBe "Classifier cycle detected: self -> self"
+    }
+
+    "not report a cycle for a classifier reached twice on separate paths" in {
+      val provider = newProvider(system, cycleConfig)
+      provider.client.classify("diamond-top", "x").label() shouldBe java.util.Optional.of("diamond-top:x")
+      // the chain is not left behind on the calling thread
+      TelemetryContext.current() shouldBe TelemetryContext.root()
     }
 
     "invoke the overridden classifyAsync(...) and never the sync classify(...)" in {
