@@ -20,6 +20,7 @@ import akka.javasdk.ledger.EvaluationRecord
 import akka.javasdk.ledger.GuardrailDecisionRecord
 import akka.javasdk.ledger.InteractionRecord
 import akka.runtime.sdk.spi.SpiAgent
+import akka.runtime.sdk.spi.SpiAutonomousAgent
 import akka.runtime.sdk.spi.SpiLedger
 import akka.runtime.sdk.spi.{ LedgerClient => SpiLedgerClient }
 import org.scalatest.matchers.should.Matchers
@@ -310,8 +311,9 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
           new SpiLedger.ActivityEvent.IterationFailed(Some("task-5"), Some(4), "rate limited"),
           new SpiLedger.ActivityEvent.IterationFailed(None, None, "model unavailable"),
           new SpiLedger.ActivityEvent.DelegationStarted(
-            workerComponentIds = Seq("worker-agent", "reviewer-agent"),
-            workerInstanceIds = Seq("worker-1", "reviewer-1"),
+            workers = Seq(
+              new SpiAutonomousAgent.AgentRef("worker-agent", "worker-1"),
+              new SpiAutonomousAgent.AgentRef("reviewer-agent", "reviewer-1")),
             delegationCount = 2,
             subtaskIds = Seq("subtask-1", "subtask-2")),
           new SpiLedger.ActivityEvent.DelegationResolved(
@@ -320,7 +322,9 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
             succeededSubtaskIds = Seq("subtask-1", "subtask-2"),
             failedSubtaskIds = Seq("subtask-3")),
           new SpiLedger.ActivityEvent.HandoffStarted("task-6", "specialist-agent"),
-          new SpiLedger.ActivityEvent.HandoffReceived("task-7", "triage-agent", "triage-1"),
+          new SpiLedger.ActivityEvent.HandoffReceived(
+            "task-7",
+            new SpiAutonomousAgent.AgentRef("triage-agent", "triage-1")),
           new SpiLedger.ActivityEvent.Other("worker_task_received")))
 
       record.recordId() shouldEqual "activity-1"
@@ -361,7 +365,7 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
       val decision = spiGuardrailDecisionRecord(controlId = None, toolCall = None)
       val evaluation = spiEvaluationRecord(controlId = None)
       val spiClient = new FlowReadingSpiLedgerClient(
-        Future.successful(new SpiLedger.FlowPage(Seq(interaction, activity, decision, evaluation), Some(5L))))
+        Future.successful(new SpiLedger.FlowPage(Seq(interaction, activity, decision, evaluation), Some(5L), 5L)))
 
       val page = new LedgerClientImpl(spiClient, ExecutionContext.parasitic).getFlowRecords("flow-1")
 
@@ -380,7 +384,7 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
     }
 
     "map an empty last page" in {
-      val spiClient = new FlowReadingSpiLedgerClient(Future.successful(new SpiLedger.FlowPage(Seq.empty, None)))
+      val spiClient = new FlowReadingSpiLedgerClient(Future.successful(new SpiLedger.FlowPage(Seq.empty, None, 5L)))
 
       val page = new LedgerClientImpl(spiClient, ExecutionContext.parasitic).getFlowRecords("flow-1", 5L)
 
@@ -389,7 +393,7 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
     }
 
     "ask for position 0 in the forms without a position, and for a limit of 100 in every form" in {
-      val spiClient = new FlowReadingSpiLedgerClient(Future.successful(new SpiLedger.FlowPage(Seq.empty, None)))
+      val spiClient = new FlowReadingSpiLedgerClient(Future.successful(new SpiLedger.FlowPage(Seq.empty, None, 0L)))
       val client = new LedgerClientImpl(spiClient, ExecutionContext.parasitic)
 
       client.getFlowRecords("flow-1")

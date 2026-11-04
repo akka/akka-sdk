@@ -22,6 +22,7 @@ import akka.javasdk.ledger.Failure
 import akka.javasdk.ledger.GuardrailDecisionRecord
 import akka.javasdk.ledger.InteractionMetadata
 import akka.javasdk.ledger.InteractionRecord
+import akka.runtime.sdk.spi.SpiAutonomousAgent
 import akka.runtime.sdk.spi.SpiLedger
 import akka.runtime.sdk.spi.{ LedgerClient => SpiLedgerClient }
 import org.scalatest.matchers.should.Matchers
@@ -108,7 +109,10 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
       new SpiLedger.ActivityEvent.IterationFailed(Some("task-1"), Some(2), "failed"),
       new ActivityRecord.Event.IterationFailed("failed", Optional.of("task-1"), Optional.of(2))),
     (
-      new SpiLedger.ActivityEvent.DelegationStarted(Seq("worker-agent"), Seq("worker-1"), 1, Seq("subtask-1")),
+      new SpiLedger.ActivityEvent.DelegationStarted(
+        Seq(new SpiAutonomousAgent.AgentRef("worker-agent", "worker-1")),
+        1,
+        Seq("subtask-1")),
       new ActivityRecord.Event.DelegationStarted(
         Seq("worker-agent").asJava,
         1,
@@ -121,7 +125,9 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
       new SpiLedger.ActivityEvent.HandoffStarted("task-1", "specialist-agent"),
       new ActivityRecord.Event.HandoffStarted("task-1", "specialist-agent")),
     (
-      new SpiLedger.ActivityEvent.HandoffReceived("task-1", "triage-agent", "triage-1"),
+      new SpiLedger.ActivityEvent.HandoffReceived(
+        "task-1",
+        new SpiAutonomousAgent.AgentRef("triage-agent", "triage-1")),
       new ActivityRecord.Event.HandoffReceived("task-1", "triage-agent", "triage-1")),
     (new SpiLedger.ActivityEvent.Other("worker_task_received"), new ActivityRecord.Event.Other("worker_task_received")))
 
@@ -222,7 +228,7 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
       interaction: SpiLedger.InteractionRecord,
       evaluations: Seq[SpiLedger.EvaluationRecord],
       guardrailDecisions: Seq[SpiLedger.GuardrailDecisionRecord] = Seq.empty,
-      flowPage: SpiLedger.FlowPage = new SpiLedger.FlowPage(Seq.empty, None)): LedgerClientImpl = {
+      flowPage: SpiLedger.FlowPage = new SpiLedger.FlowPage(Seq.empty, None, 0L)): LedgerClientImpl = {
     val spiLedgerClient = new SpiLedgerClient {
       override def getInteraction(interactionId: String): Future[SpiLedger.InteractionRecord] =
         Future.successful(interaction)
@@ -433,7 +439,8 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
             spiInteractionRecord(),
             unknownValue[SpiLedger.FlowRecord],
             spiActivityRecord(new SpiLedger.ActivityEvent.TaskAssigned("task-1"))),
-          Some(4L)))
+          Some(4L),
+          4L))
 
       val page = client.getFlowRecords("flow-1")
 
