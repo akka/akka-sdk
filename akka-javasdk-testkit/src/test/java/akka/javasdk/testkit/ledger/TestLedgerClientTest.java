@@ -209,7 +209,7 @@ public class TestLedgerClientTest {
     assertEquals(List.of(interaction, activity, decision, evaluation), page.records());
     assertEquals(Optional.empty(), page.nextPosition());
     assertEquals(page, ledger.getFlowRecordsAsync("flow-1").toCompletableFuture().join());
-    assertTrue(ledger.getFlowRecords("flow-3").records().isEmpty());
+    assertEquals(new FlowPage(List.of(), Optional.empty(), 0), ledger.getFlowRecords("flow-3"));
   }
 
   @Test
@@ -252,10 +252,31 @@ public class TestLedgerClientTest {
     FlowPage first = ledger.getFlowRecords("flow-1");
     assertEquals(seeded.subList(0, 100), first.records());
     assertEquals(Optional.of(101L), first.nextPosition());
+    assertEquals(101L, first.continuationPosition());
 
     FlowPage second = ledger.getFlowRecords("flow-1", first.nextPosition().get());
     assertEquals(List.of(seeded.get(100)), second.records());
     assertEquals(Optional.empty(), second.nextPosition());
+    assertEquals(102L, second.continuationPosition());
+  }
+
+  @Test
+  public void readsTheRecordsRecordedAfterTheLastPageFromItsContinuationPosition() {
+    var first = activity("a1", "flow-1", Instant.ofEpochSecond(1));
+    var ledger = TestLedgerClient.create().seed(first);
+    FlowPage last = ledger.getFlowRecords("flow-1");
+    assertEquals(List.of(first), last.records());
+    assertEquals(Optional.empty(), last.nextPosition());
+
+    FlowPage caughtUp = ledger.getFlowRecords("flow-1", last.continuationPosition());
+    assertEquals(List.of(), caughtUp.records());
+    assertEquals(last.continuationPosition(), caughtUp.continuationPosition());
+
+    var second = activity("a2", "flow-1", Instant.ofEpochSecond(2));
+    ledger.seed(second);
+    FlowPage continued = ledger.getFlowRecords("flow-1", last.continuationPosition());
+    assertEquals(List.of(second), continued.records());
+    assertEquals(Optional.empty(), continued.nextPosition());
   }
 
   @Test
