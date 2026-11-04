@@ -280,15 +280,21 @@ public class TestLedgerClientTest {
   }
 
   @Test
-  public void rejectsAnEmptyFlowId() {
-    var ledger = TestLedgerClient.create();
+  public void rejectsAnEmptyFlowIdOrANegativePosition() {
+    var ledger = TestLedgerClient.create().seed(activity("a1", "flow-1", Instant.ofEpochSecond(1)));
 
     assertThrows(IllegalArgumentException.class, () -> ledger.getFlowRecords(""));
     assertThrows(IllegalArgumentException.class, () -> ledger.getFlowRecords("", 1));
+    assertThrows(IllegalArgumentException.class, () -> ledger.getFlowRecords("flow-1", -1));
     var async =
         assertThrows(
             CompletionException.class,
             () -> ledger.getFlowRecordsAsync("").toCompletableFuture().join());
     assertTrue(async.getCause() instanceof IllegalArgumentException);
+    var asyncNegative =
+        assertThrows(
+            CompletionException.class,
+            () -> ledger.getFlowRecordsAsync("flow-1", -1).toCompletableFuture().join());
+    assertTrue(asyncNegative.getCause() instanceof IllegalArgumentException);
   }
 }
