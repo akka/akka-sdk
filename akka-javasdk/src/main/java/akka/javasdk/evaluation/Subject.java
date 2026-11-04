@@ -13,9 +13,10 @@ import java.util.Optional;
 public sealed interface Subject {
 
   /**
-   * The id of the evaluated interaction.
+   * The ID of the evaluated interaction.
    *
-   * @throws IllegalStateException if the subject is not an interaction
+   * @return the interaction ID
+   * @throws IllegalStateException if this subject is not an interaction
    * @deprecated Switch over the subject and read {@link Interaction#interactionId()} instead.
    */
   @Deprecated(since = "3.8.0")
@@ -24,9 +25,10 @@ public sealed interface Subject {
   }
 
   /**
-   * The component id of the agent that produced the evaluated interaction.
+   * The component ID of the agent that produced the evaluated interaction.
    *
-   * @throws IllegalStateException if the subject is not an interaction
+   * @return the agent component ID
+   * @throws IllegalStateException if this subject is not an interaction
    * @deprecated Switch over the subject and read {@link Interaction#agentComponentId()} instead.
    */
   @Deprecated(since = "3.8.0")
@@ -45,16 +47,14 @@ public sealed interface Subject {
       implements Subject {}
 
   /**
-   * One run of a workflow, for a verdict about the outcome of the whole run rather than about one
-   * agent interaction. The interactions of the run that the evaluator judges are passed as the
-   * trigger attributes of the {@link EvaluationContext} when the evaluation is started, or kept in
-   * the workflow state and read through the workflow by its id. The evaluation can start before the
-   * workflow step that starts it is persisted, so the evaluator reads only what earlier steps
-   * persisted.
+   * One run of a workflow, evaluated as a whole rather than as an individual agent interaction.
    *
-   * @param workflowId the id of the workflow instance
-   * @param workflowComponentId the component id of the workflow, since a workflow id is unique per
-   *     workflow type only
+   * <p>Interactions to evaluate can be passed as trigger attributes when starting the evaluation,
+   * or read from workflow state. If reading workflow state, ensure the relevant state was persisted
+   * in an earlier step before the evaluation starts.
+   *
+   * @param workflowId the ID of the workflow instance
+   * @param workflowComponentId the component ID of the workflow
    */
   record Workflow(String workflowId, String workflowComponentId) implements Subject {}
 }

@@ -12,44 +12,51 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Client for starting an evaluation by an {@link akka.javasdk.evaluation.Evaluator} or {@link
- * akka.javasdk.evaluation.DurableEvaluator} on request, outside the bindings of the evaluator to
- * agents. The final step of a workflow uses it to have the outcome of the whole run evaluated, and
- * an endpoint uses it to evaluate a recorded interaction again.
+ * Client for starting evaluations on request with an {@link akka.javasdk.evaluation.Evaluator} or
+ * {@link akka.javasdk.evaluation.DurableEvaluator}, outside automatic agent bindings.
  *
- * <p>The evaluation id is derived from the evaluator, the subject and the attributes, so a repeated
- * call with the same arguments returns the same id. The runtime delivers the trigger at least once.
- * An {@code Evaluator} runs again for each repeated call and records each run under that id, so a
- * retried workflow step can run it twice. A {@code DurableEvaluator} runs once per id while its
- * instance exists: a repeated call returns the id without running anything. To evaluate the same
- * subject again on purpose, for example after a prompt change, pass an attribute that differs, such
- * as the prompt version.
+ * <p>Typically called from the final step of a workflow to evaluate the outcome of an entire run,
+ * or from an endpoint to evaluate a recorded interaction again.
  *
- * <p>Not for user extension, implementation provided by the SDK.
+ * <p>The evaluation ID is deterministically derived from the evaluator, the subject, and the
+ * attributes. Repeated calls with identical arguments return the same evaluation ID:
+ *
+ * <ul>
+ *   <li>For an {@code Evaluator}, each repeated call triggers another evaluation and records each
+ *       run under that ID. Retried workflow steps may therefore run the evaluator multiple times.
+ *   <li>For a {@code DurableEvaluator}, the evaluation runs only once per ID while the instance
+ *       exists. Subsequent calls return the existing ID without re-executing.
+ * </ul>
+ *
+ * To evaluate the same subject again intentionally (for instance, after updating a prompt), pass
+ * distinct attributes, such as a prompt version.
+ *
+ * <p>Not for user extension; implementation is provided by the SDK.
  */
 @DoNotInherit
 public interface EvaluatorClient {
 
   /**
-   * Start an evaluation of the subject by this evaluator. The evaluation runs in the background and
-   * can start before the workflow step that calls this method is persisted. Its outcome is recorded
-   * in the ledger under the returned evaluation id, see {@link
+   * Starts an evaluation of the given subject.
+   *
+   * <p>The evaluation runs asynchronously in the background. Its outcome is recorded in the ledger
+   * under the returned evaluation ID; see {@link
    * akka.javasdk.ledger.LedgerClient#getEvaluation(String)}.
    *
    * <p>Blocks the calling thread until the evaluation is durably queued. Safe to call on a virtual
-   * thread. Use {@link #startEvaluationAsync(Subject, Map)} for the non-blocking variant.
+   * thread. Use {@link #startEvaluationAsync(Subject, Map)} for non-blocking execution.
    *
-   * @param subject what to evaluate
-   * @param attributes pointers for the evaluator, available as {@link
-   *     akka.javasdk.evaluation.EvaluationContext#attributes()}, for example the ids of the
-   *     interactions to judge; the attributes are recorded with the evaluation
-   * @return the evaluation id
-   * @throws NullPointerException if the subject or the attributes are null
-   * @throws IllegalArgumentException if no evaluator has the component id of this client, if the
-   *     subject has an empty id or component id or one longer than 256 characters, if an attribute
-   *     key is empty, or if the keys and values of the attributes exceed 8192 characters in total
-   * @throws IllegalStateException if evaluators or the ledger are disabled, or if this evaluator is
-   *     disabled with {@code enabled = false} in its configuration entry
+   * @param subject what to evaluate; must not be null
+   * @param attributes contextual metadata passed to {@link
+   *     akka.javasdk.evaluation.EvaluationContext#attributes()}, such as interaction IDs to judge;
+   *     recorded with the evaluation; must not be null
+   * @return the generated evaluation ID
+   * @throws NullPointerException if {@code subject} or {@code attributes} is null
+   * @throws IllegalArgumentException if no evaluator matches this client component ID, if the
+   *     subject has an empty or oversized ID (> 256 characters), if an attribute key is empty, or
+   *     if total attribute keys and values exceed 8192 characters
+   * @throws IllegalStateException if evaluators or the ledger are disabled, or if this evaluator
+   *     has {@code enabled = false} in its configuration
    */
   default String startEvaluation(Subject subject, Map<String, String> attributes) {
     try {
@@ -60,12 +67,12 @@ public interface EvaluatorClient {
   }
 
   /**
-   * Async variant of {@link #startEvaluation(Subject, Map)}.
+   * Asynchronously starts an evaluation of the given subject.
    *
-   * @param subject what to evaluate
-   * @param attributes pointers for the evaluator, recorded with the evaluation
-   * @return a stage that completes with the evaluation id once the evaluation is durably queued, or
-   *     fails with the exception that {@link #startEvaluation(Subject, Map)} throws
+   * @param subject what to evaluate; must not be null
+   * @param attributes contextual metadata passed to the evaluator; must not be null
+   * @return a completion stage that completes with the evaluation ID once durably queued, or fails
+   *     with the exceptions documented in {@link #startEvaluation(Subject, Map)}
    */
   CompletionStage<String> startEvaluationAsync(Subject subject, Map<String, String> attributes);
 }

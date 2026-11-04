@@ -82,28 +82,27 @@ public class EvaluatorTestKit<E extends Evaluator> {
   }
 
   /**
-   * Run the evaluator's {@code evaluate} handler over the given subject with the given attributes,
-   * as an evaluation started through {@link akka.javasdk.client.EvaluatorClient} carries them,
-   * using the {@link #DEFAULT_EVALUATION_ID}.
+   * Runs the evaluator's {@code evaluate} handler over the subject with the given attributes, using
+   * the {@link #DEFAULT_EVALUATION_ID}.
    *
    * @param subject what to evaluate
-   * @param attributes the attributes the evaluation sees through {@link
+   * @param attributes trigger attributes passed to {@link
    *     akka.javasdk.evaluation.EvaluationContext#attributes()}
-   * @return the result of the evaluation
+   * @return the evaluation result
    */
   public EvaluatorResult evaluate(Subject subject, Map<String, String> attributes) {
     return evaluate(subject, DEFAULT_EVALUATION_ID, attributes);
   }
 
   /**
-   * Run the evaluator's {@code evaluate} handler over the given subject with the given attributes,
-   * using the given evaluation id.
+   * Runs the evaluator's {@code evaluate} handler over the subject with the given attributes and
+   * evaluation ID.
    *
    * @param subject what to evaluate
-   * @param evaluationId the id of the evaluation
-   * @param attributes the attributes the evaluation sees through {@link
+   * @param evaluationId the ID of the evaluation
+   * @param attributes trigger attributes passed to {@link
    *     akka.javasdk.evaluation.EvaluationContext#attributes()}
-   * @return the result of the evaluation
+   * @return the evaluation result
    */
   public EvaluatorResult evaluate(
       Subject subject, String evaluationId, Map<String, String> attributes) {

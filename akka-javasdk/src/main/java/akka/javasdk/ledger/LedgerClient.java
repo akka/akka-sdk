@@ -89,25 +89,24 @@ public interface LedgerClient {
   CompletionStage<List<EvaluationRecord>> getEvaluationsAsync(String interactionId);
 
   /**
-   * Fetch the evaluations recorded about the run of the workflow with the given {@code
-   * workflowComponentId} and {@code workflowId}, newest first. At most the 100 newest evaluations
-   * are returned.
+   * Fetches recorded evaluations for a workflow run, sorted newest first. Returns at most 100
+   * records.
    *
    * <p>Blocks the calling thread until the records have been fetched. Safe to call on a virtual
-   * thread. Use {@link #getWorkflowEvaluationsAsync(String, String)} for the non-blocking variant.
+   * thread. Use {@link #getWorkflowEvaluationsAsync(String, String)} for non-blocking execution.
    *
-   * @param workflowComponentId the component id of the workflow
-   * @param workflowId the id of the evaluated workflow instance
-   * @return the evaluations of that workflow run, or an empty list when none are recorded
+   * @param workflowComponentId the component ID of the workflow
+   * @param workflowId the ID of the evaluated workflow instance
+   * @return evaluations of the workflow run, or an empty list if none are recorded
    */
   List<EvaluationRecord> getWorkflowEvaluations(String workflowComponentId, String workflowId);
 
   /**
-   * Async variant of {@link #getWorkflowEvaluations(String, String)}.
+   * Asynchronously fetches recorded evaluations for a workflow run, sorted newest first.
    *
-   * @param workflowComponentId the component id of the workflow
-   * @param workflowId the id of the evaluated workflow instance
-   * @return a stage that completes with the evaluations of that workflow run
+   * @param workflowComponentId the component ID of the workflow
+   * @param workflowId the ID of the evaluated workflow instance
+   * @return a stage completing with evaluations of the workflow run, or an empty list if none
    */
   CompletionStage<List<EvaluationRecord>> getWorkflowEvaluationsAsync(
       String workflowComponentId, String workflowId);

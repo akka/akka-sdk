@@ -25,11 +25,13 @@ public interface EvaluationContext {
   Subject subject();
 
   /**
-   * The attributes the evaluation was started with through {@link
-   * akka.javasdk.client.EvaluatorClient}, pointers for the evaluator such as the ids of the
-   * interactions to judge. Empty for an evaluation that a binding starts.
+   * The attributes supplied when starting the evaluation through {@link
+   * akka.javasdk.client.EvaluatorClient}.
    *
-   * @return the attributes of this evaluation, unmodifiable
+   * <p>Attributes provide contextual pointers, such as interaction IDs to judge. Returns an empty
+   * map for evaluations triggered automatically by agent bindings.
+   *
+   * @return an unmodifiable map of evaluation attributes
    */
   Map<String, String> attributes();
 

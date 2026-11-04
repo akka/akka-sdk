@@ -82,12 +82,14 @@ public interface ComponentClient {
   TaskClient forTask(String taskId);
 
   /**
-   * Select an {@link akka.javasdk.evaluation.Evaluator} or {@link
-   * akka.javasdk.evaluation.DurableEvaluator} for starting an evaluation on request.
+   * Creates an {@link EvaluatorClient} to start evaluations on request with the given evaluator
+   * class.
    *
    * @param evaluatorClass the evaluator class, annotated with {@link
    *     akka.javasdk.annotations.Component}
+   * @return a client for starting evaluations with this evaluator
    * @throws IllegalArgumentException if the class is not an evaluator or has no component id
+   * @throws NullPointerException if {@code evaluatorClass} is null
    */
   EvaluatorClient forEvaluator(Class<?> evaluatorClass);
 }
