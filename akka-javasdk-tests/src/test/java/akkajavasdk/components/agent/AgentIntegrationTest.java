@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -172,6 +173,46 @@ public class AgentIntegrationTest extends TestKitSupport {
     var toolCall = interaction.toolCalls().get(0);
     assertThat(toolCall.status()).isEqualTo(ToolCall.Status.COMPLETED);
     assertThat(toolCall.response()).isEqualTo("2025-01-01");
+  }
+
+  /** A tool that fails ends the tool round, so the recorded tool call has no result. */
+  @Test
+  public void shouldRecordNoResultForTheToolCallOfAFailedToolRound() {
+    var userQuestion = "How is the traffic today in Ghent?";
+    var sessionId = newSessionId();
+
+    testModelProvider
+        .whenUserMessage(msg -> msg.content().equals(userQuestion))
+        .reply(new ToolInvocationRequest("TrafficService_getTrafficNow", ""));
+
+    Assertions.assertThrows(
+        Exception.class,
+        () ->
+            componentClient
+                .forAgent()
+                .inSession(sessionId)
+                .method(SomeAgentWithFailingTool::query)
+                .invoke(userQuestion));
+
+    Awaitility.await()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () ->
+                assertThat(
+                        getLedgerClient()
+                            .getInteractions("some-agent-with-failing-tool", sessionId))
+                    .singleElement()
+                    .satisfies(
+                        interaction -> {
+                          assertThat(interaction.failed()).isTrue();
+                          assertThat(interaction.toolCalls())
+                              .singleElement()
+                              .satisfies(
+                                  call -> {
+                                    assertThat(call.status()).isEqualTo(ToolCall.Status.NO_RESULT);
+                                    assertThat(call.response()).isEmpty();
+                                  });
+                        }));
   }
 
   @Test
