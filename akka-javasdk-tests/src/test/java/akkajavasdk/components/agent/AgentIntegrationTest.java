@@ -15,6 +15,7 @@ import akka.javasdk.agent.AgentRegistry;
 import akka.javasdk.agent.Guardrail;
 import akka.javasdk.agent.MessageContent;
 import akka.javasdk.agent.ToolCallGuardrail;
+import akka.javasdk.ledger.ToolCall;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
@@ -143,6 +144,36 @@ public class AgentIntegrationTest extends TestKitSupport {
     var interaction = getLedgerClient().getInteraction(result.interactionId().get());
     assertThat(interaction.agentComponentId()).isEqualTo("some-agent");
     assertThat(interaction.finalResponseText()).isEqualTo("123456");
+  }
+
+  /** The recorded interaction carries the status of its tool calls. */
+  @Test
+  public void shouldRecordTheStatusOfAToolCall() {
+    var userQuestion = "What is the date today?";
+
+    testModelProvider
+        .whenMessage(s -> s.equals(userQuestion))
+        .reply(new ToolInvocationRequest("SomeAgentWithTool_getDateOfToday", ""));
+
+    testModelProvider
+        .whenToolResult(result -> result.content().equals("2025-01-01"))
+        .thenReply(result -> new AiResponse("Today is " + result.content()));
+
+    Agent.AgentReply<SomeAgentWithTool.SomeResponse> result =
+        componentClient
+            .forAgent()
+            .inSession(newSessionId())
+            .method(SomeAgentWithTool::query)
+            .withDetailedReply()
+            .invoke(userQuestion);
+
+    assertThat(result.value().response()).isEqualTo("Today is 2025-01-01");
+    var interaction = getLedgerClient().getInteraction(result.interactionId().get());
+
+    assertThat(interaction.toolCalls()).hasSize(1);
+    var toolCall = interaction.toolCalls().get(0);
+    assertThat(toolCall.status()).isEqualTo(ToolCall.Status.COMPLETED);
+    assertThat(toolCall.response()).isEqualTo("2025-01-01");
   }
 
   @Test
