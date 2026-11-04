@@ -136,14 +136,17 @@ public record ActivityRecord(
     }
 
     /**
-     * The agent started delegations to workers. A delegation to an autonomous agent is a subtask,
-     * and the three lists have one entry for each subtask, in the same order. For a delegation to a
-     * request-based agent, the three lists are empty and only {@link #delegationCount()} counts it.
+     * The agent started delegations to workers. The two worker lists have one entry for each
+     * delegation, in the same order. A delegation to an autonomous agent is a subtask, and {@link
+     * #subtaskIds()} has its id at the same index. The runtime records each delegation to a
+     * request-based agent in an event of its own, with one worker that has an empty instance id and
+     * no subtask id.
      *
      * @param workerComponentIds the component ids of the workers
      * @param delegationCount the number of delegations that started
-     * @param subtaskIds the ids of the subtasks
-     * @param workerInstanceIds the instance ids of the workers
+     * @param subtaskIds the ids of the subtasks, empty for a delegation to a request-based agent
+     * @param workerInstanceIds the instance ids of the workers, an empty string for a request-based
+     *     agent
      */
     record DelegationStarted(
         List<String> workerComponentIds,

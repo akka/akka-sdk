@@ -14,6 +14,7 @@ import akka.javasdk.ledger.InteractionRecord;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
+import akkajavasdk.components.agent.SomeAgent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -27,13 +28,17 @@ public class LedgerFlowIntegrationTest extends TestKitSupport {
 
   private final TestModelProvider coordinatorModel = new TestModelProvider();
   private final TestModelProvider workerModel = new TestModelProvider();
+  private final TestModelProvider requestDelegatingModel = new TestModelProvider();
+  private final TestModelProvider someAgentModel = new TestModelProvider();
 
   @Override
   protected TestKit.Settings testKitSettings() {
     return TestKit.Settings.DEFAULT
         .withAdditionalConfig("akka.javasdk.agent.openai.api-key = n/a")
         .withModelProvider(CoordinatorAgent.class, coordinatorModel)
-        .withModelProvider(WorkerAgent.class, workerModel);
+        .withModelProvider(WorkerAgent.class, workerModel)
+        .withModelProvider(RequestDelegatingAgent.class, requestDelegatingModel)
+        .withModelProvider(SomeAgent.class, someAgentModel);
   }
 
   @Test
@@ -70,17 +75,7 @@ public class LedgerFlowIntegrationTest extends TestKitSupport {
                 assertThat(componentClient.forTask(taskId).get(TestTasks.RESEARCH).result())
                     .isPresent());
 
-    // the session of an autonomous agent interaction is the id of the agent instance
-    var flowId =
-        Awaitility.await()
-            .atMost(10, TimeUnit.SECONDS)
-            .until(
-                () ->
-                    getLedgerClient().getInteractions("coordinator-agent", coordinatorId).stream()
-                        .flatMap(interaction -> interaction.flowId().stream())
-                        .findFirst(),
-                Optional::isPresent)
-            .orElseThrow();
+    var flowId = flowIdOf("coordinator-agent", coordinatorId);
 
     // the ledger records the activity after the task completes
     Awaitility.await()
@@ -96,27 +91,15 @@ public class LedgerFlowIntegrationTest extends TestKitSupport {
                           .distinct())
                   .contains("coordinator-agent", "worker-agent");
 
-              var events =
-                  records.stream()
-                      .filter(record -> record instanceof ActivityRecord)
-                      .flatMap(record -> ((ActivityRecord) record).events().stream())
-                      .toList();
+              var events = activityEvents(records);
 
               var delegationStarted =
-                  events.stream()
-                      .filter(event -> event instanceof ActivityRecord.Event.DelegationStarted)
-                      .map(event -> (ActivityRecord.Event.DelegationStarted) event)
-                      .findFirst()
-                      .orElseThrow();
+                  firstEvent(events, ActivityRecord.Event.DelegationStarted.class);
               assertThat(delegationStarted.workerComponentIds()).containsExactly("worker-agent");
               assertThat(delegationStarted.subtaskIds()).hasSize(1);
 
               var delegationResolved =
-                  events.stream()
-                      .filter(event -> event instanceof ActivityRecord.Event.DelegationResolved)
-                      .map(event -> (ActivityRecord.Event.DelegationResolved) event)
-                      .findFirst()
-                      .orElseThrow();
+                  firstEvent(events, ActivityRecord.Event.DelegationResolved.class);
               assertThat(delegationResolved.succeeded()).isEqualTo(1);
               assertThat(delegationResolved.failed()).isZero();
               assertThat(delegationResolved.succeededSubtaskIds())
@@ -132,6 +115,77 @@ public class LedgerFlowIntegrationTest extends TestKitSupport {
 
               assertThat(FlowRecord.transcript(records)).contains("Research quantum computing");
             });
+  }
+
+  @Test
+  public void readsTheWorkerOfADelegationToARequestBasedAgent() {
+    requestDelegatingModel
+        .whenMessage(msg -> msg.contains("verify"))
+        .reply(delegateTo(SomeAgent.class, "{\"claim\":\"The sky is blue.\"}"));
+
+    someAgentModel.fixedResponse("{\"response\":\"Verified: the sky is indeed blue.\"}");
+
+    requestDelegatingModel
+        .whenMessage(msg -> msg.contains("Continue working"))
+        .reply(completeTask(new TestTasks.TestResult("Claim verified.", 90)));
+
+    var agentId = UUID.randomUUID().toString();
+    var taskId =
+        componentClient
+            .forAutonomousAgent(RequestDelegatingAgent.class, agentId)
+            .runSingleTask(TestTasks.TEST_TASK.instructions("Please verify: the sky is blue."));
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(30, TimeUnit.SECONDS)
+        .untilAsserted(
+            () ->
+                assertThat(componentClient.forTask(taskId).get(TestTasks.TEST_TASK).result())
+                    .isPresent());
+
+    var flowId = flowIdOf("request-delegating-agent", agentId);
+
+    Awaitility.await()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              var records = readFlow(flowId);
+
+              var delegationStarted =
+                  firstEvent(activityEvents(records), ActivityRecord.Event.DelegationStarted.class);
+              assertThat(delegationStarted.workerComponentIds()).containsExactly("some-agent");
+              assertThat(delegationStarted.workerInstanceIds()).containsExactly("");
+              assertThat(delegationStarted.subtaskIds()).isEmpty();
+              assertThat(delegationStarted.delegationCount()).isEqualTo(1);
+
+              assertThat(FlowRecord.transcript(records))
+                  .contains("started 1 delegation to [some-agent]");
+            });
+  }
+
+  // the session of an autonomous agent interaction is the id of the agent instance
+  private String flowIdOf(String agentComponentId, String agentInstanceId) {
+    return Awaitility.await()
+        .atMost(10, TimeUnit.SECONDS)
+        .until(
+            () ->
+                getLedgerClient().getInteractions(agentComponentId, agentInstanceId).stream()
+                    .flatMap(interaction -> interaction.flowId().stream())
+                    .findFirst(),
+            Optional::isPresent)
+        .orElseThrow();
+  }
+
+  private static List<ActivityRecord.Event> activityEvents(List<FlowRecord> records) {
+    return records.stream()
+        .filter(record -> record instanceof ActivityRecord)
+        .flatMap(record -> ((ActivityRecord) record).events().stream())
+        .toList();
+  }
+
+  private static <T extends ActivityRecord.Event> T firstEvent(
+      List<ActivityRecord.Event> events, Class<T> type) {
+    return events.stream().filter(type::isInstance).map(type::cast).findFirst().orElseThrow();
   }
 
   private List<FlowRecord> readFlow(String flowId) {
