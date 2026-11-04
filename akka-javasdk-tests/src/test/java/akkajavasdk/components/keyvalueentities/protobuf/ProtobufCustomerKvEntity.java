@@ -10,6 +10,8 @@ import akkajavasdk.protocol.SerializationTestProtos.ContactInfo;
 import akkajavasdk.protocol.SerializationTestProtos.CustomerState;
 import akkajavasdk.protocol.SerializationTestProtos.SimpleMessage;
 import akkajavasdk.protocol.SerializationTestProtos.Status;
+import com.google.protobuf.StringValue;
+import com.google.protobuf.util.Durations;
 import com.google.protobuf.util.Timestamps;
 
 /**
@@ -54,6 +56,24 @@ public class ProtobufCustomerKvEntity extends KeyValueEntity<CustomerState> {
             .setReviewDate(Timestamps.now())
             .setContact(ContactInfo.newBuilder().setPhone("123").build())
             .setPreferredEmail(command.preferredEmail())
+            .setDisplayName(StringValue.of(command.nickname() + "-display"))
+            .setSessionLength(Durations.fromSeconds(90))
+            .build();
+    return effects().updateState(newState).thenReply("Customer created");
+  }
+
+  public Effect<String> createWithNumbers(CreateWithNumbersCommand command) {
+    if (!currentState().getCustomerId().isEmpty()) {
+      return effects().error("Customer already exists");
+    }
+    var newState =
+        CustomerState.newBuilder()
+            .setCustomerId(commandContext().entityId())
+            .setName(command.name())
+            .setStatus(Status.ACTIVE)
+            .setLoyaltyPoints(command.loyaltyPoints())
+            .setVisitCount(command.visitCount())
+            .setLifetimeSpend(command.lifetimeSpend())
             .build();
     return effects().updateState(newState).thenReply("Customer created");
   }
@@ -138,6 +158,9 @@ public class ProtobufCustomerKvEntity extends KeyValueEntity<CustomerState> {
 
   public record CreateWithPresenceFieldsCommand(
       String name, String nickname, String preferredEmail) {}
+
+  public record CreateWithNumbersCommand(
+      String name, long loyaltyPoints, int visitCount, long lifetimeSpend) {}
 
   public record ChangeNameCommand(String newName) {}
 

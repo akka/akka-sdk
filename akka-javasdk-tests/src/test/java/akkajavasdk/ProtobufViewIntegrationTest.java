@@ -16,8 +16,10 @@ import akkajavasdk.components.views.protobuf.ProtobufCustomerStateView;
 import akkajavasdk.components.views.protobuf.ProtobufCustomersByNameView;
 import akkajavasdk.protocol.SerializationTestProtos.CustomerStateList;
 import akkajavasdk.protocol.SerializationTestProtos.CustomersByCreationTimeQuery;
+import akkajavasdk.protocol.SerializationTestProtos.CustomersByNumbersQuery;
 import akkajavasdk.protocol.SerializationTestProtos.SimpleMessage;
 import akkajavasdk.protocol.SerializationTestProtos.Status;
+import com.google.protobuf.util.Durations;
 import com.google.protobuf.util.Timestamps;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -232,6 +234,18 @@ public class ProtobufViewIntegrationTest extends TestKitSupport {
             view.method(ProtobufCustomerStateView::getCustomersByPreferredEmail)
                 .invoke(preferredEmailParam));
     assertThat(byPreferredEmail).containsExactly(fullId);
+
+    // Wrapper type field, stored as a plain JSON value.
+    var withoutDisplayName =
+        ids(view.method(ProtobufCustomerStateView::getCustomersWithoutDisplayName).invoke());
+    assertThat(withoutDisplayName).contains(bareId).doesNotContain(fullId);
+    var byDisplayName =
+        view.method(ProtobufCustomerStateView::getCustomersByDisplayName)
+            .invoke(SimpleMessage.newBuilder().setText("presence-nick-display").build());
+    assertThat(ids(byDisplayName)).containsExactly(fullId);
+    var full = byDisplayName.getCustomers(0);
+    assertThat(full.getDisplayName().getValue()).isEqualTo("presence-nick-display");
+    assertThat(full.getSessionLength()).isEqualTo(Durations.fromSeconds(90));
   }
 
   @Test
@@ -309,6 +323,53 @@ public class ProtobufViewIntegrationTest extends TestKitSupport {
     assertThat(emptyResult.getCustomersList())
         .extracting(c -> c.getName())
         .doesNotContain("TS Alice", "TS Bob");
+  }
+
+  @Test
+  public void shouldQueryViewOnLongAndUnsignedFields() {
+    var entityId = "view-proto-numbers-1";
+    // uint32 above Integer.MAX_VALUE, uint64 values above Long.MAX_VALUE are not supported
+    var loyaltyPoints = Long.MAX_VALUE - 1;
+    var visitCount = Integer.parseUnsignedInt("3000000000");
+    var lifetimeSpend = Long.MAX_VALUE;
+    componentClient
+        .forKeyValueEntity(entityId)
+        .method(ProtobufCustomerKvEntity::createWithNumbers)
+        .invoke(
+            new ProtobufCustomerKvEntity.CreateWithNumbersCommand(
+                "Numbers Alice", loyaltyPoints, visitCount, lifetimeSpend));
+
+    var query =
+        CustomersByNumbersQuery.newBuilder()
+            .setLoyaltyPoints(loyaltyPoints)
+            .setVisitCount(visitCount)
+            .setLifetimeSpend(lifetimeSpend)
+            .build();
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(20, TimeUnit.of(SECONDS))
+        .untilAsserted(
+            () -> {
+              var result =
+                  componentClient
+                      .forView()
+                      .method(ProtobufCustomerStateView::getCustomersByLoyaltyPoints)
+                      .invoke(query);
+              assertThat(ids(result)).containsExactly(entityId);
+              assertThat(result.getCustomers(0).getLoyaltyPoints()).isEqualTo(loyaltyPoints);
+            });
+
+    var view = componentClient.forView();
+    var byVisitCount =
+        view.method(ProtobufCustomerStateView::getCustomersByVisitCount).invoke(query);
+    assertThat(ids(byVisitCount)).containsExactly(entityId);
+    assertThat(byVisitCount.getCustomers(0).getVisitCount()).isEqualTo(visitCount);
+
+    var byLifetimeSpend =
+        view.method(ProtobufCustomerStateView::getCustomersByLifetimeSpend).invoke(query);
+    assertThat(ids(byLifetimeSpend)).containsExactly(entityId);
+    assertThat(byLifetimeSpend.getCustomers(0).getLifetimeSpend()).isEqualTo(lifetimeSpend);
   }
 
   private static List<String> ids(CustomerStateList list) {

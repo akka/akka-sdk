@@ -562,7 +562,7 @@ private[impl] object ViewDescriptorFactory {
                 s"View updater tried to set row state to null, not allowed [$componentId] threw an exception")
               throw ViewException(componentId, "updateState with null state is not allowed.", None)
             }
-            val bytesPayload = serializer.toBytesAsJson(newState)
+            val bytesPayload = serializer.toBytesAsViewJson(newState)
             new spi.SpiTableUpdateHandler.UpdateRow(bytesPayload)
           case ViewEffectImpl.Delete => SpiTableUpdateHandler.DeleteRow
           case ViewEffectImpl.Ignore => SpiTableUpdateHandler.IgnoreUpdate
@@ -584,7 +584,7 @@ private[impl] object ViewDescriptorFactory {
 
     override def handle(input: SpiTableUpdateEnvelope): Future[SpiTableUpdateEffect] = Future {
       val protoMessage = serializer.fromBytes(tableRowClass, input.eventPayload)
-      val bytesPayload = serializer.toBytesAsJson(protoMessage)
+      val bytesPayload = serializer.toBytesAsViewJson(protoMessage)
       new spi.SpiTableUpdateHandler.UpdateRow(bytesPayload)
     }(ec)
   }

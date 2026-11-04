@@ -6,6 +6,14 @@ package akka.javasdk.impl.serialization
 
 import akka.runtime.sdk.spi.BytesPayload
 import akka.util.ByteString
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.google.protobuf.DescriptorProtos
+import com.google.protobuf.Int64Value
+import com.google.protobuf.Timestamp
+import com.google.protobuf.UInt64Value
+import numbers.NumberProtos.Int64Map
+import numbers.NumberProtos.NoLongFields
+import numbers.NumberProtos.NumberFields
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import protoconsumer.EventsForConsumer
@@ -50,6 +58,88 @@ class ProtobufSerializerSpec extends AnyWordSpec with Matchers {
       val jsonString = bytesPayload.bytes.utf8String
       jsonString should include("text")
       jsonString should include("hello json")
+    }
+
+    "serialize 64-bit integers as JSON numbers in view JSON" in {
+      val maxUnsigned = Long.MaxValue
+      val nested = NumberFields.newBuilder().setInt64Value(Long.MinValue).build()
+      val original = NumberFields
+        .newBuilder()
+        .setInt32Value(1)
+        .setUint32Value(Integer.parseUnsignedInt("4294967295"))
+        .setFixed32Value(Integer.parseUnsignedInt("3000000000"))
+        .setInt64Value(Long.MaxValue)
+        .setSint64Value(-5L)
+        .setSfixed64Value(6L)
+        .setUint64Value(maxUnsigned)
+        .setFixed64Value(maxUnsigned)
+        .addInt64Values(7L)
+        .addInt64Values(8L)
+        .setInt64Wrapper(Int64Value.of(10L))
+        .setUint64Wrapper(UInt64Value.of(maxUnsigned))
+        .setNested(nested)
+        .addNestedList(nested)
+        .setTimestamp(Timestamp.newBuilder().setSeconds(11L))
+        .setText("12")
+        .build()
+
+      val bytesPayload = ProtobufSerializer.toBytesAsViewJson(original)
+
+      bytesPayload.contentType shouldBe "json.akka.io/numbers.NumberFields"
+      val json = new ObjectMapper().readTree(bytesPayload.bytes.utf8String)
+      json.get("int32_value").isNumber shouldBe true
+      json.get("uint32_value").asText shouldBe "4294967295"
+      json.get("uint32_value").isNumber shouldBe true
+      json.get("fixed32_value").asText shouldBe "3000000000"
+      json.get("int64_value").isNumber shouldBe true
+      json.get("int64_value").asLong shouldBe Long.MaxValue
+      json.get("sint64_value").asLong shouldBe -5L
+      json.get("sfixed64_value").asLong shouldBe 6L
+      json.get("uint64_value").isNumber shouldBe true
+      json.get("uint64_value").asLong shouldBe Long.MaxValue
+      json.get("fixed64_value").asLong shouldBe Long.MaxValue
+      json.get("int64_values").get(0).isNumber shouldBe true
+      json.get("int64_values").get(1).asLong shouldBe 8L
+      json.get("int64_wrapper").isNumber shouldBe true
+      json.get("int64_wrapper").asLong shouldBe 10L
+      json.get("uint64_wrapper").asLong shouldBe Long.MaxValue
+      json.get("nested").get("int64_value").asLong shouldBe Long.MinValue
+      json.get("nested").get("int64_value").isNumber shouldBe true
+      json.get("nested_list").get(0).get("int64_value").isNumber shouldBe true
+      json.get("timestamp").isTextual shouldBe true
+      json.get("text").isTextual shouldBe true
+
+      ProtobufSerializer.fromBytesAsJson(classOf[NumberFields], bytesPayload) shouldBe original
+    }
+
+    "serialize 64-bit integers in map values as JSON numbers in view JSON" in {
+      val original = Int64Map.newBuilder().putValues("nine", 9L).build()
+      val json = new ObjectMapper().readTree(ProtobufSerializer.toBytesAsViewJson(original).bytes.utf8String)
+      json.get("values").get("nine").isNumber shouldBe true
+    }
+
+    "serialize 64-bit integers in well-known types without a special JSON form as JSON numbers" in {
+      val original = DescriptorProtos.UninterpretedOption.newBuilder().setNegativeIntValue(-1L).build()
+      val json = new ObjectMapper().readTree(ProtobufSerializer.toBytesAsViewJson(original).bytes.utf8String)
+      json.get("negative_int_value").isNumber shouldBe true
+      json.get("negative_int_value").asLong shouldBe -1L
+    }
+
+    "fail view JSON serialization of a uint64 value above Long.MaxValue" in {
+      val original = NumberFields.newBuilder().setUint64Value(-1L).build()
+      intercept[IllegalArgumentException](ProtobufSerializer.toBytesAsViewJson(original)).getMessage should include(
+        "uint64_value")
+    }
+
+    "serialize a 64-bit wrapper type as a JSON number in view JSON" in {
+      val bytesPayload = ProtobufSerializer.toBytesAsViewJson(Int64Value.of(42L))
+      bytesPayload.bytes.utf8String shouldBe "42"
+      ProtobufSerializer.fromBytesAsJson(classOf[Int64Value], bytesPayload) shouldBe Int64Value.of(42L)
+    }
+
+    "serialize a message without 64-bit integer fields to the same view JSON as regular JSON" in {
+      val original = NoLongFields.newBuilder().setText("text").setCount(3).build()
+      ProtobufSerializer.toBytesAsViewJson(original) shouldBe ProtobufSerializer.toBytesAsJson(original)
     }
 
     "detect protobuf content type" in {
