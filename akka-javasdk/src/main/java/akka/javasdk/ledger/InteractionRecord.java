@@ -137,8 +137,13 @@ public record InteractionRecord(
    * for logging.
    */
   public String transcript() {
+    return transcript(true);
+  }
+
+  // FlowRecord.transcript leaves out the system message when it repeats the one written before.
+  String transcript(boolean withSystemMessage) {
     var sb = new StringBuilder();
-    if (systemMessage != null && !systemMessage.isEmpty()) {
+    if (withSystemMessage && systemMessage != null && !systemMessage.isEmpty()) {
       sb.append("System: ").append(systemMessage).append("\n");
     }
     var input =
