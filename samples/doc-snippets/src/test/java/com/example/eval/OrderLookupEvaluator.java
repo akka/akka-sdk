@@ -4,6 +4,7 @@ import akka.javasdk.annotations.Component;
 import akka.javasdk.evaluation.Evaluation;
 import akka.javasdk.evaluation.EvaluationContext;
 import akka.javasdk.evaluation.Evaluator;
+import akka.javasdk.evaluation.Subject;
 import akka.javasdk.ledger.LedgerClient;
 import java.util.regex.Pattern;
 
@@ -22,7 +23,8 @@ public class OrderLookupEvaluator extends Evaluator {
 
   @Override
   public Effect evaluate(EvaluationContext context) {
-    var interaction = ledger.getInteraction(context.subject().interactionId()); // <3>
+    var subject = (Subject.Interaction) context.subject();
+    var interaction = ledger.getInteraction(subject.interactionId()); // <3>
     if (interaction.failed() && interaction.toolCalls().isEmpty()) {
       return effects().inconclusive("the interaction failed before any tool call"); // <4>
     }

@@ -5,6 +5,7 @@ import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.evaluation.EvaluationContext;
 import akka.javasdk.evaluation.Evaluator;
+import akka.javasdk.evaluation.Subject;
 import akka.javasdk.ledger.InteractionRecord;
 import akka.javasdk.ledger.LedgerClient;
 import java.util.stream.Collectors;
@@ -67,7 +68,8 @@ public class HallucinationJudgeEvaluator extends Evaluator {
 
   @Override
   public Effect evaluate(EvaluationContext context) {
-    InteractionRecord interaction = ledger.getInteraction(context.subject().interactionId());
+    var subject = (Subject.Interaction) context.subject();
+    InteractionRecord interaction = ledger.getInteraction(subject.interactionId());
     String answer = interaction.finalResponseText();
     if (interaction.failed() || answer.isBlank()) {
       return effects().inconclusive("no answer to evaluate");

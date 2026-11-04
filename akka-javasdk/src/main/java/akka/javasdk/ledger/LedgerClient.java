@@ -14,8 +14,9 @@ import java.util.concurrent.CompletionStage;
  * evaluations and the guardrail decisions made in them.
  *
  * <p>A {@code LedgerClient} can be injected into any component. An {@link
- * akka.javasdk.evaluation.Evaluator} uses it to fetch the interaction referenced by its {@link
- * akka.javasdk.evaluation.Subject#interactionId()}.
+ * akka.javasdk.evaluation.Evaluator} uses it to fetch the interactions that its {@link
+ * akka.javasdk.evaluation.Subject} and {@link
+ * akka.javasdk.evaluation.EvaluationContext#attributes()} refer to.
  *
  * <p>Not for user extension.
  */
@@ -86,6 +87,29 @@ public interface LedgerClient {
    * @return a stage that completes with the evaluations of that interaction
    */
   CompletionStage<List<EvaluationRecord>> getEvaluationsAsync(String interactionId);
+
+  /**
+   * Fetches recorded evaluations for a workflow run, sorted newest first. Returns at most 100
+   * records.
+   *
+   * <p>Blocks the calling thread until the records have been fetched. Safe to call on a virtual
+   * thread. Use {@link #getWorkflowEvaluationsAsync(String, String)} for non-blocking execution.
+   *
+   * @param workflowComponentId the component ID of the workflow
+   * @param workflowId the ID of the evaluated workflow instance
+   * @return evaluations of the workflow run, or an empty list if none are recorded
+   */
+  List<EvaluationRecord> getWorkflowEvaluations(String workflowComponentId, String workflowId);
+
+  /**
+   * Asynchronously fetches recorded evaluations for a workflow run, sorted newest first.
+   *
+   * @param workflowComponentId the component ID of the workflow
+   * @param workflowId the ID of the evaluated workflow instance
+   * @return a stage completing with evaluations of the workflow run, or an empty list if none
+   */
+  CompletionStage<List<EvaluationRecord>> getWorkflowEvaluationsAsync(
+      String workflowComponentId, String workflowId);
 
   /**
    * Fetch the interactions of the agent with the given {@code agentComponentId} in the session with

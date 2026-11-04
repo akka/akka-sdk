@@ -12,6 +12,7 @@ import akka.javasdk.evaluation.Evaluation;
 import akka.javasdk.evaluation.Subject;
 import akka.javasdk.testkit.EvaluatorResult;
 import akka.javasdk.testkit.EvaluatorTestKit;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
@@ -57,5 +58,16 @@ public class SimpleEvaluatorTest {
 
     assertTrue(result.isComplete());
     assertEquals("support-agent", result.getEvaluation().attributes().get("agent"));
+  }
+
+  @Test
+  public void evaluatesAWorkflowRunWithTheAttributes() {
+    Subject subject = new Subject.Workflow("workflow-1", "order-workflow");
+
+    EvaluatorResult result = testKit.evaluate(subject, Map.of("interactionIds", "i1,i2"));
+
+    assertTrue(result.isComplete());
+    assertEquals("evaluated run workflow-1", result.getEvaluation().explanation());
+    assertEquals("i1,i2", result.getEvaluation().attributes().get("interactionIds"));
   }
 }

@@ -101,6 +101,7 @@ import akka.javasdk.impl.consumer.MessageContextImpl
 import akka.javasdk.impl.evaluation.DurableEvaluatorImpl
 import akka.javasdk.impl.evaluation.EvaluatorImpl
 import akka.javasdk.impl.evaluation.EvaluatorSettings
+import akka.javasdk.impl.evaluation.GuardedEvaluationClient
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityImpl
 import akka.javasdk.impl.grpc.GrpcClientProviderImpl
 import akka.javasdk.impl.http.HttpClientProviderImpl
@@ -167,6 +168,7 @@ import akka.runtime.sdk.spi.SpiDevObjectStorageS3PathAccessStyle
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3ProfileCredentials
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3StaticCredentials
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3VirtualHostAccessStyle
+import akka.runtime.sdk.spi.SpiEvaluationClient
 import akka.runtime.sdk.spi.SpiEvaluator
 import akka.runtime.sdk.spi.SpiEventSourcedEntity
 import akka.runtime.sdk.spi.SpiEventingSupportSettings
@@ -450,6 +452,7 @@ class SdkRunner private (
         startContext.componentClients,
         startContext.eventLogClient,
         startContext.ledgerClient,
+        startContext.evaluationClient,
         startContext.remoteIdentification,
         startContext.tracerFactory,
         startContext.sdkMeter,
@@ -522,6 +525,7 @@ private[javasdk] object Sdk {
       classifierClient: ClassifierClient,
       sanitizerClient: SanitizerClient,
       ledgerClient: LedgerClient,
+      evaluationClient: SpiEvaluationClient,
       inMemorySpanExporter: Option[InMemorySpanExporter],
       // Completed by the runtime with the address its HTTP endpoint was bound to, see StartContext. Carried
       // here for the testkit, which awaits it from the thread that started the testkit. Nothing in the SDK
@@ -585,6 +589,7 @@ private final class Sdk(
     runtimeComponentClients: ComponentClients,
     eventLogClient: EventLogClient,
     spiLedgerClient: SpiLedgerClient,
+    spiEvaluationClient: SpiEvaluationClient,
     remoteIdentification: Option[RemoteIdentification],
     tracerFactory: String => Tracer,
     sdkMeter: Meter,
@@ -613,6 +618,8 @@ private final class Sdk(
   @volatile private var dependencyProviderOpt: Option[DependencyProvider] = dependencyProviderOverride
 
   private val applicationConfig = ApplicationConfig(system).getConfig
+  private val evaluationClient: SpiEvaluationClient =
+    new GuardedEvaluationClient(spiEvaluationClient, applicationConfig)
   private val sdkSettings = Settings(applicationConfig.getConfig("akka.javasdk"), spiSettings)
 
   spiSettings.devMode.foreach { devMode =>
@@ -811,6 +818,7 @@ private final class Sdk(
       sdkTracerFactory,
       regionInfo,
       runtimeComponentClients,
+      evaluationClient,
       { context =>
         val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
         val workflow = wiredInstance("Workflow", clz) {
@@ -915,6 +923,7 @@ private final class Sdk(
     val scanTimeComponentClient: ComponentClient =
       ComponentClientImpl(
         runtimeComponentClients,
+        evaluationClient,
         serializer,
         agentClassById = Map.empty,
         agentCapabilityConverter = None,
@@ -1488,6 +1497,7 @@ private final class Sdk(
               classifierClient,
               sanitizerClient,
               ledgerClient,
+              evaluationClient,
               inMemorySpanExporter,
               httpEndpointBound))
           Future.successful(Done)
@@ -1525,6 +1535,7 @@ private final class Sdk(
               classifierClient,
               sanitizerClient,
               ledgerClient,
+              evaluationClient,
               inMemorySpanExporter,
               httpEndpointBound))
           Future.successful(Done)
@@ -1786,6 +1797,7 @@ private final class Sdk(
   private def componentClient(telemetryContext: Option[OtelContext]): ComponentClient = {
     ComponentClientImpl(
       runtimeComponentClients,
+      evaluationClient,
       serializer,
       agentRegistry.agentClassById,
       Some(agentCapabilityConverter),

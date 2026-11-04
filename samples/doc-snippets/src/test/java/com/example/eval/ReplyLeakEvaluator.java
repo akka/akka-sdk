@@ -4,6 +4,7 @@ import akka.javasdk.annotations.Component;
 import akka.javasdk.evaluation.Evaluation;
 import akka.javasdk.evaluation.EvaluationContext;
 import akka.javasdk.evaluation.Evaluator;
+import akka.javasdk.evaluation.Subject;
 import akka.javasdk.ledger.LedgerClient;
 import java.util.Locale;
 import java.util.regex.Pattern;
@@ -27,7 +28,8 @@ public class ReplyLeakEvaluator extends Evaluator {
   @Override
   public Effect evaluate(EvaluationContext context) {
     var forbidden = context.config().getStringList("forbidden-texts"); // <1>
-    var interaction = ledger.getInteraction(context.subject().interactionId());
+    var subject = (Subject.Interaction) context.subject();
+    var interaction = ledger.getInteraction(subject.interactionId());
     var reply = interaction.finalResponseText();
     if (reply.isEmpty()) {
       return effects().notApplicable("no reply");

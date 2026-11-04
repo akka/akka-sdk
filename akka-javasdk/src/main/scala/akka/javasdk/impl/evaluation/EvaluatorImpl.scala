@@ -4,7 +4,10 @@
 
 package akka.javasdk.impl.evaluation
 
+import java.util
+
 import scala.concurrent.Future
+import scala.jdk.CollectionConverters._
 import scala.util.control.NonFatal
 
 import akka.annotation.InternalApi
@@ -42,6 +45,8 @@ private[impl] object EvaluatorImpl {
 
     override def evaluationId(): String = spiContext.evaluationId
 
+    override def attributes(): util.Map[String, String] = spiContext.attributes.asJava
+
     override def config(): Config = evaluationConfig
   }
 
@@ -51,14 +56,13 @@ private[impl] object EvaluatorImpl {
  * INTERNAL API
  *
  * Adapts a user [[Evaluator]] to the [[SpiEvaluator]] expected by the runtime. A new instance is created per evaluation
- * by the descriptor's instance factory. `configFor` gives the config for an evaluation of an agent, by its component
- * id.
+ * by the descriptor's instance factory. `configFor` gives the config for an evaluation of a subject.
  */
 @InternalApi
 private[impl] final class EvaluatorImpl[E <: Evaluator](
     factory: Option[OtelContext] => E,
     evaluatorClass: Class[E],
-    configFor: String => Config)
+    configFor: Subject => Config)
     extends SpiEvaluator {
   import EvaluatorImpl._
 
@@ -67,7 +71,7 @@ private[impl] final class EvaluatorImpl[E <: Evaluator](
   override def evaluate(spiContext: SpiEvaluator.EvaluationContext): Future[SpiEvaluator.Effect] = {
     try {
       val subject = EvaluationConversions.toSdkSubject(spiContext.subject)
-      val context = new EvaluationContextImpl(spiContext, subject, configFor(subject.agentComponentId()))
+      val context = new EvaluationContextImpl(spiContext, subject, configFor(subject))
       val evaluator = factory(Option(spiContext.telemetryContext))
       val effect = evaluator.evaluate(context)
       toSpiEffect(effect)
