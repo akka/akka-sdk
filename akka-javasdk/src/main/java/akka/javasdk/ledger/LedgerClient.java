@@ -191,7 +191,7 @@ public interface LedgerClient {
    *     FlowPage#continuationPosition()} of an earlier page of the flow, or 0 to read from the
    *     start
    * @return the page of the records of the flow that starts at that position
-   * @throws IllegalArgumentException if the flow id is empty
+   * @throws IllegalArgumentException if the flow id is empty or the position is negative
    */
   FlowPage getFlowRecords(String flowId, long fromPosition);
 
@@ -212,7 +212,8 @@ public interface LedgerClient {
    *     FlowPage#continuationPosition()} of an earlier page of the flow, or 0 to read from the
    *     start
    * @return a stage that completes with the page of the records of the flow that starts at that
-   *     position, or fails with {@link IllegalArgumentException} if the flow id is empty
+   *     position, or fails with {@link IllegalArgumentException} if the flow id is empty or the
+   *     position is negative
    */
   CompletionStage<FlowPage> getFlowRecordsAsync(String flowId, long fromPosition);
 }

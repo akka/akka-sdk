@@ -233,6 +233,10 @@ public final class TestLedgerClient implements LedgerClient {
     if (flowId.isEmpty()) {
       throw new IllegalArgumentException("The flow id must not be empty");
     }
+    if (fromPosition < 0) {
+      throw new IllegalArgumentException(
+          "The from position must not be negative, but was [" + fromPosition + "]");
+    }
     var inFlow = Optional.of(flowId);
     var interactions =
         records.values().stream().filter(record -> record.flowId().equals(inFlow)).toList();
