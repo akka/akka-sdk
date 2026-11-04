@@ -36,8 +36,8 @@ akka code init --name helloworld-agent --repo akka-samples/helloworld-agent.git
 ----
 docker run -d --name akka-dev \
   -v "$(pwd)/helloworld-agent":/workspace \
-  -p 9000:9000 \
-  -p 9889:9889 \
+  -p 127.0.0.1:9000:9000 \
+  -p 127.0.0.1:9889:9889 \
   -e AKKA_RESOLVER_TOKEN \
   -e GOOGLE_AI_GEMINI_API_KEY \
   -e ANTHROPIC_API_KEY \
@@ -45,7 +45,7 @@ docker run -d --name akka-dev \
   registry.akka.io/akka-dev-container:latest
 ----
 +
-This forwards `localhost:9000` for your service endpoint and `localhost:9889` for the Akka local console.
+This forwards `localhost:9000` for your service endpoint and `localhost:9889` for the Akka local console. By default, Docker opens these ports to your whole network. `127.0.0.1` keeps them on your machine, so no one else on your network can open the console or your service.
 
 == Run the service
 
