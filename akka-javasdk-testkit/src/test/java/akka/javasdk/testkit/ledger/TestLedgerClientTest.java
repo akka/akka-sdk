@@ -5,10 +5,14 @@
 package akka.javasdk.testkit.ledger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import akka.javasdk.evaluation.Evaluation;
+import akka.javasdk.ledger.ActivityRecord;
 import akka.javasdk.ledger.EvaluationRecord;
+import akka.javasdk.ledger.FlowPage;
+import akka.javasdk.ledger.FlowRecord;
 import akka.javasdk.ledger.GuardrailDecisionRecord;
 import akka.javasdk.ledger.InteractionMetadata;
 import akka.javasdk.ledger.InteractionRecord;
@@ -16,15 +20,22 @@ import akka.javasdk.ledger.ModelConfig;
 import akka.javasdk.testkit.TestLedgerClient;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletionException;
 import org.junit.jupiter.api.Test;
 
 public class TestLedgerClientTest {
 
   private static InteractionRecord interaction(
       String id, String agentId, String sessionId, Instant timestamp) {
+    return interaction(id, agentId, sessionId, Optional.empty(), timestamp);
+  }
+
+  private static InteractionRecord interaction(
+      String id, String agentId, String sessionId, Optional<String> flowId, Instant timestamp) {
     var metadata =
         new InteractionMetadata(
             new ModelConfig("test", "test", "", -1.0, -1.0, -1, -1),
@@ -36,7 +47,7 @@ public class TestLedgerClientTest {
         id,
         sessionId,
         agentId,
-        Optional.empty(),
+        flowId,
         metadata,
         "",
         List.of(),
@@ -75,12 +86,21 @@ public class TestLedgerClientTest {
 
   private static GuardrailDecisionRecord decision(
       String id, String interactionId, String sessionId, Instant timestamp) {
+    return decision(id, interactionId, sessionId, Optional.empty(), timestamp);
+  }
+
+  private static GuardrailDecisionRecord decision(
+      String id,
+      String interactionId,
+      String sessionId,
+      Optional<String> flowId,
+      Instant timestamp) {
     return new GuardrailDecisionRecord(
         id,
         "support-agent",
         interactionId,
         sessionId,
-        Optional.empty(),
+        flowId,
         "no-refunds",
         Optional.empty(),
         "policy",
@@ -91,6 +111,28 @@ public class TestLedgerClientTest {
         GuardrailDecisionRecord.FailMode.FAIL_CLOSED,
         Duration.ZERO,
         Optional.empty(),
+        timestamp);
+  }
+
+  private static ActivityRecord activity(String id, String flowId, Instant timestamp) {
+    return new ActivityRecord(
+        id,
+        "coordinator-agent",
+        "coordinator-1",
+        flowId,
+        List.of(new ActivityRecord.Event.TaskAssigned("task-1")),
+        timestamp);
+  }
+
+  private static EvaluationRecord evaluation(String id, String interactionId, Instant timestamp) {
+    return new EvaluationRecord(
+        id,
+        "quality-evaluator",
+        Optional.empty(),
+        EvaluationRecord.Trigger.ON_INTERACTION,
+        interactionId,
+        "coordinator-agent",
+        new EvaluationRecord.Outcome.Verdict(Evaluation.of(true, "good")),
         timestamp);
   }
 
@@ -139,5 +181,93 @@ public class TestLedgerClientTest {
 
     assertEquals(List.of(second, first), ledger.getGuardrailDecisions("interaction-1"));
     assertTrue(ledger.getGuardrailDecisions("interaction-3").isEmpty());
+  }
+
+  @Test
+  public void readsTheRecordsOfAFlowOldestFirst() {
+    var flow = Optional.of("flow-1");
+    var otherFlow = Optional.of("flow-2");
+    var interaction = interaction("i1", "coordinator-agent", "c1", flow, Instant.ofEpochSecond(1));
+    var activity = activity("a1", "flow-1", Instant.ofEpochSecond(2));
+    var decision = decision("g1", "i1", "c1", flow, Instant.ofEpochSecond(3));
+    var evaluation = evaluation("e1", "i1", Instant.ofEpochSecond(4));
+    var ledger =
+        TestLedgerClient.create()
+            .seed(evaluation)
+            .seed(decision)
+            .seed(activity)
+            .seed(interaction)
+            .seed(interaction("i2", "coordinator-agent", "c2", otherFlow, Instant.ofEpochSecond(1)))
+            .seed(activity("a2", "flow-2", Instant.ofEpochSecond(2)))
+            .seed(decision("g2", "i2", "c2", otherFlow, Instant.ofEpochSecond(3)))
+            .seed(evaluation("e2", "i2", Instant.ofEpochSecond(4)))
+            .seed(interaction("i3", "support-agent", "s1", Instant.ofEpochSecond(1)))
+            .seed(evaluation("e3", "i3", Instant.ofEpochSecond(4)));
+
+    var page = ledger.getFlowRecords("flow-1");
+
+    assertEquals(List.of(interaction, activity, decision, evaluation), page.records());
+    assertEquals(Optional.empty(), page.nextPosition());
+    assertEquals(page, ledger.getFlowRecordsAsync("flow-1").toCompletableFuture().join());
+    assertTrue(ledger.getFlowRecords("flow-3").records().isEmpty());
+  }
+
+  @Test
+  public void readsAnEvaluationInTheFlowOfItsInteraction() {
+    var interaction =
+        interaction(
+            "i1", "coordinator-agent", "c1", Optional.of("flow-1"), Instant.ofEpochSecond(1));
+    var evaluation = evaluation("e1", "i1", Instant.ofEpochSecond(2));
+    var ledger =
+        TestLedgerClient.create()
+            .seed(interaction)
+            .seed(evaluation)
+            .seed(evaluation("e2", "unknown-interaction", Instant.ofEpochSecond(3)));
+
+    assertEquals(List.of(interaction, evaluation), ledger.getFlowRecords("flow-1").records());
+  }
+
+  @Test
+  public void readsTheRecordsOfAFlowWithTheSameTimestampInTheOrderTheyWereSeeded() {
+    var timestamp = Instant.ofEpochSecond(1);
+    var first = activity("a2", "flow-1", timestamp);
+    var second = interaction("i1", "coordinator-agent", "c1", Optional.of("flow-1"), timestamp);
+    var third = activity("a1", "flow-1", timestamp);
+    var ledger = TestLedgerClient.create().seed(first).seed(second).seed(third);
+
+    assertEquals(
+        List.<FlowRecord>of(first, second, third), ledger.getFlowRecords("flow-1").records());
+  }
+
+  @Test
+  public void readsTheRecordsOfAFlowInPagesOf100() {
+    var ledger = TestLedgerClient.create();
+    var seeded = new ArrayList<FlowRecord>();
+    for (int i = 0; i < 101; i++) {
+      var activity = activity("a" + i, "flow-1", Instant.ofEpochSecond(i));
+      seeded.add(activity);
+      ledger.seed(activity);
+    }
+
+    FlowPage first = ledger.getFlowRecords("flow-1");
+    assertEquals(seeded.subList(0, 100), first.records());
+    assertEquals(Optional.of(101L), first.nextPosition());
+
+    FlowPage second = ledger.getFlowRecords("flow-1", first.nextPosition().get());
+    assertEquals(List.of(seeded.get(100)), second.records());
+    assertEquals(Optional.empty(), second.nextPosition());
+  }
+
+  @Test
+  public void rejectsAnEmptyFlowId() {
+    var ledger = TestLedgerClient.create();
+
+    assertThrows(IllegalArgumentException.class, () -> ledger.getFlowRecords(""));
+    assertThrows(IllegalArgumentException.class, () -> ledger.getFlowRecords("", 1));
+    var async =
+        assertThrows(
+            CompletionException.class,
+            () -> ledger.getFlowRecordsAsync("").toCompletableFuture().join());
+    assertTrue(async.getCause() instanceof IllegalArgumentException);
   }
 }

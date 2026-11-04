@@ -48,7 +48,8 @@ public record GuardrailDecisionRecord(
     FailMode failMode,
     Duration duration,
     Optional<ToolCall> toolCall,
-    Instant timestamp) {
+    Instant timestamp)
+    implements FlowRecord {
 
   /** Where in an interaction a guardrail ran. A later SDK version can add values. */
   public enum Boundary {
