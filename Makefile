@@ -2,7 +2,7 @@
 SHELL_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 ROOT_DIR := ${SHELL_DIR}
 TARGET_DIR := ${ROOT_DIR}/target/site
-NEXUS_DIR ?= ${ROOT_DIR}/../nexus
+NEXUS_DIR ?= ${ROOT_DIR}/../akka-optimize
 AKKA_CLI_VERSION := 3.0.81
 
 upstream := akka/akka-sdk
@@ -149,8 +149,8 @@ prod: check-optimize docker-image managed optimize-content antora-prod done
 check-optimize:
 	if [ ! -e "${NEXUS_DIR}/.git" ] || [ ! -f "${NEXUS_DIR}/optimize-docs/src/antora.yml" ]; then \
 		echo "Optimize documentation checkout is missing at ${NEXUS_DIR}." >&2; \
-		echo "Clone it beside akka-sdk: git clone git@github.com:akka/nexus.git ../nexus" >&2; \
-		echo "Or set NEXUS_DIR to the absolute path of an existing nexus checkout." >&2; \
+		echo "Clone it beside akka-sdk: git clone git@github.com:akka/akka-optimize.git ../akka-optimize" >&2; \
+		echo "Or set NEXUS_DIR to the absolute path of an existing Optimize checkout." >&2; \
 		exit 1; \
 	fi
 
