@@ -522,6 +522,34 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
       page.hasMore() shouldBe true
     }
 
+    "keep an evaluation with an outcome that the SDK does not know in a flow page, and leave out an evaluation of a subject that is not an interaction" in {
+      val ofInteraction = spiEvaluationRecord(
+        SpiLedger.EvaluationTrigger.OnInteraction,
+        "evaluation-1",
+        outcome = unknownValue[SpiLedger.EvaluationOutcome])
+      val client = ledgerClient(
+        spiInteractionRecord(),
+        Seq.empty,
+        flowPage = new SpiLedger.FlowPage(
+          Seq(
+            ofInteraction,
+            spiEvaluationRecord(
+              SpiLedger.EvaluationTrigger.OnInteraction,
+              "evaluation-2",
+              subject = new SpiLedger.WorkflowSubject("order-1", "order-workflow")),
+            spiEvaluationRecord(
+              SpiLedger.EvaluationTrigger.OnInteraction,
+              "evaluation-3",
+              subject = unknownValue[SpiLedger.EvaluationSubject])),
+          4L,
+          hasMore = false))
+
+      val records = client.getFlowRecords("flow-1").records().asScala.toSeq
+
+      records shouldBe Seq(LedgerClientImpl.toEvaluationRecord(ofInteraction))
+      records.head.asInstanceOf[EvaluationRecord].outcome() shouldBe a[EvaluationRecord.Outcome.Inconclusive]
+    }
+
     "read the interactions and the guardrail decisions of a session that hold values the SDK does not know" in {
       val client = ledgerClient(
         spiInteractionRecord(finishReason = unknownValue[SpiLedger.FinishReason]),
