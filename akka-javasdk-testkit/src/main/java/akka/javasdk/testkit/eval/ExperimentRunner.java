@@ -21,6 +21,7 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashSet;
@@ -267,6 +268,7 @@ public final class ExperimentRunner {
     public <A extends Agent, R extends V> Experiment<V> agent(
         Function2<A, C, Agent.Effect<R>> method) {
       if (method == null) throw new IllegalArgumentException("agent method required");
+      requireExpectedOfReplyType(cases, AgentEvaluatorBindings.replyClass(method));
       var config = testKit.getApplicationConfig();
       var bindings = EvaluatorBindings.of(config, method);
       bindings.requireEvaluatorComponents(
@@ -313,10 +315,31 @@ public final class ExperimentRunner {
     }
   }
 
+  // The compiler checks the reply type of the handler against the reply type of the cases, and a
+  // list declared for cases without an expected reply has Object as that type, which lets an
+  // expected reply of any type through.
+  static void requireExpectedOfReplyType(
+      List<? extends EvalCase<?, ?>> cases, Class<?> replyClass) {
+    for (var evalCase : cases) {
+      var expected = evalCase.expected();
+      if (expected.isPresent() && !replyClass.isInstance(expected.get())) {
+        throw new IllegalArgumentException(
+            "Case "
+                + evalCase.id()
+                + " expects a reply of type "
+                + expected.get().getClass().getName()
+                + ", but the command handler replies with "
+                + replyClass.getName()
+                + ". Give the case an expected reply of the reply type of the handler");
+      }
+    }
+  }
+
   /**
    * The grader that applies without {@link Experiment#grade}: the two replies must be equal. When
-   * the two replies read the same as text but are not equal, the detail names a missing {@code
-   * equals} as the cause.
+   * the two replies read the same as text but are not equal, the detail names the cause: the
+   * expected reply was read as another type than the handler replies with, or the reply type does
+   * not define {@code equals}.
    */
   static <V> Grader<V> equality() {
     return (expected, reply) -> {
@@ -324,14 +347,31 @@ public final class ExperimentRunner {
       var expectedText = EvalCase.asText(expected);
       var replyText = EvalCase.asText(reply);
       var detail = "expected " + expectedText + ", the reply is " + replyText;
-      if (expectedText.equals(replyText)) {
-        detail +=
-            ". The two read the same but are not equal: the reply type does not define equals, or"
-                + " a component of it does not. Define equals on the reply type, or compare the"
-                + " replies with a Grader";
-      }
+      if (expectedText.equals(replyText)) detail += whyNotEqual(expected, reply);
       return Evaluation.failed(detail);
     };
+  }
+
+  private static String whyNotEqual(Object expected, Object reply) {
+    var expectedClass = comparedClass(expected);
+    var replyClass = comparedClass(reply);
+    if (expectedClass != replyClass) {
+      return ". The two read the same but are of different types: the expected reply is a "
+          + expectedClass.getName()
+          + " and the reply is a "
+          + replyClass.getName()
+          + ". Read the cases with the reply type of the command handler";
+    }
+    return ". The two read the same but are not equal: the reply type does not define equals, or"
+        + " a component of it does not. Define equals on the reply type, or compare the replies"
+        + " with a Grader";
+  }
+
+  // The class equality turns on: for a collection, the class of its elements.
+  private static Class<?> comparedClass(Object value) {
+    if (value instanceof Collection<?> collection && !collection.isEmpty())
+      return comparedClass(collection.iterator().next());
+    return value.getClass();
   }
 
   private static void requirePositive(Duration evaluationTimeout) {
@@ -582,7 +622,7 @@ public final class ExperimentRunner {
             var evaluation = grader.grade(expected, (V) answered.value().get());
             if (evaluation == null) yield EvalResult.fail(EXPECTED, "the grader returned null");
             yield verdictResult(EXPECTED, evaluation);
-          } catch (RuntimeException e) {
+          } catch (RuntimeException | AssertionError e) {
             yield EvalResult.fail(EXPECTED, "the grader threw " + describe(e));
           }
         }
@@ -612,7 +652,7 @@ public final class ExperimentRunner {
     }
   }
 
-  private static String describe(RuntimeException e) {
+  private static String describe(Throwable e) {
     return e.getMessage() == null
         ? e.getClass().getSimpleName()
         : e.getClass().getSimpleName() + ": " + e.getMessage();

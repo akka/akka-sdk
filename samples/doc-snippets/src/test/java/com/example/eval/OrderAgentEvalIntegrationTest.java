@@ -110,12 +110,10 @@ public class OrderAgentEvalIntegrationTest extends TestKitSupport {
     var report = new ExperimentRunner(testKit)
       .cases(cases)
       .agent(OrderAgent::ask)
-      .grade(
-        (expected, reply) -> // <2>
-          reply.toLowerCase(Locale.ROOT).contains(expected)
-            ? Evaluation.passed("the reply says " + expected)
-            : Evaluation.failed("the reply does not say " + expected)
-      )
+      .grade((expected, reply) -> // <2>
+        reply.toLowerCase(Locale.ROOT).contains(expected)
+          ? Evaluation.passed("the reply says " + expected)
+          : Evaluation.failed("the reply does not say " + expected))
       .gate(Gate.expectedShouldPass()) // <3>
       .run();
 

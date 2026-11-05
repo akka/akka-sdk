@@ -31,7 +31,8 @@ public interface Grader<V> {
    * @param expected the expected reply of the case, not null
    * @param reply the value the agent's command handler returned, not null
    * @return the verdict, with the explanation the report prints and optionally a score and a label.
-   *     A thrown exception is recorded as a failed result with the exception as the detail.
+   *     A thrown exception or assertion error is recorded as a failed result with the exception as
+   *     the detail, so the grader can use assertions.
    */
   Evaluation grade(V expected, V reply);
 }

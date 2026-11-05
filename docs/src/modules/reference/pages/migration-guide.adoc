@@ -25,6 +25,12 @@ The evaluation runner of the TestKit no longer has its own evaluators and judges
 | `Experiment` returned by `agent(...)`
 | `Experiment<V>` with the reply type of the command handler. `grade(Grader<V>)` compares the reply of an attempt with the expected reply of its case.
 
+| An evaluator with the component id `expected`
+| Refused by the experiment. The id names the comparison result of the runner, next to `target`. Rename the evaluator.
+
+| `Gate.passRateShouldBeAtLeast(rate)` and `Gate.passRateShouldBeAtLeast(evaluatorClass, rate)` with a rate outside 0.0 to 1.0
+| `IllegalArgumentException`. The rate is a share of the attempts.
+
 | `Judge.modelBased(testKit)`, `JudgeAgent`, `ModelBasedJudge`
 | A judge agent and a judge evaluator written by the project, with the criterion and the threshold as xref:sdk:evaluators/examples.adoc#judging[configuration properties of the evaluator]
 

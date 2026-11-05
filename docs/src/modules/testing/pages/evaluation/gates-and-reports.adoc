@@ -65,7 +65,7 @@ A link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Gate.html[Gate] is a c
 | The reply of every attempt matches the expected reply of its case: every `expected` result passed. An attempt without a reply to compare, because the agent call failed or returned no value, fails the gate. The gate fails when no case has an expected reply.
 
 | `Gate.expectedPassRateShouldBeAtLeast(minimumRate)`
-| The share of the `expected` results that passed is at least `minimumRate`, over the attempts where the comparison ran. An attempt without a reply to compare is excluded. The gate fails when no case has an expected reply.
+| The share of the `expected` results that passed is at least `minimumRate`, over the attempts where the comparison ran. An attempt without a reply to compare is excluded, so combine the gate with `Gate.targetShouldNotFail()` to fail the batch on failed agent calls. The gate fails when no case has an expected reply.
 
 | `Gate.guardrailShouldNotDeny(name)`
 | The named guardrail denied nothing in any attempt. For a guardrail that must stay silent on legitimate traffic.

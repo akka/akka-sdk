@@ -12,6 +12,9 @@ import java.time.Duration;
 /**
  * Cases bound to the agent under test, ready to run. Obtained from {@link ExperimentCases#agent}.
  *
+ * <p>An experiment is immutable. Every setting returns a new experiment and leaves this one
+ * unchanged, so call {@link #run} on the experiment the last setting returned.
+ *
  * <p>Not for user extension.
  *
  * @param <V> the reply type of the agent's command handler
@@ -23,7 +26,7 @@ public interface Experiment<V> {
    * Sets the gate {@link #run} checks. Without a gate every case must pass.
    *
    * @param gate the gate condition to satisfy
-   * @return this experiment builder
+   * @return a new experiment with the setting applied
    * @throws IllegalArgumentException when {@code gate} is null
    */
   Experiment<V> gate(Gate gate);
@@ -39,7 +42,7 @@ public interface Experiment<V> {
    * ExperimentRunner#EXPECTED} result is then inconclusive.
    *
    * @param grader the grader to evaluate the expected reply against the actual reply
-   * @return this experiment builder
+   * @return a new experiment with the setting applied
    * @throws IllegalArgumentException when no case has an expected reply, or {@code grader} is null
    */
   Experiment<V> grade(Grader<V> grader);
@@ -51,7 +54,7 @@ public interface Experiment<V> {
    * test method that called {@link #run}, for example {@code SupportAgentEvalTest.qualityGate}.
    *
    * @param name the report name
-   * @return this experiment builder
+   * @return a new experiment with the setting applied
    * @throws IllegalArgumentException when the name is not usable as a file name
    */
   Experiment<V> name(String name);
@@ -61,7 +64,7 @@ public interface Experiment<V> {
    * Without one the report goes to {@code target/eval-reports} under the working directory.
    *
    * @param directory the directory to write the report file to
-   * @return this experiment builder
+   * @return a new experiment with the setting applied
    * @throws IllegalArgumentException when {@code directory} is null
    */
   Experiment<V> reportDirectory(Path directory);
@@ -69,7 +72,7 @@ public interface Experiment<V> {
   /**
    * Disables writing a report file on {@link #run}.
    *
-   * @return this experiment builder
+   * @return a new experiment with the setting applied
    */
   Experiment<V> withoutReportFile();
 
@@ -80,7 +83,7 @@ public interface Experiment<V> {
    * calls a real model or for a durable evaluator with slow steps.
    *
    * @param timeout duration to wait, must be positive
-   * @return this experiment builder
+   * @return a new experiment with the setting applied
    * @throws IllegalArgumentException when {@code timeout} is null, zero, or negative
    */
   Experiment<V> evaluationTimeout(Duration timeout);
@@ -96,7 +99,7 @@ public interface Experiment<V> {
    * runs, so a stub or an evaluator must not depend on state an attempt writes.
    *
    * @param times number of times to run each case, at least 1
-   * @return this experiment builder
+   * @return a new experiment with the setting applied
    * @throws IllegalArgumentException when {@code times} is less than 1
    */
   Experiment<V> repeat(int times);

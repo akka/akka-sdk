@@ -5,6 +5,7 @@
 package akkajavasdk.eval;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import akka.javasdk.DependencyProvider;
 import akka.javasdk.evaluation.Evaluation;
@@ -403,6 +404,23 @@ public class SupportAgentEvalTest extends TestKitSupport {
                 + " the reply is {\"customerId\":\"cust_7\",\"text\":\""
                 + answer.text()
                 + "\"}");
+  }
+
+  @Test
+  public void anExpectedReplyOfAnotherTypeThanTheHandlerRepliesWithIsRejected() {
+    // A list declared for cases without an expected reply accepts an expected reply of any type,
+    // and the compiler then accepts any handler.
+    List<EvalCase<AccountSupportAgent.Question, Object>> cases =
+        List.of(
+            EvalCase.of(
+                "answer-for-a-text-handler",
+                new AccountSupportAgent.Question("cust_7", "What am I waiting on?"),
+                new StructuredSupportAgent.Answer("cust_7", "card declined")));
+
+    assertThatThrownBy(() -> experimentRunner.cases(cases).agent(AccountSupportAgent::ask))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Case answer-for-a-text-handler expects a reply of type")
+        .hasMessageContaining("but the command handler replies with java.lang.String");
   }
 
   @Test

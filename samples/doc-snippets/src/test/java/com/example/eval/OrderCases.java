@@ -21,6 +21,10 @@ final class OrderCases {
 
   static final EvalCase<String, Object> GREETING = EvalCase.of("greeting", "hello?");
 
-  static final List<EvalCase<String, Object>> CURATED = List.of(ORDER_STATUS, FULL_REFUND, GREETING);
+  static final List<EvalCase<String, Object>> CURATED = List.of(
+    ORDER_STATUS,
+    FULL_REFUND,
+    GREETING
+  );
   // end::cases[]
 }

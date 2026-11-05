@@ -1105,6 +1105,76 @@ class ExperimentRunnerTest {
   }
 
   @Test
+  void anExpectedReplyReadAsAnotherTypeThanTheReplyIsNamedInTheDetail() {
+    var detail =
+        ExperimentRunner.equality()
+            .grade(List.of(Map.of("tool", "open-refund")), List.of(new Route("open-refund")))
+            .explanation();
+
+    assertThat(detail)
+        .isEqualTo(
+            "expected [{\"tool\":\"open-refund\"}], the reply is [{\"tool\":\"open-refund\"}]. The"
+                + " two read the same but are of different types: the expected reply is a"
+                + " java.util.ImmutableCollections$Map1 and the reply is a "
+                + Route.class.getName()
+                + ". Read the cases with the reply type of the command handler");
+  }
+
+  @Test
+  void anExpectedReplyOfAnotherTypeThanTheHandlerRepliesWithIsRejected() {
+    List<EvalCase<String, Object>> cases =
+        List.of(EvalCase.of("ok", "q", "text"), EvalCase.of("routed", "q", new Route("x")));
+
+    ExperimentRunner.requireExpectedOfReplyType(cases, Object.class);
+    ExperimentRunner.requireExpectedOfReplyType(cases.subList(0, 1), String.class);
+    assertThatThrownBy(() -> ExperimentRunner.requireExpectedOfReplyType(cases, String.class))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage(
+            "Case routed expects a reply of type "
+                + Route.class.getName()
+                + ", but the command handler replies with java.lang.String. Give the case an"
+                + " expected reply of the reply type of the handler");
+  }
+
+  @Test
+  void aGraderThatFailsAnAssertionFailsTheExpectedResult() {
+    var result =
+        experiment(
+                Targets.replying(ledger, turn -> "a reply"),
+                bindings(),
+                EvalCase.of("c", "q", "another reply"))
+            .grade(
+                (expected, reply) -> {
+                  assertThat(reply).isEqualTo(expected);
+                  return Evaluation.passed("equal");
+                })
+            .run()
+            .results()
+            .getFirst();
+
+    assertThat(result.failed()).isTrue();
+    assertThat(resultOf(result, ExperimentRunner.EXPECTED).detail())
+        .startsWith("the grader threw AssertionFailedError:")
+        .contains("another reply");
+  }
+
+  @Test
+  void aGraderThatReturnsNullFailsTheExpectedResult() {
+    var result =
+        experiment(
+                Targets.replying(ledger, turn -> "a reply"),
+                bindings(),
+                EvalCase.of("c", "q", "a reply"))
+            .grade((expected, reply) -> null)
+            .run()
+            .results()
+            .getFirst();
+
+    assertThat(result.evalResults())
+        .containsExactly(EvalResult.fail(ExperimentRunner.EXPECTED, "the grader returned null"));
+  }
+
+  @Test
   void aGraderThatThrowsFailsTheExpectedResult() {
     var result =
         experiment(

@@ -9,6 +9,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -135,6 +138,22 @@ class EvalCasesTest {
         .containsExactly(
             EvalCase.of("refund", "I want my money back", new Route("open-refund")),
             EvalCase.of("status", "Where is o_42?", new Route("track-order")));
+  }
+
+  @Test
+  void aCollectionReplyTypeIsRefused(@TempDir Path dir) {
+    var file = dir.resolve("graded-cases.jsonl");
+    for (var replyType : List.of(List.class, Set.class, Map.class)) {
+      assertThatThrownBy(() -> EvalCases.readJsonLines(file, String.class, replyType))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageStartingWith("The reply type " + replyType.getName() + " is a collection");
+      assertThatThrownBy(
+              () ->
+                  EvalCases.readJsonLinesResource(
+                      "akka/javasdk/testkit/eval/graded-cases.jsonl", String.class, replyType))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageStartingWith("The reply type " + replyType.getName() + " is a collection");
+    }
   }
 
   @Test

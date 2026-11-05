@@ -15,8 +15,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -73,15 +75,27 @@ public final class EvalCases {
    *     handler that replies with the model text
    * @return the cases in file order
    * @throws IllegalArgumentException when {@code file} is null, {@code commandType} is null, {@code
-   *     replyType} is null, or a line is not a case: missing id, missing command, missing expected
-   *     reply, a command or an expected reply that does not decode into its type, or an id a
-   *     previous line uses
+   *     replyType} is null or a collection or map type, or a line is not a case: missing id,
+   *     missing command, missing expected reply, a command or an expected reply that does not
+   *     decode into its type, or an id a previous line uses
    * @throws UncheckedIOException when the file cannot be read
    */
   public static <C, V> List<EvalCase<C, V>> readJsonLines(
       Path file, Class<C> commandType, Class<V> replyType) {
-    if (replyType == null) throw new IllegalArgumentException("replyType required");
+    requireReplyType(replyType);
     return readJsonLines(file, commandType, replyType, true);
+  }
+
+  // The element type of a collection is erased from its class, so the expected replies would
+  // decode into maps and never equal the reply of the handler.
+  private static void requireReplyType(Class<?> replyType) {
+    if (replyType == null) throw new IllegalArgumentException("replyType required");
+    if (Collection.class.isAssignableFrom(replyType) || Map.class.isAssignableFrom(replyType))
+      throw new IllegalArgumentException(
+          "The reply type "
+              + replyType.getName()
+              + " is a collection, whose element type the cases cannot be decoded into. Reply with"
+              + " a record that holds the collection, or compare the replies in the test");
   }
 
   private static <C, V> List<EvalCase<C, V>> readJsonLines(
@@ -125,12 +139,13 @@ public final class EvalCases {
    *     handler that replies with the model text
    * @return the cases in file order
    * @throws IllegalArgumentException when {@code resource} is null or blank, {@code commandType} is
-   *     null, {@code replyType} is null, the resource does not exist, or a line is not a case
+   *     null, {@code replyType} is null or a collection or map type, the resource does not exist,
+   *     or a line is not a case
    * @throws UncheckedIOException when the resource cannot be read
    */
   public static <C, V> List<EvalCase<C, V>> readJsonLinesResource(
       String resource, Class<C> commandType, Class<V> replyType) {
-    if (replyType == null) throw new IllegalArgumentException("replyType required");
+    requireReplyType(replyType);
     return readJsonLinesResource(resource, commandType, replyType, true);
   }
 
