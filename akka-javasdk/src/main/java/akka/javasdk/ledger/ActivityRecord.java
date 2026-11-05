@@ -64,13 +64,13 @@ public record ActivityRecord(
     }
 
     /**
-     * The agent completed a task.
+     * The agent completed a task. The event does not hold the result of the task. Read the result
+     * with {@link akka.javasdk.client.TaskClient#get}.
      *
      * @param taskId the id of the task
-     * @param resultSummary a summary of the result, or an empty string when none was recorded
      * @param iterationsUsed the number of iterations the task used
      */
-    record TaskCompleted(String taskId, String resultSummary, int iterationsUsed) implements Event {
+    record TaskCompleted(String taskId, int iterationsUsed) implements Event {
       @Override
       public String kind() {
         return "task_completed";

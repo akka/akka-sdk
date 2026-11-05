@@ -218,7 +218,7 @@ private[ledger] object LedgerClientImpl {
         case e: SpiLedger.ActivityEvent.TaskStarted =>
           new ActivityRecord.Event.TaskStarted(e.taskId, e.taskDescription, e.maxIterations)
         case e: SpiLedger.ActivityEvent.TaskCompleted =>
-          new ActivityRecord.Event.TaskCompleted(e.taskId, e.resultSummary, e.iterationsUsed)
+          new ActivityRecord.Event.TaskCompleted(e.taskId, e.iterationsUsed)
         case e: SpiLedger.ActivityEvent.TaskFailed =>
           new ActivityRecord.Event.TaskFailed(e.taskId, e.reason, e.iterationsUsed)
         case e: SpiLedger.ActivityEvent.TaskCancelled =>
