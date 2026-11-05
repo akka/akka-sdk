@@ -24,11 +24,17 @@ See xref:consuming-producing.adoc#_multi_region_replication[Consumer multi-regio
 Identify reads that tolerate stale replicated state and those that require primary-region consistency.
 Check flows that write and immediately read, such as submitting an order and displaying its status.
 Review each handler's `ReadOnlyEffect` or `Effect` return type using xref:event-sourced-entities.adoc#_replication[Event Sourced Entity replication] and xref:key-value-entities.adoc#_replication[Key Value Entity replication].
+In request-region mode, an `Effect` read received in a region other than the entity's primary moves the primary to that region, and needs every region to be reachable.
 
-== Review Workflow retries
+== Review Workflow retries and failover
 
 Make external calls safe to retry after a failure or lost response.
 When a Consumer starts a Workflow, use a deterministic Workflow identifier and make repeated start commands safe.
+
+A step that is running when its region is marked down can run again in another region while the first attempt still runs.
+Make step side effects safe for concurrent attempts, and do not depend on which attempt's result the Workflow keeps.
+
+A Workflow handles its commands in its primary region. Commands received in other regions are forwarded there, so they fail while that region cannot be reached and has not been marked down.
 See xref:workflows.adoc[] for execution, retries, and replication.
 
 == Check payload sizes and replication filters
@@ -50,23 +56,45 @@ These checks also apply to multiple instances in a single region:
 * Keep authoritative business state out of mutable static fields and local caches.
 * Define how caches tolerate stale data and recover after a restart.
 * Review Java timers and scheduled executors that run independently in each instance. Use xref:timed-actions.adoc[Akka timers] for durable scheduled calls, and handle repeated execution.
+* Akka timers are stored in the region where they are scheduled and are not replicated. A timer scheduled from a Consumer is scheduled in every region that processes the event, unless the Consumer guards it.
 
 == Align request routing with primary selection
 
-In request-region mode, keep writes for a given entity in a consistent region during normal operation to avoid repeated primary transfers.
-Review routing for clients and background jobs, and define a failover route.
+In request-region mode:
 
-In pinned-region mode, changing incoming traffic does not change the primary region.
+* The first write to a new entity, and every primary transfer, needs every region to respond. During deployments, restarts, region additions, and regional outages, these writes can fail with an `Unexpected error`. Make clients retry them, or use pinned-region mode if entities must remain creatable while a region is unreachable.
+* Keep writes for a given entity in a consistent region during normal operation. Concurrent writes to one entity from several regions transfer the primary back and forth, and can fail.
+* A region marked down rejects writes instead of forwarding them. Route clients to another region.
+
+In pinned-region mode:
+
+* Writes received in any region are forwarded to the project's primary region, including writes that create entities and Workflows. Changing incoming traffic does not change the primary region.
+* After a failed region is brought back, writes stay with the new primary region until you change the project's primary region again. Changing the project's primary region restarts all services in all regions.
+
+Review routing for clients and background jobs, and define a failover route.
 Follow the failover procedure in xref:operations:regions/setup.adoc[].
+Before a failover, check that every service in the region is running: a paused or deleted service makes `down-region` and `bring-up-region` stop before they reach the remaining services.
+
+== Prepare for adding a region
+
+When you add a region to a project with running services:
+
+* Consumers in the new region process the full event history of the entities they consume. A side effect that runs in every receiving region runs again for every past event. Use origin-only or designated-region processing for such side effects.
+* The new region can report ready before replicated data arrives. For a short time, reads there can return empty state.
+* In request-region mode, writes that create entities can fail in all regions for several minutes.
+* Routes created before the addition keep the hostname of the original region. Check that a route serves the new region.
 
 == Testing
 
-Use xref:local-cluster.adoc[a local cluster] to check behavior with multiple service instances.
-Validate regional routing and recovery in a deployed multi-region project.
+Use xref:local-cluster.adoc[a local cluster] to check behavior with multiple service instances in one region.
+Validate regional routing, primary transfers, and recovery in a deployed multi-region project.
 
 * Write in one region and read from another. Check both local reads and reads routed to the primary.
 * Deliver the same business operation more than once and verify that external actions are deduplicated, including attempts from different regions when applicable.
+* In request-region mode, write to one entity from two regions at the same time, and create entities during a rolling restart. Check that clients retry failed writes.
 * Exercise regional failover and recover unfinished external actions. For designated-region processing, include events already acknowledged and skipped in the replacement region.
+* Mark a region down while a Workflow step runs there, and check that the repeated step is safe.
+* Add a region to a project that already has data. Check Consumer side effects and reads in the new region.
 * Verify which data is available in the recovery region, including agent session memory.
 * Verify that external databases, object stores, and APIs remain reachable from the failover region, with the required data and credentials.
 
