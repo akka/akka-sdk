@@ -118,9 +118,7 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
     (
       new SpiLedger.ActivityEvent.TaskStarted("task-1", "research", 5),
       new ActivityRecord.Event.TaskStarted("task-1", "research", 5)),
-    (
-      new SpiLedger.ActivityEvent.TaskCompleted("task-1", "summary", 3),
-      new ActivityRecord.Event.TaskCompleted("task-1", "summary", 3)),
+    (new SpiLedger.ActivityEvent.TaskCompleted("task-1", 3), new ActivityRecord.Event.TaskCompleted("task-1", 3)),
     (
       new SpiLedger.ActivityEvent.TaskFailed("task-1", "failed", 5),
       new ActivityRecord.Event.TaskFailed("task-1", "failed", 5)),

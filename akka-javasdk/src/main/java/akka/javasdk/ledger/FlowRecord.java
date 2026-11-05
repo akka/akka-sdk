@@ -121,11 +121,7 @@ public sealed interface FlowRecord
               + iterations(e.maxIterations())
               + withText(e.taskDescription());
       case ActivityRecord.Event.TaskCompleted e ->
-          "task "
-              + e.taskId()
-              + " completed after "
-              + iterations(e.iterationsUsed())
-              + withText(e.resultSummary());
+          "task " + e.taskId() + " completed after " + iterations(e.iterationsUsed());
       case ActivityRecord.Event.TaskFailed e ->
           "task "
               + e.taskId()

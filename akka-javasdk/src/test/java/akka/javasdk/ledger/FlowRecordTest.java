@@ -211,8 +211,7 @@ public class FlowRecordTest {
         activity(
             new ActivityRecord.Event.TaskAssigned("task-1"),
             new ActivityRecord.Event.TaskStarted("task-1", "Research quantum computing", 5),
-            new ActivityRecord.Event.TaskCompleted(
-                "task-1", "Qubits enable parallel computation.", 3),
+            new ActivityRecord.Event.TaskCompleted("task-1", 3),
             new ActivityRecord.Event.TaskFailed("task-2", "iteration limit reached", 1),
             new ActivityRecord.Event.TaskCancelled("task-3", "dependency failed", 0),
             new ActivityRecord.Event.TaskResultRejected("task-4", "title missing", 2),
@@ -240,8 +239,7 @@ public class FlowRecordTest {
         .containsExactly(
             prefix + "task task-1 assigned",
             prefix + "task task-1 started with at most 5 iterations: Research quantum computing",
-            prefix
-                + "task task-1 completed after 3 iterations: Qubits enable parallel computation.",
+            prefix + "task task-1 completed after 3 iterations",
             prefix + "task task-2 failed after 1 iteration: iteration limit reached",
             prefix + "task task-3 cancelled after 0 iterations: dependency failed",
             prefix + "result of task task-4 rejected after 2 iterations: title missing",

@@ -304,7 +304,7 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
         spiActivityRecord(
           new SpiLedger.ActivityEvent.TaskAssigned("task-1"),
           new SpiLedger.ActivityEvent.TaskStarted("task-1", "Research quantum computing", 5),
-          new SpiLedger.ActivityEvent.TaskCompleted("task-1", "Qubits enable parallel computation.", 3),
+          new SpiLedger.ActivityEvent.TaskCompleted("task-1", 3),
           new SpiLedger.ActivityEvent.TaskFailed("task-2", "iteration limit reached", 6),
           new SpiLedger.ActivityEvent.TaskCancelled("task-3", "dependency failed", 0),
           new SpiLedger.ActivityEvent.TaskResultRejected("task-4", "title missing", 2),
@@ -335,7 +335,7 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
       record.events().asScala.toSeq shouldEqual Seq(
         new ActivityRecord.Event.TaskAssigned("task-1"),
         new ActivityRecord.Event.TaskStarted("task-1", "Research quantum computing", 5),
-        new ActivityRecord.Event.TaskCompleted("task-1", "Qubits enable parallel computation.", 3),
+        new ActivityRecord.Event.TaskCompleted("task-1", 3),
         new ActivityRecord.Event.TaskFailed("task-2", "iteration limit reached", 6),
         new ActivityRecord.Event.TaskCancelled("task-3", "dependency failed", 0),
         new ActivityRecord.Event.TaskResultRejected("task-4", "title missing", 2),
