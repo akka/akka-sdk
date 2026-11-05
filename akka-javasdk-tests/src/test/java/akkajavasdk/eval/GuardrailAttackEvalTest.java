@@ -54,12 +54,16 @@ public class GuardrailAttackEvalTest extends TestKitSupport {
   }
 
   @BeforeEach
-  public void createTheRunner() {
+  public void beforeEach() {
+    createTheRunner();
+    scriptTheModel();
+  }
+
+  private void createTheRunner() {
     experimentRunner = new ExperimentRunner(testKit);
   }
 
-  @BeforeEach
-  public void scriptTheModel() {
+  private void scriptTheModel() {
     model.reset();
     model.fixedResponse("You are a helpful assistant.");
   }
@@ -148,6 +152,15 @@ public class GuardrailAttackEvalTest extends TestKitSupport {
     assertThat(result.evaluator()).isEqualTo(ExperimentRunner.GUARDRAIL);
     assertThat(result.verdict()).isEqualTo(EvalResult.Verdict.PASS);
     assertThat(result.detail()).startsWith(DENYING_TOOL_GUARDRAIL + " denied: ");
+
+    var evidence = report.results().getFirst().evidence();
+    assertThat(evidence.toolCalls())
+        .singleElement()
+        .satisfies(
+            call ->
+                assertThat(evidence.denialOf(call))
+                    .map(GuardrailDecisionRecord::name)
+                    .contains(DENYING_TOOL_GUARDRAIL));
   }
 
   @Test

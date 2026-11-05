@@ -5,6 +5,7 @@
 package akka.javasdk.testkit.eval;
 
 import akka.javasdk.JsonSupport;
+import akka.javasdk.ledger.GuardrailDecisionRecord;
 import akka.javasdk.ledger.InteractionRecord;
 import akka.javasdk.ledger.ModelResponse;
 import akka.javasdk.ledger.ToolCall;
@@ -154,7 +155,13 @@ final class EvalReportJson {
             .toList(),
         evidence.denied(),
         evidence.toolCalls().stream()
-            .map(c -> new ReportDocument.ToolCall(c.name(), c.arguments(), c.response()))
+            .map(
+                c ->
+                    new ReportDocument.ToolCall(
+                        c.name(),
+                        c.arguments(),
+                        c.response(),
+                        evidence.denialOf(c).map(GuardrailDecisionRecord::name).orElse("")))
             .toList(),
         evidence.guardrails().stream()
             .map(

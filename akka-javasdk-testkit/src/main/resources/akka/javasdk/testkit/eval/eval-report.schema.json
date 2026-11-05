@@ -171,11 +171,12 @@
     },
     "toolCall": {
       "type": "object",
-      "required": ["name", "arguments", "response"],
+      "required": ["name", "arguments", "response", "deniedBy"],
       "properties": {
         "name": { "type": "string", "description": "The registered tool name, <Class>_<method> for a function tool method without a name of its own." },
         "arguments": { "type": "string", "description": "The arguments as the JSON the model sent." },
-        "response": { "type": "string", "description": "The tool's result as recorded. Empty when none was recorded." }
+        "response": { "type": "string", "description": "The tool's result as recorded. Empty when none was recorded." },
+        "deniedBy": { "type": "string", "description": "The guardrail that denied the call before the tool ran. Empty when none did." }
       }
     },
     "guardrail": {

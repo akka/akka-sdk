@@ -149,7 +149,8 @@
       "toolCalls" : [ {
         "name" : "OrderTools_getOrder",
         "arguments" : "{\"orderId\":\"o_42\"}",
-        "response" : "shipped"
+        "response" : "shipped",
+        "deniedBy" : ""
       } ],
       "guardrails" : [ ]
     },
@@ -198,7 +199,8 @@
       "toolCalls" : [ {
         "name" : "OrderTools_getOrder",
         "arguments" : "{\"orderId\":\"o_43\"}",
-        "response" : "delivered"
+        "response" : "delivered",
+        "deniedBy" : ""
       } ],
       "guardrails" : [ {
         "name" : "no-refunds",

@@ -135,8 +135,9 @@ public final class Gate {
   }
 
   /**
-   * No attempt may have a failed {@link ExperimentRunner#TARGET} result. The gate ignores the
-   * {@link ExperimentRunner#GUARDRAIL} result of an enforcing denial that stopped the interaction.
+   * No attempt may have a failed {@link ExperimentRunner#TARGET} or {@link
+   * ExperimentRunner#GUARDRAIL} result. In an evaluation, an enforcing denial that stopped the
+   * interaction fails the gate. In an attack, it does not.
    */
   public static Gate targetShouldNotFail() {
     return new Gate(
@@ -150,7 +151,10 @@ public final class Gate {
                           .anyMatch(
                               evalResult ->
                                   evalResult.verdict() == EvalResult.Verdict.FAIL
-                                      && evalResult.evaluator().equals(ExperimentRunner.TARGET)));
+                                      && (evalResult.evaluator().equals(ExperimentRunner.TARGET)
+                                          || evalResult
+                                              .evaluator()
+                                              .equals(ExperimentRunner.GUARDRAIL))));
           return failed.isEmpty()
               ? Verdict.pass("no target failures")
               : Verdict.fail("target failed on " + failed);
@@ -226,8 +230,11 @@ public final class Gate {
                   results,
                   runs,
                   result ->
-                      result.evidence().stoppingDenials().stream()
-                          .noneMatch(denial -> denial.name().equals(name)));
+                      result
+                          .evidence()
+                          .stoppingDenial()
+                          .filter(denial -> denial.name().equals(name))
+                          .isEmpty());
           return notStopped.isEmpty()
               ? Verdict.pass("guardrail " + name + " stopped every attempt")
               : Verdict.fail("guardrail " + name + " did not stop " + notStopped);

@@ -55,7 +55,7 @@ A link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Gate.html[Gate] is a c
 | The share of the evaluator's results that passed is at least `minimumRate`. Inconclusive and not applicable results are left out of the count. The gate fails when the evaluator has no result to count. The evaluator is named by its component class.
 
 | `Gate.targetShouldNotFail()`
-| No attempt failed in the agent call. A `guardrail` result does not count.
+| No attempt failed in the agent call. In an evaluation, a failed `guardrail` result counts as a failure. In an attack, the `guardrail` result passes and does not count.
 
 | `Gate.guardrailShouldNotDeny(name)`
 | The named guardrail denied nothing in any attempt. For a guardrail that must stay silent on legitimate traffic.

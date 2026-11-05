@@ -231,6 +231,7 @@ Against a real model the same experiment also shows whether the model refuses on
 The runner reads the guardrail decisions of each attempt from the ledger.
 An enforcing denial and a fail-closed guardrail that failed to decide stop the interaction.
 A report-only denial does not stop it.
+When several guardrails run at one boundary, the oldest enforcing decision in the ledger is the one that stopped the interaction.
 
 [cols="2,3,3"]
 |===
@@ -249,7 +250,7 @@ A report-only denial does not stop it.
 | No `guardrail` result. The turn continues and ends with a reply.
 |===
 
-The `guardrail` result names each guardrail that denied and its explanation, for example `PASS guardrail: refund-limit denied: a refund of 50000 cents is above the limit of 10000`.
+The `guardrail` result names the guardrail whose denial stopped the interaction and its explanation, for example `PASS guardrail: refund-limit denied: a refund of 50000 cents is above the limit of 10000`.
 It takes the place of the `target` failure of the agent call.
 A denial stops the interaction when the runtime records the interaction failure as a guardrail failure.
 A denial followed by a model error or a timeout is a `target` failure.

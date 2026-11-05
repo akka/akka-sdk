@@ -98,13 +98,18 @@ public class SupportAgentEvalTest extends TestKitSupport {
   }
 
   @BeforeEach
-  public void createTheRunner() {
+  public void beforeEach() {
+    createTheRunner();
+    fillTheCrm();
+    mockTheModel();
+  }
+
+  private void createTheRunner() {
     experimentRunner = new ExperimentRunner(testKit);
   }
 
   /** What the CRM knows. Every case reads these records, keyed by customer id. */
-  @BeforeEach
-  public void fillTheCrm() {
+  private void fillTheCrm() {
     crm.reset();
     crm.add(new Customer("cust_1", "Ada Lovelace", "gold"));
     crm.add(new Customer("cust_7", "Grace Hopper", "silver"));
@@ -118,8 +123,7 @@ public class SupportAgentEvalTest extends TestKitSupport {
 
   // ---- the mocked model: deterministic, and plausible enough that the cases mean something --
 
-  @BeforeEach
-  public void mockTheModel() {
+  private void mockTheModel() {
     supportModel.reset();
     scriptTheModel(supportModel, GET_CUSTOMER, OPEN_TICKETS);
 

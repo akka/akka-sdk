@@ -81,6 +81,8 @@ A `ToolCallGuardrail` that replaces an `mcp-tool-request` entry behaves differen
 * The runtime records the `ToolCallGuardrail` decision in the ledger.
 * On the same MCP tool call, the runtime evaluates `ToolCallGuardrail` entries before `TextGuardrail` entries with `mcp-tool-request`. The `TextGuardrail` entries run only when no blocking `ToolCallGuardrail` stopped the call.
 
+The runtime records no guardrail decision for a `TextGuardrail`. The experiment runner therefore reports a turn that a `TextGuardrail` stopped as a failed `target` result, not as a `guardrail` result. When the agent maps the failure to a reply in `onFailure`, the attempt is inconclusive. `Gate.guardrailShouldStop(name)` and `Gate.guardrailShouldDeny(name)` do not see a `TextGuardrail`.
+
 Remove `use-for` from the migrated entry. The service fails to start when a `ModelCallGuardrail`, `AgentResponseGuardrail`, or `ToolCallGuardrail` entry defines `use-for`.
 
 All `use-for` values are deprecated. At startup, the SDK logs a warning for each enabled `TextGuardrail` entry that sets `use-for`.

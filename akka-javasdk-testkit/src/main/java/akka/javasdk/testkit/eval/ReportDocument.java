@@ -256,8 +256,9 @@ public record ReportDocument(
    *     without a name of its own
    * @param arguments the arguments as the JSON the model sent
    * @param response the tool's result as recorded; empty when none was recorded
+   * @param deniedBy the guardrail that denied the call before the tool ran; empty when none did
    */
-  public record ToolCall(String name, String arguments, String response) {}
+  public record ToolCall(String name, String arguments, String response, String deniedBy) {}
 
   /**
    * @param name the configured name of the guardrail

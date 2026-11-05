@@ -12,6 +12,7 @@ import static akka.javasdk.testkit.eval.Targets.interaction;
 import static akka.javasdk.testkit.eval.Targets.toolCall;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 
 import akka.javasdk.evaluation.Evaluation;
 import akka.javasdk.ledger.EvaluationRecord;
@@ -626,7 +627,7 @@ class ExperimentRunnerTest {
   }
 
   @Test
-  void aFailClosedGuardrailErrorWinsOverADenial() {
+  void aFailClosedGuardrailErrorRecordedBeforeADenialStopsTheInteraction() {
     var target =
         failingWith(
             Failure.FailureReason.GUARDRAIL,
@@ -641,6 +642,30 @@ class ExperimentRunnerTest {
     assertThat(result.failed()).isTrue();
     assertThat(result.evalResults())
         .containsExactly(EvalResult.fail(ExperimentRunner.TARGET, "GuardrailException: blocked"));
+  }
+
+  @Test
+  void aDenialRecordedBeforeAFailClosedGuardrailErrorStopsTheInteraction() {
+    var target =
+        failingWith(
+            Failure.FailureReason.GUARDRAIL,
+            i ->
+                List.of(
+                    Targets.guardrail(
+                        i,
+                        "jailbreak",
+                        GuardrailDecisionRecord.Decision.DENY,
+                        "injection",
+                        false,
+                        GuardrailDecisionRecord.FailMode.FAIL_CLOSED,
+                        500),
+                    failed(i, "pii", GuardrailDecisionRecord.FailMode.FAIL_CLOSED)));
+
+    var result = attack(target, bindings(), EvalCase.of("c", "q")).run().results().getFirst();
+
+    assertThat(result.evalResults())
+        .containsExactly(
+            EvalResult.pass(ExperimentRunner.GUARDRAIL, "jailbreak denied: injection"));
   }
 
   @Test
@@ -750,7 +775,7 @@ class ExperimentRunnerTest {
   }
 
   @Test
-  void severalStoppingDenialsAreListedOldestFirst() {
+  void theOldestOfSeveralDenialsStopsTheInteraction() {
     var enforcing = GuardrailDecisionRecord.FailMode.FAIL_CLOSED;
     var target =
         failingWith(
@@ -772,11 +797,11 @@ class ExperimentRunnerTest {
 
     assertThat(result.evalResults())
         .containsExactly(
-            EvalResult.fail(ExperimentRunner.GUARDRAIL, "jailbreak denied: injection, pii denied"));
+            EvalResult.fail(ExperimentRunner.GUARDRAIL, "jailbreak denied: injection"));
   }
 
   @Test
-  void targetShouldNotFailIgnoresAGuardrailResult() {
+  void targetShouldNotFailCountsAGuardrailResultInAnEvaluation() {
     var target =
         failingWith(Failure.FailureReason.GUARDRAIL, i -> deniedBy(i, "jailbreak", "injection"));
 
@@ -785,7 +810,97 @@ class ExperimentRunnerTest {
             .gate(Gate.targetShouldNotFail())
             .run();
 
+    assertThat(report.passed()).isFalse();
+    assertThat(report.render()).contains("target failed on [c (run 1)]");
+  }
+
+  @Test
+  void targetShouldNotFailIgnoresAGuardrailResultInAnAttack() {
+    var target =
+        failingWith(Failure.FailureReason.GUARDRAIL, i -> deniedBy(i, "jailbreak", "injection"));
+
+    var report =
+        attack(target, bindings(), EvalCase.of("c", "q")).gate(Gate.targetShouldNotFail()).run();
+
     assertThat(report.passed()).isTrue();
+  }
+
+  @Test
+  void aToolCallDeniedByIdIsMarkedInTheReport() {
+    var report =
+        experiment(
+                deniedRefund(Optional.of("call-OrderTools_issueRefund")),
+                bindings(),
+                EvalCase.of("c", "q"))
+            .run();
+
+    assertDeniedRefund(report);
+  }
+
+  @Test
+  void aToolCallDeniedWithoutAnIdIsMatchedByName() {
+    var report =
+        experiment(deniedRefund(Optional.empty()), bindings(), EvalCase.of("c", "q")).run();
+
+    assertDeniedRefund(report);
+  }
+
+  /** A target whose order lookup ran and whose refund a before-tool-call guardrail denied. */
+  private EvalTarget<String> deniedRefund(Optional<String> deniedCallId) {
+    return turn -> {
+      var interaction =
+          interaction(
+              "i-" + turn.sessionId(),
+              turn.sessionId(),
+              "",
+              List.of(
+                  toolCall("OrderTools_getOrder", "{\"orderId\":\"o_43\"}", "delivered"),
+                  toolCall("OrderTools_issueRefund", "{\"cents\":50000}", "")),
+              Optional.of(new Failure(Failure.FailureReason.GUARDRAIL, "blocked")),
+              50,
+              0,
+              300);
+      ledger.seed(interaction);
+      ledger.seed(toolCallDenial(interaction, deniedCallId, "OrderTools_issueRefund"));
+      return EvalTarget.Outcome.failed("GuardrailException: blocked");
+    };
+  }
+
+  private static GuardrailDecisionRecord toolCallDenial(
+      InteractionRecord interaction, Optional<String> toolCallId, String toolName) {
+    var denial =
+        Targets.guardrail(
+            interaction, "refund-limit", GuardrailDecisionRecord.Decision.DENY, "above the limit");
+    return new GuardrailDecisionRecord(
+        denial.recordId(),
+        denial.agentComponentId(),
+        denial.interactionId(),
+        denial.sessionId(),
+        denial.flowId(),
+        denial.name(),
+        denial.controlId(),
+        denial.category(),
+        GuardrailDecisionRecord.Boundary.BEFORE_TOOL_CALL,
+        denial.decision(),
+        denial.explanation(),
+        denial.reportOnly(),
+        denial.failMode(),
+        denial.duration(),
+        Optional.of(
+            new GuardrailDecisionRecord.ToolCall(
+                toolCallId, toolName, new GuardrailDecisionRecord.ToolOrigin.FunctionTool())),
+        denial.timestamp());
+  }
+
+  private static void assertDeniedRefund(ExperimentRunner.EvalReport report) {
+    assertThat(report.render())
+        .contains(
+            "tools: OrderTools_getOrder{\"orderId\":\"o_43\"} → "
+                + "OrderTools_issueRefund{\"cents\":50000} denied by refund-limit");
+    assertThat(report.document().attempts().getFirst().evidence().toolCalls())
+        .extracting(ReportDocument.ToolCall::name, ReportDocument.ToolCall::deniedBy)
+        .containsExactly(
+            tuple("OrderTools_getOrder", ""), tuple("OrderTools_issueRefund", "refund-limit"));
   }
 
   @Test
