@@ -155,7 +155,7 @@ private[ledger] object LedgerClientImpl {
       record.flowId.toJava,
       toMetadata(record.metadata),
       record.systemMessage,
-      record.userMessage.map(toMessageContent).asJava,
+      record.userMessage.flatMap(toMessageContent).asJava,
       record.modelResponses.map(toModelResponse).asJava,
       record.toolCallResponses.map(toToolCallResponse).asJava,
       record.taskContext.map(toTaskContext).toJava,
@@ -184,8 +184,8 @@ private[ledger] object LedgerClientImpl {
   def toFlowPage(page: SpiLedger.FlowPage): FlowPage =
     new FlowPage(page.records.flatMap(toFlowRecord).asJava, page.nextPosition, page.hasMore)
 
-  // A record of a class that this SDK does not know is left out of the page. Only the class decides this. A value
-  // inside a known record that this SDK cannot read fails the read, as it does in the other reads.
+  // A record of a class that this SDK does not know is left out of the page. Only the class decides this. The mapping
+  // of a kept record runs outside of knownOr, so that a MatchError from an SDK bug fails the read.
   def toFlowRecord(record: SpiLedger.FlowRecord): Option[FlowRecord] =
     knownOr(Option.empty[() => FlowRecord]) {
       record match {
@@ -312,16 +312,21 @@ private[ledger] object LedgerClientImpl {
       }
     }
 
+  // An outcome that this SDK does not know reads as inconclusive, as the runtime reads a stored outcome that it does
+  // not know.
   private def toEvaluationOutcome(outcome: SpiLedger.EvaluationOutcome): EvaluationRecord.Outcome =
-    outcome match {
-      case verdict: SpiLedger.EvaluationVerdict =>
-        new EvaluationRecord.Outcome.Verdict(toEvaluation(verdict.evaluation))
-      case inconclusive: SpiLedger.EvaluationInconclusive =>
-        new EvaluationRecord.Outcome.Inconclusive(inconclusive.reason)
-      case notApplicable: SpiLedger.EvaluationNotApplicable =>
-        new EvaluationRecord.Outcome.NotApplicable(notApplicable.reason)
-      case failure: SpiLedger.EvaluationFailure =>
-        new EvaluationRecord.Outcome.Failed(failure.reason)
+    knownOr[EvaluationRecord.Outcome](
+      new EvaluationRecord.Outcome.Inconclusive("The outcome of the evaluation is unknown to this SDK")) {
+      outcome match {
+        case verdict: SpiLedger.EvaluationVerdict =>
+          new EvaluationRecord.Outcome.Verdict(toEvaluation(verdict.evaluation))
+        case inconclusive: SpiLedger.EvaluationInconclusive =>
+          new EvaluationRecord.Outcome.Inconclusive(inconclusive.reason)
+        case notApplicable: SpiLedger.EvaluationNotApplicable =>
+          new EvaluationRecord.Outcome.NotApplicable(notApplicable.reason)
+        case failure: SpiLedger.EvaluationFailure =>
+          new EvaluationRecord.Outcome.Failed(failure.reason)
+      }
     }
 
   private def toEvaluation(evaluation: SpiLedger.Evaluation): Evaluation = {
@@ -375,19 +380,24 @@ private[ledger] object LedgerClientImpl {
     new ToolCall(toolCall.id, toolCall.name, toolCall.arguments, toolCall.response)
 
   private def toToolCallResponse(response: SpiLedger.ToolCallResponse): ToolCallResponse =
-    new ToolCallResponse(response.id, response.name, response.contents.map(toMessageContent).asJava)
+    new ToolCallResponse(response.id, response.name, response.contents.flatMap(toMessageContent).asJava)
 
-  private def toMessageContent(content: SpiLedger.MessageContent): MessageContent =
-    content match {
-      case text: SpiLedger.TextContent =>
-        new MessageContent.TextMessageContent(text.text)
-      case image: SpiLedger.ImageUriContent =>
-        new MessageContent.ImageUrlMessageContent(
-          URI.create(image.uri),
-          toDetailLevel(image.detailLevel),
-          image.mimeType.toJava)
-      case pdf: SpiLedger.PdfUriContent =>
-        new MessageContent.PdfUrlMessageContent(URI.create(pdf.uri))
+  // A content that this SDK does not know is left out, as the runtime leaves out a stored content that it does not
+  // know.
+  private def toMessageContent(content: SpiLedger.MessageContent): Option[MessageContent] =
+    knownOr(Option.empty[MessageContent]) {
+      content match {
+        case text: SpiLedger.TextContent =>
+          Some(new MessageContent.TextMessageContent(text.text))
+        case image: SpiLedger.ImageUriContent =>
+          Some(
+            new MessageContent.ImageUrlMessageContent(
+              URI.create(image.uri),
+              toDetailLevel(image.detailLevel),
+              image.mimeType.toJava))
+        case pdf: SpiLedger.PdfUriContent =>
+          Some(new MessageContent.PdfUrlMessageContent(URI.create(pdf.uri)))
+      }
     }
 
   // Mirrors SpiAgent.ImageMessageContent.DetailLevel.render, the form stored in the ledger.
