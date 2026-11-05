@@ -5,7 +5,6 @@
 package akka.javasdk.ledger;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * One page of the records of a flow, as {@link LedgerClient#getFlowRecords(String)} returns it. A
@@ -13,11 +12,9 @@ import java.util.Optional;
  * LedgerClient#getFlowRecords(String, long)}.
  *
  * @param records the records of the page, in the order they were recorded
- * @param nextPosition where the next page starts; empty when the flow held no further record when
- *     it was read
- * @param continuationPosition the position after the last record of the page, or the position the
- *     read started from when the page is empty. Read from it to get the records that were recorded
- *     after this page, also when the next position is empty.
+ * @param nextPosition where the next page starts: the position after the last record of the page,
+ *     or the position the read started from when the page is empty. A read from it also returns the
+ *     records that were recorded after this page was read.
+ * @param hasMore {@code true} when the flow held more records after this page when it was read
  */
-public record FlowPage(
-    List<FlowRecord> records, Optional<Long> nextPosition, long continuationPosition) {}
+public record FlowPage(List<FlowRecord> records, long nextPosition, boolean hasMore) {}

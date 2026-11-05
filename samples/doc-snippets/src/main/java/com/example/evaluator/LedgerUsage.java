@@ -43,8 +43,8 @@ public class LedgerUsage {
     // tag::flow[]
     FlowPage page = ledger.getFlowRecords(flowId); // <1>
     List<FlowRecord> records = new ArrayList<>(page.records());
-    while (page.nextPosition().isPresent()) { // <2>
-      page = ledger.getFlowRecords(flowId, page.nextPosition().get());
+    while (page.hasMore()) { // <2>
+      page = ledger.getFlowRecords(flowId, page.nextPosition());
       records.addAll(page.records());
     }
     String transcript = FlowRecord.transcript(records); // <3>

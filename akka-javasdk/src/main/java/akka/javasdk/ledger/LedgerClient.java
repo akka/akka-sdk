@@ -166,9 +166,9 @@ public interface LedgerClient {
    * <p>Get the flow id of an interaction from {@link
    * akka.javasdk.evaluation.Subject.Interaction#flowId()} or {@link InteractionRecord#flowId()}. To
    * read the next page, pass the {@link FlowPage#nextPosition()} of the page to {@link
-   * #getFlowRecords(String, long)}. A page with an empty next position was the last page when it
-   * was read. To read the records that were recorded after a page, pass its {@link
-   * FlowPage#continuationPosition()}.
+   * #getFlowRecords(String, long)}. A page where {@link FlowPage#hasMore()} is {@code false} was
+   * the last page when it was read. To read the records that were recorded after the last page,
+   * pass its next position later.
    *
    * <p>Blocks the calling thread until the records have been fetched. Safe to call on a virtual
    * thread. Use {@link #getFlowRecordsAsync(String)} for the non-blocking variant.
@@ -187,9 +187,8 @@ public interface LedgerClient {
    * thread. Use {@link #getFlowRecordsAsync(String, long)} for the non-blocking variant.
    *
    * @param flowId the id of the flow
-   * @param fromPosition the {@link FlowPage#nextPosition()} or the {@link
-   *     FlowPage#continuationPosition()} of an earlier page of the flow, or 0 to read from the
-   *     start
+   * @param fromPosition the {@link FlowPage#nextPosition()} of an earlier page of the flow, or 0 to
+   *     read from the start
    * @return the page of the records of the flow that starts at that position
    * @throws IllegalArgumentException if the flow id is empty or the position is negative
    */
@@ -208,9 +207,8 @@ public interface LedgerClient {
    * Async variant of {@link #getFlowRecords(String, long)}.
    *
    * @param flowId the id of the flow
-   * @param fromPosition the {@link FlowPage#nextPosition()} or the {@link
-   *     FlowPage#continuationPosition()} of an earlier page of the flow, or 0 to read from the
-   *     start
+   * @param fromPosition the {@link FlowPage#nextPosition()} of an earlier page of the flow, or 0 to
+   *     read from the start
    * @return a stage that completes with the page of the records of the flow that starts at that
    *     position, or fails with {@link IllegalArgumentException} if the flow id is empty or the
    *     position is negative

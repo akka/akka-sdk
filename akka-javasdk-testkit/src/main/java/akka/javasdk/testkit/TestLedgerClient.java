@@ -258,10 +258,9 @@ public final class TestLedgerClient implements LedgerClient {
     // position 0 reads from the start, as position 1 does
     var from = (int) Math.min(Math.max(fromPosition, 1) - 1, flowRecords.size());
     var to = Math.min(from + FLOW_PAGE_LIMIT, flowRecords.size());
-    var nextPosition = to < flowRecords.size() ? Optional.of(to + 1L) : Optional.<Long>empty();
-    var continuationPosition = to > from ? to + 1L : fromPosition;
+    var nextPosition = to > from ? to + 1L : fromPosition;
     return new FlowPage(
-        List.copyOf(flowRecords.subList(from, to)), nextPosition, continuationPosition);
+        List.copyOf(flowRecords.subList(from, to)), nextPosition, to < flowRecords.size());
   }
 
   @Override

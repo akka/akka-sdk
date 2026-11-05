@@ -228,7 +228,7 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
       interaction: SpiLedger.InteractionRecord,
       evaluations: Seq[SpiLedger.EvaluationRecord],
       guardrailDecisions: Seq[SpiLedger.GuardrailDecisionRecord] = Seq.empty,
-      flowPage: SpiLedger.FlowPage = new SpiLedger.FlowPage(Seq.empty, None, 0L)): LedgerClientImpl = {
+      flowPage: SpiLedger.FlowPage = new SpiLedger.FlowPage(Seq.empty, 0L, hasMore = false)): LedgerClientImpl = {
     val spiLedgerClient = new SpiLedgerClient {
       override def getInteraction(interactionId: String): Future[SpiLedger.InteractionRecord] =
         Future.successful(interaction)
@@ -430,7 +430,7 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
 
   "The ledger client" should {
 
-    "leave a flow record that the SDK does not know out of the page, and keep the positions" in {
+    "leave a flow record that the SDK does not know out of the page, and keep the next position and has-more flag" in {
       val client = ledgerClient(
         spiInteractionRecord(),
         Seq.empty,
@@ -439,14 +439,14 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
             spiInteractionRecord(),
             unknownValue[SpiLedger.FlowRecord],
             spiActivityRecord(new SpiLedger.ActivityEvent.TaskAssigned("task-1"))),
-          Some(4L),
-          4L))
+          4L,
+          hasMore = true))
 
       val page = client.getFlowRecords("flow-1")
 
       page.records().asScala.map(_.getClass) shouldBe Seq(classOf[InteractionRecord], classOf[ActivityRecord])
-      page.nextPosition() shouldBe Optional.of(4L)
-      page.continuationPosition() shouldBe 4L
+      page.nextPosition() shouldBe 4L
+      page.hasMore() shouldBe true
     }
 
     "read the interactions and the guardrail decisions of a session that hold values the SDK does not know" in {
