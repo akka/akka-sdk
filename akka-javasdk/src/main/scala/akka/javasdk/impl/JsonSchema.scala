@@ -194,7 +194,7 @@ private[impl] object JsonSchema {
                 true)
             case _ if classOf[GeneratedMessageV3].isAssignableFrom(clazz) =>
               val descriptor = Reflect.protoDescriptorFor(clazz.asSubclass(classOf[GeneratedMessageV3]))
-              (protobufJsonSchemaFromDescriptor(descriptor, description), true)
+              (protobufJsonSchemaFromDescriptor(descriptor, description, Set.empty), true)
 
             case _ if clazz.isEnum =>
               val values = clazz.getEnumConstants.toIndexedSeq.map(_.asInstanceOf[Enum[_]].name)
@@ -252,7 +252,9 @@ private[impl] object JsonSchema {
       }
   }
 
-  private def protobufFieldToJsonSchema(field: Descriptors.FieldDescriptor): JsonSchemaDataType = {
+  private def protobufFieldToJsonSchema(
+      field: Descriptors.FieldDescriptor,
+      seenMessages: Set[String]): JsonSchemaDataType = {
     import Descriptors.FieldDescriptor.JavaType
     val baseType = field.getJavaType match {
       case JavaType.STRING      => new JsonSchemaString(None)
@@ -266,7 +268,7 @@ private[impl] object JsonSchema {
         // protobuf JSON uses string enum names
         val values = field.getEnumType.getValues.asScala.map(_.getName).toSeq
         new JsonSchemaEnum(values, None)
-      case JavaType.MESSAGE => protobufJsonSchemaFromDescriptor(field.getMessageType, None)
+      case JavaType.MESSAGE => protobufJsonSchemaFromDescriptor(field.getMessageType, None, seenMessages)
     }
     if (field.isRepeated) new JsonSchemaArray(baseType, None)
     else baseType
@@ -274,13 +276,18 @@ private[impl] object JsonSchema {
 
   private def protobufJsonSchemaFromDescriptor(
       descriptor: Descriptors.Descriptor,
-      description: Option[String]): JsonSchemaObject = {
-    val fields = descriptor.getFields.asScala.toVector
-    val properties = fields.map { field =>
-      field.getName -> protobufFieldToJsonSchema(field)
-    }.toMap
-    // All proto3 fields are always present (they have defaults)
-    new JsonSchemaObject(description = description, properties = properties, required = fields.map(_.getName).sorted)
-  }
+      description: Option[String],
+      seenMessages: Set[String]): JsonSchemaObject =
+    if (seenMessages.contains(descriptor.getFullName))
+      emptyObject(description) // avoid infinite recursion
+    else {
+      val seenIncludingThis = seenMessages + descriptor.getFullName
+      val fields = descriptor.getFields.asScala.toVector
+      val properties = fields.map { field =>
+        field.getName -> protobufFieldToJsonSchema(field, seenIncludingThis)
+      }.toMap
+      // All proto3 fields are always present (they have defaults)
+      new JsonSchemaObject(description = description, properties = properties, required = fields.map(_.getName).sorted)
+    }
 
 }
