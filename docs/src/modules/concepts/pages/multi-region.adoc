@@ -12,11 +12,11 @@ Multi-region operation runs a project in several regions and replicates componen
 
 An entity's primary region accepts its writes. Its origin records where it was created. The project's primary region is separate: it is where project resources replicate from and, in pinned-region mode, where entities accept writes.
 
-Reads can be served locally from replicated state. A local read can therefore lag behind a write accepted elsewhere. If an operation requires the latest state, use a handler routed to the entity's primary region rather than assuming its nearest replica is current.
+Reads can be served locally from replicated state. A local read can therefore lag behind a write accepted elsewhere. If an operation requires the latest state, use a handler that runs in the entity's primary region rather than assuming its nearest replica is current.
 
 == Selecting the writer
 
-In *request-region* mode, the entity's primary can move to the region receiving a write. The new primary must catch up before accepting it, and all regions must be reachable for that transition. Later writes in that region avoid another transfer.
+In *request-region* mode, the entity's primary can move to the region receiving a write. The new primary must catch up before accepting it, and all regions must be reachable for that transition. The first write to a new entity needs the same. If a region cannot be reached, these writes fail in every region. Later writes in that region avoid another transfer.
 
 In *pinned-region* mode, entities use the project's primary region. Writes arriving elsewhere are forwarded there. Changing the primary or handling a regional outage is an operator action.
 
@@ -38,6 +38,7 @@ image::geo-b.svg[A write received in London is forwarded to the primary region i
 
 When client B writes to Alice's entity in London image:steps-1.svg[Step 1,width=20], Akka forwards the request to Los Angeles image:steps-2.svg[Step 2,width=20].
 The primary handles the write and returns the reply image:steps-3.svg[Step 3,width=20]. Receiving the request in London does not move the primary.
+An entity or Workflow created through a request in London also has its primary in Los Angeles.
 
 === Entity reads and writes with request-region selection
 
@@ -51,8 +52,10 @@ The change is replicated asynchronously to Los Angeles image:steps-3.svg[Step 3,
 
 image::geo-e.svg[Bob's entity moves its primary to Los Angeles when Bob writes there,width=600]
 
-If Bob travels to Los Angeles, local reads can use his entity's replicated state there.
+If Bob travels to Los Angeles, read-only handlers can use his entity's replicated state there.
 His first write in Los Angeles moves the entity's primary there: Akka synchronizes and applies the earlier writes from London before handling the new write.
+The move needs a reply from London. If London cannot be reached, the write fails.
+A read declared with `Effect` moves the primary in the same way.
 Later writes in Los Angeles are handled locally. Alice's entity continues accepting writes in Los Angeles independently, with its changes replicated to London.
 
 == Failure and data placement
