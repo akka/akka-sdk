@@ -159,6 +159,27 @@ class JsonSchemaSpec extends AnyWordSpec with Matchers {
       result.required.toSet shouldEqual Set("regular", "recursive", "nested")
     }
 
+    "extract schema with recursive protobuf messages" in {
+      val result = JsonSchema
+        .jsonSchemaFor(classOf[protoconsumer.EventsForConsumer.CircularParent])
+        .asInstanceOf[JsonSchemaObject]
+
+      result.properties.keySet shouldEqual Set("id", "child")
+      val child = result.properties("child").asInstanceOf[JsonSchemaObject]
+      child.properties.keySet shouldEqual Set("name", "parent")
+      child.properties("parent") shouldEqual Schema.jsonObject()
+    }
+
+    "extract schema with indirectly recursive protobuf messages in a repeated field" in {
+      val result = JsonSchema.jsonSchemaFor(classOf[protoconsumer.EventsForConsumer.TreeNode])
+      result shouldBe a[JsonSchemaObject]
+    }
+
+    "extract schema for google.protobuf.Struct" in {
+      val result = JsonSchema.jsonSchemaFor(classOf[com.google.protobuf.Struct])
+      result shouldBe a[JsonSchemaObject]
+    }
+
     "extract schema with common Java stdlib types" in {
       val result = JsonSchema.jsonSchemaFor(classOf[CommonStdlibTypes]).asInstanceOf[JsonSchemaObject]
 
