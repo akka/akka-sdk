@@ -318,7 +318,7 @@ The flow holds the interactions of its agents and their activity, such as task o
 include::example$doc-snippets/src/main/java/com/example/evaluator/LedgerUsage.java[tag=flow]
 ----
 <1> The first page starts at the beginning of the flow.
-<2> `nextPosition` is where the next page starts. It is empty on the last page.
+<2> `hasMore` is `false` on the last page. `nextPosition` is where the next page starts. On the last page, it is where the records that are recorded later start.
 <3> `FlowRecord.transcript` renders the records as text for an LLM judge. It leaves out the evaluations, so the judge does not read the verdicts of other evaluators.
 
 See link:{attachmentsdir}/api/akka/javasdk/ledger/FlowRecord.html[`FlowRecord`] for the kinds of records and what the transcript contains.

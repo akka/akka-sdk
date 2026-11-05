@@ -359,13 +359,13 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
 
   "Reading the records of a flow" should {
 
-    "map a page of each of the four kinds to the public records, in order, with its positions" in {
+    "map a page of each of the four kinds to the public records, in order, with its next position and has-more flag" in {
       val interaction = spiInteractionRecord()
       val activity = spiActivityRecord(new SpiLedger.ActivityEvent.TaskAssigned("task-1"))
       val decision = spiGuardrailDecisionRecord(controlId = None, toolCall = None)
       val evaluation = spiEvaluationRecord(controlId = None)
       val spiClient = new FlowReadingSpiLedgerClient(
-        Future.successful(new SpiLedger.FlowPage(Seq(interaction, activity, decision, evaluation), Some(5L), 5L)))
+        Future.successful(new SpiLedger.FlowPage(Seq(interaction, activity, decision, evaluation), 5L, hasMore = true)))
 
       val page = new LedgerClientImpl(spiClient, ExecutionContext.parasitic).getFlowRecords("flow-1")
 
@@ -380,22 +380,24 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
         LedgerClientImpl.toActivityRecord(activity),
         LedgerClientImpl.toGuardrailDecisionRecord(decision),
         LedgerClientImpl.toEvaluationRecord(evaluation))
-      page.nextPosition() shouldEqual Optional.of(5L)
-      page.continuationPosition() shouldEqual 5L
+      page.nextPosition() shouldEqual 5L
+      page.hasMore() shouldBe true
     }
 
     "map an empty last page" in {
-      val spiClient = new FlowReadingSpiLedgerClient(Future.successful(new SpiLedger.FlowPage(Seq.empty, None, 5L)))
+      val spiClient =
+        new FlowReadingSpiLedgerClient(Future.successful(new SpiLedger.FlowPage(Seq.empty, 5L, hasMore = false)))
 
       val page = new LedgerClientImpl(spiClient, ExecutionContext.parasitic).getFlowRecords("flow-1", 5L)
 
       page.records().isEmpty shouldBe true
-      page.nextPosition() shouldEqual Optional.empty()
-      page.continuationPosition() shouldEqual 5L
+      page.nextPosition() shouldEqual 5L
+      page.hasMore() shouldBe false
     }
 
     "ask for position 0 in the forms without a position, and for a limit of 100 in every form" in {
-      val spiClient = new FlowReadingSpiLedgerClient(Future.successful(new SpiLedger.FlowPage(Seq.empty, None, 0L)))
+      val spiClient =
+        new FlowReadingSpiLedgerClient(Future.successful(new SpiLedger.FlowPage(Seq.empty, 0L, hasMore = false)))
       val client = new LedgerClientImpl(spiClient, ExecutionContext.parasitic)
 
       client.getFlowRecords("flow-1")

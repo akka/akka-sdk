@@ -191,8 +191,8 @@ public class LedgerFlowIntegrationTest extends TestKitSupport {
   private List<FlowRecord> readFlow(String flowId) {
     var page = getLedgerClient().getFlowRecords(flowId);
     var records = new ArrayList<FlowRecord>(page.records());
-    while (page.nextPosition().isPresent()) {
-      page = getLedgerClient().getFlowRecords(flowId, page.nextPosition().get());
+    while (page.hasMore()) {
+      page = getLedgerClient().getFlowRecords(flowId, page.nextPosition());
       records.addAll(page.records());
     }
     return records;
