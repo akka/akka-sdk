@@ -29,7 +29,8 @@ import java.util.stream.Collectors;
  *     interaction
  * @param metadata metadata about the model call(s) of the interaction
  * @param systemMessage the system message the model was given
- * @param inputMessage the input message content given to the model, in order
+ * @param inputMessage the input message content given to the model, in order. A piece of a kind
+ *     that this version of the SDK or the runtime does not know is left out.
  * @param modelResponses the model call(s) of the interaction, in order
  * @param toolCallResponses tool call responses that arrived as input to a model call
  * @param taskContext autonomous-agent task metadata, present only for flow interactions

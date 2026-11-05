@@ -7,6 +7,7 @@ package akka.javasdk.impl.ledger
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
+import java.net.URI
 import java.time.Duration
 import java.time.Instant
 import java.util.Optional
@@ -16,6 +17,7 @@ import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
 import scala.reflect.ClassTag
 
+import akka.javasdk.agent.MessageContent
 import akka.javasdk.ledger.ActivityRecord
 import akka.javasdk.ledger.EvaluationRecord
 import akka.javasdk.ledger.Failure
@@ -87,6 +89,29 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
       new SpiLedger.ToolOrigin.RemoteMcp("https://mcp.example.com"),
       new GuardrailDecisionRecord.ToolOrigin.RemoteMcp("https://mcp.example.com")))
 
+  private val outcomes = Table[SpiLedger.EvaluationOutcome, Class[_ <: EvaluationRecord.Outcome]](
+    ("spi", "public"),
+    (
+      new SpiLedger.EvaluationVerdict(
+        new SpiLedger.Evaluation(passed = true, explanation = "", score = None, label = None, attributes = Map.empty)),
+      classOf[EvaluationRecord.Outcome.Verdict]),
+    (new SpiLedger.EvaluationInconclusive("no verdict"), classOf[EvaluationRecord.Outcome.Inconclusive]),
+    (new SpiLedger.EvaluationNotApplicable("no tool call"), classOf[EvaluationRecord.Outcome.NotApplicable]),
+    (new SpiLedger.EvaluationFailure("model unavailable"), classOf[EvaluationRecord.Outcome.Failed]))
+
+  private val messageContents = Table[SpiLedger.MessageContent, MessageContent](
+    ("spi", "public"),
+    (new SpiLedger.TextContent("What is the answer?"), new MessageContent.TextMessageContent("What is the answer?")),
+    (
+      new SpiLedger.ImageUriContent("https://example.com/chart.png", "high", Some("image/png")),
+      new MessageContent.ImageUrlMessageContent(
+        URI.create("https://example.com/chart.png"),
+        MessageContent.ImageMessageContent.DetailLevel.HIGH,
+        Optional.of("image/png"))),
+    (
+      new SpiLedger.PdfUriContent("https://example.com/report.pdf"),
+      new MessageContent.PdfUrlMessageContent(URI.create("https://example.com/report.pdf"))))
+
   private val activityEvents = Table[SpiLedger.ActivityEvent, ActivityRecord.Event](
     ("spi", "public"),
     (new SpiLedger.ActivityEvent.TaskAssigned("task-1"), new ActivityRecord.Event.TaskAssigned("task-1")),
@@ -152,7 +177,9 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
 
   private def spiInteractionRecord(
       finishReason: SpiLedger.FinishReason = SpiLedger.FinishReason.Stop,
-      failure: Option[SpiLedger.Failure] = None): SpiLedger.InteractionRecord =
+      failure: Option[SpiLedger.Failure] = None,
+      userMessage: Seq[SpiLedger.MessageContent] = Seq.empty,
+      toolCallResponses: Seq[SpiLedger.ToolCallResponse] = Seq.empty): SpiLedger.InteractionRecord =
     new SpiLedger.InteractionRecord(
       interactionId = "interaction-1",
       sessionId = "session-1",
@@ -172,23 +199,26 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
         callFinishedAt = Instant.EPOCH,
         finishReason = finishReason),
       systemMessage = "",
-      userMessage = Seq.empty,
+      userMessage = userMessage,
       modelResponses = Seq.empty,
-      toolCallResponses = Seq.empty,
+      toolCallResponses = toolCallResponses,
       taskContext = None,
       failure = failure,
       timestamp = Instant.EPOCH)
 
   private def spiEvaluationRecord(
       trigger: SpiLedger.EvaluationTrigger,
-      evaluationId: String = "evaluation-1"): SpiLedger.EvaluationRecord =
+      evaluationId: String = "evaluation-1",
+      subject: SpiLedger.EvaluationSubject = new SpiLedger.InteractionSubject("interaction-1", "support-agent"),
+      outcome: SpiLedger.EvaluationOutcome = new SpiLedger.EvaluationInconclusive("no verdict"))
+      : SpiLedger.EvaluationRecord =
     new SpiLedger.EvaluationRecord(
       evaluationId = evaluationId,
       evaluatorComponentId = "quality-evaluator",
       controlId = None,
       trigger = trigger,
-      subject = new SpiLedger.InteractionSubject("interaction-1", "support-agent"),
-      outcome = new SpiLedger.EvaluationInconclusive("no verdict"),
+      subject = subject,
+      outcome = outcome,
       timestamp = Instant.EPOCH,
       attributes = Map.empty)
 
@@ -347,6 +377,23 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
       }
     }
 
+    "keep the mapping of every known evaluation outcome" in {
+      outcomes.map(_._2).toSet[Class[_]] shouldBe classOf[EvaluationRecord.Outcome].getPermittedSubclasses.toSet
+      forAll(outcomes) { (spiOutcome, publicOutcome) =>
+        val record =
+          LedgerClientImpl.toEvaluationRecord(
+            spiEvaluationRecord(SpiLedger.EvaluationTrigger.Manual, outcome = spiOutcome))
+        record.outcome().getClass shouldBe publicOutcome
+      }
+    }
+
+    "keep the mapping of every known message content" in {
+      forAll(messageContents) { (spiContent, publicContent) =>
+        val record = LedgerClientImpl.toInteractionRecord(spiInteractionRecord(userMessage = Seq(spiContent)))
+        record.inputMessage().asScala.toSeq shouldBe Seq(publicContent)
+      }
+    }
+
     "read a failure reason that the SDK does not know as unspecified" in {
       val unknown = unknownValue[SpiLedger.FailureReason]
       forAll(failureReasons) { (known, _) => unknown should not be known }
@@ -413,6 +460,32 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
           decision = new SpiLedger.GuardrailDecision.Unspecified(""),
           failMode = SpiLedger.GuardrailFailMode.Unspecified,
           toolOrigin = SpiLedger.ToolOrigin.Unspecified))
+    }
+
+    "read an evaluation outcome that the SDK does not know as inconclusive" in {
+      val unknown = unknownValue[SpiLedger.EvaluationOutcome]
+      forAll(outcomes) { (known, _) => unknown should not be known }
+
+      val record =
+        LedgerClientImpl.toEvaluationRecord(spiEvaluationRecord(SpiLedger.EvaluationTrigger.Manual, outcome = unknown))
+
+      record.outcome() shouldBe new EvaluationRecord.Outcome.Inconclusive(
+        "The outcome of the evaluation is unknown to this SDK")
+    }
+
+    "leave a message content that the SDK does not know out of the input message and the tool call responses" in {
+      val unknown = unknownValue[SpiLedger.MessageContent]
+      forAll(messageContents) { (known, _) => unknown should not be known }
+      val text = new SpiLedger.TextContent("42")
+
+      val record = LedgerClientImpl.toInteractionRecord(
+        spiInteractionRecord(
+          userMessage = Seq(unknown, text),
+          toolCallResponses = Seq(new SpiLedger.ToolCallResponse("call-1", "lookup", Seq(text, unknown)))))
+
+      val known = Seq(new MessageContent.TextMessageContent("42"))
+      record.inputMessage().asScala.toSeq shouldBe known
+      record.toolCallResponses().asScala.toSeq.map(_.contents().asScala.toSeq) shouldBe Seq(known)
     }
 
     "read an activity event that the SDK does not know as other, with the kind of the event" in {

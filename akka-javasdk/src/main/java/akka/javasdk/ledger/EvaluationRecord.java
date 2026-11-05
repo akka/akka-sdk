@@ -91,7 +91,10 @@ public record EvaluationRecord(
     record Workflow(String workflowId, String workflowComponentId) implements Subject {}
   }
 
-  /** The terminal outcome of an evaluation. */
+  /**
+   * The terminal outcome of an evaluation. A later SDK version can add outcomes. An outcome that
+   * this version of the SDK or the runtime does not know reads as {@link Inconclusive}.
+   */
   public sealed interface Outcome {
 
     /** The evaluation reached a verdict. */
@@ -101,7 +104,11 @@ public record EvaluationRecord(
       }
     }
 
-    /** The evaluation ran but could not reach a verdict. This is a deliberate, expected outcome. */
+    /**
+     * The evaluation ran but could not reach a verdict. This is a deliberate, expected outcome. An
+     * outcome that this version of the SDK or the runtime does not know also reads as inconclusive,
+     * with a reason that says so.
+     */
     record Inconclusive(String reason) implements Outcome {}
 
     /**
