@@ -1,8 +1,11 @@
 package com.example.evaluator;
 
 import akka.javasdk.ledger.EvaluationRecord;
+import akka.javasdk.ledger.FlowPage;
+import akka.javasdk.ledger.FlowRecord;
 import akka.javasdk.ledger.InteractionRecord;
 import akka.javasdk.ledger.LedgerClient;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
 
@@ -34,5 +37,18 @@ public class LedgerUsage {
       workflowId
     );
     // end::workflow-evaluations[]
+  }
+
+  String flowTranscript(String flowId) {
+    // tag::flow[]
+    FlowPage page = ledger.getFlowRecords(flowId); // <1>
+    List<FlowRecord> records = new ArrayList<>(page.records());
+    while (page.hasMore()) { // <2>
+      page = ledger.getFlowRecords(flowId, page.nextPosition());
+      records.addAll(page.records());
+    }
+    String transcript = FlowRecord.transcript(records); // <3>
+    // end::flow[]
+    return transcript;
   }
 }

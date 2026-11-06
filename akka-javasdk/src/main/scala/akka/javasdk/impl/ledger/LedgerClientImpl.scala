@@ -20,8 +20,11 @@ import akka.javasdk.agent.MessageContent
 import akka.javasdk.evaluation.Evaluation
 import akka.javasdk.impl.ErrorHandling
 import akka.javasdk.impl.ForwardCompat.knownOr
+import akka.javasdk.ledger.ActivityRecord
 import akka.javasdk.ledger.EvaluationRecord
 import akka.javasdk.ledger.Failure
+import akka.javasdk.ledger.FlowPage
+import akka.javasdk.ledger.FlowRecord
 import akka.javasdk.ledger.GuardrailDecisionRecord
 import akka.javasdk.ledger.InteractionMetadata
 import akka.javasdk.ledger.InteractionRecord
@@ -115,6 +118,24 @@ private[javasdk] final class LedgerClientImpl(spiLedgerClient: SpiLedgerClient, 
       .getGuardrailDecisions(interactionId, from = None, limit = LedgerClientImpl.ListLimit)
       .map(_.map(LedgerClientImpl.toGuardrailDecisionRecord).asJava)
       .asJava
+
+  override def getFlowRecords(flowId: String): FlowPage =
+    getFlowRecords(flowId, fromPosition = 0L)
+
+  override def getFlowRecords(flowId: String, fromPosition: Long): FlowPage =
+    try getFlowRecordsAsync(flowId, fromPosition).toCompletableFuture.join()
+    catch {
+      case e: CompletionException => throw ErrorHandling.unwrapCompletionException(e)
+    }
+
+  override def getFlowRecordsAsync(flowId: String): CompletionStage[FlowPage] =
+    getFlowRecordsAsync(flowId, fromPosition = 0L)
+
+  override def getFlowRecordsAsync(flowId: String, fromPosition: Long): CompletionStage[FlowPage] =
+    spiLedgerClient
+      .getFlowRecords(flowId, fromPosition, limit = LedgerClientImpl.ListLimit)
+      .map(LedgerClientImpl.toFlowPage)
+      .asJava
 }
 
 /**
@@ -123,7 +144,7 @@ private[javasdk] final class LedgerClientImpl(spiLedgerClient: SpiLedgerClient, 
 @InternalApi
 private[ledger] object LedgerClientImpl {
 
-  /** Cap on the records returned by one listing, matching the ledger page size. */
+  /** Cap on the records returned by one listing or one flow page, matching the ledger page size. */
   private val ListLimit = 100
 
   def toInteractionRecord(record: SpiLedger.InteractionRecord): InteractionRecord =
@@ -134,7 +155,7 @@ private[ledger] object LedgerClientImpl {
       record.flowId.toJava,
       toMetadata(record.metadata),
       record.systemMessage,
-      record.userMessage.map(toMessageContent).asJava,
+      record.userMessage.flatMap(toMessageContent).asJava,
       record.modelResponses.map(toModelResponse).asJava,
       record.toolCallResponses.map(toToolCallResponse).asJava,
       record.taskContext.map(toTaskContext).toJava,
@@ -158,6 +179,74 @@ private[ledger] object LedgerClientImpl {
         new EvaluationRecord.Subject.Interaction(interaction.interactionId, interaction.agentComponentId)
       case workflow: SpiLedger.WorkflowSubject =>
         new EvaluationRecord.Subject.Workflow(workflow.workflowId, workflow.workflowComponentId)
+    }
+
+  def toFlowPage(page: SpiLedger.FlowPage): FlowPage =
+    new FlowPage(page.records.flatMap(toFlowRecord).asJava, page.nextPosition, page.hasMore)
+
+  // A record of a class that this SDK does not know is left out of the page. A flow page holds only the evaluations of
+  // the interactions of the flow, so an evaluation of another subject is left out too: a workflow run, or a subject
+  // class that this SDK does not know. The mapping of a kept record runs outside of knownOr, so that a MatchError from
+  // an SDK bug fails the read.
+  def toFlowRecord(record: SpiLedger.FlowRecord): Option[FlowRecord] =
+    knownOr(Option.empty[() => FlowRecord]) {
+      record match {
+        case interaction: SpiLedger.InteractionRecord    => Some(() => toInteractionRecord(interaction))
+        case activity: SpiLedger.ActivityRecord          => Some(() => toActivityRecord(activity))
+        case decision: SpiLedger.GuardrailDecisionRecord => Some(() => toGuardrailDecisionRecord(decision))
+        case evaluation: SpiLedger.EvaluationRecord =>
+          evaluation.subject match {
+            case _: SpiLedger.InteractionSubject => Some(() => toEvaluationRecord(evaluation))
+            case _: SpiLedger.WorkflowSubject    => None
+          }
+      }
+    }.map(_.apply())
+
+  def toActivityRecord(record: SpiLedger.ActivityRecord): ActivityRecord =
+    new ActivityRecord(
+      record.recordId,
+      record.agentComponentId,
+      record.agentInstanceId,
+      record.flowId,
+      record.events.map(toActivityEvent).asJava,
+      record.timestamp)
+
+  private def toActivityEvent(event: SpiLedger.ActivityEvent): ActivityRecord.Event =
+    knownOr[ActivityRecord.Event](new ActivityRecord.Event.Other(event.kind)) {
+      event match {
+        case e: SpiLedger.ActivityEvent.TaskAssigned =>
+          new ActivityRecord.Event.TaskAssigned(e.taskId)
+        case e: SpiLedger.ActivityEvent.TaskStarted =>
+          new ActivityRecord.Event.TaskStarted(e.taskId, e.taskDescription, e.maxIterations)
+        case e: SpiLedger.ActivityEvent.TaskCompleted =>
+          new ActivityRecord.Event.TaskCompleted(e.taskId, e.iterationsUsed)
+        case e: SpiLedger.ActivityEvent.TaskFailed =>
+          new ActivityRecord.Event.TaskFailed(e.taskId, e.reason, e.iterationsUsed)
+        case e: SpiLedger.ActivityEvent.TaskCancelled =>
+          new ActivityRecord.Event.TaskCancelled(e.taskId, e.reason, e.iterationsUsed)
+        case e: SpiLedger.ActivityEvent.TaskResultRejected =>
+          new ActivityRecord.Event.TaskResultRejected(e.taskId, e.reason, e.iterationsUsed)
+        case e: SpiLedger.ActivityEvent.IterationFailed =>
+          new ActivityRecord.Event.IterationFailed(e.reason, e.taskId.toJava, e.iterationNumber.map(Int.box).toJava)
+        case e: SpiLedger.ActivityEvent.DelegationStarted =>
+          new ActivityRecord.Event.DelegationStarted(
+            e.workers.map(_.componentId).asJava,
+            e.delegationCount,
+            e.subtaskIds.asJava,
+            e.workers.map(_.instanceId).asJava)
+        case e: SpiLedger.ActivityEvent.DelegationResolved =>
+          new ActivityRecord.Event.DelegationResolved(
+            e.succeeded,
+            e.failed,
+            e.succeededSubtaskIds.asJava,
+            e.failedSubtaskIds.asJava)
+        case e: SpiLedger.ActivityEvent.HandoffStarted =>
+          new ActivityRecord.Event.HandoffStarted(e.taskId, e.targetComponentId)
+        case e: SpiLedger.ActivityEvent.HandoffReceived =>
+          new ActivityRecord.Event.HandoffReceived(e.taskId, e.source.componentId, e.source.instanceId)
+        case e: SpiLedger.ActivityEvent.Other =>
+          new ActivityRecord.Event.Other(e.kind)
+      }
     }
 
   def toGuardrailDecisionRecord(record: SpiLedger.GuardrailDecisionRecord): GuardrailDecisionRecord =
@@ -229,16 +318,21 @@ private[ledger] object LedgerClientImpl {
       }
     }
 
+  // An outcome that this SDK does not know reads as inconclusive, as the runtime reads a stored outcome that it does
+  // not know.
   private def toEvaluationOutcome(outcome: SpiLedger.EvaluationOutcome): EvaluationRecord.Outcome =
-    outcome match {
-      case verdict: SpiLedger.EvaluationVerdict =>
-        new EvaluationRecord.Outcome.Verdict(toEvaluation(verdict.evaluation))
-      case inconclusive: SpiLedger.EvaluationInconclusive =>
-        new EvaluationRecord.Outcome.Inconclusive(inconclusive.reason)
-      case notApplicable: SpiLedger.EvaluationNotApplicable =>
-        new EvaluationRecord.Outcome.NotApplicable(notApplicable.reason)
-      case failure: SpiLedger.EvaluationFailure =>
-        new EvaluationRecord.Outcome.Failed(failure.reason)
+    knownOr[EvaluationRecord.Outcome](
+      new EvaluationRecord.Outcome.Inconclusive("The outcome of the evaluation is unknown to this SDK")) {
+      outcome match {
+        case verdict: SpiLedger.EvaluationVerdict =>
+          new EvaluationRecord.Outcome.Verdict(toEvaluation(verdict.evaluation))
+        case inconclusive: SpiLedger.EvaluationInconclusive =>
+          new EvaluationRecord.Outcome.Inconclusive(inconclusive.reason)
+        case notApplicable: SpiLedger.EvaluationNotApplicable =>
+          new EvaluationRecord.Outcome.NotApplicable(notApplicable.reason)
+        case failure: SpiLedger.EvaluationFailure =>
+          new EvaluationRecord.Outcome.Failed(failure.reason)
+      }
     }
 
   private def toEvaluation(evaluation: SpiLedger.Evaluation): Evaluation = {
@@ -292,19 +386,24 @@ private[ledger] object LedgerClientImpl {
     new ToolCall(toolCall.id, toolCall.name, toolCall.arguments, toolCall.response)
 
   private def toToolCallResponse(response: SpiLedger.ToolCallResponse): ToolCallResponse =
-    new ToolCallResponse(response.id, response.name, response.contents.map(toMessageContent).asJava)
+    new ToolCallResponse(response.id, response.name, response.contents.flatMap(toMessageContent).asJava)
 
-  private def toMessageContent(content: SpiLedger.MessageContent): MessageContent =
-    content match {
-      case text: SpiLedger.TextContent =>
-        new MessageContent.TextMessageContent(text.text)
-      case image: SpiLedger.ImageUriContent =>
-        new MessageContent.ImageUrlMessageContent(
-          URI.create(image.uri),
-          toDetailLevel(image.detailLevel),
-          image.mimeType.toJava)
-      case pdf: SpiLedger.PdfUriContent =>
-        new MessageContent.PdfUrlMessageContent(URI.create(pdf.uri))
+  // A content that this SDK does not know is left out, as the runtime leaves out a stored content that it does not
+  // know.
+  private def toMessageContent(content: SpiLedger.MessageContent): Option[MessageContent] =
+    knownOr(Option.empty[MessageContent]) {
+      content match {
+        case text: SpiLedger.TextContent =>
+          Some(new MessageContent.TextMessageContent(text.text))
+        case image: SpiLedger.ImageUriContent =>
+          Some(
+            new MessageContent.ImageUrlMessageContent(
+              URI.create(image.uri),
+              toDetailLevel(image.detailLevel),
+              image.mimeType.toJava))
+        case pdf: SpiLedger.PdfUriContent =>
+          Some(new MessageContent.PdfUrlMessageContent(URI.create(pdf.uri)))
+      }
     }
 
   // Mirrors SpiAgent.ImageMessageContent.DetailLevel.render, the form stored in the ledger.
