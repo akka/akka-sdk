@@ -133,6 +133,25 @@ final class Targets {
       String name,
       GuardrailDecisionRecord.Decision decision,
       String explanation) {
+    return guardrail(
+        interaction,
+        name,
+        decision,
+        explanation,
+        false,
+        GuardrailDecisionRecord.FailMode.FAIL_CLOSED,
+        700);
+  }
+
+  /** A guardrail decision recorded {@code atMillis} after the start of the interaction. */
+  static GuardrailDecisionRecord guardrail(
+      InteractionRecord interaction,
+      String name,
+      GuardrailDecisionRecord.Decision decision,
+      String explanation,
+      boolean reportOnly,
+      GuardrailDecisionRecord.FailMode failMode,
+      long atMillis) {
     return new GuardrailDecisionRecord(
         "guardrail-" + interaction.interactionId() + "-" + name,
         AGENT,
@@ -145,11 +164,11 @@ final class Targets {
         GuardrailDecisionRecord.Boundary.BEFORE_AGENT_RESPONSE,
         decision,
         explanation,
-        false,
-        GuardrailDecisionRecord.FailMode.FAIL_CLOSED,
+        reportOnly,
+        failMode,
         Duration.ofMillis(5),
         Optional.empty(),
-        STARTED.plusMillis(700));
+        STARTED.plusMillis(atMillis));
   }
 
   static EvaluationRecord verdict(String interactionId, String evaluator, Evaluation evaluation) {

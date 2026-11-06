@@ -4,10 +4,12 @@
 
 package akka.javasdk.testkit.eval;
 
+import akka.javasdk.ledger.Failure;
 import akka.javasdk.ledger.GuardrailDecisionRecord;
 import akka.javasdk.ledger.InteractionRecord;
 import akka.javasdk.ledger.ToolCall;
 import java.time.Duration;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -66,9 +68,39 @@ public record Evidence(
     return interaction.map(InteractionRecord::failed).orElse(false);
   }
 
-  /** The tool calls the model requested, in call order. */
+  /**
+   * The tool calls the model requested, in call order. A call that a guardrail denied is included;
+   * see {@link #denialOf}.
+   */
   public List<ToolCall> toolCalls() {
     return interaction.map(InteractionRecord::toolCalls).orElse(List.of());
+  }
+
+  /**
+   * The enforcing denial that stopped the call before the tool ran. Empty when no guardrail denied
+   * the call.
+   */
+  public Optional<GuardrailDecisionRecord> denialOf(ToolCall call) {
+    return guardrails.stream()
+        .filter(
+            g ->
+                g.boundary() == GuardrailDecisionRecord.Boundary.BEFORE_TOOL_CALL
+                    && g.decision() == GuardrailDecisionRecord.Decision.DENY
+                    && !g.reportOnly()
+                    && decidedOn(g, call))
+        .findFirst();
+  }
+
+  private static boolean decidedOn(GuardrailDecisionRecord decision, ToolCall call) {
+    return decision
+        .toolCall()
+        .map(
+            decided ->
+                decided
+                    .toolCallId()
+                    .map(id -> id.equals(call.id()))
+                    .orElse(decided.toolName().equals(call.name())))
+        .orElse(false);
   }
 
   /** How many model responses the interaction holds. */
@@ -99,5 +131,42 @@ public record Evidence(
   /** Whether a guardrail denied content in the interaction. */
   public boolean denied() {
     return guardrails.stream().anyMatch(g -> g.decision() == GuardrailDecisionRecord.Decision.DENY);
+  }
+
+  /**
+   * The enforcing denial that stopped the interaction. Empty when no guardrail stopped it, or when
+   * a guardrail error stopped it.
+   */
+  Optional<GuardrailDecisionRecord> stoppingDenial() {
+    return stoppingDecision().filter(g -> g.decision() == GuardrailDecisionRecord.Decision.DENY);
+  }
+
+  /** Whether a fail-closed guardrail that failed to decide stopped the interaction. */
+  boolean stoppedByGuardrailError() {
+    return stoppingDecision()
+        .filter(g -> g.decision() == GuardrailDecisionRecord.Decision.FAIL)
+        .isPresent();
+  }
+
+  // The oldest enforcing decision, which is the one that stopped the interaction.
+  private Optional<GuardrailDecisionRecord> stoppingDecision() {
+    if (!stoppedByGuardrail()) return Optional.empty();
+    return guardrails.stream()
+        .filter(Evidence::enforcing)
+        .min(Comparator.comparing(GuardrailDecisionRecord::timestamp));
+  }
+
+  private static boolean enforcing(GuardrailDecisionRecord decision) {
+    if (decision.reportOnly()) return false;
+    return decision.decision() == GuardrailDecisionRecord.Decision.DENY
+        || (decision.decision() == GuardrailDecisionRecord.Decision.FAIL
+            && decision.failMode() == GuardrailDecisionRecord.FailMode.FAIL_CLOSED);
+  }
+
+  private boolean stoppedByGuardrail() {
+    return interaction
+        .flatMap(InteractionRecord::failure)
+        .map(failure -> failure.reason() == Failure.FailureReason.GUARDRAIL)
+        .orElse(false);
   }
 }

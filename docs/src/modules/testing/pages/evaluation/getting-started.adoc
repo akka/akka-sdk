@@ -167,7 +167,7 @@ A rendered report of this batch:
 
 [listing]
 ----
-3 cases, 1 run: 3/3 attempts passed (100%)
+evaluation of 3 cases, 1 run: 3/3 attempts passed (100%)
 gate: passed — pass rate 1.00 over 3 attempts (3 cases, 1 run), required 0.90; order-lookup rate 1.00 over 3 judged attempts, required 1.00; no target failures
   judge 3/3
   order-lookup 3/3

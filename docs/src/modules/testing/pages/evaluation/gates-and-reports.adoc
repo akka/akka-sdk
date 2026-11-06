@@ -15,7 +15,7 @@ A report is the result of one run.
 == The attempt verdict
 
 An attempt is one case in one run.
-Its results are the xref:sdk:evaluators.adoc#outcomes[outcomes] of the evaluators bound to the agent, one per evaluator. A failed agent call is a failed result named `target`, and an evaluator that recorded nothing within the evaluation timeout is inconclusive. The timeout is 10 seconds unless the experiment sets another with `evaluationTimeout(Duration)`.
+Its results are the xref:sdk:evaluators.adoc#outcomes[outcomes] of the evaluators bound to the agent, one per evaluator. A failed agent call is a failed result named `target`. A guardrail denial that stopped the interaction is a result named `guardrail` instead. It passes in an attack and fails in an evaluation. See xref:testing:evaluation/adversarial.adoc#denials[How an attack judges a guardrail denial]. An evaluator that recorded nothing within the evaluation timeout is inconclusive. The timeout is 10 seconds unless the experiment sets another with `evaluationTimeout(Duration)`.
 
 The verdict of the attempt follows from the results of all its evaluators.
 
@@ -55,13 +55,19 @@ A link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Gate.html[Gate] is a c
 | The share of the evaluator's results that passed is at least `minimumRate`. Inconclusive and not applicable results are left out of the count. The gate fails when the evaluator has no result to count. The evaluator is named by its component class.
 
 | `Gate.targetShouldNotFail()`
-| No attempt failed in the agent call.
+| No attempt failed in the agent call. In an evaluation, a failed `guardrail` result counts as a failure. In an attack, the `guardrail` result passes and does not count.
 
 | `Gate.guardrailShouldNotDeny(name)`
 | The named guardrail denied nothing in any attempt. For a guardrail that must stay silent on legitimate traffic.
 
 | `Gate.guardrailShouldDeny(name)`
-| The named guardrail denied in every attempt. For a guardrail that must catch an attack every case carries.
+| The named guardrail denied in every attempt. For a guardrail that must catch an attack every case carries. A report-only denial counts.
+
+| `Gate.guardrailShouldStop()`
+| Every attempt ended with an enforcing denial from any guardrail that stopped the interaction. A report-only denial does not count.
+
+| `Gate.guardrailShouldStop(name)`
+| Every attempt ended with an enforcing denial from the named guardrail that stopped the interaction. A report-only denial does not count.
 
 | `gate.and(other)`
 | Both gates hold. The verdict lists both details.
@@ -103,6 +109,9 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentQuali
 | `name()`
 | The name given with `name(...)`, or the test method that ran the experiment, for example `OrderAgentQualityIntegrationTest.qualityGate`.
 
+| `kind()`
+| `EVALUATION` for cases run with `cases(...)`, `ATTACK` for cases run with `attacks(...)`.
+
 | `passed()`
 | Whether the gate passed.
 
@@ -132,7 +141,7 @@ A rendered report of a passing batch:
 
 [listing]
 ----
-3 cases, 1 run: 3/3 attempts passed (100%)
+evaluation of 3 cases, 1 run: 3/3 attempts passed (100%)
 gate: passed — pass rate 1.00 over 3 attempts (3 cases, 1 run), required 0.90; order-lookup rate 1.00 over 3 judged attempts, required 1.00; no target failures
   judge 3/3
   order-lookup 3/3
@@ -143,7 +152,7 @@ spend: 7 model responses, 0 tokens in, 0 out, 31 ms in total, slowest full-refun
 
 Line by line:
 
-. The cases, the runs, and the attempts that passed with their share. Inconclusive attempts follow when there are any: `3 cases, 1 run: 2/3 attempts passed (67%), 1 inconclusive`. An attempt is one case in one run, so without `repeat(n)` on the experiment the attempts are the cases.
+. The kind of the experiment, the cases, the runs, and the passed attempts with their share. The kind is `evaluation` or `attack`. Inconclusive attempts follow when there are any: `evaluation of 3 cases, 1 run: 2/3 attempts passed (67%), 1 inconclusive`. An attempt is one case in one run, so without `repeat(n)` on the experiment the attempts are the cases.
 . The gate's verdict and its detail. A combined gate lists the detail of each part. The detail counts attempts and names the runs a case failed or was inconclusive in: `failed cases [order-status (run 2)], inconclusive cases [refund (run 1)]`.
 . One line per evaluator, under its component id: the attempts it passed over the attempts where it reached a verdict. The attempts where it was inconclusive or not applicable follow in brackets, for example `refund-policy 1/1 (2 not applicable)`.
 . One line per guardrail that decided in the batch, for example `guardrail refund-limit: denied 1, allowed 0`. Absent when no guardrail decided.
@@ -170,7 +179,7 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentEvalI
 
 [listing]
 ----
-1 case, 1 run: 0/1 attempts passed (0%)
+evaluation of 1 case, 1 run: 0/1 attempts passed (0%)
 gate: FAILED — failed cases [order-status (run 1)]
   judge 1/1
   order-lookup 0/1
@@ -202,6 +211,9 @@ include::sdk:example$doc-snippets/src/test/java/com/example/eval/OrderAgentEvalI
 <1> The runner's own result for the failed call.
 <2> The ledger still has the interaction, with the tool call that threw and the failure.
 <3> An evaluator bound with `trigger-on-failure = true` still judges the failed interaction. The other evaluators are not expected on it.
+
+When a guardrail denial stopped the interaction, the runner reports a result named `guardrail` in place of `target`.
+See xref:testing:evaluation/adversarial.adoc#denials[How an attack judges a guardrail denial].
 
 [#repeated-runs]
 == Running every case several times
