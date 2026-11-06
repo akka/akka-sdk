@@ -18,6 +18,12 @@ Connectivity terms used below:
 
 xref:deployment:technical-overview/data-flows-grid.adoc[View the full data flows table,role=open-grid,window=_blank]
 
+Akka Optimize adds more flows. They are in a separate grid.
+
+xref:deployment:technical-overview/data-flows-optimize-grid.adoc[View the Akka Optimize data flows table,role=open-grid,window=_blank]
+
+Download both data flows tables as a link:../../operations/_attachments/whitepapers/aao-data-flows.pdf[PDF, window=_blank].
+
 == Private connectivity by cloud
 
 Under BYOC, Akka can set up a private-connectivity option per cloud to keep region-to-internal traffic off the public internet: Transit Gateway on AWS, VPC Peering on GCP, and VNet Peering with Azure Firewall on Azure. See the xref:deployment:technical-overview/byoc-aws.adoc[BYOC on AWS], xref:deployment:technical-overview/byoc-azure.adoc[BYOC on Azure], and xref:deployment:technical-overview/byoc-gcp.adoc[BYOC on GCP] pages.

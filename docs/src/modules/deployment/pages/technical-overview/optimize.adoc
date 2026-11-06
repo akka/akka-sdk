@@ -26,14 +26,14 @@ Akka installs open source infrastructure in the Kubernetes cluster that AAO uses
 | KubeRay
 | Runs training jobs and serves models.
 
-| NVIDIA device plugins
-| Schedules GPUs.
+| NVIDIA DRA driver
+| Allocates GPUs.
 
 | verl
-| Runs reinforcement learning for sharded and multi-device training runs. Also scores and grades training runs.
+| Training engine for sharded and multi-device runs.
 |===
 
-Akka also provisions the storage account (bucket) for training. The add-on stores logs and traces of AI interactions in your hyperscaler's preferred object storage service.
+Akka also provisions the storage account (bucket) for training. The add-on stores logs and traces of AI interactions in your hyperscaler's preferred object storage service. The flows that Optimize adds are in the xref:deployment:technical-overview/data-flows.adoc[data flows]. The components that Optimize depends on are listed in xref:deployment:technical-overview/optimize-dependencies.adoc[Akka Optimize dependencies].
 
 == What the add-on needs from you
 
@@ -51,7 +51,7 @@ You deploy a model onto GPU capacity in an Akka region. Any OpenAI-compatible cl
 Akka installs and manages the routing and serving components separately from the training components. Initially, a deployment gives you direct access to manage routing and inference. For how-to guides, see xref:inference:serving/getting-started.adoc[] and xref:inference:routing.adoc[]. Akka's team configures and manages the initial training loops with you, while Akka stabilizes the external interfaces that define and run long-running training loops.
 
 // DIAGRAM: recreated as a Mermaid diagram from the Optimize architecture drawing. Flagged for creator review.
-The diagram shows how a request reaches a model. A client outside the cluster calls the route on a host name. An agent or service inside the project calls the model endpoint by its internal name. Both requests reach the gateway, which checks the bearer key and picks the engine from the model name. The engines accept only the gateway identity.
+The diagram shows how a request reaches a model. A client outside the cluster calls the route on a host name. An agent or service inside the project calls the model endpoint by its internal name. Both requests reach the gateway, which checks the bearer key and picks the engine from the model name. The engines accept only the gateway identity. The engines run on GPU devices that the region binds with a Dynamic Resource Allocation (DRA) ResourceClaim, and Trainer endpoints draw devices from the same pool.
 
 .How a request reaches a model
 [mermaid]
@@ -60,16 +60,6 @@ include::deployment:partial$model-request-diagram.mmd[]
 ----
 
 xref:deployment:technical-overview-model-request-image.adoc[View the full-size model request diagram,role=open-image,window=_blank]
-
-== Tools for evaluation and adversarial testing
-
-Akka provides these tools with the add-on:
-
-* evalkit, a toolkit that you download separately and that integrates with your Akka project, runs evaluation and scoring campaigns locally.
-* redkit, a toolkit that is also part of your Akka project and downloadable separately, runs adversarial testing campaigns against models.
-* Extensions to the Akka CLI manage evalkit, redkit, and your hosted environment. See xref:reference:cli/akka-cli/akka_optimize.adoc[akka optimize].
-
-For testing an agent, see xref:testing:evaluation/adversarial.adoc[].
 
 == Next steps
 

@@ -4,6 +4,7 @@
 *** xref:deployment:technical-overview.adoc[How AAO works]
 **** xref:deployment:technical-overview/data-flows.adoc[Data flows and security pathways]
 **** xref:deployment:technical-overview/optimize.adoc[Model routing, serving and training]
+**** xref:deployment:technical-overview/optimize-dependencies.adoc[Akka Optimize dependencies]
 *** xref:deployment:configuring.adoc[Self-managed]
 *** xref:deployment:technical-overview/serverless.adoc[Serverless]
 *** xref:deployment:technical-overview/dedicated.adoc[Dedicated]
