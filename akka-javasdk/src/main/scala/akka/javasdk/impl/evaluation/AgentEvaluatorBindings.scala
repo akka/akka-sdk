@@ -4,6 +4,7 @@
 
 package akka.javasdk.impl.evaluation
 
+import java.lang.reflect.ParameterizedType
 import java.util
 
 import scala.jdk.CollectionConverters._
@@ -41,6 +42,16 @@ private[javasdk] object AgentEvaluatorBindings {
   /** The agent class a method reference to an agent command handler belongs to. */
   def agentClass(methodRef: AnyRef): Class[_] =
     MethodRefResolver.resolveMethodRef(methodRef).getDeclaringClass
+
+  /** The raw class of the reply of the agent command handler a method reference names. */
+  def replyClass(methodRef: AnyRef): Class[_] = {
+    val method = MethodRefResolver.resolveMethodRef(methodRef)
+    Reflect.getReturnType(method.getDeclaringClass, method) match {
+      case clazz: Class[_]      => clazz
+      case p: ParameterizedType => p.getRawType.asInstanceOf[Class[_]]
+      case _                    => classOf[AnyRef]
+    }
+  }
 
   /** The component id of the agent class. */
   def agentComponentId(agentClass: Class[_]): String =

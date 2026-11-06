@@ -16,6 +16,10 @@ A report is the result of one run.
 
 An attempt is one case in one run.
 Its results are the xref:sdk:evaluators.adoc#outcomes[outcomes] of the evaluators bound to the agent, one per evaluator. A failed agent call is a failed result named `target`. A guardrail denial that stopped the interaction is a result named `guardrail` instead. It passes in an attack and fails in an evaluation. See xref:testing:evaluation/adversarial.adoc#denials[How an attack judges a guardrail denial]. An evaluator that recorded nothing within the evaluation timeout is inconclusive. The timeout is 10 seconds unless the experiment sets another with `evaluationTimeout(Duration)`.
+A case with an xref:testing:evaluation/getting-started.adoc#expected-reply[expected reply] adds a result named `expected`.
+This result compares the actual reply with the expected reply.
+It passes or fails, and is inconclusive if the agent call failed or returned no value.
+An attempt with an `expected` result and no bound evaluator passes or fails on that result alone.
 
 The verdict of the attempt follows from the results of all its evaluators.
 
@@ -27,7 +31,7 @@ The verdict of the attempt follows from the results of all its evaluators.
 | Any result failed.
 
 | `INCONCLUSIVE`
-| No result failed and any result is inconclusive, or no result passed: every result is not applicable, or no evaluator is bound.
+| No result failed and any result is inconclusive, or no result passed: every result is not applicable, or no evaluator is bound and the case has no expected reply.
 
 | `PASS`
 | At least one result passed and the others are not applicable.
@@ -56,6 +60,12 @@ A link:{attachmentsdir}/testkit/akka/javasdk/testkit/eval/Gate.html[Gate] is a c
 
 | `Gate.targetShouldNotFail()`
 | No attempt failed in the agent call. In an evaluation, a failed `guardrail` result counts as a failure. In an attack, the `guardrail` result passes and does not count.
+
+| `Gate.expectedShouldPass()`
+| The reply of every attempt matches the expected reply of its case: every `expected` result passed. An attempt without a reply to compare, because the agent call failed or returned no value, fails the gate. The gate fails when no case has an expected reply.
+
+| `Gate.expectedPassRateShouldBeAtLeast(minimumRate)`
+| The share of the `expected` results that passed is at least `minimumRate`, over the attempts where the comparison ran. An attempt without a reply to compare is excluded, so combine the gate with `Gate.targetShouldNotFail()` to fail the batch on failed agent calls. The gate fails when no case has an expected reply.
 
 | `Gate.guardrailShouldNotDeny(name)`
 | The named guardrail denied nothing in any attempt. For a guardrail that must stay silent on legitimate traffic.
@@ -154,7 +164,7 @@ Line by line:
 
 . The kind of the experiment, the cases, the runs, and the passed attempts with their share. The kind is `evaluation` or `attack`. Inconclusive attempts follow when there are any: `evaluation of 3 cases, 1 run: 2/3 attempts passed (67%), 1 inconclusive`. An attempt is one case in one run, so without `repeat(n)` on the experiment the attempts are the cases.
 . The gate's verdict and its detail. A combined gate lists the detail of each part. The detail counts attempts and names the runs a case failed or was inconclusive in: `failed cases [order-status (run 2)], inconclusive cases [refund (run 1)]`.
-. One line per evaluator, under its component id: the attempts it passed over the attempts where it reached a verdict. The attempts where it was inconclusive or not applicable follow in brackets, for example `refund-policy 1/1 (2 not applicable)`.
+. One line per evaluator, under its component id: the attempts it passed over the attempts where it reached a verdict. The attempts where it was inconclusive or not applicable follow in brackets, for example `refund-policy 1/1 (2 not applicable)`. The runner's own results, `target`, `guardrail` and `expected`, are listed the same way.
 . One line per guardrail that decided in the batch, for example `guardrail refund-limit: denied 1, allowed 0`. Absent when no guardrail decided.
 . The spend: model responses, tokens and latency summed over the attempts with a recorded interaction, and the slowest attempt. A mocked model reports no tokens.
 . `inconsistent across runs`, only when an evaluator passed in some runs of a case and failed in others: one line per such evaluator with the runs it passed, failed and was inconclusive in, for example `order-status order-lookup: passed in runs 1, 3, failed in run 2`. An evaluator that failed in every run is not listed here. See <<repeated-runs>>.

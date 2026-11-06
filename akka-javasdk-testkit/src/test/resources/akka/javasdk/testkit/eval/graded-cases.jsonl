@@ -1,0 +1,2 @@
+{"id":"shipped","command":"Where is o_42?","expected":"Order o_42 is shipped."}
+{"id":"closing","command":"bye","expected":"Goodbye."}

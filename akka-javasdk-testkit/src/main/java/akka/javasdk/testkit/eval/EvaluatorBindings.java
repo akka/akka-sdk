@@ -79,17 +79,30 @@ record EvaluatorBindings(String agentComponentId, List<Binding> bindings) {
     }
   }
 
-  // Refuses an evaluator id the runner uses for its own results.
+  // The runner's own results are named target, guardrail and expected, so an evaluator with one of
+  // these ids would merge with them in the report.
   void requireNoRunnerName() {
-    for (var name : List.of(ExperimentRunner.TARGET, ExperimentRunner.GUARDRAIL)) {
-      if (bindings.stream().anyMatch(binding -> binding.evaluator().equals(name)))
-        throw new IllegalArgumentException(
-            "An evaluator bound to agent ["
-                + agentComponentId
-                + "] has the component id ["
-                + name
-                + "], which the runner uses for its own result. Give the evaluator another id.");
+    for (var binding : bindings) {
+      if (binding.evaluator().equals(ExperimentRunner.TARGET))
+        throw reservedName(binding.evaluator(), "its own result on a failed agent call");
+      if (binding.evaluator().equals(ExperimentRunner.GUARDRAIL))
+        throw reservedName(
+            binding.evaluator(), "its own result on a denial that stopped the interaction");
+      if (binding.evaluator().equals(ExperimentRunner.EXPECTED))
+        throw reservedName(
+            binding.evaluator(), "the comparison of the reply with the expected reply");
     }
+  }
+
+  private IllegalArgumentException reservedName(String evaluator, String use) {
+    return new IllegalArgumentException(
+        "An evaluator bound to agent ["
+            + agentComponentId
+            + "] has the component id ["
+            + evaluator
+            + "], which the runner uses for "
+            + use
+            + ". Give the evaluator another id.");
   }
 
   // A binding to an evaluator id without a component never records an evaluation, so every attempt
@@ -116,9 +129,16 @@ record EvaluatorBindings(String agentComponentId, List<Binding> bindings) {
   /**
    * Why no evaluator is bound, with the agents the configuration does bind. Empty when an evaluator
    * is bound.
+   *
+   * @param graded whether the cases carry an expected reply, so the comparison judges the attempts
    */
-  Optional<String> describeUnbound(List<String> boundAgentComponentIds) {
+  Optional<String> describeUnbound(List<String> boundAgentComponentIds, boolean graded) {
     if (!bindings.isEmpty()) return Optional.empty();
+    var consequence =
+        graded
+            ? "so only the comparison with the expected reply judges every attempt. "
+            : "so every attempt is inconclusive unless the gate reads only the guardrail"
+                + " decisions or the agent call. ";
     var others =
         boundAgentComponentIds.isEmpty()
             ? "The configuration binds no evaluator to any agent under"
@@ -127,10 +147,6 @@ record EvaluatorBindings(String agentComponentId, List<Binding> bindings) {
                 + boundAgentComponentIds
                 + ", under akka.javasdk.evaluation.evaluators.<evaluator>.agents.";
     return Optional.of(
-        "No evaluator is bound to agent ["
-            + agentComponentId
-            + "], so every attempt is inconclusive unless the gate reads only the guardrail"
-            + " decisions or the agent call. "
-            + others);
+        "No evaluator is bound to agent [" + agentComponentId + "], " + consequence + others);
   }
 }
