@@ -20,6 +20,23 @@ An AI harness is the coding tool in which you work. The Akka Specify Plugin supp
 
 Compilation and tests check the implementation. Inspection exercises the running service through its endpoints, state, and user interface. Convergence identifies work still required by the specification. These checks complement each other: inspection does not replace acceptance conditions, and generating code does not establish conformance.
 
+=== Visualizing a feature
+
+Run `/akka:visualize` to generate or refresh Mermaid diagrams from a feature specification and plan. Any Markdown viewer that supports Mermaid renders the result.
+
+[cols="1,1,2",options="header"]
+|===
+| Source | Output | Diagrams
+| `spec.md` | `spec-visualize.md` | A user journey map and an actor and goal overview. When the specification defines them, an entity relationship map and a status lifecycle.
+| `plan.md` and `spec.md` when available | `plan-visualize.md` | Component dependencies, sequence diagrams of the main flows, and a state machine for each workflow when the plan uses Akka Workflows.
+|===
+
+The command processes both outputs when both source documents exist. When one source document exists, it processes the corresponding output. Each diagram file records a hash, a value calculated from the contents of its source files. Running the command again skips outputs whose source hashes match and regenerates those whose sources changed. Pass `--force` to regenerate even when the source hashes match.
+
+The `/akka:specify`, `/akka:clarify`, and `/akka:plan` commands leave diagram files unchanged. After updating a source document, they mention existing diagrams that may be stale and suggest `/akka:visualize`.
+
+Diagrams show what the specification or plan states. A diagram is a view of those documents, not a separate source of truth. If a diagram looks wrong, correct the specification or plan and regenerate it.
+
 === Modernizing an existing system
 
 The same process can start from a system that already exists. The plugin recovers what a legacy system does, turns that behavior into checks that a replacement must pass, and shows that the replacement behaves the same.
