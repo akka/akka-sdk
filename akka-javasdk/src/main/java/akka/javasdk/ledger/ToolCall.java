@@ -34,8 +34,9 @@ public record ToolCall(String id, String name, String arguments, String response
     UNSPECIFIED,
     /**
      * The call has a result that is not an error result. {@code response} holds it, and it can be
-     * empty. A call of a failed interaction can have this status. The runtime then may not have
-     * sent the result to the model.
+     * empty. The runtime does not read the text, so a result that reports an error only in its text
+     * has this status. A call of a failed interaction can have this status. The runtime then may
+     * not have sent the result to the model.
      */
     COMPLETED,
     /**
