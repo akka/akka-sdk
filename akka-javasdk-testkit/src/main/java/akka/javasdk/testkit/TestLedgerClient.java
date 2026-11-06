@@ -251,7 +251,10 @@ public final class TestLedgerClient implements LedgerClient {
         .filter(record -> record.flowId().equals(flowId))
         .forEach(flowRecords::add);
     evaluations.values().stream()
-        .filter(record -> interactionIds.contains(record.interactionId()))
+        .filter(
+            record ->
+                record.subject() instanceof EvaluationRecord.Subject.Interaction interaction
+                    && interactionIds.contains(interaction.interactionId()))
         .forEach(flowRecords::add);
     flowRecords.sort(Comparator.comparing(FlowRecord::timestamp).thenComparingLong(seedOrder::get));
 

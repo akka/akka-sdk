@@ -244,6 +244,9 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
             from: Option[Instant],
             limit: Int): Future[Seq[SpiLedger.GuardrailDecisionRecord]] =
           Future.successful(Seq.empty)
+
+        override def getFlowRecords(flowId: String, fromPosition: Long, limit: Int): Future[SpiLedger.FlowPage] =
+          Future.successful(new SpiLedger.FlowPage(Seq.empty, 0L, hasMore = false))
       }
       val client = new LedgerClientImpl(spiLedgerClient, ExecutionContext.parasitic)
 
