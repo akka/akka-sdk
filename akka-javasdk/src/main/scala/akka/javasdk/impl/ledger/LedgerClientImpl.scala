@@ -184,9 +184,10 @@ private[ledger] object LedgerClientImpl {
   def toFlowPage(page: SpiLedger.FlowPage): FlowPage =
     new FlowPage(page.records.flatMap(toFlowRecord).asJava, page.nextPosition, page.hasMore)
 
-  // A record of a class that this SDK does not know is left out of the page. So is an evaluation of a subject that is
-  // not an interaction, because an EvaluationRecord holds only an interaction subject. The mapping of a kept record
-  // runs outside of knownOr, so that a MatchError from an SDK bug fails the read.
+  // A record of a class that this SDK does not know is left out of the page. A flow page holds only the evaluations of
+  // the interactions of the flow, so an evaluation of another subject is left out too: a workflow run, or a subject
+  // class that this SDK does not know. The mapping of a kept record runs outside of knownOr, so that a MatchError from
+  // an SDK bug fails the read.
   def toFlowRecord(record: SpiLedger.FlowRecord): Option[FlowRecord] =
     knownOr(Option.empty[() => FlowRecord]) {
       record match {
