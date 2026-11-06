@@ -8,6 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 
+import akka.javasdk.agent.Agent;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ImageContent;
 import dev.langchain4j.data.message.TextContent;
@@ -21,6 +22,8 @@ import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import dev.langchain4j.model.output.FinishReason;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -375,6 +378,97 @@ class TestModelProviderTest {
     // But complete response should still be called
     assertThat(handler.completeResponse).isNotNull();
     assertThat(handler.completeResponse.aiMessage().text()).isEmpty();
+  }
+
+  @Test
+  void testReplyWithThinkingAndAttributes() {
+    testModelProvider.fixedResponse(
+        new TestModelProvider.AiResponse("hello")
+            .withThinking("the user greets me")
+            .withAttributes(Map.of("provider-key", "provider-value")));
+
+    ChatModel chatModel = (ChatModel) testModelProvider.createChatModel();
+    ChatResponse response =
+        chatModel.doChat(ChatRequest.builder().messages(new UserMessage("hi")).build());
+
+    assertThat(response.aiMessage().text()).isEqualTo("hello");
+    assertThat(response.aiMessage().thinking()).isEqualTo("the user greets me");
+    assertThat(response.aiMessage().attributes())
+        .containsExactlyEntriesOf(Map.of("provider-key", "provider-value"));
+  }
+
+  @Test
+  void testToolRequestReplyWithThinkingAndAttributes() {
+    testModelProvider.fixedResponse(
+        new TestModelProvider.AiResponse(
+                new TestModelProvider.ToolInvocationRequest("getDate", "{}"))
+            .withThinking("I need the date")
+            .withAttributes(Map.of("signature", "abc")));
+
+    ChatModel chatModel = (ChatModel) testModelProvider.createChatModel();
+    ChatResponse response =
+        chatModel.doChat(ChatRequest.builder().messages(new UserMessage("what day is it")).build());
+
+    assertThat(response.aiMessage().hasToolExecutionRequests()).isTrue();
+    assertThat(response.aiMessage().toolExecutionRequests().getFirst().name()).isEqualTo("getDate");
+    assertThat(response.aiMessage().thinking()).isEqualTo("I need the date");
+    assertThat(response.aiMessage().attributes())
+        .containsExactlyEntriesOf(Map.of("signature", "abc"));
+    assertThat(response.finishReason()).isEqualTo(FinishReason.TOOL_EXECUTION);
+  }
+
+  @Test
+  void testStreamingReplyWithThinkingAndAttributes() {
+    testModelProvider.fixedResponse(
+        new TestModelProvider.AiResponse("hello")
+            .withThinking("the user greets me")
+            .withAttributes(Map.of("provider-key", "provider-value")));
+
+    StreamingChatModel streamingChatModel =
+        (StreamingChatModel) testModelProvider.createStreamingChatModel();
+    TestStreamingHandler handler = new TestStreamingHandler();
+
+    streamingChatModel.doChat(
+        ChatRequest.builder().messages(new UserMessage("hi")).build(), handler);
+
+    assertThat(handler.completeResponse).isNotNull();
+    assertThat(handler.completeResponse.aiMessage().thinking()).isEqualTo("the user greets me");
+    assertThat(handler.completeResponse.aiMessage().attributes())
+        .containsExactlyEntriesOf(Map.of("provider-key", "provider-value"));
+  }
+
+  @Test
+  void testReplyWithoutThinkingAndAttributes() {
+    testModelProvider.fixedResponse("plain");
+
+    ChatModel chatModel = (ChatModel) testModelProvider.createChatModel();
+    ChatResponse response =
+        chatModel.doChat(ChatRequest.builder().messages(new UserMessage("hi")).build());
+
+    assertThat(response.aiMessage().thinking()).isNull();
+    assertThat(response.aiMessage().attributes()).isEmpty();
+  }
+
+  @Test
+  void testWithThinkingKeepsOtherComponents() {
+    var usage = new Agent.TokenUsage(10, 20);
+    var request = new TestModelProvider.ToolInvocationRequest("getDate", "{}");
+    var response =
+        new TestModelProvider.AiResponse("text", List.of(request), Optional.of(usage))
+            .withAttributes(Map.of("k", "v"))
+            .withThinking("t");
+
+    assertThat(response.message()).isEqualTo("text");
+    assertThat(response.toolRequests()).containsExactly(request);
+    assertThat(response.tokenUsage()).contains(usage);
+    assertThat(response.thinking()).contains("t");
+    assertThat(response.attributes()).containsExactlyEntriesOf(Map.of("k", "v"));
+  }
+
+  @Test
+  void testWithThinkingNullClearsThinking() {
+    var response = new TestModelProvider.AiResponse("text").withThinking("t").withThinking(null);
+    assertThat(response.thinking()).isEmpty();
   }
 
   // Test implementation of StreamingChatResponseHandler
