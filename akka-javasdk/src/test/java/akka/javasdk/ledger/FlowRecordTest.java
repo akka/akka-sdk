@@ -136,8 +136,9 @@ public class FlowRecordTest {
             "quality-evaluator",
             Optional.empty(),
             EvaluationRecord.Trigger.ON_INTERACTION,
-            coordinator.interactionId(),
-            "coordinator-agent",
+            new EvaluationRecord.Subject.Interaction(
+                coordinator.interactionId(), "coordinator-agent"),
+            Map.of(),
             new EvaluationRecord.Outcome.Verdict(Evaluation.of(false, "verdict of another judge")),
             Instant.EPOCH);
     var delegation =

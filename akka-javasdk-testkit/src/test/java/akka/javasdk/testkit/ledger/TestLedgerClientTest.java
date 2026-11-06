@@ -125,18 +125,6 @@ public class TestLedgerClientTest {
         timestamp);
   }
 
-  private static EvaluationRecord evaluation(String id, String interactionId, Instant timestamp) {
-    return new EvaluationRecord(
-        id,
-        "quality-evaluator",
-        Optional.empty(),
-        EvaluationRecord.Trigger.ON_INTERACTION,
-        interactionId,
-        "coordinator-agent",
-        new EvaluationRecord.Outcome.Verdict(Evaluation.of(true, "good")),
-        timestamp);
-  }
-
   @Test
   public void listsTheInteractionsOfAnAgentInASessionNewestFirst() {
     var first = interaction("i1", "support-agent", "session-1", Instant.ofEpochSecond(1));
@@ -191,7 +179,7 @@ public class TestLedgerClientTest {
     var interaction = interaction("i1", "coordinator-agent", "c1", flow, Instant.ofEpochSecond(1));
     var activity = activity("a1", "flow-1", Instant.ofEpochSecond(2));
     var decision = decision("g1", "i1", "c1", flow, Instant.ofEpochSecond(3));
-    var evaluation = evaluation("e1", "i1", Instant.ofEpochSecond(4));
+    var evaluation = interactionEvaluation("e1", "i1", Instant.ofEpochSecond(4));
     var ledger =
         TestLedgerClient.create()
             .seed(evaluation)
@@ -201,9 +189,9 @@ public class TestLedgerClientTest {
             .seed(interaction("i2", "coordinator-agent", "c2", otherFlow, Instant.ofEpochSecond(1)))
             .seed(activity("a2", "flow-2", Instant.ofEpochSecond(2)))
             .seed(decision("g2", "i2", "c2", otherFlow, Instant.ofEpochSecond(3)))
-            .seed(evaluation("e2", "i2", Instant.ofEpochSecond(4)))
+            .seed(interactionEvaluation("e2", "i2", Instant.ofEpochSecond(4)))
             .seed(interaction("i3", "support-agent", "s1", Instant.ofEpochSecond(1)))
-            .seed(evaluation("e3", "i3", Instant.ofEpochSecond(4)));
+            .seed(interactionEvaluation("e3", "i3", Instant.ofEpochSecond(4)));
 
     var page = ledger.getFlowRecords("flow-1");
 
@@ -218,12 +206,12 @@ public class TestLedgerClientTest {
     var interaction =
         interaction(
             "i1", "coordinator-agent", "c1", Optional.of("flow-1"), Instant.ofEpochSecond(1));
-    var evaluation = evaluation("e1", "i1", Instant.ofEpochSecond(2));
+    var evaluation = interactionEvaluation("e1", "i1", Instant.ofEpochSecond(2));
     var ledger =
         TestLedgerClient.create()
             .seed(interaction)
             .seed(evaluation)
-            .seed(evaluation("e2", "unknown-interaction", Instant.ofEpochSecond(3)));
+            .seed(interactionEvaluation("e2", "unknown-interaction", Instant.ofEpochSecond(3)));
 
     assertEquals(List.of(interaction, evaluation), ledger.getFlowRecords("flow-1").records());
   }
