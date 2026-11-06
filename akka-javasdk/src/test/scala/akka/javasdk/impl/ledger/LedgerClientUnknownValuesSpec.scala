@@ -205,6 +205,9 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
           from: Option[Instant],
           limit: Int): Future[Seq[SpiLedger.GuardrailDecisionRecord]] =
         Future.successful(guardrailDecisions)
+
+      override def getFlowRecords(flowId: String, fromPosition: Long, limit: Int): Future[SpiLedger.FlowPage] =
+        Future.successful(new SpiLedger.FlowPage(Seq.empty, fromPosition, hasMore = false))
     }
     new LedgerClientImpl(spiLedgerClient, ExecutionContext.parasitic)
   }

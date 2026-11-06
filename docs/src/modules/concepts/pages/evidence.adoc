@@ -20,7 +20,7 @@ Captures are different: they hold input and output passing through the model gat
 
 The ledger records interactions without sampling and chains records by hash. Changes to the chain are detectable; ordinary operational logs do not provide the same property.
 
-Evidence packs collect signed control evidence and supporting records for review. Retention follows the system's applicable requirements, and legal hold can retain records beyond their normal period. Storage grows with recorded traffic, and masked text cannot later reveal information that was removed before recording.
+Evidence packs collect signed control evidence and supporting records for review. Retention follows the system's applicable requirements, and legal hold can retain records beyond their normal period. Storage grows with recorded traffic. To reduce it, turn off the xref:sdk:evaluators.adoc#_optional_ledger_records[optional ledger records]. Masked text cannot later reveal information that was removed before recording.
 
 == Runtime and external agents
 
