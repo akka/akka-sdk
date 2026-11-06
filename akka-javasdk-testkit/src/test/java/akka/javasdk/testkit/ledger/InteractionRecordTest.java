@@ -160,11 +160,11 @@ public class InteractionRecordTest {
         Input: Compute these.
         Tool call calc({"expr":"2+2"}) -> 4
         Tool call calc({"expr":"3+3"}) -> 6
-        Tool call calc({"expr":"1/0"}) -> failed: division by zero
-        Tool call calc({"expr":"0/0"}) -> failed
-        Tool call calc({"expr":"5+5"}) -> not run
-        Tool call ask_user({}) -> pending
-        Tool call calc({"expr":"7+7"}) -> no result
+        Tool call calc({"expr":"1/0"}) -> [failed: division by zero]
+        Tool call calc({"expr":"0/0"}) -> [failed]
+        Tool call calc({"expr":"5+5"}) -> [not run]
+        Tool call ask_user({}) -> [pending]
+        Tool call calc({"expr":"7+7"}) -> [no result]
         """;
     assertThat(record.transcript()).isEqualTo(expected);
   }
