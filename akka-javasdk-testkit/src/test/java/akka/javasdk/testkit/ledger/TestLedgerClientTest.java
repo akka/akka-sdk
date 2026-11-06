@@ -217,6 +217,21 @@ public class TestLedgerClientTest {
   }
 
   @Test
+  public void leavesAnEvaluationOfAWorkflowRunOutOfAFlow() {
+    var interaction =
+        interaction(
+            "i1", "coordinator-agent", "c1", Optional.of("flow-1"), Instant.ofEpochSecond(1));
+    var evaluation = interactionEvaluation("e1", "i1", Instant.ofEpochSecond(2));
+    var ledger =
+        TestLedgerClient.create()
+            .seed(interaction)
+            .seed(workflowEvaluation("e2", "workflow-1", Instant.ofEpochSecond(3)))
+            .seed(evaluation);
+
+    assertEquals(List.of(interaction, evaluation), ledger.getFlowRecords("flow-1").records());
+  }
+
+  @Test
   public void readsTheRecordsOfAFlowWithTheSameTimestampInTheOrderTheyWereSeeded() {
     var timestamp = Instant.ofEpochSecond(1);
     var first = activity("a2", "flow-1", timestamp);
