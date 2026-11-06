@@ -67,5 +67,9 @@ class InteractionRecordSpec extends AnyWordSpec with Matchers {
         new ToolCall("c3", "getOrder", "not json", "").argumentsAs(classOf[GetOrder])
       }.getMessage should include("getOrder")
     }
+
+    "have the status unspecified when constructed with the four components of SDK 3.7" in {
+      lookup.status() shouldBe ToolCall.Status.UNSPECIFIED
+    }
   }
 }
