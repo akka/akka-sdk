@@ -5,6 +5,7 @@
 package akka.javasdk.impl.agent
 
 import java.time.Duration
+import java.util.Locale
 
 import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
@@ -386,6 +387,16 @@ class ModelProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike w
       assertThrows[IllegalArgumentException] {
         fromOpenAiConfig("""api = "completions" """)
       }
+    }
+
+    "read api from config whatever the default locale" in {
+      // the upper case of "i" in Turkish is a dotted capital I, which no value of OpenAiApi has
+      val defaultLocale = Locale.getDefault
+      Locale.setDefault(Locale.forLanguageTag("tr-TR"))
+      try {
+        fromOpenAiConfig("").api() shouldBe ModelProvider.OpenAiApi.CHAT_COMPLETIONS
+        fromOpenAiConfig("""api = "responses" """).api() shouldBe ModelProvider.OpenAiApi.RESPONSES
+      } finally Locale.setDefault(defaultLocale)
     }
 
     "keep the api and the reasoning effort in every other with method" in {

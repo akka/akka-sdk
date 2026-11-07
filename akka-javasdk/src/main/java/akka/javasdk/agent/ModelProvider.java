@@ -1043,7 +1043,8 @@ public sealed interface ModelProvider {
           config.getString("api-key"),
           config.getString("model-name"),
           config.getString("base-url"),
-          OpenAiApi.valueOf(config.getString("api").trim().toUpperCase().replace('-', '_')),
+          OpenAiApi.valueOf(
+              config.getString("api").trim().toUpperCase(Locale.ROOT).replace('-', '_')),
           config.getDouble("temperature"),
           config.getDouble("top-p"),
           config.getInt("max-tokens"),
