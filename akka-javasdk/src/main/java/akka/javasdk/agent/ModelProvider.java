@@ -964,7 +964,10 @@ public sealed interface ModelProvider {
       String modelName,
       /** Base URL for OpenAI's API endpoints */
       String baseUrl,
-      /** The OpenAI API to call. {@link OpenAiApi#CHAT_COMPLETIONS} by default. */
+      /**
+       * The OpenAI API to call. {@link OpenAiApi#CHAT_COMPLETIONS} by default. See {@link
+       * OpenAiApi#RESPONSES} for what the Responses API changes.
+       */
       OpenAiApi api,
       /**
        * Controls randomness in the model's output (0.0-1.0, higher = more random). Not supported by
@@ -981,17 +984,23 @@ public sealed interface ModelProvider {
       double topP,
       /**
        * Maximum number of tokens to generate in the response. Not supported by GPT-5 with {@link
-       * OpenAiApi#CHAT_COMPLETIONS}, use maxCompletionTokens instead.
+       * OpenAiApi#CHAT_COMPLETIONS}, use maxCompletionTokens instead. With {@link
+       * OpenAiApi#RESPONSES} it takes precedence over maxCompletionTokens.
        */
       int maxTokens,
+      /**
+       * Maximum number of tokens to generate, -1 for the model default. With {@link
+       * OpenAiApi#RESPONSES} it applies only when maxTokens is -1.
+       */
       int maxCompletionTokens,
       Duration connectionTimeout,
       Duration responseTimeout,
       int maxRetries,
       /**
        * Enable thinking. With {@link OpenAiApi#CHAT_COMPLETIONS} the reply has the reasoning
-       * content of DeepSeek models. With {@link OpenAiApi#RESPONSES} the reply has a summary of the
-       * reasoning of the model. Only for models that support thinking.
+       * content of DeepSeek models. With {@link OpenAiApi#RESPONSES} the agent asks the model for a
+       * summary of its reasoning, and the reply has the summary if the model returns one. Only for
+       * models that support thinking.
        */
       boolean thinking,
       /**
@@ -2886,8 +2895,11 @@ public sealed interface ModelProvider {
      */
     CHAT_COMPLETIONS,
     /**
-     * The Responses API. Each model call sends the whole conversation, and OpenAI does not store
-     * the response.
+     * The Responses API. The agent sends the whole conversation with each model call and asks
+     * OpenAI not to store the response. The output limit is {@code maxTokens}, or {@code
+     * maxCompletionTokens} when {@code maxTokens} is -1. When thinking is on or a reasoning effort
+     * is set, the agent asks for the reasoning in encrypted form, sends it back with the next model
+     * call, and session memory stores it in that form.
      */
     RESPONSES
   }

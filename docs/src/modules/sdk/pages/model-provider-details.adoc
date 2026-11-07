@@ -630,7 +630,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Ollama.html[`Mode
 
 | thinking
 | Boolean
-| Enable thinking. With `api = "chat-completions"` the reply has the reasoning content of DeepSeek models. With `api = "responses"` the reply has a summary of the reasoning of the model. Make sure the chosen model supports thinking before enabling.
+| Enable thinking. With `api = "chat-completions"` the reply has the reasoning content of DeepSeek models. With `api = "responses"` the agent asks the model for a summary of its reasoning, and the reply has the summary if the model returns one. Make sure the chosen model supports thinking before enabling.
 
 | reasoning-effort
 | String
@@ -642,7 +642,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Ollama.html[`Mode
 
 |===
 
-With `api = "responses"`, the agent calls the OpenAI Responses API. The agent sends the whole conversation from the session memory with each model call, and OpenAI does not store the response. `max-tokens` limits the output tokens, or `max-completion-tokens` when `max-tokens` is `-1`. When `thinking` is on or `reasoning-effort` is set, the model returns its reasoning in encrypted form. The agent sends the encrypted reasoning back with the next model call, and session memory stores it in that form.
+With `api = "responses"`, the agent calls the OpenAI Responses API. The agent sends the whole conversation from the session memory with each model call, and asks OpenAI not to store the response. `max-tokens` limits the output tokens, or `max-completion-tokens` when `max-tokens` is `-1`. When `thinking` is on or `reasoning-effort` is set, the agent asks for the reasoning in encrypted form. The agent sends the encrypted reasoning back with the next model call, and session memory stores it in that form.
 
 Example configuration for a reasoning model on the Responses API:
 
