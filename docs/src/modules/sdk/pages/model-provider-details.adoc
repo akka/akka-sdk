@@ -596,6 +596,10 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Ollama.html[`Mode
 | Url
 | Optional override to the base URL of the API
 
+| api
+| String
+| The OpenAI API to call, `"chat-completions"` or `"responses"`. The default is `"chat-completions"`. A server that implements only the Chat Completions API of OpenAI needs `"chat-completions"`.
+
 | temperature
 | Float
 | Model randomness. The default is not supplied so check with the model documentation for default behavior
@@ -606,7 +610,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Ollama.html[`Mode
 
 | max-tokens
 | Integer
-| Max token quota. Leave as –1 for model default. Not supported by GPT-5, use max-completion-tokens instead.
+| Max token quota. Leave as –1 for model default. Not supported by GPT-5 with `api = "chat-completions"`, use max-completion-tokens instead.
 
 | max-completion-tokens
 | Integer
@@ -626,13 +630,27 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Ollama.html[`Mode
 
 | thinking
 | Boolean
-| Enable thinking, only supported for DeepSeek. Make sure the chosen model supports thinking before enabling.
+| Enable thinking. With `api = "chat-completions"` the reply has the reasoning content of DeepSeek models. With `api = "responses"` the reply has a summary of the reasoning of the model. Make sure the chosen model supports thinking before enabling.
+
+| reasoning-effort
+| String
+| The reasoning effort of a reasoning model, for example `low`, `medium` or `high`. Leave empty for the model default. The values that a model accepts depend on the model. Applies to both values of `api`.
 
 | additional-model-request-headers
 | List of String
 | List of `"name:value"` strings for HTTP headers to include in every request to the model API. Inherits from `akka.javasdk.agent.additional-model-request-headers` by default. Can also be set via `ADDITIONAL_OPENAI_REQUEST_HEADERS_N` environment variables.
 
 |===
+
+With `api = "responses"`, the agent calls the OpenAI Responses API. The agent sends the whole conversation from the session memory with each model call, and OpenAI does not store the response. `max-tokens` limits the output tokens, or `max-completion-tokens` when `max-tokens` is `-1`. When `thinking` is on or `reasoning-effort` is set, the model returns its reasoning in encrypted form. The agent sends the encrypted reasoning back with the next model call, and session memory stores it in that form.
+
+Example configuration for a reasoning model on the Responses API:
+
+[source,json,indent=0]
+.src/main/resources/application.conf
+----
+include::sdk:example$doc-snippets/src/main/resources/application.conf[tags=agent-model-config-openai-responses]
+----
 
 See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.OpenAi.html[`ModelProvider.OpenAi`] for programmatic settings.
 
