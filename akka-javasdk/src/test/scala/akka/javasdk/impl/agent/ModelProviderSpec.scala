@@ -4,6 +4,9 @@
 
 package akka.javasdk.impl.agent
 
+import java.time.Duration
+
+import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 
 import akka.actor.testkit.typed.scaladsl.LoggingTestKit
@@ -321,6 +324,118 @@ class ModelProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike w
       provider.modelName() shouldBe "no-config-model-name"
     }
 
+  }
+
+  "The OpenAI model provider" should {
+
+    def spiOpenAi(modelProvider: ModelProvider): SpiAgent.ModelProvider.OpenAi =
+      AgentImpl.toSpiModelProvider(modelProvider, config, "myagent").asInstanceOf[SpiAgent.ModelProvider.OpenAi]
+
+    def fromOpenAiConfig(settings: String): ModelProvider.OpenAi =
+      ModelProvider.OpenAi.fromConfig(
+        ConfigFactory.parseString(settings).withFallback(defaultConfig.getConfig("akka.javasdk.agent.openai")))
+
+    val headers = List[HttpHeader](RawHeader.create("X-Request-Id", "r-1")).asJava
+
+    // every component other than api and reasoningEffort has a value other than its default
+    def openAiWithSettings(api: ModelProvider.OpenAiApi, reasoningEffort: String): ModelProvider.OpenAi =
+      new ModelProvider.OpenAi(
+        "key",
+        "gpt-5",
+        "http://localhost:8080/v1",
+        api,
+        0.3,
+        0.8,
+        100,
+        200,
+        Duration.ofSeconds(3),
+        Duration.ofSeconds(30),
+        5,
+        true,
+        reasoningEffort,
+        headers)
+
+    "pass chat completions and no reasoning effort on to the runtime by default" in {
+      Seq(ModelProvider.openAi(), ModelProvider.fromConfig("openai")).foreach { provider =>
+        withClue(provider) {
+          val spi = spiOpenAi(provider)
+          spi.api shouldBe SpiAgent.ModelProvider.OpenAiApi.ChatCompletions
+          spi.reasoningEffort shouldBe ""
+        }
+      }
+    }
+
+    "pass the api and the reasoning effort from config on to the runtime" in {
+      val m = fromOpenAiConfig("""
+        api = "responses"
+        reasoning-effort = "high"
+        """)
+      m shouldBe ModelProvider.openAi().withApi(ModelProvider.OpenAiApi.RESPONSES).withReasoningEffort("high")
+
+      val spi = spiOpenAi(m)
+      spi.api shouldBe SpiAgent.ModelProvider.OpenAiApi.Responses
+      spi.reasoningEffort shouldBe "high"
+    }
+
+    "read both values of api from config" in {
+      fromOpenAiConfig("""api = "chat-completions" """).api() shouldBe ModelProvider.OpenAiApi.CHAT_COMPLETIONS
+      fromOpenAiConfig("""api = "responses" """).api() shouldBe ModelProvider.OpenAiApi.RESPONSES
+    }
+
+    "fail on an unknown value of api in config" in {
+      assertThrows[IllegalArgumentException] {
+        fromOpenAiConfig("""api = "completions" """)
+      }
+    }
+
+    "keep the api and the reasoning effort in every other with method" in {
+      val base = ModelProvider.openAi().withApi(ModelProvider.OpenAiApi.RESPONSES).withReasoningEffort("high")
+      val updated = Seq(
+        "withApiKey" -> base.withApiKey("key"),
+        "withModelName" -> base.withModelName("gpt-5"),
+        "withBaseUrl" -> base.withBaseUrl("http://localhost:8080/v1"),
+        "withTemperature" -> base.withTemperature(0.3),
+        "withTopP" -> base.withTopP(0.8),
+        "withMaxTokens" -> base.withMaxTokens(100),
+        "withMaxCompletionTokens" -> base.withMaxCompletionTokens(200),
+        "withConnectionTimeout" -> base.withConnectionTimeout(Duration.ofSeconds(3)),
+        "withResponseTimeout" -> base.withResponseTimeout(Duration.ofSeconds(30)),
+        "withMaxRetries" -> base.withMaxRetries(5),
+        "withThinking" -> base.withThinking(true),
+        "withAdditionalModelRequestHeaders" -> base.withAdditionalModelRequestHeaders(headers))
+      updated.foreach { case (method, provider) =>
+        withClue(method) {
+          provider.api() shouldBe ModelProvider.OpenAiApi.RESPONSES
+          provider.reasoningEffort() shouldBe "high"
+        }
+      }
+    }
+
+    "keep every other setting in withApi and withReasoningEffort" in {
+      val provider = openAiWithSettings(ModelProvider.OpenAiApi.CHAT_COMPLETIONS, "low")
+      val withApi = provider.withApi(ModelProvider.OpenAiApi.RESPONSES)
+      withApi shouldBe openAiWithSettings(ModelProvider.OpenAiApi.RESPONSES, "low")
+      val withReasoningEffort = provider.withReasoningEffort("high")
+      withReasoningEffort shouldBe openAiWithSettings(ModelProvider.OpenAiApi.CHAT_COMPLETIONS, "high")
+    }
+
+    "give chat completions and no reasoning effort from the constructor without them" in {
+      @nowarn("cat=deprecation")
+      val provider = new ModelProvider.OpenAi(
+        "key",
+        "gpt-5",
+        "http://localhost:8080/v1",
+        0.3,
+        0.8,
+        100,
+        200,
+        Duration.ofSeconds(3),
+        Duration.ofSeconds(30),
+        5,
+        true,
+        headers)
+      provider shouldBe openAiWithSettings(ModelProvider.OpenAiApi.CHAT_COMPLETIONS, "")
+    }
   }
 
   "Additional model request headers" should {

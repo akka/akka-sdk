@@ -943,6 +943,7 @@ public sealed interface ModelProvider {
         "",
         "",
         "",
+        OpenAiApi.CHAT_COMPLETIONS,
         Double.NaN,
         Double.NaN,
         -1,
@@ -951,6 +952,7 @@ public sealed interface ModelProvider {
         Duration.ofMinutes(1),
         2,
         false,
+        "",
         List.of());
   }
 
@@ -962,6 +964,8 @@ public sealed interface ModelProvider {
       String modelName,
       /** Base URL for OpenAI's API endpoints */
       String baseUrl,
+      /** The OpenAI API to call. {@link OpenAiApi#CHAT_COMPLETIONS} by default. */
+      OpenAiApi api,
       /**
        * Controls randomness in the model's output (0.0-1.0, higher = more random). Not supported by
        * GPT-5.
@@ -976,24 +980,70 @@ public sealed interface ModelProvider {
        */
       double topP,
       /**
-       * Maximum number of tokens to generate in the response. Not supported by GPT-5, use
-       * maxCompletionTokens instead.
+       * Maximum number of tokens to generate in the response. Not supported by GPT-5 with {@link
+       * OpenAiApi#CHAT_COMPLETIONS}, use maxCompletionTokens instead.
        */
       int maxTokens,
       int maxCompletionTokens,
       Duration connectionTimeout,
       Duration responseTimeout,
       int maxRetries,
+      /**
+       * Enable thinking. With {@link OpenAiApi#CHAT_COMPLETIONS} the reply has the reasoning
+       * content of DeepSeek models. With {@link OpenAiApi#RESPONSES} the reply has a summary of the
+       * reasoning of the model. Only for models that support thinking.
+       */
       boolean thinking,
+      /**
+       * Reasoning effort of a reasoning model, such as "low", "medium" or "high". The values that a
+       * model accepts depend on the model. Empty for the model default.
+       */
+      String reasoningEffort,
       /** Additional HTTP headers to include in each request to the model API */
       List<HttpHeader> additionalModelRequestHeaders)
       implements ModelProvider {
+
+    /**
+     * @deprecated Use constructor with api and reasoningEffort, or the static factory method and
+     *     {@code with} methods.
+     */
+    @Deprecated(since = "3.7.2", forRemoval = true)
+    public OpenAi(
+        String apiKey,
+        String modelName,
+        String baseUrl,
+        double temperature,
+        double topP,
+        int maxTokens,
+        int maxCompletionTokens,
+        Duration connectionTimeout,
+        Duration responseTimeout,
+        int maxRetries,
+        boolean thinking,
+        List<HttpHeader> additionalModelRequestHeaders) {
+      this(
+          apiKey,
+          modelName,
+          baseUrl,
+          OpenAiApi.CHAT_COMPLETIONS,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          thinking,
+          "",
+          additionalModelRequestHeaders);
+    }
 
     public static OpenAi fromConfig(Config config) {
       return new OpenAi(
           config.getString("api-key"),
           config.getString("model-name"),
           config.getString("base-url"),
+          OpenAiApi.valueOf(config.getString("api").trim().toUpperCase().replace('-', '_')),
           config.getDouble("temperature"),
           config.getDouble("top-p"),
           config.getInt("max-tokens"),
@@ -1002,6 +1052,7 @@ public sealed interface ModelProvider {
           config.getDuration("response-timeout"),
           config.getInt("max-retries"),
           config.getBoolean("thinking"),
+          config.getString("reasoning-effort"),
           headersFromConfig(config));
     }
 
@@ -1010,6 +1061,7 @@ public sealed interface ModelProvider {
           apiKey,
           modelName,
           baseUrl,
+          api,
           temperature,
           topP,
           maxTokens,
@@ -1018,6 +1070,7 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinking,
+          reasoningEffort,
           additionalModelRequestHeaders);
     }
 
@@ -1026,6 +1079,7 @@ public sealed interface ModelProvider {
           apiKey,
           modelName,
           baseUrl,
+          api,
           temperature,
           topP,
           maxTokens,
@@ -1034,6 +1088,7 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinking,
+          reasoningEffort,
           additionalModelRequestHeaders);
     }
 
@@ -1042,6 +1097,7 @@ public sealed interface ModelProvider {
           apiKey,
           modelName,
           baseUrl,
+          api,
           temperature,
           topP,
           maxTokens,
@@ -1050,6 +1106,25 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinking,
+          reasoningEffort,
+          additionalModelRequestHeaders);
+    }
+
+    public OpenAi withApi(OpenAiApi api) {
+      return new OpenAi(
+          apiKey,
+          modelName,
+          baseUrl,
+          api,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          thinking,
+          reasoningEffort,
           additionalModelRequestHeaders);
     }
 
@@ -1058,6 +1133,7 @@ public sealed interface ModelProvider {
           apiKey,
           modelName,
           baseUrl,
+          api,
           temperature,
           topP,
           maxTokens,
@@ -1066,6 +1142,7 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinking,
+          reasoningEffort,
           additionalModelRequestHeaders);
     }
 
@@ -1074,6 +1151,7 @@ public sealed interface ModelProvider {
           apiKey,
           modelName,
           baseUrl,
+          api,
           temperature,
           topP,
           maxTokens,
@@ -1082,6 +1160,7 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinking,
+          reasoningEffort,
           additionalModelRequestHeaders);
     }
 
@@ -1090,6 +1169,7 @@ public sealed interface ModelProvider {
           apiKey,
           modelName,
           baseUrl,
+          api,
           temperature,
           topP,
           maxTokens,
@@ -1098,6 +1178,7 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinking,
+          reasoningEffort,
           additionalModelRequestHeaders);
     }
 
@@ -1106,6 +1187,7 @@ public sealed interface ModelProvider {
           apiKey,
           modelName,
           baseUrl,
+          api,
           temperature,
           topP,
           maxTokens,
@@ -1114,6 +1196,7 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinking,
+          reasoningEffort,
           additionalModelRequestHeaders);
     }
 
@@ -1122,6 +1205,7 @@ public sealed interface ModelProvider {
           apiKey,
           modelName,
           baseUrl,
+          api,
           temperature,
           topP,
           maxTokens,
@@ -1130,6 +1214,7 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinking,
+          reasoningEffort,
           additionalModelRequestHeaders);
     }
 
@@ -1138,6 +1223,7 @@ public sealed interface ModelProvider {
           apiKey,
           modelName,
           baseUrl,
+          api,
           temperature,
           topP,
           maxTokens,
@@ -1146,6 +1232,7 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinking,
+          reasoningEffort,
           additionalModelRequestHeaders);
     }
 
@@ -1154,6 +1241,7 @@ public sealed interface ModelProvider {
           apiKey,
           modelName,
           baseUrl,
+          api,
           temperature,
           topP,
           maxTokens,
@@ -1162,6 +1250,7 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinking,
+          reasoningEffort,
           additionalModelRequestHeaders);
     }
 
@@ -1170,6 +1259,7 @@ public sealed interface ModelProvider {
           apiKey,
           modelName,
           baseUrl,
+          api,
           temperature,
           topP,
           maxTokens,
@@ -1178,6 +1268,25 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinking,
+          reasoningEffort,
+          additionalModelRequestHeaders);
+    }
+
+    public OpenAi withReasoningEffort(String reasoningEffort) {
+      return new OpenAi(
+          apiKey,
+          modelName,
+          baseUrl,
+          api,
+          temperature,
+          topP,
+          maxTokens,
+          maxCompletionTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          thinking,
+          reasoningEffort,
           additionalModelRequestHeaders);
     }
 
@@ -1187,6 +1296,7 @@ public sealed interface ModelProvider {
           apiKey,
           modelName,
           baseUrl,
+          api,
           temperature,
           topP,
           maxTokens,
@@ -1195,6 +1305,7 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinking,
+          reasoningEffort,
           additionalModelRequestHeaders);
     }
   }
@@ -2764,6 +2875,20 @@ public sealed interface ModelProvider {
      * the cached prefix is invalidated before it can be read.
      */
     AFTER_LAST_USER_MESSAGE
+  }
+
+  /** The OpenAI API that the OpenAI model provider calls. */
+  enum OpenAiApi {
+    /**
+     * The Chat Completions API. Use it for a server that implements only the Chat Completions API
+     * of OpenAI.
+     */
+    CHAT_COMPLETIONS,
+    /**
+     * The Responses API. Each model call sends the whole conversation, and OpenAI does not store
+     * the response.
+     */
+    RESPONSES
   }
 
   record Bedrock(
