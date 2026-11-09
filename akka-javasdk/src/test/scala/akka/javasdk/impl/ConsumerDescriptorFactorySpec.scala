@@ -24,8 +24,8 @@ import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToValueEn
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToValueEntityWithDeletes
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.TemplatePlatformServiceStreamConsumer
 import akka.runtime.sdk.spi.ConsumerSource
-import org.scalatest.matchers.should.Matchers
 import akka.runtime.sdk.spi.ConsumerStartFrom
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import protoconsumer.EventsForConsumer
 
