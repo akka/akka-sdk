@@ -7,6 +7,8 @@ A _Service Descriptor_ in Akka defines the configuration for a service resource.
 
 The Service Descriptor is used by the `akka service apply` command, described in xref:operations:services/deploy-service.adoc#apply[deploying a service with a descriptor].
 
+The descriptor is the complete configuration of the service. `akka service apply` removes settings that are not in the descriptor, including settings made earlier with `akka service deploy` flags such as `--secret-env`. To change one setting of a deployed service, export the current configuration with `akka service export <service-name> -f <file>`, edit the file, and apply it.
+
 [cols="1,1,1"]
 |===
 |Field   |Type                              |Description
@@ -73,8 +75,35 @@ A reference to a particular key in a particular secret, used by environment vari
 
 |*name*     |string _required_ |The name of a configured secret
 |*key*      |string _required_ |The name of a key in the specified secret
-|*optional* |boolean           |Whether the secret or its key must exist. If true, the service will fail to deploy if the secret or its key does not exist. If false, the service will be deployed with the environment variable unset if the secret does not or its key does not exist.
+|*optional* |boolean
+a|Whether the secret and its key may be missing. If `false`, the service fails to deploy when the secret or its key does not exist. If `true`, the service deploys with the environment variable unset.
+
+*Default:* `false`
 |===
+
+Example of an environment variable with a fixed value and an environment variable that reads the key `value` from the secret `openai-key`:
+
+[source, bash]
+----
+akka secret create generic openai-key --literal value=sk-abc123...
+----
+
+[source, yaml]
+----
+name: <<service-name>>
+service:
+  image: my-image:latest
+  env:
+  - name: LOG_LEVEL
+    value: INFO
+  - name: OPENAI_API_KEY
+    valueFrom:
+      secretKeyRef:
+        name: openai-key
+        key: value
+----
+
+The same configuration with `akka service deploy` is `--env LOG_LEVEL=INFO --secret-env OPENAI_API_KEY=openai-key/value`. See xref:operations:projects/secrets.adoc[] for creating and managing secrets.
 
 === ServiceJwt
 
