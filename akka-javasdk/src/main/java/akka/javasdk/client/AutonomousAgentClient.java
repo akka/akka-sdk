@@ -74,10 +74,10 @@ public interface AutonomousAgentClient {
    * Apply per-instance configuration to this agent. The instructions override the static
    * instructions from the agent's definition, and capabilities extend the static capabilities.
    *
-   * <p>Call this once per instance, before any operation that starts work, such as {@link
+   * <p>Call this once per instance, before any operation that triggers iteration, such as {@link
    * #runSingleTask} or {@link #assignTasks}. A repeated call with the same instructions and the
-   * same capabilities, in the same order, succeeds, so a retry is safe. A call with a different
-   * setup fails, and the agent keeps the setup it has.
+   * same capabilities in the same order succeeds. A retry is therefore safe. A call with a
+   * different setup throws an exception, and the agent keeps the setup it has.
    *
    * @param setup the per-instance configuration
    */
