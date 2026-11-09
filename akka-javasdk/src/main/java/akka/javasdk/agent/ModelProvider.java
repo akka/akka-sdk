@@ -2909,17 +2909,13 @@ public sealed interface ModelProvider {
 
   /** The OpenAI API that the OpenAI model provider calls. */
   enum OpenAiApi {
-    /**
-     * The Chat Completions API. Use it for a server that implements only the Chat Completions API
-     * of OpenAI.
-     */
+    /** The Chat Completions API. */
     CHAT_COMPLETIONS,
     /**
-     * The Responses API. The agent sends the whole conversation with each model call and asks
-     * OpenAI not to store the response. The output limit is {@code maxTokens}, or {@code
-     * maxCompletionTokens} when {@code maxTokens} is -1. When thinking is on or a reasoning effort
-     * is set, the agent asks for the reasoning in encrypted form, sends it back with the next model
-     * call, and session memory stores it in that form.
+     * The Responses API. The agent asks OpenAI not to store the response. The output limit is
+     * {@code maxTokens}, or {@code maxCompletionTokens} when {@code maxTokens} is -1. When thinking
+     * is on or a reasoning effort is set, the agent asks for the reasoning in encrypted form, sends
+     * it back with the next model call, and session memory stores it in that form.
      */
     RESPONSES
   }

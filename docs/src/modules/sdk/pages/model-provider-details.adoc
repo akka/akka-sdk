@@ -598,7 +598,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Ollama.html[`Mode
 
 | api
 | String
-| The OpenAI API to call, `"chat-completions"` or `"responses"`. The default is `"chat-completions"`. A server that implements only the Chat Completions API of OpenAI needs `"chat-completions"`.
+| The OpenAI API to call, `"chat-completions"` or `"responses"`. The default is `"chat-completions"`.
 
 | temperature
 | Float
@@ -642,7 +642,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Ollama.html[`Mode
 
 |===
 
-With `api = "responses"`, the agent calls the OpenAI Responses API. The agent sends the whole conversation from the session memory with each model call, and asks OpenAI not to store the response. `max-tokens` limits the output tokens, or `max-completion-tokens` when `max-tokens` is `-1`. When `thinking` is on or `reasoning-effort` is set, the agent asks for the reasoning in encrypted form. The agent sends the encrypted reasoning back with the next model call, and session memory stores it in that form.
+With `api = "responses"`, the agent calls the OpenAI Responses API and asks OpenAI not to store the response. `max-tokens` limits the output tokens, or `max-completion-tokens` when `max-tokens` is `-1`. When `thinking` is on or `reasoning-effort` is set, the agent asks for the reasoning in encrypted form. The agent sends the encrypted reasoning back with the next model call, and session memory stores it in that form.
 
 Example configuration for a reasoning model on the Responses API:
 
