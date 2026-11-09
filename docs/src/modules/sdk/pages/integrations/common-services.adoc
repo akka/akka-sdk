@@ -1,0 +1,199 @@
+= Common services
+:page-summary: A common service is an Akka service that other services depend on. Callers use it through an HTTP call, a gRPC call, a service-to-service event stream or an MCP tool. This page explains how to choose between them.
+:page-when-to-use: When several services or agents need the same data or capability and you must decide how they reach it.
+:page-related: sdk:component-and-service-calls.adoc, sdk:consuming-producing.adoc, sdk:grpc-endpoints.adoc, sdk:mcp-endpoints.adoc, sdk:access-control.adoc, operations:projects/network-policies.adoc
+:page-prerequisites: Akka SDK basics
+:page-persona: builder-developer
+
+include::ROOT:partial$include.adoc[]
+
+A common service is an Akka service that other services depend on, such as a store for customer preferences or session data. Other services use it through an HTTP call, a gRPC call, a service-to-service event stream or, for agents, an MCP tool.
+
+== Overview
+
+A common service is not a separate component type. It is an ordinary Akka service whose endpoints or event streams are used by other services. Two decisions shape how callers use it. The first is whether the callers run in the same Akka project. The second is what the callers need when the common service is unavailable.
+
+Use this page when more than one service needs the same data or capability. For calls between components inside one service, use the `ComponentClient`. See xref:sdk:component-and-service-calls.adoc#_component_client[Component Client].
+
+[#project-boundary]
+== Deciding by project boundary
+
+The project boundary decides which options are available, so decide it first.
+
+Same project::
+Callers reach the service by its deployed name. Akka handles routing and mutual TLS. The platform knows which service is calling, so you can allow callers by name with `@Acl`. Service-to-service event streams connect by service name.
+
+Different project::
+You choose how the caller connects and how the service identifies the caller.
++
+* To keep the service private, add an ingress rule to the network policy of the project. The rule names each allowed caller as a peer of the form `service:<service-name>@<project-id>`. The service needs no public route.
+* Alternatively, expose the service on a public route. A caller reaches the route with the full host name, for example `httpClientFor("https://<host>")`.
+* `@Acl` cannot match a service from another project by name. The endpoint allows `principal = ALL` and requires a JWT, and the token is the only identity of the caller.
+* On a private service, the network rule still limits which services can connect. On a public route, the JWT is the only check.
+* Service-to-service event streams connect services in the same project. Callers in another project use an HTTP call, a gRPC call or an MCP tool.
+* Callers usually share the contract as a `.proto` file or as a published library.
+
+See xref:operations:projects/network-policies.adoc[] for private access between projects and xref:sdk:access-control.adoc[] for ACLs.
+
+[#choosing-a-pattern]
+== Choosing a pattern for a common service
+
+Start with a direct call. A direct call asks the common service at the time of the call, so callers do not keep a copy that can be out of date. The callers then depend on the common service being available. Add a service-to-service stream and a local View only when the trade-off is worth it. The stream keeps readers working during an outage, but it introduces eventual consistency and more components to maintain.
+
+Answer the questions in order. Each answer leads to a step or to a pattern.
+
+[cols="1,4,3,3,3", options="header"]
+|===
+| Step | Question | If yes | If no | Explained in
+
+| 1
+| Is the caller an agent that decides at run time when to look something up?
+| Use an agent tool through MCP.
+| Go to step 2.
+| <<_agent_tool_through_mcp,Agent tool through MCP>>
+
+| 2
+| Must the caller keep answering when the common service is down, or react to changes in it?
+| Go to step 3.
+| Go to step 4.
+| <<_service_to_service_eventing,Service-to-service eventing>>
+
+| 3
+| Do the caller and the common service run in the same project?
+| Use service-to-service eventing.
+| Go to step 4 for a direct call.
+| <<project-boundary,Deciding by project boundary>>
+
+| 4
+| Does the common service have many callers, callers in another project, or a contract that must be checked at build time?
+| Use a gRPC call.
+| Use an HTTP call.
+| <<_grpc_call,gRPC call>>
+|===
+
+[#patterns]
+== Patterns for using a common service
+
+=== HTTP call
+
+Ask for a client by service name with `httpClientProvider.httpClientFor("<service-name>")`. No host or port configuration is required. This is the simplest option for a JSON API.
+
+The contract is the JSON records of the endpoint. The caller must keep its own copy of those records in step with the endpoint.
+
+See xref:sdk:component-and-service-calls.adoc#_calling_akka_services_over_http[Calling Akka services over HTTP].
+
+=== gRPC call
+
+Ask for a generated client with `grpcClientProvider.grpcClientFor(<client class>, "<service-name>")`. The client is generated from the `.proto` file of the service, so the compiler checks the contract at build time. A gRPC call suits a service with many callers, or callers in another project.
+
+Callers need the `.proto` file of the service. You can copy it into each caller or publish it in a shared library.
+
+See xref:sdk:component-and-service-calls.adoc#_calling_akka_services_over_grpc[Calling Akka services over gRPC] and xref:sdk:grpc-endpoints.adoc[].
+
+=== Service-to-service eventing
+
+The common service publishes changes with `@Produce.ServiceStream(id = "...")`. Callers subscribe with `@Consume.FromServiceStream(service = "...", id = "...")`, usually to feed their own View. The local View keeps answering when the common service is unavailable.
+
+* Events arrive at least once.
+* Order is guaranteed per source entity instance, not across entities.
+* In the same project, set `service` to the deployed name of the producing service.
+* Set the `@Acl` on the class of the producing Consumer to the services that may read the stream. See xref:sdk:consuming-producing.adoc[Event Producer].
+
+Use this pattern only when a caller needs availability during outages, needs a projection of its own, or must react asynchronously to state changes. For standard data access, a direct call is simpler and avoids eventual consistency.
+
+See xref:sdk:consuming-producing.adoc[] and xref:concepts:delivery-guarantees.adoc[].
+
+=== Agent tool through MCP
+
+The common service can expose tools through an `@McpEndpoint`. An agent in the same project resolves the tools by service name with `RemoteMcpTools.fromService("<service-name>")`. This works for an endpoint on the default path `/mcp`. An agent in another project connects by address with `RemoteMcpTools.fromServer("<url>")` and can pass a token with `addClientHeader`.
+
+* Use `withAllowedToolNames` to limit which tools the agent can call.
+* Make the `@Acl` of the endpoint name the calling service where possible.
+* Access control applies to the whole endpoint, not to individual tools.
+* Keep write operations off the MCP endpoint unless every caller is allowed to use them.
+
+See xref:sdk:mcp-endpoints.adoc[] and xref:sdk:agents/extending.adoc#mcp_tools[Using tools from remote MCP servers].
+
+[#comparison]
+== Comparing the patterns for a common service
+
+[cols="1,1,1,1,1", options="header"]
+|===
+| Dimension | HTTP call | gRPC call | Service-to-service eventing | Agent tool through MCP
+
+| Interaction
+| Request and response
+| Request and response
+| Publish and subscribe
+| Tool calls that the model chooses
+
+| Use when
+| You need a live answer and JSON is enough.
+| You need a live answer with a typed contract, many callers or a caller in another project.
+| Callers need a local read model or must react to changes.
+| An agent decides when to look something up.
+
+| Contract
+| JSON records
+| `.proto` file
+| Public event type
+| Tool names, descriptions and parameters
+
+| If the common service is down
+| The call fails.
+| The call fails.
+| The local View keeps answering.
+| The agent cannot use the tools.
+
+| Across projects
+| Yes, through a network policy or a public route.
+| Yes, through a network policy or a public route.
+| No. A stream connects services in the same project.
+| Yes, through a network policy or a public route.
+|===
+
+[#securing-a-common-service]
+== Securing a common service
+
+* Keep the common service private where you can. Within a project, name the allowed callers with `@Acl`. For callers in other projects, prefer an ingress rule in the network policy over a public route.
+* If the endpoint must allow `principal = ALL` for callers in other projects, require a JWT and treat the token as the identity of the caller. See xref:reference:jwts.adoc[] and xref:sdk:auth-with-jwts.adoc[].
+** Annotate the endpoint class with `@JWT(validate = JWT.JwtMethodMode.BEARER_TOKEN)`, or annotate each method.
+** The default mode validates nothing, so a method added later without the annotation is open to every caller.
+** Register the signing key of the issuer on the service. Without a key, every call that needs a token fails with a server error.
+* Network policies and ACLs are independent. A request must pass both. See xref:concepts:security-and-identity.adoc[].
+
+[#designing-the-contract]
+== Designing the contract
+
+Publish a contract that you can keep stable, not the internal state of the service.
+
+* In a service-to-service stream, transform internal events into public event types and leave out what consumers do not need, such as who made a change and why. See xref:sdk:consuming-producing.adoc[Event Producer].
+* Keep each event below 1 MB. An event above that size cannot be consumed by other services. See xref:sdk:dev-best-practices.adoc#_the_1_mb_replication_ceiling[The 1 MB replication ceiling].
+* For gRPC, follow the rules for compatible changes to protobuf messages. See xref:sdk:grpc-endpoints.adoc[].
+
+[#duplicates-and-retries]
+== Handling duplicates and retries
+
+A stream can deliver an event more than once, and a call that timed out can still have succeeded. Design updates in the common service and in its callers so that a repeat has no further effect.
+
+A View removes duplicates from Akka sources by sequence number. A Consumer must make its own side effects safe. See xref:sdk:dev-best-practices.adoc#message-deduplication[Message deduplication].
+
+[#testing]
+== Testing
+
+The TestKit can replace the common service in a caller test:
+
+* For HTTP and gRPC calls, register a mock under the service name that the caller passes to `httpClientFor` or `grpcClientFor`. See xref:sdk:component-and-service-calls.adoc#_mocking_http_and_grpc_services_in_tests[Mocking HTTP and gRPC services in tests].
+* For service-to-service streams, mock the stream by service name and stream id. See xref:sdk:consuming-producing.adoc#_service_to_service_streams[Testing service-to-service streams].
+* For MCP tools, run the common service and the calling service together to verify the tool calls. Use a `TestModelProvider` in the calling service to return a tool request in place of a real model response. See xref:sdk:agents/testing.adoc[] and xref:sdk:running-locally.adoc#multiple_services[Running multiple services].
+
+== See also
+
+* xref:sdk:component-and-service-calls.adoc[]
+* xref:sdk:consuming-producing.adoc[]
+* xref:sdk:grpc-endpoints.adoc[]
+* xref:sdk:mcp-endpoints.adoc[]
+* xref:sdk:access-control.adoc[]
+* xref:sdk:auth-with-jwts.adoc[]
+* xref:operations:projects/network-policies.adoc[]
+* xref:concepts:delivery-guarantees.adoc[]
