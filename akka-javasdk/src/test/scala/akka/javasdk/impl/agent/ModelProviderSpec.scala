@@ -234,6 +234,19 @@ class ModelProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike w
       parse("after-system") shouldBe ModelProvider.BedrockPromptCachePlacement.AFTER_SYSTEM
       parse("after-user-message") shouldBe ModelProvider.BedrockPromptCachePlacement.AFTER_USER_MESSAGE
       parse("after-tools") shouldBe ModelProvider.BedrockPromptCachePlacement.AFTER_TOOLS
+      parse("after-last-user-message") shouldBe ModelProvider.BedrockPromptCachePlacement.AFTER_LAST_USER_MESSAGE
+    }
+
+    "fail on an unknown bedrock prompt caching value in config" in {
+      val cfg = ConfigFactory
+        .parseString("""prompt-caching = "after-everything" """)
+        .withFallback(defaultConfig.getConfig("akka.javasdk.agent.bedrock"))
+      val exc = intercept[IllegalArgumentException] {
+        ModelProvider.Bedrock.fromConfig(cfg)
+      }
+      exc.getMessage shouldBe
+      "Unknown prompt-caching [after-everything] in bedrock model provider configuration. " +
+      "Use one of [after-system, after-user-message, after-tools, after-last-user-message]."
     }
 
     "load defaults from config for vertex-ai" in {
@@ -384,9 +397,11 @@ class ModelProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike w
     }
 
     "fail on an unknown value of api in config" in {
-      assertThrows[IllegalArgumentException] {
+      val exc = intercept[IllegalArgumentException] {
         fromOpenAiConfig("""api = "completions" """)
       }
+      exc.getMessage shouldBe
+      "Unknown api [completions] in openai model provider configuration. Use one of [chat-completions, responses]."
     }
 
     "read api from config whatever the default locale" in {

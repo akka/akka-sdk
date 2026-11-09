@@ -56,6 +56,27 @@ public sealed interface ModelProvider {
   }
 
   /**
+   * Reads the enum constant that a kebab-case value names, such as {@code "chat-completions"} for
+   * {@code CHAT_COMPLETIONS}, ignoring case and surrounding white space.
+   */
+  private static <E extends Enum<E>> E enumFromConfig(
+      Config config, String path, Class<E> enumType, String providerName) {
+    String value = config.getString(path);
+    String name = value.trim().toUpperCase(Locale.ROOT).replace('-', '_');
+    for (E constant : enumType.getEnumConstants()) {
+      if (constant.name().equals(name)) return constant;
+    }
+    String validValues =
+        Arrays.stream(enumType.getEnumConstants())
+            .map(constant -> constant.name().toLowerCase(Locale.ROOT).replace('_', '-'))
+            .collect(Collectors.joining(", "));
+    throw new IllegalArgumentException(
+        String.format(
+            "Unknown %s [%s] in %s model provider configuration. Use one of [%s].",
+            path, value, providerName, validValues));
+  }
+
+  /**
    * Creates a model provider from the default configuration path.
    *
    * <p>Reads configuration from {@code akka.javasdk.agent.model-provider}.
@@ -1052,8 +1073,7 @@ public sealed interface ModelProvider {
           config.getString("api-key"),
           config.getString("model-name"),
           config.getString("base-url"),
-          OpenAiApi.valueOf(
-              config.getString("api").trim().toUpperCase(Locale.ROOT).replace('-', '_')),
+          enumFromConfig(config, "api", OpenAiApi.class, "openai"),
           config.getDouble("temperature"),
           config.getDouble("top-p"),
           config.getInt("max-tokens"),
@@ -2933,8 +2953,8 @@ public sealed interface ModelProvider {
           promptCachingStr.isEmpty()
               ? Optional.empty()
               : Optional.of(
-                  BedrockPromptCachePlacement.valueOf(
-                      promptCachingStr.trim().toUpperCase().replace('-', '_')));
+                  enumFromConfig(
+                      config, "prompt-caching", BedrockPromptCachePlacement.class, "bedrock"));
       return new Bedrock(
           config.getString("region"),
           config.getString("model-id"),
