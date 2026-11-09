@@ -30,6 +30,7 @@ import dev.langchain4j.model.output.FinishReason;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
@@ -54,30 +55,63 @@ public final class TestModelProvider implements ModelProvider.Custom {
    * <p>Only {@code inputTokens} and {@code outputTokens} of the token usage reach the agent. The
    * agent reply reports no prompt cache tokens, and {@code totalInputTokens} equals {@code
    * inputTokens}.
+   *
+   * @param thinking the thinking of the model. Empty when the model returns none.
+   * @param attributes the provider attributes. Empty when the model returns none.
    */
   public record AiResponse(
       String message,
       List<ToolInvocationRequest> toolRequests,
-      Optional<Agent.TokenUsage> tokenUsage) {
+      Optional<Agent.TokenUsage> tokenUsage,
+      Optional<String> thinking,
+      Map<String, Object> attributes) {
+
+    public AiResponse {
+      Objects.requireNonNull(thinking, "thinking must not be null");
+      Objects.requireNonNull(attributes, "attributes must not be null");
+      attributes = Map.copyOf(attributes);
+    }
+
+    /** Constructs an AI response with no thinking and no attributes. */
+    public AiResponse(
+        String message,
+        List<ToolInvocationRequest> toolRequests,
+        Optional<Agent.TokenUsage> tokenUsage) {
+      this(message, toolRequests, tokenUsage, Optional.empty(), Map.of());
+    }
 
     /** Constructs an AI response with only a message. */
     public AiResponse(String message) {
-      this(message, List.of(), Optional.empty());
+      this(message, List.of(), Optional.empty(), Optional.empty(), Map.of());
     }
 
     /** Constructs an AI response with a message and a single tool request. */
     public AiResponse(String message, ToolInvocationRequest toolRequest) {
-      this(message, List.of(toolRequest), Optional.empty());
+      this(message, List.of(toolRequest), Optional.empty(), Optional.empty(), Map.of());
     }
 
     /** Constructs an AI response with only a tool request. */
     public AiResponse(ToolInvocationRequest toolRequest) {
-      this("", List.of(toolRequest), Optional.empty());
+      this("", List.of(toolRequest), Optional.empty(), Optional.empty(), Map.of());
     }
 
     /** Constructs an AI response with a list of tool invocation requests. */
     public AiResponse(List<ToolInvocationRequest> toolRequests) {
-      this("", toolRequests, Optional.empty());
+      this("", toolRequests, Optional.empty(), Optional.empty(), Map.of());
+    }
+
+    /** Returns a copy of this response with the given thinking. */
+    public AiResponse withThinking(String thinking) {
+      Objects.requireNonNull(thinking, "thinking must not be null");
+      return new AiResponse(message, toolRequests, tokenUsage, Optional.of(thinking), attributes);
+    }
+
+    /**
+     * Returns a copy of this response with the given provider attributes. The agent keeps only
+     * {@code String} and {@code List<String>} values in session memory.
+     */
+    public AiResponse withAttributes(Map<String, Object> attributes) {
+      return new AiResponse(message, toolRequests, tokenUsage, thinking, attributes);
     }
   }
 
@@ -430,15 +464,25 @@ public final class TestModelProvider implements ModelProvider.Custom {
                           .build())
               .toList();
 
-      var aiMessage = AiMessage.from(response.message, requests);
+      var aiMessage =
+          AiMessage.builder()
+              .text(response.message)
+              .thinking(response.thinking.orElse(null))
+              .attributes(response.attributes)
+              .toolExecutionRequests(requests)
+              .build();
 
       return builder.aiMessage(aiMessage).finishReason(FinishReason.TOOL_EXECUTION).build();
 
     } else {
-      return builder
-          .finishReason(FinishReason.STOP)
-          .aiMessage(new AiMessage(response.message))
-          .build();
+      var aiMessage =
+          AiMessage.builder()
+              .text(response.message)
+              .thinking(response.thinking.orElse(null))
+              .attributes(response.attributes)
+              .build();
+
+      return builder.finishReason(FinishReason.STOP).aiMessage(aiMessage).build();
     }
   }
 
