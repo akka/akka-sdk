@@ -30,6 +30,7 @@ import dev.langchain4j.model.output.FinishReason;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
@@ -65,6 +66,12 @@ public final class TestModelProvider implements ModelProvider.Custom {
       Optional<String> thinking,
       Map<String, Object> attributes) {
 
+    public AiResponse {
+      Objects.requireNonNull(thinking, "thinking must not be null");
+      Objects.requireNonNull(attributes, "attributes must not be null");
+      attributes = Map.copyOf(attributes);
+    }
+
     /** Constructs an AI response with no thinking and no attributes. */
     public AiResponse(
         String message,
@@ -93,13 +100,16 @@ public final class TestModelProvider implements ModelProvider.Custom {
       this("", toolRequests, Optional.empty(), Optional.empty(), Map.of());
     }
 
-    /** Returns a copy of this response with the given thinking. A null value clears it. */
+    /** Returns a copy of this response with the given thinking. */
     public AiResponse withThinking(String thinking) {
-      return new AiResponse(
-          message, toolRequests, tokenUsage, Optional.ofNullable(thinking), attributes);
+      Objects.requireNonNull(thinking, "thinking must not be null");
+      return new AiResponse(message, toolRequests, tokenUsage, Optional.of(thinking), attributes);
     }
 
-    /** Returns a copy of this response with the given provider attributes. */
+    /**
+     * Returns a copy of this response with the given provider attributes. The agent keeps only
+     * {@code String} and {@code List<String>} values in session memory.
+     */
     public AiResponse withAttributes(Map<String, Object> attributes) {
       return new AiResponse(message, toolRequests, tokenUsage, thinking, attributes);
     }

@@ -466,9 +466,32 @@ class TestModelProviderTest {
   }
 
   @Test
-  void testWithThinkingNullClearsThinking() {
-    var response = new TestModelProvider.AiResponse("text").withThinking("t").withThinking(null);
-    assertThat(response.thinking()).isEmpty();
+  void testWithThinkingNullThrows() {
+    var response = new TestModelProvider.AiResponse("text");
+
+    assertThatThrownBy(() -> response.withThinking(null))
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("thinking must not be null");
+  }
+
+  @Test
+  void testNullThinkingThrowsAtConstruction() {
+    assertThatThrownBy(
+            () ->
+                new TestModelProvider.AiResponse(
+                    "plain", List.of(), Optional.empty(), null, Map.of()))
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("thinking must not be null");
+  }
+
+  @Test
+  void testNullAttributesThrowsAtConstruction() {
+    assertThatThrownBy(
+            () ->
+                new TestModelProvider.AiResponse(
+                    "plain", List.of(), Optional.empty(), Optional.empty(), null))
+        .isInstanceOf(NullPointerException.class)
+        .hasMessage("attributes must not be null");
   }
 
   // Test implementation of StreamingChatResponseHandler
