@@ -382,7 +382,7 @@ spec:
 [#object-storage]
 === ObjectStorage
 
-Configures the buckets that services can use through the SDK's `ObjectStorageProvider`. See xref:sdk:integrations/object-storage.adoc[] for how to use object storage from a service. Only one object storage configuration exists per project, and it does not require a `metadata.name`.
+Configures the buckets that services can use through the `ObjectStorageProvider` of the SDK. See xref:sdk:integrations/object-storage.adoc[] for how to use object storage from a service. Only one object storage configuration exists per project, and it does not require a `metadata.name`.
 
 [cols="1,1,1"]
 |===
@@ -404,7 +404,7 @@ NOTE: Applying an `ObjectStorage` document replaces the whole list of buckets. B
 |*provider*       |string _required_           |The storage provider: `s3`, `gcs`, or `azure-blob`.
 |*bucket*         |string _required_           |The name of the bucket (or container) at the provider.
 |*region*         |string                      |The provider region. Required for `s3`.
-|*endpointUrl*    |string                      |Overrides the provider endpoint, for example to use an S3-compatible service.
+|*`endpointUrl`*    |string                      |Overrides the provider endpoint, for example to use an S3-compatible service.
 |*credentials*    |<<BucketCredentialsSpec>>   |How the runtime authenticates to the provider. Optional for `s3` and `gcs`, which then use the provider's default credential chain. Required for `azure-blob`.
 |===
 
@@ -418,11 +418,11 @@ The `type` selects the authentication mode. Only the fields listed for that type
 |Type                  |Providers      |Fields
 
 |`native`              |`s3`, `gcs`    |None. Uses the provider's default credential chain.
-|`static`              |`s3`           |*accessKeyIdSecret* and *secretAccessKeySecret* (both required): secret references for the access key ID and the secret access key.
-|`profile`             |`s3`           |*profileName* (required): the AWS profile name.
-|`service-account-key` |`gcs`          |*serviceAccountKeySecret* (required): secret reference for the service account JSON key.
-|`shared-key`          |`azure-blob`   |*accountName* (required): the storage account name. *accountKeySecret* (required): secret reference for the account key.
-|`sas`                 |`azure-blob`   |*accountName* (required): the storage account name. *sasTokenSecret* (required): secret reference for the SAS token.
+|`static`              |`s3`           |`accessKeyIdSecret` and `secretAccessKeySecret` (both required): secret references for the access key ID and the secret access key.
+|`profile`             |`s3`           |`profileName` (required): the AWS profile name.
+|`service-account-key` |`gcs`          |`serviceAccountKeySecret` (required): secret reference for the service account JSON key.
+|`shared-key`          |`azure-blob`   |`accountName` (required): the storage account name. `accountKeySecret` (required): secret reference for the account key.
+|`sas`                 |`azure-blob`   |`accountName` (required): the storage account name. `sasTokenSecret` (required): secret reference for the SAS token.
 |===
 
 Example:
