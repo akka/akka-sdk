@@ -163,6 +163,12 @@ public interface LedgerClient {
    * interactions and the {@link EvaluationRecord}s of its interactions. No other kind of record is
    * returned. A page holds at most 100 records.
    *
+   * <p>The client leaves two kinds of record out of a page: a record of a class that this version
+   * of the SDK does not know, and an evaluation of a subject that is not an interaction, such as a
+   * workflow run. A page can then hold fewer than 100 records, or none, while {@link
+   * FlowPage#hasMore()} is {@code true}. Use {@code hasMore}, not the number of records, to decide
+   * whether to read the next page.
+   *
    * <p>Get the flow id of an interaction from {@link
    * akka.javasdk.evaluation.Subject.Interaction#flowId()} or {@link InteractionRecord#flowId()}. To
    * read the next page, pass the {@link FlowPage#nextPosition()} of the page to {@link
