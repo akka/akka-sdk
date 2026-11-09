@@ -173,6 +173,7 @@ import akka.runtime.sdk.spi.SpiEvaluator
 import akka.runtime.sdk.spi.SpiEventSourcedEntity
 import akka.runtime.sdk.spi.SpiEventingSupportSettings
 import akka.runtime.sdk.spi.SpiGuardrailSetup
+import akka.runtime.sdk.spi.SpiLedgerSettings
 import akka.runtime.sdk.spi.SpiMockedEventingSettings
 import akka.runtime.sdk.spi.SpiSanitizerClient
 import akka.runtime.sdk.spi.SpiSanitizerEngine
@@ -214,7 +215,6 @@ object SdkRunner {
 
   val FutureDone: Future[Done] = Future.successful(Done)
 
-  @nowarn("msg=deprecated")
   def extractSpiSettings(applicationConf: Config): SpiSettings = {
     val eventSourcedEntitySnapshotEvery = applicationConf.getInt("akka.javasdk.event-sourced-entity.snapshot-every")
 
@@ -262,15 +262,19 @@ object SdkRunner {
 
     val spiDeployedEventingSettings = extractDeployedEventingSettings(applicationConf)
 
+    // FIXME: read the ledger settings from configuration
+    val ledgerSettings =
+      if (agentInteractionLogEnabled) SpiLedgerSettings.Enabled else SpiLedgerSettings.Disabled
+
     new SpiSettings(
       eventSourcedEntitySnapshotEvery,
       cleanupDeletedEntityAfter,
       cleanupInterval,
       maxToolCallSteps,
-      agentInteractionLogEnabled,
       devModeSettings,
       Some(sanitizationSettings),
-      Some(spiDeployedEventingSettings))
+      Some(spiDeployedEventingSettings),
+      ledgerSettings)
   }
 
   private def extractDevObjectStorageBuckets(objectStorageConf: Config): Seq[SpiDevObjectStorageBucketConfig] = {
@@ -801,7 +805,6 @@ private final class Sdk(
 
   // we need a method instead of function in order to have type params
   // to late use in Reflect.workflowStateType
-  @nowarn("msg=deprecated")
   private def workflowInstanceFactory[S, W <: Workflow[S]](
       componentId: String,
       factoryContext: SpiWorkflow.FactoryContext,
@@ -1116,16 +1119,14 @@ private final class Sdk(
             () => unhandledExceptionReporterFn)
         }
         timedActionDescriptors :+=
-          (new TimedActionDescriptor(
+          new TimedActionDescriptor(
             componentId,
             clz.getName,
             timedActionInstanceFactory,
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
             provided = false,
-            protobufDescriptors =
-              Reflect.protoCommandHandlerInputTimedAction(clz.asInstanceOf[Class[TimedAction]])): @nowarn(
-            "msg=deprecated"))
+            protobufDescriptors = Reflect.protoCommandHandlerInputTimedAction(clz.asInstanceOf[Class[TimedAction]]))
 
       case clz if Reflect.isConsumer(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -1154,7 +1155,7 @@ private final class Sdk(
             () => unhandledExceptionReporterFn)
         }
         consumerDescriptors :+=
-          (new ConsumerDescriptor(
+          new ConsumerDescriptor(
             componentId,
             clz.getName,
             consumerSrc,
@@ -1163,8 +1164,9 @@ private final class Sdk(
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
             provided = false,
-            protobufDescriptors = Reflect.protoCommandHandlerInputOutput(componentDescriptor)): @nowarn(
-            "msg=deprecated"))
+            protobufDescriptors = Reflect.protoCommandHandlerInputOutput(componentDescriptor),
+            // FIXME: read the start position from the consumer annotation
+            startFrom = None)
 
       case clz if Reflect.isAutonomousAgent(clz) =>
         val componentId = Reflect.readComponentId(clz)
