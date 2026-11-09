@@ -80,14 +80,14 @@ public class ViewValidations {
   }
 
   /**
-   * Validates that neither the View nor its TableUpdaters are annotated with @StartFrom.
+   * Validates that neither the View nor its TableUpdaters are annotated with @Consume.StartFrom.
    *
    * @param typeDef the View class to validate
    * @return a Validation result indicating success or failure
    */
   private static Validation viewMustNotHaveStartFrom(TypeDef typeDef) {
-    String startFrom = "akka.javasdk.annotations.StartFrom";
-    String message = "@StartFrom is only supported on a Consumer, not on a View.";
+    String startFrom = "akka.javasdk.annotations.Consume.StartFrom";
+    String message = "@Consume.StartFrom is only supported on a Consumer, not on a View.";
     List<String> errors = new ArrayList<>();
     if (typeDef.hasAnnotation(startFrom)) {
       errors.add(Validations.errorMessage(typeDef, message));

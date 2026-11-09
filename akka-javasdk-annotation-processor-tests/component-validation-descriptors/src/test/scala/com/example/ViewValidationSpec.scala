@@ -54,8 +54,10 @@ abstract class AbstractViewValidationSpec(val validationMode: ValidationMode)
       assertInvalid("invalid/ViewWithTableAnnotation.java", "A View itself should not be annotated with @Table")
     }
 
-    "reject View with @StartFrom on a TableUpdater" in {
-      assertInvalid("invalid/ViewWithStartFrom.java", "@StartFrom is only supported on a Consumer, not on a View")
+    "reject View with @Consume.StartFrom on a TableUpdater" in {
+      assertInvalid(
+        "invalid/ViewWithStartFrom.java",
+        "@Consume.StartFrom is only supported on a Consumer, not on a View")
     }
 
     "reject View with no TableUpdater" in {

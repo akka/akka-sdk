@@ -251,13 +251,13 @@ See xref:reference:cli/akka-cli/index.adoc[`akka service deploy -h`] for details
 
 == Starting from the latest events or a timestamp
 
-A new consumer starts from the beginning of its source and processes the whole history. A consumer that only needs new events, such as a consumer that sends notifications, can instead start from the time of its first deployment with `@StartFrom(latest = true)`. To start from a specific point in time, use `@StartFrom(timestamp = "2026-10-01T00:00:00Z")` with an ISO-8601 instant.
+A new consumer starts from the beginning of its source and processes the whole history. A consumer that only needs new events, such as a consumer that sends notifications, can instead start from the time of its first deployment with `@Consume.StartFrom(latest = true)`. To start from a specific point in time, use `@Consume.StartFrom(timestamp = "2026-10-01T00:00:00Z")` with an ISO-8601 instant.
 
 [source,java,indent=0]
 ----
 @Component(id = "order-notifier")
 @Consume.FromEventSourcedEntity(OrderEntity.class)
-@StartFrom(latest = true)
+@Consume.StartFrom(latest = true)
 public class OrderNotifier extends Consumer {
   // ...
 }
@@ -267,12 +267,12 @@ Events and state changes persisted before the start point are not delivered, als
 
 The start point is recorded when the consumer is first deployed and is permanent. The consumer never receives events from before it.
 
-* A consumer that is already deployed and gets `@StartFrom` skips the events from before the start point that it has not yet processed.
+* A consumer that is already deployed and gets `@Consume.StartFrom` skips the events from before the start point that it has not yet processed.
 * Clearing the offsets of the consumer makes it process everything since the start point again, not the whole history. A consumer that sends notifications sends them again for all events since the start point.
 * A consumer that is added again with an old component id reuses its recorded start point and stored offsets.
 * Changing a timestamp to `latest = true` is accepted and keeps the recorded timestamp. Changing `latest = true` to a timestamp is refused.
 
-WARNING: Removing `@StartFrom` or changing it to another timestamp after the consumer has been deployed is not supported, the service refuses to start. This also applies when you roll back to a version of the service without the annotation. To start over from a different point, give the consumer a new component id. That discards the processing progress of the consumer. To change a recorded start point, contact support.
+WARNING: Removing `@Consume.StartFrom` or changing it to another timestamp after the consumer has been deployed is not supported, the service refuses to start. This also applies when you roll back to a version of the service without the annotation. To start over from a different point, give the consumer a new component id. That discards the processing progress of the consumer. To change a recorded start point, contact support.
 
 In development mode and in tests nothing is recorded. `latest = true` is then the time of each start of the service, and events that are written while the service is stopped are not delivered. Messages that a test publishes through the test kit do not go through the start point. A timestamp in the future delivers nothing until that time, and the service logs a warning.
 

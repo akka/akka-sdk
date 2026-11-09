@@ -133,15 +133,15 @@ public class ConsumerValidations {
   }
 
   /**
-   * Validates @StartFrom: exactly one of latest and timestamp is set, the timestamp parses, the
-   * source is not a topic and the consumer does not produce a service stream.
+   * Validates @Consume.StartFrom: exactly one of latest and timestamp is set, the timestamp parses,
+   * the source is not a topic and the consumer does not produce a service stream.
    *
    * @param typeDef the component class to validate
    * @return a Validation result indicating success or failure
    */
   private static Validation startFromValidations(TypeDef typeDef) {
     Optional<AnnotationDef> startFrom =
-        typeDef.findAnnotation("akka.javasdk.annotations.StartFrom");
+        typeDef.findAnnotation("akka.javasdk.annotations.Consume.StartFrom");
     if (startFrom.isEmpty()) {
       return Validation.Valid.instance();
     }
@@ -153,9 +153,10 @@ public class ConsumerValidations {
     if (latest && !timestamp.isEmpty()) {
       errors.add(
           Validations.errorMessage(
-              typeDef, "@StartFrom must set either latest or timestamp, not both."));
+              typeDef, "@Consume.StartFrom must set either latest or timestamp, not both."));
     } else if (!latest && timestamp.isEmpty()) {
-      errors.add(Validations.errorMessage(typeDef, "@StartFrom must set latest or timestamp."));
+      errors.add(
+          Validations.errorMessage(typeDef, "@Consume.StartFrom must set latest or timestamp."));
     } else if (!timestamp.isEmpty()) {
       try {
         Instant.parse(timestamp);
@@ -163,7 +164,7 @@ public class ConsumerValidations {
         errors.add(
             Validations.errorMessage(
                 typeDef,
-                "@StartFrom timestamp ["
+                "@Consume.StartFrom timestamp ["
                     + timestamp
                     + "] is not an ISO-8601 instant, for example 2026-10-01T00:00:00Z."));
       }
@@ -172,12 +173,14 @@ public class ConsumerValidations {
     if (hasTopicSubscription(typeDef)) {
       errors.add(
           Validations.errorMessage(
-              typeDef, "@StartFrom is not supported for a Consumer with @Consume.FromTopic."));
+              typeDef,
+              "@Consume.StartFrom is not supported for a Consumer with @Consume.FromTopic."));
     }
     if (typeDef.hasAnnotation("akka.javasdk.annotations.Produce.ServiceStream")) {
       errors.add(
           Validations.errorMessage(
-              typeDef, "@StartFrom is not supported for a Consumer with @Produce.ServiceStream."));
+              typeDef,
+              "@Consume.StartFrom is not supported for a Consumer with @Produce.ServiceStream."));
     }
 
     return Validation.of(errors);

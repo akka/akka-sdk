@@ -33,7 +33,7 @@ class ConsumerDescriptorFactorySpec extends AnyWordSpec with Matchers {
 
   "Consumer descriptor factory" should {
 
-    "read the start point from @StartFrom" in {
+    "read the start point from @Consume.StartFrom" in {
       ComponentDescriptorFactory.consumerStartFrom(classOf[SubscribeToEventSourcedEmployee]) shouldBe None
       ComponentDescriptorFactory.consumerStartFrom(classOf[SubscribeToEventSourcedEmployeeFromLatest]) shouldBe Some(
         ConsumerStartFrom.Latest)
