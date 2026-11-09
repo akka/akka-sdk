@@ -243,7 +243,6 @@ private[impl] object AgentImpl {
     toSpiModelProviderWithIdentityHeaders(modelProvider, config, componentId, globalIdentityHeaders(config))
 
   @tailrec
-  @nowarn("msg=deprecated")
   private def toSpiModelProviderWithIdentityHeaders(
       modelProvider: ModelProvider,
       config: Config,
@@ -348,7 +347,10 @@ private[impl] object AgentImpl {
             p.maxRetries(),
             p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq,
             identityHeaders),
-          thinking = p.thinking)
+          thinking = p.thinking,
+          // FIXME: pass the OpenAI API and reasoning effort from ModelProvider.OpenAi
+          api = SpiAgent.ModelProvider.OpenAiApi.ChatCompletions,
+          reasoningEffort = "")
       case p: ModelProvider.AzureOpenAi =>
         new SpiAgent.ModelProvider.AzureOpenAi(
           endpoint = p.endpoint,
@@ -1045,7 +1047,6 @@ private[impl] final class AgentImpl(
     }
   }
 
-  @nowarn("msg=deprecated")
   private def mapSpiAgentException(func: Throwable => Any): Throwable => Any = {
 
     @nowarn("msg=deprecated")
