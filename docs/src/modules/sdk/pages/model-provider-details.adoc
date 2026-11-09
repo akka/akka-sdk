@@ -614,7 +614,7 @@ See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Ollama.html[`Mode
 
 | max-completion-tokens
 | Integer
-| Max token quota. Leave as –1 for model default
+| Max token quota. Leave as –1 for model default. With `api = "responses"` it applies only when `max-tokens` is `-1`.
 
 | connection-timeout
 | Duration

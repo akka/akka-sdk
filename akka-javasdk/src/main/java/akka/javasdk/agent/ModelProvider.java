@@ -1026,7 +1026,8 @@ public sealed interface ModelProvider {
       boolean thinking,
       /**
        * Reasoning effort of a reasoning model, such as "low", "medium" or "high". The values that a
-       * model accepts depend on the model. Empty for the model default.
+       * model accepts depend on the model. Empty for the model default. Applies to both values of
+       * {@link OpenAiApi}.
        */
       String reasoningEffort,
       /** Additional HTTP headers to include in each request to the model API */
