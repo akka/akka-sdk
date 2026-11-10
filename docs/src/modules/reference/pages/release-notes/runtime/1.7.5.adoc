@@ -1,0 +1,32 @@
+= Akka Runtime 1.7.5
+:page-summary: Runtime 1.7.5 adds trace context in logs, and logs and a duration metric for evaluations. It also fixes a failed runtime start, idle autonomous agents, workflow replicas, and views.
+
+include::ROOT:partial$include.adoc[]
+
+Released 2026-11-03.
+
+== Changes
+
+* Service startup: when the runtime fails to start, it logs the cause and exits with code 1. A failed start no longer exits with code 0 or leaves the JVM running. When the runtime is older than the SDK needs, the log names both versions.
+* Metrics: the workflow, entity, and step metrics and spans of a durable evaluator have `akka.component.type` set to `evaluator`, not `workflow`.
+* Dependencies: the runtime no longer includes `lmdbjava`. A service that uses `lmdbjava` must declare the dependency itself.
+* Agents: session memory keeps only the string and string list values of the provider attributes of a model reply. Guardrails still receive all attributes.
+* Logs: when tracing is on, a JSON log line has the `trace_id`, `span_id`, and `trace_flags` of the current span. This applies to code in HTTP endpoints and MCP endpoints, and to the error logs of consumers, timed actions, and agents.
+* Tracing: the span of an MCP request continues the trace of the incoming request.
+* Ledger: the runtime stores the exchange id that a model gateway returns in the `x-akka-exchange-id` response header. The ledger record of the interaction has the exchange id of each model response.
+* Evaluators: the runtime logs a failed or timed out evaluation as a warning, on a logger named after the evaluator class. At debug level, the runtime logs whether it starts an evaluation for an interaction, and the recorded result.
+* Metrics: the `akka.evaluation.duration` metric reports the time from the start of an evaluation to the recording of its result.
+* Evaluators: the workflow timeout of a durable evaluator no longer fails with AK-00803, which the runtime retried without end.
+* Autonomous agents: an idle agent no longer stays in memory after an input that does not activate it, such as a failed dependency or a delivered message. This defect affected version 1.7.4.
+* Workflows: a write command to a read-only replica of a workflow no longer times out when the replica has received the selected step but not its result.
+* Views: a view row type with a field that refers back to the row type no longer fails with a `ClassCastException`. A query can refer to a column through a recursive optional or repeated field, such as `parent.id`.
+* Metrics: the `akka.entity.active` metric no longer goes below zero after journal failures, for example while the database is unavailable.
+
+== Noteworthy dependency updates
+
+* Langchain4j 1.22.0
+* Netty 4.1.139.Final
+* Jackson 2.22.4
+* AWS SDK 2.57.2
+* Google GenAI 1.78.0
+* Logback 1.6.6
