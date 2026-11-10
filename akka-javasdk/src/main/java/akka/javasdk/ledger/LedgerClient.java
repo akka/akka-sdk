@@ -11,7 +11,8 @@ import java.util.concurrent.CompletionStage;
 
 /**
  * Client for fetching records from the ledger, the log of recorded agent interactions, their
- * evaluations, the guardrail decisions made in them and the activity of autonomous agents.
+ * evaluations, the guardrail decisions made in them, the classifications produced in them and the
+ * activity of autonomous agents.
  *
  * <p>A {@code LedgerClient} can be injected into any component. An {@link
  * akka.javasdk.evaluation.Evaluator} uses it to fetch the interactions that its {@link
@@ -67,6 +68,27 @@ public interface LedgerClient {
    *     NoSuchElementException} if no evaluation exists with that id
    */
   CompletionStage<EvaluationRecord> getEvaluationAsync(String evaluationId);
+
+  /**
+   * Fetch the record for the classification with the given {@code classificationId}.
+   *
+   * <p>Blocks the calling thread until the record has been fetched. Safe to call on a virtual
+   * thread. Use {@link #getClassificationAsync(String)} for the non-blocking variant.
+   *
+   * @param classificationId the globally unique id of the classification to fetch
+   * @return the classification record
+   * @throws NoSuchElementException if no classification exists with that id
+   */
+  ClassificationRecord getClassification(String classificationId);
+
+  /**
+   * Async variant of {@link #getClassification(String)}.
+   *
+   * @param classificationId the globally unique id of the classification to fetch
+   * @return a stage that completes with the classification record, or fails with {@link
+   *     NoSuchElementException} if no classification exists with that id
+   */
+  CompletionStage<ClassificationRecord> getClassificationAsync(String classificationId);
 
   /**
    * Fetch the evaluations recorded about the interaction with the given {@code interactionId},
