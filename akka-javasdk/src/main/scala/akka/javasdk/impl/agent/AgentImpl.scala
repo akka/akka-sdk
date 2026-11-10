@@ -348,9 +348,11 @@ private[impl] object AgentImpl {
             p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq,
             identityHeaders),
           thinking = p.thinking,
-          // FIXME: pass the OpenAI API and reasoning effort from ModelProvider.OpenAi
-          api = SpiAgent.ModelProvider.OpenAiApi.ChatCompletions,
-          reasoningEffort = "")
+          api = p.api match {
+            case ModelProvider.OpenAiApi.CHAT_COMPLETIONS => SpiAgent.ModelProvider.OpenAiApi.ChatCompletions
+            case ModelProvider.OpenAiApi.RESPONSES        => SpiAgent.ModelProvider.OpenAiApi.Responses
+          },
+          reasoningEffort = p.reasoningEffort)
       case p: ModelProvider.AzureOpenAi =>
         new SpiAgent.ModelProvider.AzureOpenAi(
           endpoint = p.endpoint,
