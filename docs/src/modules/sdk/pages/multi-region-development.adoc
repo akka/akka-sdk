@@ -1,4 +1,4 @@
-= Multi-region readiness
+= Multi-region implementation review
 :page-summary: Review application code, request routing, and recovery expectations before running an Akka service in multiple regions.
 :page-when-to-use: Before adding a region to a project or reviewing an existing service for multi-region deployment
 :page-related: concepts:multi-region.adoc, sdk:consuming-producing.adoc, sdk:dev-best-practices.adoc, operations:regions/setup.adoc
@@ -6,7 +6,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-Multi-region readiness is a review of how your application handles regional replication, repeated processing, and regional outages.
+This page helps you review your application to handle regional replication, repeated processing, and regional outages.
 Use this checklist before adding a region to your project.
 
 Start with xref:concepts:multi-region.adoc[] for primary regions, asynchronous replication, and primary selection modes.
