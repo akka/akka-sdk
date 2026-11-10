@@ -29,7 +29,8 @@ import java.util.stream.Collectors;
  *     interaction
  * @param metadata metadata about the model call(s) of the interaction
  * @param systemMessage the system message the model was given
- * @param inputMessage the input message content given to the model, in order
+ * @param inputMessage the input message content given to the model, in order. A piece of a kind
+ *     that this version of the SDK or the runtime does not know is left out.
  * @param modelResponses the model call(s) of the interaction, in order
  * @param toolCallResponses tool call responses that arrived as input to a model call
  * @param taskContext autonomous-agent task metadata, present only for flow interactions
@@ -48,7 +49,8 @@ public record InteractionRecord(
     List<ToolCallResponse> toolCallResponses,
     Optional<TaskContext> taskContext,
     Optional<Failure> failure,
-    Instant timestamp) {
+    Instant timestamp)
+    implements FlowRecord {
 
   /** Whether this interaction was produced by an agent running as part of a flow. */
   public boolean isFlowInteraction() {
@@ -136,8 +138,13 @@ public record InteractionRecord(
    * for logging.
    */
   public String transcript() {
+    return transcript(true);
+  }
+
+  // FlowRecord.transcript leaves out the system message when it repeats the one written before.
+  String transcript(boolean withSystemMessage) {
     var sb = new StringBuilder();
-    if (systemMessage != null && !systemMessage.isEmpty()) {
+    if (withSystemMessage && systemMessage != null && !systemMessage.isEmpty()) {
       sb.append("System: ").append(systemMessage).append("\n");
     }
     var input =

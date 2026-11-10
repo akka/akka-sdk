@@ -11,12 +11,13 @@ import java.util.concurrent.CompletionStage;
 
 /**
  * Client for fetching records from the ledger, the log of recorded agent interactions, their
- * evaluations and the guardrail decisions made in them.
+ * evaluations, the guardrail decisions made in them and the activity of autonomous agents.
  *
  * <p>A {@code LedgerClient} can be injected into any component. An {@link
  * akka.javasdk.evaluation.Evaluator} uses it to fetch the interactions that its {@link
  * akka.javasdk.evaluation.Subject} and {@link
- * akka.javasdk.evaluation.EvaluationContext#attributes()} refer to.
+ * akka.javasdk.evaluation.EvaluationContext#attributes()} refer to. When an interaction ran in a
+ * flow, the evaluator reads the records of the flow with {@link #getFlowRecords(String)}.
  *
  * <p>Not for user extension.
  */
@@ -154,4 +155,69 @@ public interface LedgerClient {
    * @return a stage that completes with the guardrail decisions of that interaction
    */
   CompletionStage<List<GuardrailDecisionRecord>> getGuardrailDecisionsAsync(String interactionId);
+
+  /**
+   * Read the first page of the records of the flow with the given {@code flowId}, in the order they
+   * were recorded. The records are the {@link InteractionRecord}s of the agents in the flow, the
+   * {@link ActivityRecord}s of its autonomous agents, the {@link GuardrailDecisionRecord}s of its
+   * interactions and the {@link EvaluationRecord}s of its interactions. No other kind of record is
+   * returned. A page holds at most 100 records.
+   *
+   * <p>The client leaves two kinds of record out of a page: a record of a class that this version
+   * of the SDK does not know, and an evaluation of a subject that is not an interaction, such as a
+   * workflow run. A page can then hold fewer than 100 records, or none, while {@link
+   * FlowPage#hasMore()} is {@code true}. Use {@code hasMore}, not the number of records, to decide
+   * whether to read the next page.
+   *
+   * <p>Get the flow id of an interaction from {@link
+   * akka.javasdk.evaluation.Subject.Interaction#flowId()} or {@link InteractionRecord#flowId()}. To
+   * read the next page, pass the {@link FlowPage#nextPosition()} of the page to {@link
+   * #getFlowRecords(String, long)}. A page where {@link FlowPage#hasMore()} is {@code false} was
+   * the last page when it was read. To read the records that were recorded after the last page,
+   * pass its next position later.
+   *
+   * <p>Blocks the calling thread until the records have been fetched. Safe to call on a virtual
+   * thread. Use {@link #getFlowRecordsAsync(String)} for the non-blocking variant.
+   *
+   * @param flowId the id of the flow
+   * @return the first page of the records of the flow, or an empty page for an unknown flow
+   * @throws IllegalArgumentException if the flow id is empty
+   */
+  FlowPage getFlowRecords(String flowId);
+
+  /**
+   * Read the page of the records of the flow with the given {@code flowId} that starts at {@code
+   * fromPosition}. See {@link #getFlowRecords(String)} for what a page holds.
+   *
+   * <p>Blocks the calling thread until the records have been fetched. Safe to call on a virtual
+   * thread. Use {@link #getFlowRecordsAsync(String, long)} for the non-blocking variant.
+   *
+   * @param flowId the id of the flow
+   * @param fromPosition the {@link FlowPage#nextPosition()} of an earlier page of the flow, or 0 to
+   *     read from the start
+   * @return the page of the records of the flow that starts at that position
+   * @throws IllegalArgumentException if the flow id is empty or the position is negative
+   */
+  FlowPage getFlowRecords(String flowId, long fromPosition);
+
+  /**
+   * Async variant of {@link #getFlowRecords(String)}.
+   *
+   * @param flowId the id of the flow
+   * @return a stage that completes with the first page of the records of the flow, or fails with
+   *     {@link IllegalArgumentException} if the flow id is empty
+   */
+  CompletionStage<FlowPage> getFlowRecordsAsync(String flowId);
+
+  /**
+   * Async variant of {@link #getFlowRecords(String, long)}.
+   *
+   * @param flowId the id of the flow
+   * @param fromPosition the {@link FlowPage#nextPosition()} of an earlier page of the flow, or 0 to
+   *     read from the start
+   * @return a stage that completes with the page of the records of the flow that starts at that
+   *     position, or fails with {@link IllegalArgumentException} if the flow id is empty or the
+   *     position is negative
+   */
+  CompletionStage<FlowPage> getFlowRecordsAsync(String flowId, long fromPosition);
 }

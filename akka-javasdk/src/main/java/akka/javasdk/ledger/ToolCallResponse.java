@@ -13,6 +13,7 @@ import java.util.List;
  *
  * @param id the id of the tool call this is a response to
  * @param name the name of the tool that produced the response
- * @param contents the content of the response, as one or more pieces of {@link MessageContent}
+ * @param contents the content of the response, as pieces of {@link MessageContent}. A piece of a
+ *     kind that this version of the SDK or the runtime does not know is left out.
  */
 public record ToolCallResponse(String id, String name, List<MessageContent> contents) {}
