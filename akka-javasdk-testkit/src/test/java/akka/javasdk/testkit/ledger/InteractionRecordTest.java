@@ -40,7 +40,8 @@ public class InteractionRecordTest {
             10,
             5,
             "let me think",
-            List.of(new ToolCall("t1", "calc", "{\"expr\":\"2+2\"}", "4")));
+            List.of(
+                new ToolCall("t1", "calc", "{\"expr\":\"2+2\"}", "4", ToolCall.Status.COMPLETED)));
     var finalAnswer = new ModelResponse("m2", "The answer is 4.", 8, 6, "", List.of());
     return new InteractionRecord(
         "interaction-1",
@@ -125,6 +126,47 @@ public class InteractionRecordTest {
         Failure: GUARDRAIL: reply blocked
         """;
     assertThat(transcript).isEqualTo(expected);
+  }
+
+  @Test
+  public void transcriptShowsTheStatusOfEachToolCall() {
+    var toolCalls =
+        List.of(
+            new ToolCall("t1", "calc", "{\"expr\":\"2+2\"}", "4", ToolCall.Status.COMPLETED),
+            new ToolCall("t2", "calc", "{\"expr\":\"3+3\"}", "6", ToolCall.Status.UNSPECIFIED),
+            new ToolCall(
+                "t3", "calc", "{\"expr\":\"1/0\"}", "division by zero", ToolCall.Status.FAILED),
+            new ToolCall("t4", "calc", "{\"expr\":\"0/0\"}", "", ToolCall.Status.FAILED),
+            new ToolCall("t5", "calc", "{\"expr\":\"5+5\"}", "", ToolCall.Status.NOT_RUN),
+            new ToolCall("t6", "ask_user", "{}", "", ToolCall.Status.PENDING),
+            new ToolCall("t7", "calc", "{\"expr\":\"7+7\"}", "", ToolCall.Status.NO_RESULT));
+    var record =
+        new InteractionRecord(
+            "interaction-4",
+            "session-1",
+            "math-agent",
+            Optional.empty(),
+            metadata(),
+            "",
+            List.of(TextMessageContent.from("Compute these.")),
+            List.of(new ModelResponse("m1", "", 10, 5, "", toolCalls)),
+            List.of(),
+            Optional.empty(),
+            Optional.empty(),
+            Instant.EPOCH);
+
+    var expected =
+        """
+        Input: Compute these.
+        Tool call calc({"expr":"2+2"}) -> 4
+        Tool call calc({"expr":"3+3"}) -> 6
+        Tool call calc({"expr":"1/0"}) -> [failed: division by zero]
+        Tool call calc({"expr":"0/0"}) -> [failed]
+        Tool call calc({"expr":"5+5"}) -> [not run]
+        Tool call ask_user({}) -> [pending]
+        Tool call calc({"expr":"7+7"}) -> [no result]
+        """;
+    assertThat(record.transcript()).isEqualTo(expected);
   }
 
   @Test
