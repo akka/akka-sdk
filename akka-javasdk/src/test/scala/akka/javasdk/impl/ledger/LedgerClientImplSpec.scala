@@ -16,6 +16,7 @@ import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
 
 import akka.javasdk.ledger.ActivityRecord
+import akka.javasdk.ledger.ClassificationRecord
 import akka.javasdk.ledger.EvaluationRecord
 import akka.javasdk.ledger.GuardrailDecisionRecord
 import akka.javasdk.ledger.InteractionRecord
@@ -254,6 +255,55 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
 
       records.asScala.map(_.evaluationId()) shouldEqual Seq("evaluation-2")
       requested shouldBe Some(("order-workflow", "workflow-1", None, 100))
+    }
+  }
+
+  "Mapping a classification record" should {
+
+    "carry the result, the attributes and the references" in {
+      val record = LedgerClientImpl.toClassificationRecord(
+        new SpiLedger.ClassificationRecord(
+          classificationId = "classification-1",
+          classifierComponentId = "sentiment-classifier",
+          label = Some("positive"),
+          score = Some(0.9),
+          confidence = Some(0.8),
+          attributes = Map("source" -> "judge"),
+          flowId = Some("flow-1"),
+          evaluationId = Some("evaluation-1"),
+          timestamp = Instant.EPOCH))
+
+      record shouldEqual new ClassificationRecord(
+        "classification-1",
+        "sentiment-classifier",
+        Optional.of("positive"),
+        Optional.of(0.9),
+        Optional.of(0.8),
+        Map("source" -> "judge").asJava,
+        Optional.of("flow-1"),
+        Optional.of("evaluation-1"),
+        Instant.EPOCH)
+    }
+
+    "carry empty optionals for a classification without a result or references" in {
+      val record = LedgerClientImpl.toClassificationRecord(
+        new SpiLedger.ClassificationRecord(
+          classificationId = "classification-2",
+          classifierComponentId = "sentiment-classifier",
+          label = None,
+          score = None,
+          confidence = None,
+          attributes = Map.empty,
+          flowId = None,
+          evaluationId = None,
+          timestamp = Instant.EPOCH))
+
+      record.label() shouldEqual Optional.empty()
+      record.score() shouldEqual Optional.empty()
+      record.confidence() shouldEqual Optional.empty()
+      record.attributes() shouldEqual util.Map.of()
+      record.flowId() shouldEqual Optional.empty()
+      record.evaluationId() shouldEqual Optional.empty()
     }
   }
 
