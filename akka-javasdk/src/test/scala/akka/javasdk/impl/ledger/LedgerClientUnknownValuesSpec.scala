@@ -520,6 +520,19 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
       page.hasMore() shouldBe true
     }
 
+    "keep the next position of a page whose records the SDK all leaves out" in {
+      val client = ledgerClient(
+        spiInteractionRecord(),
+        Seq.empty,
+        flowPage = new SpiLedger.FlowPage(Seq(unknownValue[SpiLedger.FlowRecord]), 3L, hasMore = true))
+
+      val page = client.getFlowRecords("flow-1", 2L)
+
+      page.records() shouldBe empty
+      page.nextPosition() shouldBe 3L
+      page.hasMore() shouldBe true
+    }
+
     "keep an evaluation with an outcome that the SDK does not know in a flow page, and leave out an evaluation of a subject that is not an interaction" in {
       val ofInteraction = spiEvaluationRecord(
         SpiLedger.EvaluationTrigger.OnInteraction,
