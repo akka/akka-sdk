@@ -4,6 +4,7 @@
 
 package akka.javasdk.testmodels.subscriptions;
 
+import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.DeleteHandler;
@@ -140,6 +141,16 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
         case EmployeeCreated created -> effects().produce(created.toString());
         case EmployeeEmailUpdated emailUpdated -> effects().produce(emailUpdated.toString());
       };
+    }
+  }
+
+  @Consume.FromEventSourcedEntity(value = EmployeeEntity.class)
+  @Produce.ServiceStream(id = "employee_events_acl")
+  @Acl(allow = @Acl.Matcher(service = "other-service"))
+  public static class AclEventStreamPublishingConsumer extends Consumer {
+
+    public Effect transform(EmployeeEvent event) {
+      return effects().produce(event.toString());
     }
   }
 

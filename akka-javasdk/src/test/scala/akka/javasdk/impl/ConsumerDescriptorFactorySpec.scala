@@ -8,6 +8,7 @@ import java.time.Instant
 
 import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.testmodels.keyvalueentity.CounterState
+import akka.javasdk.testmodels.subscriptions.PubSubTestModels.AclEventStreamPublishingConsumer
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.EventStreamPublishingConsumer
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.EventStreamSubscriptionConsumer
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.HostWithPlatformServiceStreamConsumer
@@ -23,8 +24,10 @@ import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToTopicTy
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToValueEntityTypeLevel
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToValueEntityWithDeletes
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.TemplatePlatformServiceStreamConsumer
+import akka.runtime.sdk.spi.ConsumerDestination
 import akka.runtime.sdk.spi.ConsumerSource
 import akka.runtime.sdk.spi.ConsumerStartFrom
+import akka.runtime.sdk.spi.ServiceNamePattern
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import protoconsumer.EventsForConsumer
@@ -39,6 +42,20 @@ class ConsumerDescriptorFactorySpec extends AnyWordSpec with Matchers {
         ConsumerStartFrom.Latest)
       ComponentDescriptorFactory.consumerStartFrom(classOf[SubscribeToEventSourcedEmployeeFromTimestamp]) shouldBe Some(
         new ConsumerStartFrom.Timestamp(Instant.parse("2026-10-01T00:00:00Z")))
+    }
+
+    "pass class-level @Acl on a service stream producer to the destination" in {
+      val dest = ComponentDescriptorFactory.consumerDestination(
+        classOf[AclEventStreamPublishingConsumer].asInstanceOf[Class[akka.javasdk.consumer.Consumer]])
+      val streamDest = dest.get.asInstanceOf[ConsumerDestination.ServiceStreamDestination]
+      streamDest.streamId shouldBe "employee_events_acl"
+      streamDest.acl.get.allow.collect { case p: ServiceNamePattern => p.pattern } shouldBe List("other-service")
+    }
+
+    "have no ACL on a service stream producer without @Acl" in {
+      val dest = ComponentDescriptorFactory.consumerDestination(
+        classOf[EventStreamPublishingConsumer].asInstanceOf[Class[akka.javasdk.consumer.Consumer]])
+      dest.get.asInstanceOf[ConsumerDestination.ServiceStreamDestination].acl shouldBe None
     }
 
     "generate mapping with Event Sourced Subscription annotations" in {
