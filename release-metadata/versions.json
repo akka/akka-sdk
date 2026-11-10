@@ -21,7 +21,17 @@
     ]
   },
   "runtime": {
-    "releases": []
+    "releases": [
+      {
+        "version": "1.7.6",
+        "releasedAt": "2026-11-10T12:00:00Z",
+        "releaseNotesUrl": "https://doc.akka.io/reference/release-notes/runtime/1.7.6.html",
+        "supportedProtocol": {
+          "minimum": "1.0",
+          "maximum": "1.2"
+        }
+      }
+    ]
   },
   "cli": {
     "releases": [

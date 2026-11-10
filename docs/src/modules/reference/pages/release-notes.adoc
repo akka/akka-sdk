@@ -12,6 +12,16 @@ Current versions
 
 == November 2026
 
+* xref:release-notes/runtime/1.7.6.adoc[Akka Runtime 1.7.6]
+- Startup check for the eventing start timestamp of a service.
+- Log of requests that JWT validation rejects.
+- Fixes for eventing from a timestamp, HTTP/2 connections, views, and autonomous agents.
+
+* xref:release-notes/runtime/1.7.5.adoc[Akka Runtime 1.7.5]
+- Trace context in logs.
+- Logs and a duration metric for evaluations.
+- Fixes for a failed runtime start, idle autonomous agents, workflow replicas, and views.
+
 * [[cli-3-0-81]]Akka CLI 3.0.81
 - **Breaking change**: Organization membership is now controlled by `akka organization role-bindings` (it used to be `akka organization users`).
 - Management of custom roles
