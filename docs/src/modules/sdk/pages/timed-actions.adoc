@@ -78,7 +78,7 @@ include::example$reliable-timers/src/main/java/com/example/application/OrderEnti
 <1> The `placeOrder` method initiates an order.
 <2> Sets the `placed` field to `true`.
 
-NOTE: Timers are unique by name across the entire cluster, so scheduling another timer will replace an existing one of the same name. 
+NOTE: Timers are unique by name within a region, so scheduling another timer will replace an existing one of the same name. In a multi-region project, a timer is stored in the region where it was scheduled and is not replicated to other regions. A timer scheduled from a Consumer is scheduled in every region where the Consumer processes the event.
 
 == Handling the timer call
 
