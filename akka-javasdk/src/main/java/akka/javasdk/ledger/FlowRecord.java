@@ -37,11 +37,15 @@ public sealed interface FlowRecord
    *   <li>An {@link ActivityRecord} is one line for each event. Each line names the agent component
    *       id and the instance id. A typed event writes its fields, and {@link
    *       ActivityRecord.Event.Other} writes its kind.
-   *   <li>A {@link GuardrailDecisionRecord} is one line with the guardrail name, the boundary, the
-   *       tool name when there is one, the decision and the explanation. The line says {@code
-   *       report only} when the decision did not stop the interaction because the guardrail only
-   *       reports. For a {@link GuardrailDecisionRecord.Decision#FAIL} of a guardrail that does not
-   *       only report, the line gives the fail mode.
+   *   <li>A {@link GuardrailDecisionRecord} is one line with the guardrail name, the agent
+   *       component id, the boundary, the tool name when there is one, the decision and the
+   *       explanation. When the list holds the interaction that the decision was made in, and that
+   *       interaction has a {@link TaskContext}, the line also names the instance id. In a flow,
+   *       the runtime records a decision while its interaction runs and the interaction when it
+   *       ends, so the line comes before the block of its interaction. The line says {@code report
+   *       only} when the decision did not stop the interaction because the guardrail only reports.
+   *       For a {@link GuardrailDecisionRecord.Decision#FAIL} of a guardrail that does not only
+   *       report, the line gives the fail mode.
    *   <li>An {@link EvaluationRecord} is left out, so a judge does not read the verdicts of other
    *       evaluators.
    * </ul>
@@ -54,13 +58,23 @@ public sealed interface FlowRecord
   static String transcript(List<? extends FlowRecord> records) {
     // the last system message written for each agent component id
     Map<String, String> systemMessages = new HashMap<>();
+    // the instance id of each interaction with a task context, for the guardrail lines
+    Map<String, String> instanceIds = new HashMap<>();
+    for (FlowRecord record : records) {
+      if (record instanceof InteractionRecord interaction) {
+        interaction
+            .taskContext()
+            .ifPresent(
+                task -> instanceIds.put(interaction.interactionId(), task.agentInstanceId()));
+      }
+    }
     var blocks = new ArrayList<String>();
     for (FlowRecord record : records) {
       var block =
           switch (record) {
             case InteractionRecord interaction -> interactionBlock(interaction, systemMessages);
             case ActivityRecord activity -> activityBlock(activity);
-            case GuardrailDecisionRecord decision -> guardrailDecisionLine(decision);
+            case GuardrailDecisionRecord decision -> guardrailDecisionLine(decision, instanceIds);
             case EvaluationRecord ignored -> "";
           };
       if (!block.isEmpty()) {
@@ -182,12 +196,18 @@ public sealed interface FlowRecord
         + withList(event.subtaskIds(), ", subtasks ");
   }
 
-  private static String guardrailDecisionLine(GuardrailDecisionRecord record) {
+  private static String guardrailDecisionLine(
+      GuardrailDecisionRecord record, Map<String, String> instanceIds) {
     var sb =
         new StringBuilder("Guardrail ")
             .append(record.name())
-            .append(", boundary ")
-            .append(record.boundary());
+            .append(" for agent ")
+            .append(record.agentComponentId());
+    var instanceId = instanceIds.get(record.interactionId());
+    if (instanceId != null) {
+      sb.append(", instance ").append(instanceId);
+    }
+    sb.append(", boundary ").append(record.boundary());
     record.toolCall().ifPresent(toolCall -> sb.append(", tool ").append(toolCall.toolName()));
     sb.append(", decision ").append(record.decision());
     // the fail mode has no effect for a guardrail that only reports

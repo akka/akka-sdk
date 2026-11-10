@@ -85,6 +85,26 @@ public class FlowRecordTest {
         Instant.EPOCH);
   }
 
+  private static GuardrailDecisionRecord piiDenial(String agentComponentId, String interactionId) {
+    return new GuardrailDecisionRecord(
+        "guardrail-pii-" + interactionId,
+        agentComponentId,
+        interactionId,
+        "session-1",
+        Optional.of("flow-1"),
+        "pii",
+        Optional.empty(),
+        "policy",
+        GuardrailDecisionRecord.Boundary.BEFORE_AGENT_RESPONSE,
+        GuardrailDecisionRecord.Decision.DENY,
+        "response holds an email address",
+        true,
+        GuardrailDecisionRecord.FailMode.FAIL_CLOSED,
+        Duration.ZERO,
+        Optional.empty(),
+        Instant.EPOCH);
+  }
+
   private static ActivityRecord activity(ActivityRecord.Event... events) {
     return new ActivityRecord(
         "activity-1",
@@ -161,7 +181,8 @@ public class FlowRecordTest {
             Activity of agent coordinator-agent, instance coordinator-1: started 1 delegation \
             to [worker-agent (worker-1)], subtasks [subtask-1]
 
-            Guardrail no-refunds, boundary BEFORE_TOOL_CALL, tool RefundTools_refund, \
+            Guardrail no-refunds for agent coordinator-agent, boundary BEFORE_TOOL_CALL, \
+            tool RefundTools_refund, \
             decision DENY: refunds are not allowed
 
             Interaction of agent worker-agent:
@@ -298,12 +319,54 @@ public class FlowRecordTest {
 
     assertThat(transcript.lines().filter(line -> !line.isEmpty()).toList())
         .containsExactly(
-            "Guardrail no-refunds, boundary BEFORE_TOOL_CALL, tool refund, decision DENY, report"
-                + " only: refunds are not allowed",
-            "Guardrail pii, boundary BEFORE_MODEL_CALL, decision FAIL, fail mode FAIL_OPEN:"
-                + " classifier unavailable",
-            "Guardrail pii, boundary BEFORE_MODEL_CALL, decision FAIL, report only: timeout",
-            "Guardrail tone, boundary BEFORE_AGENT_RESPONSE, decision ALLOW");
+            "Guardrail no-refunds for agent coordinator-agent, boundary BEFORE_TOOL_CALL, tool"
+                + " refund, decision DENY, report only: refunds are not allowed",
+            "Guardrail pii for agent coordinator-agent, boundary BEFORE_MODEL_CALL, decision FAIL,"
+                + " fail mode FAIL_OPEN: classifier unavailable",
+            "Guardrail pii for agent coordinator-agent, boundary BEFORE_MODEL_CALL, decision FAIL,"
+                + " report only: timeout",
+            "Guardrail tone for agent coordinator-agent, boundary BEFORE_AGENT_RESPONSE, decision"
+                + " ALLOW");
+  }
+
+  @Test
+  public void namesTheAgentOfAGuardrailDecisionAndTheInstanceWhenItsInteractionIsInTheList() {
+    var workerA =
+        interaction(
+            "worker-a",
+            "You find contacts.",
+            "Find contacts",
+            List.of(response("Alice, alice@example.com")),
+            List.of(),
+            Optional.of(
+                new TaskContext(
+                    "worker-a-1", "s1", "research", "Find contacts", "Contacts", 1, 5)));
+    var workerB =
+        interaction(
+            "worker-b",
+            "You find contacts.",
+            "Find more contacts",
+            List.of(response("Bob, bob@example.com")),
+            List.of(),
+            Optional.of(
+                new TaskContext(
+                    "worker-b-1", "s2", "research", "Find more contacts", "Contacts", 1, 5)));
+
+    var transcript =
+        FlowRecord.transcript(
+            List.of(
+                piiDenial("worker-b", workerB.interactionId()),
+                workerA,
+                workerB,
+                piiDenial("worker-c", "interaction-not-in-the-list")));
+
+    assertThat(transcript.lines().filter(line -> line.startsWith("Guardrail")).toList())
+        .containsExactly(
+            "Guardrail pii for agent worker-b, instance worker-b-1, boundary"
+                + " BEFORE_AGENT_RESPONSE, decision DENY, report only: response holds an email"
+                + " address",
+            "Guardrail pii for agent worker-c, boundary BEFORE_AGENT_RESPONSE, decision DENY,"
+                + " report only: response holds an email address");
   }
 
   @Test
