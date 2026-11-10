@@ -45,7 +45,7 @@ public class ResponseQualityDurableEvaluator
 
   private Effect fetchTranscript() {
     var subject = (Subject.Interaction) evaluationContext().subject();
-    // a real evaluator would fetch the transcript via the interaction log
+    // a real evaluator would fetch the transcript via the ledger client
     String transcript =
         "interaction " + subject.interactionId() + " of agent " + subject.agentComponentId();
     return effects()

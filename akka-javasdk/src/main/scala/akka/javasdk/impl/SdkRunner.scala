@@ -256,15 +256,20 @@ object SdkRunner {
           ephemeralHttpPort = false)
       }
 
-    val agentInteractionLogEnabled =
+    val ledgerEnabled =
       devModeSettings.isDefined || // always enabled in dev mode
-      applicationConf.getBoolean("akka.javasdk.agent.interaction-log.enabled")
+      applicationConf.getBoolean("akka.javasdk.agent.ledger.enabled")
 
     val spiDeployedEventingSettings = extractDeployedEventingSettings(applicationConf)
 
-    // FIXME: read the ledger settings from configuration
-    val ledgerSettings =
-      if (agentInteractionLogEnabled) SpiLedgerSettings.Enabled else SpiLedgerSettings.Disabled
+    val ledgerSettings = {
+      val records = applicationConf.getConfig("akka.javasdk.agent.ledger.records")
+      new SpiLedgerSettings(
+        enabled = ledgerEnabled,
+        toolCallIntent = records.getBoolean("tool-call-intent"),
+        guardrailAllow = records.getBoolean("guardrail-allow"),
+        sanitizerNoMasking = records.getBoolean("sanitizer-no-masking"))
+    }
 
     new SpiSettings(
       eventSourcedEntitySnapshotEvery,

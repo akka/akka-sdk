@@ -323,6 +323,27 @@ include::example$doc-snippets/src/main/java/com/example/evaluator/LedgerUsage.ja
 
 See link:{attachmentsdir}/api/akka/javasdk/ledger/FlowRecord.html[`FlowRecord`] for the kinds of records and what the transcript contains.
 
+[#_optional_ledger_records]
+=== Optional ledger records
+
+Each ledger record adds database load and stored data. Turn off these records in `application.conf`:
+
+[source,conf,indent=0]
+.src/main/resources/application.conf
+----
+akka.javasdk.agent.ledger.records {
+  tool-call-intent = false
+  guardrail-allow = false
+  sanitizer-no-masking = false
+}
+----
+
+`tool-call-intent`:: The record that the runtime writes before each tool call, with the arguments that the runtime sends to the tool. The runtime writes the interaction record when the interaction ends. It holds the same call with the arguments from the model, which differ when an MCP `ToolInterceptor` changes them in `interceptRequest`. Without the intent, a tool call leaves no trace when the runtime stops before the interaction ends. The only exception is a tool that a before-tool-call guardrail checks while `guardrail-allow` is on: the runtime records the allow decision before the call, with the name of the tool and without the arguments. Keep the intent for a tool that performs a protected operation.
+`guardrail-allow`:: The record of a guardrail decision that allows, for enforcing and report-only guardrails. Without it, the ledger has no record that the guardrail checked an interaction or a tool call that it allowed, and no allow count to compute a pass rate from. Metrics still count the decision.
+`sanitizer-no-masking`:: The record of a sanitizer that masked nothing in an interaction. Without it, the ledger has no record that the sanitizer ran in that interaction. A sanitizer that masked text keeps its record.
+
+The defaults keep all of these records. Outside dev mode and tests, `akka.javasdk.agent.ledger.enabled = false` disables the ledger, and the keys then have no effect. Dev mode and tests always enable the ledger, and the keys apply there. The ledger always holds the interactions, the evaluations, and the guardrail denials and failures, so evaluators work with all three keys off. Each runtime node writes a control configuration record that lists the guardrails, sanitizers and evaluators it runs, and the keys that are off. With a key off, that record still shows that the control was active, and a reader can tell a record that the configuration skipped from a record that was lost.
+
 == Testing
 
 === Evaluating an agent with eval cases
