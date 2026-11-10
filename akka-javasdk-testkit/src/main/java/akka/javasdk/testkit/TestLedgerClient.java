@@ -38,10 +38,14 @@ import java.util.stream.Collectors;
  *
  * <p>The records of a flow, as {@link #getFlowRecords(String)} returns them, are the seeded
  * interactions, guardrail decisions and activity records with that flow id, and the seeded
- * evaluations of the seeded interactions with that flow id. They come oldest timestamp first, and
- * records with the same timestamp come in the order they were seeded. A page holds at most 100
- * records. A position is the 1-based index of a record in that order. The ledger uses other values,
- * so pass a position only back to {@link #getFlowRecords(String, long)}.
+ * evaluations of the seeded interactions with that flow id. They come in the order they were
+ * seeded, as the runtime returns them in the order it recorded them. The timestamps of the records
+ * do not change the order. To read a flow as the runtime records it, seed a guardrail decision
+ * before the interaction it was made in, and an evaluation after the interaction it evaluates. A
+ * record that is seeded again with the same id moves to the end. A page holds at most 100 records.
+ * Each seed takes the next position, so a read from the next position of a page also returns the
+ * records seeded after that read. The ledger uses other values, so pass a position only back to
+ * {@link #getFlowRecords(String, long)}.
  */
 public final class TestLedgerClient implements LedgerClient {
 
@@ -53,8 +57,8 @@ public final class TestLedgerClient implements LedgerClient {
       new ConcurrentHashMap<>();
   private final ConcurrentMap<String, ActivityRecord> activities = new ConcurrentHashMap<>();
 
-  // The order in which the records were seeded, which orders the records of a flow with the same
-  // timestamp. A record that is seeded again takes its new place. A seed writes the order before
+  // The order in which the records were seeded, which orders the records of a flow and gives their
+  // positions. A record that is seeded again takes its new place. A seed writes the order before
   // the record, so a flow read that runs during a seed finds the order of every record it reads.
   // Replaced records stay in the map.
   private final AtomicLong seedCount = new AtomicLong();
@@ -256,14 +260,23 @@ public final class TestLedgerClient implements LedgerClient {
                 record.subject() instanceof EvaluationRecord.Subject.Interaction interaction
                     && interactionIds.contains(interaction.interactionId()))
         .forEach(flowRecords::add);
-    flowRecords.sort(Comparator.comparing(FlowRecord::timestamp).thenComparingLong(seedOrder::get));
-
-    // position 0 reads from the start, as position 1 does
-    var from = (int) Math.min(Math.max(fromPosition, 1) - 1, flowRecords.size());
-    var to = Math.min(from + FLOW_PAGE_LIMIT, flowRecords.size());
-    var nextPosition = to > from ? to + 1L : fromPosition;
+    // The position of a record is its number in the order of all seeds, starting at 1, so position
+    // 0 reads from the start. The read looks up each order once, so a seed during the read cannot
+    // change the order while the records are sorted.
+    var positioned = new ArrayList<Map.Entry<Long, FlowRecord>>();
+    for (FlowRecord record : flowRecords) {
+      var position = seedOrder.get(record) + 1;
+      if (position >= fromPosition) {
+        positioned.add(Map.entry(position, record));
+      }
+    }
+    positioned.sort(Map.Entry.comparingByKey());
+    var page = positioned.subList(0, Math.min(FLOW_PAGE_LIMIT, positioned.size()));
+    var nextPosition = page.isEmpty() ? fromPosition : page.get(page.size() - 1).getKey() + 1;
     return new FlowPage(
-        List.copyOf(flowRecords.subList(from, to)), nextPosition, to < flowRecords.size());
+        page.stream().map(Map.Entry::getValue).toList(),
+        nextPosition,
+        positioned.size() > FLOW_PAGE_LIMIT);
   }
 
   @Override

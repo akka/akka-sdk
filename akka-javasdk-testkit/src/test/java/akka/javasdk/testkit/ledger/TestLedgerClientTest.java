@@ -173,19 +173,19 @@ public class TestLedgerClientTest {
   }
 
   @Test
-  public void readsTheRecordsOfAFlowOldestFirst() {
+  public void readsTheRecordsOfAFlowInTheOrderTheyWereSeeded() {
     var flow = Optional.of("flow-1");
     var otherFlow = Optional.of("flow-2");
+    var decision = decision("g1", "i1", "c1", flow, Instant.ofEpochSecond(3));
     var interaction = interaction("i1", "coordinator-agent", "c1", flow, Instant.ofEpochSecond(1));
     var activity = activity("a1", "flow-1", Instant.ofEpochSecond(2));
-    var decision = decision("g1", "i1", "c1", flow, Instant.ofEpochSecond(3));
     var evaluation = interactionEvaluation("e1", "i1", Instant.ofEpochSecond(4));
     var ledger =
         TestLedgerClient.create()
-            .seed(evaluation)
             .seed(decision)
-            .seed(activity)
             .seed(interaction)
+            .seed(activity)
+            .seed(evaluation)
             .seed(interaction("i2", "coordinator-agent", "c2", otherFlow, Instant.ofEpochSecond(1)))
             .seed(activity("a2", "flow-2", Instant.ofEpochSecond(2)))
             .seed(decision("g2", "i2", "c2", otherFlow, Instant.ofEpochSecond(3)))
@@ -195,7 +195,7 @@ public class TestLedgerClientTest {
 
     var page = ledger.getFlowRecords("flow-1");
 
-    assertEquals(List.of(interaction, activity, decision, evaluation), page.records());
+    assertEquals(List.of(decision, interaction, activity, evaluation), page.records());
     assertFalse(page.hasMore());
     assertEquals(page, ledger.getFlowRecordsAsync("flow-1").toCompletableFuture().join());
     assertEquals(new FlowPage(List.of(), 0, false), ledger.getFlowRecords("flow-3"));
@@ -229,18 +229,6 @@ public class TestLedgerClientTest {
             .seed(evaluation);
 
     assertEquals(List.of(interaction, evaluation), ledger.getFlowRecords("flow-1").records());
-  }
-
-  @Test
-  public void readsTheRecordsOfAFlowWithTheSameTimestampInTheOrderTheyWereSeeded() {
-    var timestamp = Instant.ofEpochSecond(1);
-    var first = activity("a2", "flow-1", timestamp);
-    var second = interaction("i1", "coordinator-agent", "c1", Optional.of("flow-1"), timestamp);
-    var third = activity("a1", "flow-1", timestamp);
-    var ledger = TestLedgerClient.create().seed(first).seed(second).seed(third);
-
-    assertEquals(
-        List.<FlowRecord>of(first, second, third), ledger.getFlowRecords("flow-1").records());
   }
 
   @Test
@@ -280,6 +268,20 @@ public class TestLedgerClientTest {
     FlowPage continued = ledger.getFlowRecords("flow-1", last.nextPosition());
     assertEquals(List.of(second), continued.records());
     assertFalse(continued.hasMore());
+  }
+
+  @Test
+  public void readsARecordSeededAfterAReadFromTheNextPositionWhateverItsTimestamp() {
+    var first = activity("a1", "flow-1", Instant.ofEpochSecond(10));
+    var ledger = TestLedgerClient.create().seed(first);
+    FlowPage page = ledger.getFlowRecords("flow-1");
+    assertEquals(List.of(first), page.records());
+
+    var older = activity("a2", "flow-1", Instant.ofEpochSecond(5));
+    ledger.seed(older);
+
+    assertEquals(List.of(older), ledger.getFlowRecords("flow-1", page.nextPosition()).records());
+    assertEquals(List.of(first, older), ledger.getFlowRecords("flow-1").records());
   }
 
   @Test
