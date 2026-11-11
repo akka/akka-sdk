@@ -11,7 +11,8 @@ package akka.javasdk.agent.autonomous;
  * @param messageId the id set on the message, or the id that the runtime generated, also for a
  *     rejected message
  * @param status where the message went, or why the agent rejected it
- * @param duplicate true when a message with this id was received before. {@code status} is then the
- *     status of that message.
+ * @param duplicate true when the agent already has a message with this id, because the message is
+ *     pending or among {@link AgentState#recentMessages()}. {@code status} is then the status of
+ *     that message.
  */
 public record MessageAcknowledgement(String messageId, MessageStatus status, boolean duplicate) {}

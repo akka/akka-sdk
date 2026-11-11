@@ -78,9 +78,10 @@ public final class AgentMessage {
   }
 
   /**
-   * Return a new message with the given id. A retry with the same id gets the status of the first
-   * message, and the agent stores nothing new. Without an id, the runtime generates one, and a
-   * retry is a new message.
+   * Return a new message with the given id. While the first message is pending or among {@link
+   * AgentState#recentMessages()}, a retry with the same id gets the status of the first message,
+   * and the agent stores nothing new. The agent does not store a rejected message, so a retry of it
+   * is a new message. Without an id, the runtime generates one, and a retry is a new message.
    *
    * @throws IllegalArgumentException if the id is null or empty
    */
