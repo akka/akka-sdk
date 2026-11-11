@@ -147,7 +147,6 @@ The agent rejects a message when:
 
 * the task of the message ended, or the task is not assigned to the agent
 * the agent accepts no tasks
-* an attachment carries inline bytes
 * the agent already holds the maximum number of pending messages
 
 `Consumed` and `Dropped` are only the status of a retry and of a message in the agent state. A new message never has them.
