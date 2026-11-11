@@ -132,7 +132,7 @@ link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.MessagingNo
 
 === Struggle
 
-link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.StruggleNotification.html[`Notification.StruggleNotification`]: derived signals for repeated failures, stuck dependencies, and approaching limits. The runtime tracks counters and emits these once per detection. Notifications are deduplicated until the underlying counter resets, for example on task termination or successful recovery. Thresholds are configurable in `reference.conf` under `akka.runtime.autonomous-agent.struggle`.
+link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.StruggleNotification.html[`Notification.StruggleNotification`]: derived signals for repeated failures, stuck dependencies, and approaching limits. The runtime tracks counters and emits these once per detection. Notifications are deduplicated until the underlying counter resets, for example on task termination or successful recovery.
 
 [options="header", cols="1,3"]
 |===
