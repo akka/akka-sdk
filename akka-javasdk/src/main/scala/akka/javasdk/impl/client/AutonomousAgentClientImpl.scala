@@ -17,18 +17,23 @@ import akka.NotUsed
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
+import akka.javasdk.agent.autonomous.AgentMessage
 import akka.javasdk.agent.autonomous.AgentSetup
 import akka.javasdk.agent.autonomous.AgentState
 import akka.javasdk.agent.autonomous.AutonomousAgent
+import akka.javasdk.agent.autonomous.MessageAcknowledgement
+import akka.javasdk.agent.autonomous.MessageStatus
 import akka.javasdk.agent.autonomous.Notification
 import akka.javasdk.agent.task.Task
 import akka.javasdk.agent.task.TaskKey
 import akka.javasdk.client.AutonomousAgentClient
 import akka.javasdk.impl.MetadataImpl
+import akka.javasdk.impl.agent.AgentImpl
 import akka.javasdk.impl.agent.autonomous.AgentSetupImpl
 import akka.javasdk.impl.agent.autonomous.CapabilityConverter
 import akka.javasdk.impl.serialization.Serializer
 import akka.runtime.sdk.spi.SpiAgent
+import akka.runtime.sdk.spi.SpiAutonomousAgent
 import akka.runtime.sdk.spi.SpiAutonomousAgent.{ Notification => SpiNotification }
 import akka.runtime.sdk.spi.{ ComponentClients => RuntimeComponentClients }
 import akka.stream.Materializer
@@ -133,6 +138,27 @@ private[javasdk] final class AutonomousAgentClientImpl(
           AutonomousAgentClientImpl.toTokenUsage(spiState.totalTokenUsage),
           spiState.currentTask.map(t => new TaskKey(t.id, t.name)).toJava,
           spiState.pendingTaskIds.asJava)
+      }
+      .asJava
+  }
+
+  override def sendMessageAsync(message: AgentMessage): CompletionStage[MessageAcknowledgement] = {
+    // log the id only, the text is user content
+    log.debug(
+      "sendMessage: agent [{}] instance [{}] message [{}]",
+      agentComponentId,
+      agentInstanceId,
+      message.messageId.orElse(""))
+    runtimeComponentClients.autonomousAgentClient
+      .sendMessage(
+        agentComponentId,
+        agentInstanceId,
+        AutonomousAgentClientImpl.toSpiMessage(message),
+        callMetadata.flatMap(_.asInstanceOf[MetadataImpl].context))
+      .map { spiAcknowledgement =>
+        val acknowledgement = AutonomousAgentClientImpl.toAcknowledgement(spiAcknowledgement)
+        log.debug("sendMessage: message [{}] acknowledged with [{}]", acknowledgement.messageId, acknowledgement.status)
+        acknowledgement
       }
       .asJava
   }
@@ -311,4 +337,26 @@ private[javasdk] object AutonomousAgentClientImpl {
       usage.cacheReadInputTokenCount,
       usage.cacheWriteInputTokenCount,
       usage.effectiveInputTokenCount)
+
+  def toSpiMessage(message: AgentMessage): SpiAutonomousAgent.Message =
+    new SpiAutonomousAgent.Message(
+      message.text,
+      message.attachments.asScala.iterator.map(AgentImpl.toSpiMessageContent).toSeq,
+      message.messageId.toScala,
+      message.taskId.toScala)
+
+  def toMessageStatus(status: SpiAutonomousAgent.MessageStatus): MessageStatus =
+    status match {
+      case s: SpiAutonomousAgent.MessageStatus.ForCurrentTask => new MessageStatus.ForCurrentTask(s.taskId)
+      case s: SpiAutonomousAgent.MessageStatus.Held           => new MessageStatus.Held(s.taskId.toJava)
+      case s: SpiAutonomousAgent.MessageStatus.Consumed       => new MessageStatus.Consumed(s.taskId, s.interactionId)
+      case s: SpiAutonomousAgent.MessageStatus.Dropped        => new MessageStatus.Dropped(s.taskId)
+      case s: SpiAutonomousAgent.MessageStatus.Rejected       => new MessageStatus.Rejected(s.reason)
+    }
+
+  def toAcknowledgement(acknowledgement: SpiAutonomousAgent.MessageAcknowledgement): MessageAcknowledgement =
+    new MessageAcknowledgement(
+      acknowledgement.messageId,
+      toMessageStatus(acknowledgement.status),
+      acknowledgement.duplicate)
 }
