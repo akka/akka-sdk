@@ -292,16 +292,16 @@ public sealed interface Notification {
       implements StruggleNotification {}
 
   /**
-   * Derived signal: a task waiting on dependencies has been waiting longer than the configured
-   * threshold. Re-fires periodically until the dependency resolves.
+   * Derived signal: a task waiting on dependencies has been waiting longer than a threshold.
+   * Re-fires periodically until the dependency resolves.
    */
   record TaskDependencyStuck(
       String taskId, List<String> pendingDependencyTaskIds, long waitDurationSeconds)
       implements StruggleNotification {}
 
   /**
-   * Derived signal: a task is at or beyond a configurable fraction (default 80%) of its max
-   * iterations. Useful as a heads-up before the framework cancels with "max iterations".
+   * Derived signal: a task is at or beyond 80% of its max iterations. Useful as a heads-up before
+   * the framework cancels with "max iterations".
    */
   record TaskApproachingMaxIterations(
       String taskId, String taskName, int iteration, int maxIterations)

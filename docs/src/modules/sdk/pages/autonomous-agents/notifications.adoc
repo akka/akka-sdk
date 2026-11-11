@@ -139,8 +139,8 @@ link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.StruggleNot
 | Notification | Description
 
 | link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.TaskStruggleDetected.html[`Notification.TaskStruggleDetected`] | Repeated iteration failures or repeated rule rejections on the same task.
-| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.TaskDependencyStuck.html[`Notification.TaskDependencyStuck`] | A task has been waiting on dependencies past the configured threshold; re-fires periodically.
-| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.TaskApproachingMaxIterations.html[`Notification.TaskApproachingMaxIterations`] | A task has reached the configured fraction (default 80%) of its max iterations.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.TaskDependencyStuck.html[`Notification.TaskDependencyStuck`] | A task has been waiting on dependencies past a threshold; re-fires periodically.
+| link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.TaskApproachingMaxIterations.html[`Notification.TaskApproachingMaxIterations`] | A task has reached 80% of its max iterations.
 | link:{attachmentsdir}/api/akka/javasdk/agent/autonomous/Notification.RepeatedIterationFailure.html[`Notification.RepeatedIterationFailure`] | Repeated iteration failures in flows not tied to a specific task (pre-task setup, request-based delegation).
 |===
 
