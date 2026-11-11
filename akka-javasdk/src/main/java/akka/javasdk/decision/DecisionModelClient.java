@@ -24,6 +24,10 @@ import java.util.concurrent.CompletionStage;
  * <p>The client uses the provider configured in {@code akka.javasdk.decision.model-provider} unless
  * you choose one with {@link #model(DecisionModelProvider)}.
  *
+ * <p>The client sends the state and the questions to the model API as they are. Guardrails and
+ * sanitizers do not apply to a decision request. To mask sensitive text before the call, use the
+ * {@link akka.javasdk.SanitizerClient}.
+ *
  * <p>A call fails with:
  *
  * <ul>

@@ -51,6 +51,8 @@ include::example$doc-snippets/src/main/java/com/example/decision/TriageEndpoint.
 
 A `String` state is sent as text. Any other object is serialized to JSON. The state must serialize to JSON text, an object or an array: the client rejects an empty string, a number, a boolean and a byte array with an `IllegalArgumentException`. In the previous example, `ticket` can be a string or an instance of your own JSON-serializable type like `Ticket`.
 
+The client sends the state and the questions to the model API as they are. Guardrails and sanitizers do not apply to a decision request. To mask sensitive text before the call, use the `SanitizerClient`, as described in xref:sdk:sanitization.adoc#_ad_hoc_sanitization[Ad hoc sanitization].
+
 Use `invokeAsync()` to get a `CompletionStage<Decision>` instead of blocking. `questions` also accepts a `Collection<Question<?>>`, for questions collected at run time.
 
 == Reading the decision
