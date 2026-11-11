@@ -79,6 +79,11 @@ public interface AutonomousAgentClient {
    * same capabilities in the same order succeeds. A retry is therefore safe. A call with a
    * different setup throws an exception, and the agent keeps the setup it has.
    *
+   * <p>The comparison also covers values that the capabilities take from the deployed components
+   * and from configuration: the descriptions, accepted tasks and request schemas of other agents,
+   * the result schemas of tasks, and default limits. A retry after a deployment that changed one of
+   * these values fails.
+   *
    * @param setup the per-instance configuration
    */
   default void setup(AgentSetup setup) {
