@@ -41,6 +41,7 @@ public class ConsumerValidations {
         .combine(workflowSubscriptionValidations(typeDef, effectType))
         .combine(topicPublicationValidations(typeDef))
         .combine(publishStreamIdMustBeFilled(typeDef))
+        .combine(Validations.serviceStreamPlatformServiceValidation(typeDef))
         .combine(ambiguousHandlerValidations(typeDef, effectType))
         .combine(strictlyPublicCommandHandlerArityShouldBeZeroOrOne(typeDef, effectType))
         .combine(missingHandlerValidations(typeDef, effectType))

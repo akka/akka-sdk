@@ -12,6 +12,7 @@ import java.util.Optional;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 
 /**
@@ -40,6 +41,14 @@ public record CompileTimeAnnotationDef(AnnotationMirror annotationMirror) implem
         .map(AnnotationValue::getValue)
         .filter(v -> v instanceof Boolean)
         .map(v -> (Boolean) v);
+  }
+
+  @Override
+  public Optional<String> getEnumValue(String attributeName) {
+    return getAttributeValue(attributeName)
+        .map(AnnotationValue::getValue)
+        .filter(v -> v instanceof VariableElement)
+        .map(v -> ((VariableElement) v).getSimpleName().toString());
   }
 
   @Override

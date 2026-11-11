@@ -26,7 +26,8 @@ public interface MockedGrpcServices {
 
   /**
    * Register or replace a mock instance for calls made through {@code
-   * grpcClientProvider.grpcClientFor(serviceClass, serviceName)}.
+   * grpcClientProvider.grpcClientFor(serviceClass, serviceName)}. The mock also applies to a
+   * service with that name in a platform service, reached through {@code forPlatformService}.
    */
   <T extends AkkaGrpcClient> void mockResponse(
       String serviceName, Class<T> serviceClass, T mockInstance);
