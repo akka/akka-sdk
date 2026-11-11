@@ -124,9 +124,9 @@ A message is for one task of the agent:
 
 The model sees the message in its next request for the task of the message. That request is at the start of an iteration, or after the tool calls of a round when the model call continues. While a tool call runs, the message waits for it.
 
-A coordinator that waits for its workers in a blocking delegation makes no model call. Its model sees the message when the workers finish. The acknowledgement does not say that the message waits for a tool call or a delegation.
+A coordinator that waits for its workers in a blocking delegation makes no model call. Its model sees the message when the workers finish.
 
-The model sees that the message comes from an external sender, not who sent it. Check in the endpoint who may send messages to an agent, and put a name in the text when the model needs it.
+The model sees that the message comes from an external sender, not who sent it.
 
 === Message statuses
 
