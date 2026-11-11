@@ -119,7 +119,9 @@ public interface AutonomousAgentClient {
    *
    * <p>The acknowledgement says where the message went, or why the agent rejected it. The agent
    * does not store a rejected message. The agent drops a message whose task ends before the message
-   * is consumed, see {@link MessageStatus.Consumed}.
+   * is consumed, see {@link MessageStatus.Consumed}. {@link #getState()} and the {@link
+   * Notification.MessagesConsumed} and {@link Notification.MessagesDropped} notifications report
+   * what happened to it.
    *
    * <p>Set {@link AgentMessage#messageId(String)} to make a retry safe. A retry with the same id
    * gets the status of the first message, and the agent stores nothing new.

@@ -22,6 +22,7 @@ import akka.javasdk.agent.autonomous.AgentSetup
 import akka.javasdk.agent.autonomous.AgentState
 import akka.javasdk.agent.autonomous.AutonomousAgent
 import akka.javasdk.agent.autonomous.MessageAcknowledgement
+import akka.javasdk.agent.autonomous.MessageState
 import akka.javasdk.agent.autonomous.MessageStatus
 import akka.javasdk.agent.autonomous.Notification
 import akka.javasdk.agent.task.Task
@@ -137,7 +138,9 @@ private[javasdk] final class AutonomousAgentClientImpl(
           spiState.instructions,
           AutonomousAgentClientImpl.toTokenUsage(spiState.totalTokenUsage),
           spiState.currentTask.map(t => new TaskKey(t.id, t.name)).toJava,
-          spiState.pendingTaskIds.asJava)
+          spiState.pendingTaskIds.asJava,
+          AutonomousAgentClientImpl.toMessageStates(spiState.pendingMessages),
+          AutonomousAgentClientImpl.toMessageStates(spiState.recentMessages))
       }
       .asJava
   }
@@ -309,6 +312,10 @@ private[javasdk] final class AutonomousAgentClientImpl(
       new Notification.MessageReceived(m.from.componentId, m.from.instanceId, m.text)
     case c: SpiNotification.ContactAdded =>
       new Notification.ContactAdded(c.contact.componentId, c.contact.instanceId)
+    case m: SpiNotification.MessagesConsumed =>
+      new Notification.MessagesConsumed(m.taskId, m.messageIds.asJava, m.interactionId)
+    case m: SpiNotification.MessagesDropped =>
+      new Notification.MessagesDropped(m.taskId, m.messageIds.asJava)
 
     // Struggle signals
     case s: SpiNotification.TaskStruggleDetected =>
@@ -359,4 +366,7 @@ private[javasdk] object AutonomousAgentClientImpl {
       acknowledgement.messageId,
       toMessageStatus(acknowledgement.status),
       acknowledgement.duplicate)
+
+  def toMessageStates(states: Seq[SpiAutonomousAgent.MessageState]): java.util.List[MessageState] =
+    states.map(state => new MessageState(state.messageId, toMessageStatus(state.status))).asJava
 }
