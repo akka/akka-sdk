@@ -47,7 +47,10 @@ public sealed interface Notification {
   /** Conversation notifications: conversation creation, turns, participation. */
   sealed interface ConversationNotification extends Notification {}
 
-  /** Messaging notifications: contact introductions and message delivery. */
+  /**
+   * Messaging notifications: contact introductions, messages from other agents, and messages from
+   * clients that were consumed or dropped.
+   */
   sealed interface MessagingNotification extends Notification {}
 
   /**
@@ -259,6 +262,22 @@ public sealed interface Notification {
   /** A new contact was introduced to this agent. */
   record ContactAdded(String contactComponentId, String contactInstanceId)
       implements MessagingNotification {}
+
+  /**
+   * Messages from clients for the task {@code taskId} were consumed in one model call. The ledger
+   * records that model call under {@code interactionId}.
+   *
+   * @see akka.javasdk.client.AutonomousAgentClient#sendMessage(AgentMessage)
+   */
+  record MessagesConsumed(String taskId, List<String> messageIds, String interactionId)
+      implements MessagingNotification {}
+
+  /**
+   * Messages from clients for the task {@code taskId} were dropped because the task ended first.
+   *
+   * @see akka.javasdk.client.AutonomousAgentClient#sendMessage(AgentMessage)
+   */
+  record MessagesDropped(String taskId, List<String> messageIds) implements MessagingNotification {}
 
   // -- Struggle signals ------------------------------------------------------
 

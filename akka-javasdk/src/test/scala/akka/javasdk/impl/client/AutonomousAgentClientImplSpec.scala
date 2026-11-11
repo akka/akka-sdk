@@ -9,6 +9,7 @@ import java.util.Optional
 
 import akka.javasdk.agent.MessageContent
 import akka.javasdk.agent.autonomous.AgentMessage
+import akka.javasdk.agent.autonomous.MessageState
 import akka.javasdk.agent.autonomous.MessageStatus
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiAutonomousAgent
@@ -85,6 +86,21 @@ class AutonomousAgentClientImplSpec extends AnyWordSpec with Matchers {
             new SpiAutonomousAgent.MessageStatus.Held(None),
             duplicate = false))
         .duplicate shouldBe false
+    }
+  }
+
+  "AutonomousAgentClientImpl.toMessageStates" should {
+
+    "keep the order and the statuses" in {
+      val states = AutonomousAgentClientImpl.toMessageStates(
+        Seq(
+          new SpiAutonomousAgent.MessageState("m2", new SpiAutonomousAgent.MessageStatus.Dropped("t1")),
+          new SpiAutonomousAgent.MessageState("m1", new SpiAutonomousAgent.MessageStatus.Consumed("t1", "i1")),
+          new SpiAutonomousAgent.MessageState("m3", new SpiAutonomousAgent.MessageStatus.Held(Some("t2")))))
+      states shouldBe java.util.List.of(
+        new MessageState("m2", new MessageStatus.Dropped("t1")),
+        new MessageState("m1", new MessageStatus.Consumed("t1", "i1")),
+        new MessageState("m3", new MessageStatus.Held(Optional.of("t2"))))
     }
   }
 
