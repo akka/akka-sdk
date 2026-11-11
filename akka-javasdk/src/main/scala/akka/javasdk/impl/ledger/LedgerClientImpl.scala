@@ -187,8 +187,8 @@ private[ledger] object LedgerClientImpl {
     new ClassificationRecord(
       record.classificationId,
       record.classifierComponentId,
-      record.label.toJava,
       record.score.map(Double.box).toJava,
+      record.label.toJava,
       record.confidence.map(Double.box).toJava,
       record.attributes.asJava,
       record.flowId.toJava,

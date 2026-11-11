@@ -6,6 +6,7 @@ package akka.javasdk.testkit.ledger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -311,8 +312,8 @@ public class TestLedgerClientTest {
         new ClassificationRecord(
             "c1",
             "sentiment-classifier",
-            Optional.of("positive"),
             Optional.of(0.9),
+            Optional.of("positive"),
             Optional.of(0.8),
             Map.of("source", "judge"),
             Optional.of("flow-1"),
@@ -323,5 +324,10 @@ public class TestLedgerClientTest {
     assertEquals(classification, ledger.getClassification("c1"));
     assertEquals(classification, ledger.getClassificationAsync("c1").toCompletableFuture().join());
     assertThrows(NoSuchElementException.class, () -> ledger.getClassification("c2"));
+    var asyncFailure =
+        assertThrows(
+            CompletionException.class,
+            () -> ledger.getClassificationAsync("c2").toCompletableFuture().join());
+    assertInstanceOf(NoSuchElementException.class, asyncFailure.getCause());
   }
 }
