@@ -22,18 +22,9 @@ A decision model is not an LLM judge. An LLM judge is a language model that read
 To inject the client into a class, pass it as a constructor argument, the same way you inject other Akka SDK components:
 
 [source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/decision/TriageEndpoint.java[TriageEndpoint.java]
 ----
-@HttpEndpoint("/triage")
-public class TriageEndpoint {
-
-  public record Ticket(String subject, String body) {}
-
-  private final DecisionModelClient decisionModelClient;
-
-  public TriageEndpoint(DecisionModelClient decisionModelClient) {
-    this.decisionModelClient = decisionModelClient;
-  }
-}
+include::example$doc-snippets/src/main/java/com/example/decision/TriageEndpoint.java[tags=imports;injection]
 ----
 
 == Asking questions
@@ -43,26 +34,9 @@ There are three question types. A choice question picks one of at least two opti
 Create questions with the static factories on the `Question` class and define them as constants, so the request and the answer lookup use the same question:
 
 [source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/decision/TriageEndpoint.java[TriageEndpoint.java]
 ----
-public static final Question<Answer.Choice> ROUTE =
-    Question.choice("Which team should handle this ticket?")
-        .option("billing", "Payments, invoicing, refunds")
-        .option("technical", "Bugs, outages, integrations")
-        .build("route");
-
-public static final Question<Answer.Score> SEVERITY =
-    Question.score("How severe is the reported issue?")
-        .levels(
-            "Cosmetic, no impact on function",
-            "Broken, but a workaround exists",
-            "Blocking, no workaround")
-        .build("severity");
-
-public static final Question<Answer.YesNo> URGENT =
-    Question.yesNo("Does the customer need a reply today?")
-        .whenYes("The customer states a deadline of today or earlier")
-        .whenNo("There is no deadline requirement")
-        .build("urgent");
+include::example$doc-snippets/src/main/java/com/example/decision/TriageEndpoint.java[tag=questions]
 ----
 
 The key given to `build` identifies the question and its answer. All questions in one request must have different keys. A stored decision is read back with the same keys, so keep a key stable once it is in use.
@@ -70,9 +44,9 @@ The key given to `build` identifies the question and its answer. All questions i
 The state and the questions are sent in one request:
 
 [source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/decision/TriageEndpoint.java[TriageEndpoint.java]
 ----
-Decision decision =
-    decisionModelClient.state(ticket).questions(ROUTE, SEVERITY, URGENT).invoke();
+include::example$doc-snippets/src/main/java/com/example/decision/TriageEndpoint.java[tag=invoke]
 ----
 
 A `String` state is sent as text. Any other object is serialized to JSON. The state must serialize to JSON text, an object or an array: the client rejects an empty string, a number, a boolean and a byte array with an `IllegalArgumentException`. In the previous example, `ticket` can be a string or an instance of your own JSON-serializable type like `Ticket`.
@@ -84,10 +58,9 @@ Use `invokeAsync()` to get a `CompletionStage<Decision>` instead of blocking. `q
 Read each answer with `Decision.answer(Question)`, which returns the answer type of the question:
 
 [source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/decision/TriageEndpoint.java[TriageEndpoint.java]
 ----
-String team = decision.answer(ROUTE).selected();
-double severity = decision.answer(SEVERITY).value();
-boolean urgent = decision.answer(URGENT).probability() > 0.8;
+include::example$doc-snippets/src/main/java/com/example/decision/TriageEndpoint.java[tag=read]
 ----
 
 * `Answer.Choice` has the key of the selected option in `selected()`, a probability per option key in `probabilities()`, and how peaked the distribution over the options is in `confidence()`, from 0 to 1.
@@ -127,13 +100,9 @@ akka.javasdk.decision {
 ----
 
 [source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/decision/TriageEndpoint.java[TriageEndpoint.java]
 ----
-Decision decision =
-    decisionModelClient
-        .model(DecisionModelProvider.fromConfig("escalation-model"))
-        .state(ticket)
-        .questions(URGENT)
-        .invoke();
+include::example$doc-snippets/src/main/java/com/example/decision/TriageEndpoint.java[tag=model]
 ----
 
 `DecisionModelProvider.systemOne()` creates a SystemOne provider in code, with `withApiKey`, `withModelName`, and `withBaseUrl` to adjust it. Implement `DecisionModelProvider.Custom` to answer requests without a SystemOne API.
@@ -156,24 +125,17 @@ The client retries a request up to `max-retries` times if it fails with a rate l
 The testkit's `TestDecisionModelProvider` answers decision requests without a model. Register it in the testkit settings:
 
 [source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/decision/TriageEndpointIntegrationTest.java[TriageEndpointIntegrationTest.java]
 ----
-private final TestDecisionModelProvider testDecisionModel = new TestDecisionModelProvider();
-
-@Override
-protected TestKit.Settings testKitSettings() {
-  return TestKit.Settings.DEFAULT.withDecisionModelProvider(testDecisionModel);
-}
+include::example$doc-snippets/src/test/java/com/example/decision/TriageEndpointIntegrationTest.java[tag=settings]
 ----
 
 Define the answers per state before the test calls the component:
 
 [source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/decision/TriageEndpointIntegrationTest.java[TriageEndpointIntegrationTest.java]
 ----
-testDecisionModel
-    .whenState(ticket)
-    .choice(TriageEndpoint.ROUTE, "billing")
-    .score(TriageEndpoint.SEVERITY, 2)
-    .yesNo(TriageEndpoint.URGENT, 0.9);
+include::example$doc-snippets/src/test/java/com/example/decision/TriageEndpointIntegrationTest.java[tag=rules]
 ----
 
 The most recently added rule that matches the request answers it. A request that matches no rule, or asks a question that the matching rule does not answer, fails with `MissingDecisionResponseException`. Use `always()` for a rule that matches every request, `failWith(exception)` to test failure handling, and `reset()` to remove all rules between tests.
