@@ -38,14 +38,14 @@ public sealed interface MessageStatus {
   record Consumed(String taskId, String interactionId) implements MessageStatus {}
 
   /**
-   * The task ended before the message was consumed. A new message never has this status.
+   * The task ended before the agent consumed the message. A new message never has this status.
    *
    * @param taskId the id of the task the message was for
    */
   record Dropped(String taskId) implements MessageStatus {}
 
   /**
-   * The message is not stored.
+   * The agent rejected the message and did not store it.
    *
    * @param reason why the agent rejected the message
    */

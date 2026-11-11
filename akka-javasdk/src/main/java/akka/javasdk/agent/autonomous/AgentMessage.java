@@ -58,9 +58,8 @@ public final class AgentMessage {
   }
 
   /**
-   * Return a new message with the given content attached. Images and PDFs must be referenced by
-   * URI, with {@link MessageContent.ImageUrlMessageContent} or {@link
-   * MessageContent.PdfUrlMessageContent}.
+   * Return a new message with the given content attached. Reference images and PDFs by URI, with
+   * {@link MessageContent.ImageUrlMessageContent} or {@link MessageContent.PdfUrlMessageContent}.
    *
    * @throws IllegalArgumentException if a content item carries inline bytes
    */
@@ -96,9 +95,10 @@ public final class AgentMessage {
   }
 
   /**
-   * Return a new message for the task with the given id. The task must be assigned to the agent.
-   * The agent rejects a message for a task that ended or that is not assigned to it. Without a task
-   * id, the message is for the current task, or for the next task that starts when no task runs.
+   * Return a new message for the task with the given id. The agent accepts the message for its
+   * current task, a queued task, or a task that waits for its dependencies, and rejects it for any
+   * other task. Without a task id, the message is for the current task, or for the next task that
+   * starts when no task runs.
    *
    * @throws IllegalArgumentException if the id is null or empty
    */

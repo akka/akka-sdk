@@ -49,7 +49,7 @@ public sealed interface Notification {
 
   /**
    * Messaging notifications: contact introductions, messages from other agents, and messages from
-   * clients that were consumed or dropped.
+   * clients that the agent consumed or dropped.
    */
   sealed interface MessagingNotification extends Notification {}
 
@@ -264,8 +264,8 @@ public sealed interface Notification {
       implements MessagingNotification {}
 
   /**
-   * Messages from clients for the task {@code taskId} were consumed in one model call. The ledger
-   * records that model call under {@code interactionId}.
+   * The agent consumed messages from clients for the task {@code taskId} in one model call. The
+   * ledger records that model call under {@code interactionId}.
    *
    * @see akka.javasdk.client.AutonomousAgentClient#sendMessage(AgentMessage)
    */
@@ -273,7 +273,8 @@ public sealed interface Notification {
       implements MessagingNotification {}
 
   /**
-   * Messages from clients for the task {@code taskId} were dropped because the task ended first.
+   * The agent dropped messages from clients for the task {@code taskId} because the task ended
+   * first.
    *
    * @see akka.javasdk.client.AutonomousAgentClient#sendMessage(AgentMessage)
    */
