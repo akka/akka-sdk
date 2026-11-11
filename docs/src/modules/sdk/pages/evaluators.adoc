@@ -305,7 +305,7 @@ An endpoint can start an evaluation the same way, for example to evaluate a reco
 [#_the_ledger_client]
 == The ledger client
 
-The ledger is the log of recorded agent interactions and their evaluations. It is also used for console visibility and auditing.
+The ledger is the log of recorded agent interactions, their evaluations, guardrail decisions and classifications. It is also used for console visibility and auditing.
 A link:{attachmentsdir}/api/akka/javasdk/ledger/LedgerClient.html[`LedgerClient`] fetches records from it. It can be injected into any component, but in practice it is mainly evaluators that use it.
 
 An evaluator of an interaction of an autonomous agent can read the flow of that interaction, with the flow id from `Subject.Interaction.flowId()`.
