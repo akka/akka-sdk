@@ -20,6 +20,7 @@ import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
 import akka.javasdk.testkit.TestModelProvider.AiResponse;
+import akka.pattern.StatusReply;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -238,6 +239,25 @@ public class AgentMessageIntegrationTest extends TestKitSupport {
                     AgentMessage.of("Use metric units.").messageId(UUID.randomUUID().toString())))
         .isInstanceOf(AutonomousAgentSupport.InstanceNotFoundException.class)
         .hasMessageContaining("not found");
+  }
+
+  @Test
+  public void aMessageToAStoppedAgentFails() {
+    var agentClient =
+        componentClient.forAutonomousAgent(TestAutonomousAgent.class, UUID.randomUUID().toString());
+    agentClient.setup(AgentSetup.create());
+    agentClient.terminate();
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(() -> assertThat(agentClient.getState().phase()).isEqualTo("stopped"));
+
+    assertThatThrownBy(
+            () ->
+                agentClient.sendMessage(
+                    AgentMessage.of("Use metric units.").messageId(UUID.randomUUID().toString())))
+        .isInstanceOf(StatusReply.ErrorMessage.class)
+        .hasMessageContaining("agent is stopped");
   }
 
   private List<Notification> subscribe(AutonomousAgentClient agentClient) {
