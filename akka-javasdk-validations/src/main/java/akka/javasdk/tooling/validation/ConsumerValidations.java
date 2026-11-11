@@ -61,8 +61,8 @@ public class ConsumerValidations {
    * @return a Validation result indicating success or failure
    */
   static Validation hasConsumeAnnotation(TypeDef typeDef) {
-    // Check for any annotation that starts with "akka.javasdk.annotations.Consume"
-    if (typeDef.hasAnnotationStartingWith("akka.javasdk.annotations.Consume")) {
+    // Any @Consume source annotation, @Consume.StartFrom alone is not a source
+    if (!Validations.doesNotHaveSubscription(typeDef)) {
       return Validation.Valid.instance();
     }
 
@@ -140,8 +140,7 @@ public class ConsumerValidations {
    * @return a Validation result indicating success or failure
    */
   private static Validation startFromValidations(TypeDef typeDef) {
-    Optional<AnnotationDef> startFrom =
-        typeDef.findAnnotation("akka.javasdk.annotations.Consume.StartFrom");
+    Optional<AnnotationDef> startFrom = typeDef.findAnnotation(Validations.START_FROM);
     if (startFrom.isEmpty()) {
       return Validation.Valid.instance();
     }
@@ -154,10 +153,12 @@ public class ConsumerValidations {
       errors.add(
           Validations.errorMessage(
               typeDef, "@Consume.StartFrom must set either latest or timestamp, not both."));
-    } else if (!latest && timestamp.isEmpty()) {
+    }
+    if (!latest && timestamp.isEmpty()) {
       errors.add(
           Validations.errorMessage(typeDef, "@Consume.StartFrom must set latest or timestamp."));
-    } else if (!timestamp.isEmpty()) {
+    }
+    if (!timestamp.isEmpty()) {
       try {
         Instant.parse(timestamp);
       } catch (DateTimeParseException e) {

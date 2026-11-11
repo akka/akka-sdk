@@ -49,7 +49,7 @@ public class ViewValidations {
             .combine(viewQueriesWithStreamUpdatesMustBeStreaming(typeDef))
             .combine(viewQueryMethodArityShouldBeZeroOrOne(typeDef))
             .combine(viewMultipleTableUpdatersMustHaveTableAnnotations(typeDef))
-            .combine(viewMustNotHaveStartFrom(typeDef))
+            .combine(tableUpdatersMustNotHaveStartFrom(typeDef))
             .combine(functionToolOnlyOnQueryEffect(typeDef))
             .combine(functionToolMustNotBeOnNonPublicMethods(typeDef));
 
@@ -80,24 +80,16 @@ public class ViewValidations {
   }
 
   /**
-   * Validates that neither the View nor its TableUpdaters are annotated with @Consume.StartFrom.
+   * Validates that the TableUpdaters of the View are not annotated with @Consume.StartFrom. The
+   * View class itself is covered by the check for components that are not a Consumer.
    *
    * @param typeDef the View class to validate
    * @return a Validation result indicating success or failure
    */
-  private static Validation viewMustNotHaveStartFrom(TypeDef typeDef) {
-    String startFrom = "akka.javasdk.annotations.Consume.StartFrom";
-    String message = "@Consume.StartFrom is only supported on a Consumer, not on a View.";
-    List<String> errors = new ArrayList<>();
-    if (typeDef.hasAnnotation(startFrom)) {
-      errors.add(Validations.errorMessage(typeDef, message));
-    }
-    for (TypeDef nested : typeDef.getNestedTypes()) {
-      if (nested.hasAnnotation(startFrom)) {
-        errors.add(Validations.errorMessage(nested, message));
-      }
-    }
-    return Validation.of(errors);
+  private static Validation tableUpdatersMustNotHaveStartFrom(TypeDef typeDef) {
+    return typeDef.getNestedTypes().stream()
+        .map(Validations::startFromOnlyOnConsumer)
+        .reduce(Validation.Valid.instance(), Validation::combine);
   }
 
   /**

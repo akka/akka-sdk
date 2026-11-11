@@ -223,6 +223,23 @@ abstract class AbstractConsumerValidationSpec(val validationMode: ValidationMode
         "@Consume.StartFrom timestamp [yesterday] is not an ISO-8601 instant")
     }
 
+    "reject Consumer with @Consume.StartFrom setting both latest and an invalid timestamp" in {
+      assertInvalid(
+        "invalid/ConsumerStartFromBothInvalidTimestamp.java",
+        "@Consume.StartFrom must set either latest or timestamp, not both",
+        "@Consume.StartFrom timestamp [garbage] is not an ISO-8601 instant")
+    }
+
+    "reject Consumer with only @Consume.StartFrom and no source" in {
+      assertInvalid("invalid/ConsumerStartFromOnly.java", "A Consumer must be annotated with `@Consume` annotation")
+    }
+
+    "reject Consumer with topic publishing and @Consume.StartFrom but no source" in {
+      assertInvalid(
+        "invalid/ConsumerStartFromTopicPublishingNoSource.java",
+        "You must select a source for @Produce.ToTopic")
+    }
+
     "reject Consumer with @Consume.StartFrom on a topic subscription" in {
       assertInvalid(
         "invalid/ConsumerStartFromTopic.java",

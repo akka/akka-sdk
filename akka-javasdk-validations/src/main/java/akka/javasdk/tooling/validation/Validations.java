@@ -28,6 +28,7 @@ public class Validations {
   private static final String MCP_ENDPOINT_ANNOTATION = "akka.javasdk.annotations.mcp.McpEndpoint";
 
   private static final String ACL_ANNOTATION = "akka.javasdk.annotations.Acl";
+  static final String START_FROM = "akka.javasdk.annotations.Consume.StartFrom";
 
   private static final String JWT_ANNOTATION = "akka.javasdk.annotations.JWT";
 
@@ -180,12 +181,20 @@ public class Validations {
         .combine(jwtValidation(typeDef))
         .combine(TimedActionValidations.validate(typeDef))
         .combine(ConsumerValidations.validate(typeDef))
+        .combine(startFromOnlyOnConsumerComponent(typeDef))
         .combine(WorkflowValidations.validate(typeDef))
         .combine(KeyValueEntityValidations.validate(typeDef))
         .combine(EventSourcedEntityValidations.validate(typeDef))
         .combine(AgentValidations.validate(typeDef))
         .combine(AutonomousAgentValidations.validate(typeDef))
         .combine(ViewValidations.validate(typeDef));
+  }
+
+  private static Validation startFromOnlyOnConsumerComponent(TypeDef typeDef) {
+    if (typeDef.extendsType("akka.javasdk.consumer.Consumer")) {
+      return Validation.Valid.instance();
+    }
+    return startFromOnlyOnConsumer(typeDef);
   }
 
   /**
@@ -308,7 +317,33 @@ public class Validations {
    * @return true if the component has no subscription annotations
    */
   public static boolean doesNotHaveSubscription(TypeDef typeDef) {
-    return !typeDef.hasAnnotationStartingWith("akka.javasdk.annotations.Consume");
+    return typeDef.getAnnotations().stream()
+        .map(AnnotationDef::getAnnotationType)
+        .noneMatch(t -> t.startsWith("akka.javasdk.annotations.Consume") && !t.equals(START_FROM));
+  }
+
+  /**
+   * Checks if a component has a @Consume.StartFrom annotation.
+   *
+   * @param typeDef the component class to check
+   * @return true if the component has @Consume.StartFrom
+   */
+  public static boolean hasStartFrom(TypeDef typeDef) {
+    return typeDef.hasAnnotation(START_FROM);
+  }
+
+  /**
+   * Validates that a class does not have @Consume.StartFrom, which only applies to a Consumer.
+   *
+   * @param typeDef the class to validate
+   * @return a Validation result indicating success or failure
+   */
+  public static Validation startFromOnlyOnConsumer(TypeDef typeDef) {
+    if (hasStartFrom(typeDef)) {
+      return Validation.of(
+          errorMessage(typeDef, "@Consume.StartFrom is only supported on a Consumer."));
+    }
+    return Validation.Valid.instance();
   }
 
   /**
