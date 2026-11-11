@@ -160,7 +160,7 @@ Set a message id with `messageId(...)` when the call can run again, for example 
 
 === Message limits and failures
 
-An agent holds at most 100 pending messages by default. All pending messages count, also the messages held for a queued task or for the next task. At the limit, the agent rejects a new message, and a retry of a known message still gets its status. Configure the limit with `akka.runtime.autonomous-agent.task-processing.max-pending-messages`.
+An agent holds at most 100 pending messages by default. All pending messages count, also the messages held for a queued task or for the next task. At the limit, the agent rejects a new message, and a retry of a known message still gets its status. Set the limit with the JVM system property `akka.runtime.autonomous-agent.task-processing.max-pending-messages`, for example `-Dakka.runtime.autonomous-agent.task-processing.max-pending-messages=200`. A value in `application.conf` has no effect when you run the service locally or in tests.
 
 Reference images and PDFs by URI. `attach(...)` throws an `IllegalArgumentException` for content with inline bytes.
 
