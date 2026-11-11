@@ -28,6 +28,7 @@ import akka.javasdk.agent.autonomous.Notification
 import akka.javasdk.agent.task.Task
 import akka.javasdk.agent.task.TaskKey
 import akka.javasdk.client.AutonomousAgentClient
+import akka.javasdk.impl.ForwardCompat.knownOr
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.agent.AgentImpl
 import akka.javasdk.impl.agent.autonomous.AgentSetupImpl
@@ -352,21 +353,31 @@ private[javasdk] object AutonomousAgentClientImpl {
       message.messageId.toScala,
       message.taskId.toScala)
 
-  def toMessageStatus(status: SpiAutonomousAgent.MessageStatus): MessageStatus =
-    status match {
-      case s: SpiAutonomousAgent.MessageStatus.ForCurrentTask => new MessageStatus.ForCurrentTask(s.taskId)
-      case s: SpiAutonomousAgent.MessageStatus.Held           => new MessageStatus.Held(s.taskId.toJava)
-      case s: SpiAutonomousAgent.MessageStatus.Consumed       => new MessageStatus.Consumed(s.taskId, s.interactionId)
-      case s: SpiAutonomousAgent.MessageStatus.Dropped        => new MessageStatus.Dropped(s.taskId)
-      case s: SpiAutonomousAgent.MessageStatus.Rejected       => new MessageStatus.Rejected(s.reason)
+  // A status that this SDK does not know, from a newer runtime, reads as None.
+  def toMessageStatus(status: SpiAutonomousAgent.MessageStatus): Option[MessageStatus] =
+    knownOr(Option.empty[MessageStatus]) {
+      status match {
+        case s: SpiAutonomousAgent.MessageStatus.ForCurrentTask => Some(new MessageStatus.ForCurrentTask(s.taskId))
+        case s: SpiAutonomousAgent.MessageStatus.Held           => Some(new MessageStatus.Held(s.taskId.toJava))
+        case s: SpiAutonomousAgent.MessageStatus.Consumed =>
+          Some(new MessageStatus.Consumed(s.taskId, s.interactionId))
+        case s: SpiAutonomousAgent.MessageStatus.Dropped  => Some(new MessageStatus.Dropped(s.taskId))
+        case s: SpiAutonomousAgent.MessageStatus.Rejected => Some(new MessageStatus.Rejected(s.reason))
+      }
     }
 
+  // No public status fits a status that this SDK does not know, so the call fails, although the agent may have stored
+  // the message.
   def toAcknowledgement(acknowledgement: SpiAutonomousAgent.MessageAcknowledgement): MessageAcknowledgement =
-    new MessageAcknowledgement(
-      acknowledgement.messageId,
-      toMessageStatus(acknowledgement.status),
-      acknowledgement.duplicate)
+    toMessageStatus(acknowledgement.status) match {
+      case Some(status) => new MessageAcknowledgement(acknowledgement.messageId, status, acknowledgement.duplicate)
+      case None =>
+        throw new IllegalStateException(
+          s"The runtime acknowledged message [${acknowledgement.messageId}] with status [${acknowledgement.status}], " +
+          "which this version of the Akka SDK does not know. Upgrade the Akka SDK.")
+    }
 
+  // The state leaves out a message with a status that this SDK does not know.
   def toMessageStates(states: Seq[SpiAutonomousAgent.MessageState]): java.util.List[MessageState] =
-    states.map(state => new MessageState(state.messageId, toMessageStatus(state.status))).asJava
+    states.flatMap(state => toMessageStatus(state.status).map(new MessageState(state.messageId, _))).asJava
 }
