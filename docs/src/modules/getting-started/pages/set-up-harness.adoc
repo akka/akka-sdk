@@ -73,6 +73,8 @@ include::ROOT:partial$update-harness-table.adoc[]
 /akka:setup
 ----
 
+In Codex, enter `$akka:setup`. Use the `$akka:` prefix for other plugin skills, such as `$akka:specify` and `$akka:plan`.
+
 This ensures the Akka CLI is installed, Java and Maven are available, and your Akka download token is configured.
 
 == Choose your mode
