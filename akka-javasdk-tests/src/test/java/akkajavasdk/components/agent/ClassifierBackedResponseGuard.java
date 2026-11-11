@@ -41,10 +41,11 @@ public class ClassifierBackedResponseGuard implements AgentResponseGuardrail {
   @Override
   public CompletionStage<Decision> decideAsync(CallContext ctx) {
     return classifierClient
-        .classifyAsync(classifierName, ctx.reply().text())
+        .classifyWithResultAsync(classifierName, ctx.reply().text())
         .thenApply(
-            classification ->
-                classification
+            result ->
+                result
+                    .classification()
                     .label()
                     .filter("toxic"::equals)
                     .<Decision>map(label -> new Decision.Deny("blocked by classifier: " + label))

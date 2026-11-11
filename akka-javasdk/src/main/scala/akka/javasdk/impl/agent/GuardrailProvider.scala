@@ -18,6 +18,7 @@ import akka.annotation.InternalApi
 import akka.javasdk.Tracing
 import akka.javasdk.agent.AgentResponseGuardrail
 import akka.javasdk.agent.Classification
+import akka.javasdk.agent.ClassificationResult
 import akka.javasdk.agent.ClassifierClient
 import akka.javasdk.agent.Decision
 import akka.javasdk.agent.Decision.Allow
@@ -342,6 +343,10 @@ import org.slf4j.LoggerFactory
     override def classify(name: String, input: String): Classification =
       throw new IllegalArgumentException(s"No classifier configured with name [$name] (no ClassifierClient available)")
     override def classifyAsync(name: String, input: String): CompletionStage[Classification] =
+      throw new IllegalArgumentException(s"No classifier configured with name [$name] (no ClassifierClient available)")
+    override def classifyWithResult(name: String, input: String): ClassificationResult =
+      throw new IllegalArgumentException(s"No classifier configured with name [$name] (no ClassifierClient available)")
+    override def classifyWithResultAsync(name: String, input: String): CompletionStage[ClassificationResult] =
       throw new IllegalArgumentException(s"No classifier configured with name [$name] (no ClassifierClient available)")
   }
 }
