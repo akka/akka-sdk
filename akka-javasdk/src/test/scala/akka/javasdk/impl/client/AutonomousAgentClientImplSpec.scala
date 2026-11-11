@@ -4,6 +4,9 @@
 
 package akka.javasdk.impl.client
 
+import java.lang.reflect.InvocationHandler
+import java.lang.reflect.Method
+import java.lang.reflect.Proxy
 import java.net.URI
 import java.util.Optional
 
@@ -18,21 +21,41 @@ import org.scalatest.wordspec.AnyWordSpec
 
 class AutonomousAgentClientImplSpec extends AnyWordSpec with Matchers {
 
+  // The SPI status trait is sealed, so the spec cannot extend it. It compiles to an interface without methods.
+  private def unknownStatus: SpiAutonomousAgent.MessageStatus = {
+    val statusClass = classOf[SpiAutonomousAgent.MessageStatus]
+    val handler: InvocationHandler = (proxy: AnyRef, method: Method, args: Array[AnyRef]) =>
+      method.getName match {
+        case "equals"   => Boolean.box(proxy eq args(0))
+        case "hashCode" => Int.box(System.identityHashCode(proxy))
+        case "toString" => "unknown MessageStatus"
+        case other      => throw new UnsupportedOperationException(other)
+      }
+    Proxy
+      .newProxyInstance(statusClass.getClassLoader, Array[Class[_]](statusClass), handler)
+      .asInstanceOf[SpiAutonomousAgent.MessageStatus]
+  }
+
   "AutonomousAgentClientImpl.toMessageStatus" should {
 
     "convert each runtime status with its values" in {
       AutonomousAgentClientImpl.toMessageStatus(new SpiAutonomousAgent.MessageStatus.ForCurrentTask("t1")) shouldBe
-      new MessageStatus.ForCurrentTask("t1")
+      Some(new MessageStatus.ForCurrentTask("t1"))
       AutonomousAgentClientImpl.toMessageStatus(new SpiAutonomousAgent.MessageStatus.Held(Some("t2"))) shouldBe
-      new MessageStatus.Held(Optional.of("t2"))
+      Some(new MessageStatus.Held(Optional.of("t2")))
       AutonomousAgentClientImpl.toMessageStatus(new SpiAutonomousAgent.MessageStatus.Held(None)) shouldBe
-      new MessageStatus.Held(Optional.empty())
+      Some(new MessageStatus.Held(Optional.empty()))
       AutonomousAgentClientImpl.toMessageStatus(new SpiAutonomousAgent.MessageStatus.Consumed("t3", "i3")) shouldBe
-      new MessageStatus.Consumed("t3", "i3")
+      Some(new MessageStatus.Consumed("t3", "i3"))
       AutonomousAgentClientImpl.toMessageStatus(new SpiAutonomousAgent.MessageStatus.Dropped("t4")) shouldBe
-      new MessageStatus.Dropped("t4")
+      Some(new MessageStatus.Dropped("t4"))
       AutonomousAgentClientImpl.toMessageStatus(new SpiAutonomousAgent.MessageStatus.Rejected("too many")) shouldBe
-      new MessageStatus.Rejected("too many")
+      Some(new MessageStatus.Rejected("too many"))
+    }
+
+    "read a status that the SDK does not know, and a null status, as None" in {
+      AutonomousAgentClientImpl.toMessageStatus(unknownStatus) shouldBe None
+      AutonomousAgentClientImpl.toMessageStatus(null) shouldBe None
     }
   }
 
@@ -87,6 +110,13 @@ class AutonomousAgentClientImplSpec extends AnyWordSpec with Matchers {
             duplicate = false))
         .duplicate shouldBe false
     }
+
+    "fail with the message id for a status that the SDK does not know" in {
+      val exception = the[IllegalStateException] thrownBy AutonomousAgentClientImpl.toAcknowledgement(
+        new SpiAutonomousAgent.MessageAcknowledgement("m1", unknownStatus, duplicate = false))
+      exception.getMessage should include("[m1]")
+      exception.getMessage should include("unknown MessageStatus")
+    }
   }
 
   "AutonomousAgentClientImpl.toMessageStates" should {
@@ -101,6 +131,18 @@ class AutonomousAgentClientImplSpec extends AnyWordSpec with Matchers {
         new MessageState("m2", new MessageStatus.Dropped("t1")),
         new MessageState("m1", new MessageStatus.Consumed("t1", "i1")),
         new MessageState("m3", new MessageStatus.Held(Optional.of("t2"))))
+    }
+
+    "leave out a message with a status that the SDK does not know" in {
+      val states = AutonomousAgentClientImpl.toMessageStates(
+        Seq(
+          new SpiAutonomousAgent.MessageState("m1", new SpiAutonomousAgent.MessageStatus.Held(None)),
+          new SpiAutonomousAgent.MessageState("m2", unknownStatus),
+          new SpiAutonomousAgent.MessageState("m3", null),
+          new SpiAutonomousAgent.MessageState("m4", new SpiAutonomousAgent.MessageStatus.ForCurrentTask("t1"))))
+      states shouldBe java.util.List.of(
+        new MessageState("m1", new MessageStatus.Held(Optional.empty())),
+        new MessageState("m4", new MessageStatus.ForCurrentTask("t1")))
     }
   }
 
