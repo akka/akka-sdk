@@ -5,7 +5,7 @@
 package akka.javasdk.agent.autonomous;
 
 /**
- * The reply of an autonomous agent to a message sent with {@link
+ * The reply of an autonomous agent to a message that a client sent with {@link
  * akka.javasdk.client.AutonomousAgentClient#sendMessage(AgentMessage)}.
  *
  * @param messageId the id set on the message, or the id that the runtime generated, also for a

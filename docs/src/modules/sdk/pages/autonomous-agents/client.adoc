@@ -139,19 +139,19 @@ The `status()` of the acknowledgement is one of the records of `MessageStatus`:
 | `ForCurrentTask` | The message is for the current task. The model sees it in its next request for that task.
 | `Held` | The agent holds the message until its task starts, or until the next task starts when `taskId()` is empty.
 | `Consumed` | The agent stored the outcome of the model call that saw the message.
-| `Dropped` | The task ended before the message was consumed.
+| `Dropped` | The task ended before the agent consumed the message.
 | `Rejected` | The agent did not store the message. `reason()` says why.
 |===
 
 The agent rejects a message when:
 
-* the task of the message ended, or the task is not assigned to the agent
+* the task of the message ended, or is not one of the tasks of the agent
 * the agent accepts no tasks
 * the agent already holds the maximum number of pending messages
 
 `Consumed` and `Dropped` are only the status of a retry and of a message in the agent state. A new message never has them.
 
-The agent consumes a message when it stores the outcome of the model call that saw the message. `Consumed` holds the id of that model call in `interactionId()`, and the ledger records the model call under that id. Read the record with `getInteraction(interactionId)` of the ledger client, see xref:sdk:evaluators.adoc#_the_ledger_client[The ledger client]. The agent drops a message whose task ends before the message is consumed.
+The agent consumes a message when it stores the outcome of the model call that saw the message. `Consumed` holds the id of that model call in `interactionId()`, and the ledger records the model call under that id. Read the record with `getInteraction(interactionId)` of the ledger client, see xref:sdk:evaluators.adoc#_the_ledger_client[The ledger client]. The agent drops a message whose task ends before the agent consumes it.
 
 === Retrying a message with a message id
 
@@ -165,7 +165,7 @@ Reference images and PDFs by URI. `attach(...)` throws an `IllegalArgumentExcept
 
 The call fails when the agent instance does not exist yet, and when the agent is stopped. An instance exists after its first `setup(...)` or task.
 
-=== Following a message after it is sent
+=== Following a message after you send it
 
 `getState()` lists the pending messages and the most recent consumed or dropped messages with their status, see <<agent-state>>. The `MessagesConsumed` notification reports messages that the agent consumed, and the `MessagesDropped` notification reports messages that the agent dropped, see <<agent-notifications>>.
 

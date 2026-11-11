@@ -118,8 +118,8 @@ public interface AutonomousAgentClient {
    * delegation that waits for its workers, the message waits for it.
    *
    * <p>The acknowledgement says where the message went, or why the agent rejected it. The agent
-   * does not store a rejected message. The agent drops a message whose task ends before the message
-   * is consumed, see {@link MessageStatus.Consumed}. {@link #getState()} and the {@link
+   * does not store a rejected message. The agent drops a message whose task ends before the agent
+   * consumes it, see {@link MessageStatus.Consumed}. {@link #getState()} and the {@link
    * Notification.MessagesConsumed} and {@link Notification.MessagesDropped} notifications report
    * what happened to it.
    *
