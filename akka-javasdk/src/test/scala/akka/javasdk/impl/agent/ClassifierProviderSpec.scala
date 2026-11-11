@@ -11,6 +11,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
+import scala.annotation.nowarn
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -374,7 +375,18 @@ class ClassifierProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecL
       result2.label() shouldBe java.util.Optional.of("ok")
     }
 
-    "support the blocking classify(...) alongside classifyAsync(...)" in {
+    "return the classification from the deprecated classify(...) and classifyAsync(...)" in {
+      val provider = newProvider(system, config)
+      @nowarn("cat=deprecation")
+      val blocking = provider.client.classify("toxicity", "some text")
+      @nowarn("cat=deprecation")
+      val async = provider.client.classifyAsync("toxicity", "some text").toCompletableFuture.get(3, TimeUnit.SECONDS)
+
+      blocking.label() shouldBe java.util.Optional.of("classified:some text")
+      async.label() shouldBe java.util.Optional.of("classified:some text")
+    }
+
+    "support the blocking classifyWithResult(...) alongside classifyWithResultAsync(...)" in {
       val provider = newProvider(system, config)
       val result = provider.client.classifyWithResult("toxicity", "some text").classification()
       result.label() shouldBe java.util.Optional.of("classified:some text")
