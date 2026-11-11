@@ -21,9 +21,10 @@ import java.util.Optional;
  * @param flowId the flow of the component that injected the {@link
  *     akka.javasdk.agent.ClassifierClient} that called the classifier, or empty when that component
  *     ran in no flow. Empty when a guardrail or another classifier called the classifier.
- * @param evaluationId the evaluation of the evaluator that injected the {@link
- *     akka.javasdk.agent.ClassifierClient} that called the classifier, or empty when another
- *     component injected it. Empty when a guardrail or another classifier called the classifier.
+ * @param evaluationId the evaluation that the call of the classifier belongs to. The component that
+ *     injected the {@link akka.javasdk.agent.ClassifierClient} is the evaluator, or a component
+ *     that the evaluator calls. Empty when the call belongs to no evaluation, and when a guardrail
+ *     or another classifier called the classifier.
  * @param timestamp when the classification was recorded
  */
 public record ClassificationRecord(
