@@ -156,7 +156,7 @@ The agent consumes a message when it stores the outcome of the model call that s
 
 === Retrying a message with a message id
 
-Set a message id with `messageId(...)` when the call can run again, for example from a Workflow step or a Consumer. A message with the id of a known message gets the status of that message, with `duplicate()` set to `true`, and the agent stores nothing new. The agent knows an id while its message is pending, and while the message is among the 100 most recent consumed or dropped messages. Without a message id, the runtime generates one, and a retry is a new message.
+Set a message id with `messageId(...)` when the call can run again, for example from a Workflow step or a Consumer. A message with the id of a known message gets the status of that message, with `duplicate()` set to `true`, and the agent stores nothing new. The agent knows an id while its message is pending, and while the message is among the 100 most recent consumed or dropped messages. The agent does not store a rejected message, so a retry of a rejected message is a new message. Without a message id, the runtime generates one, and a retry is a new message.
 
 === Message limits and failures
 

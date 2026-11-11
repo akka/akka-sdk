@@ -123,8 +123,10 @@ public interface AutonomousAgentClient {
    * Notification.MessagesConsumed} and {@link Notification.MessagesDropped} notifications report
    * what happened to it.
    *
-   * <p>Set {@link AgentMessage#messageId(String)} to make a retry safe. A retry with the same id
-   * gets the status of the first message, and the agent stores nothing new.
+   * <p>Set {@link AgentMessage#messageId(String)} to make a retry safe. While the first message is
+   * pending or among {@link AgentState#recentMessages()}, a retry with the same id gets the status
+   * of the first message, and the agent stores nothing new. The agent does not store a rejected
+   * message, so a retry of it is a new message.
    *
    * <p>Fails when the agent instance does not exist or is stopped. An instance exists after its
    * first setup or task.
