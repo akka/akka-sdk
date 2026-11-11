@@ -26,6 +26,7 @@ import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import kalix.runtime.agent.autonomous.AutonomousAgentSupport;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
@@ -120,11 +121,15 @@ public class AgentMessageIntegrationTest extends TestKitSupport {
     Awaitility.await()
         .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
-            () ->
-                assertThat(ofType(notifications, Notification.MessagesConsumed.class))
-                    .containsExactly(
-                        new Notification.MessagesConsumed(
-                            taskId, List.of(messageId), consumedStatus.interactionId())));
+            () -> {
+              assertThat(ofType(notifications, Notification.MessagesConsumed.class))
+                  .containsExactly(
+                      new Notification.MessagesConsumed(
+                          taskId, List.of(messageId), consumedStatus.interactionId()));
+              assertThat(ofType(notifications, Notification.TaskCompleted.class))
+                  .anySatisfy(completed -> assertThat(completed.taskId()).isEqualTo(taskId));
+            });
+    // the agent publishes the drops at the end of a task before the TaskCompleted notification
     assertThat(ofType(notifications, Notification.MessagesDropped.class)).isEmpty();
 
     // the ledger writes the record next to the outcome of the model call, so it can lag
@@ -142,11 +147,13 @@ public class AgentMessageIntegrationTest extends TestKitSupport {
 
   @Test
   public void aMessageWhoseTaskEndsFirstIsDropped() throws InterruptedException {
+    var calls = new AtomicInteger();
     var called = new CountDownLatch(1);
     var release = new CountDownLatch(1);
     // complete_task ends the model call, so no later request shows the message
     testAgentModel.fixedResponse(
         input -> {
+          calls.incrementAndGet();
           called.countDown();
           try {
             release.await(10, TimeUnit.SECONDS);
@@ -193,6 +200,8 @@ public class AgentMessageIntegrationTest extends TestKitSupport {
                 assertThat(ofType(notifications, Notification.MessagesDropped.class))
                     .containsExactly(new Notification.MessagesDropped(taskId, List.of(messageId))));
     assertThat(ofType(notifications, Notification.MessagesConsumed.class)).isEmpty();
+    // the only model call started before the message arrived, so the model never saw the message
+    assertThat(calls.get()).isEqualTo(1);
 
     var dropped = new MessageStatus.Dropped(taskId);
     assertThat(agentClient.getState().recentMessages())
