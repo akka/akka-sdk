@@ -29,7 +29,8 @@ import java.util.stream.Collectors;
  *     interaction
  * @param metadata metadata about the model call(s) of the interaction
  * @param systemMessage the system message the model was given
- * @param inputMessage the input message content given to the model, in order
+ * @param inputMessage the input message content given to the model, in order. A piece of a kind
+ *     that this version of the SDK or the runtime does not know is left out.
  * @param modelResponses the model call(s) of the interaction, in order
  * @param toolCallResponses tool call responses that arrived as input to a model call
  * @param taskContext autonomous-agent task metadata, present only for flow interactions
@@ -48,7 +49,8 @@ public record InteractionRecord(
     List<ToolCallResponse> toolCallResponses,
     Optional<TaskContext> taskContext,
     Optional<Failure> failure,
-    Instant timestamp) {
+    Instant timestamp)
+    implements FlowRecord {
 
   /** Whether this interaction was produced by an agent running as part of a flow. */
   public boolean isFlowInteraction() {
@@ -93,6 +95,16 @@ public record InteractionRecord(
         .collect(Collectors.toList());
   }
 
+  /** The calls of the named tool, in order. */
+  public List<ToolCall> toolCalls(String name) {
+    return toolCalls().stream().filter(call -> call.name().equals(name)).toList();
+  }
+
+  /** The name of every tool call, in order. */
+  public List<String> toolNames() {
+    return toolCalls().stream().map(ToolCall::name).toList();
+  }
+
   /**
    * The total number of input tokens across all model calls of the interaction, including prompt
    * tokens read from or written to the provider's prompt cache. See {@link
@@ -118,16 +130,24 @@ public record InteractionRecord(
   /**
    * A flattened, ordered, readable transcript of the interaction: the system message, the input
    * message, each model response (including any thinking and tool calls), and the tool call
-   * responses the model saw as input. For a failed interaction, the last line is {@code Failure: }
-   * followed by the text that {@link #failureSummary()} returns. The transcript of a failed
-   * interaction can include content that a guardrail blocked.
+   * responses the model saw as input. A tool call line ends with the result of the call, or with
+   * the status of a call that did not complete, in brackets: {@code [not run]}, {@code [pending]},
+   * {@code [no result]}, {@code [failed]}, or {@code [failed: TEXT]} with the error text. For a
+   * failed interaction, the last line is {@code Failure: } followed by the text that {@link
+   * #failureSummary()} returns. The transcript of a failed interaction can include content that a
+   * guardrail blocked.
    *
    * <p>Pure rendering over this record; intended for feeding an interaction to an LLM-as-judge or
    * for logging.
    */
   public String transcript() {
+    return transcript(true);
+  }
+
+  // FlowRecord.transcript leaves out the system message when it repeats the one written before.
+  String transcript(boolean withSystemMessage) {
     var sb = new StringBuilder();
-    if (systemMessage != null && !systemMessage.isEmpty()) {
+    if (withSystemMessage && systemMessage != null && !systemMessage.isEmpty()) {
       sb.append("System: ").append(systemMessage).append("\n");
     }
     var input =
@@ -148,7 +168,7 @@ public record InteractionRecord(
             .append("(")
             .append(toolCall.arguments())
             .append(") -> ")
-            .append(toolCall.response())
+            .append(renderResult(toolCall))
             .append("\n");
       }
     }
@@ -165,6 +185,19 @@ public record InteractionRecord(
     }
     failureSummary().ifPresent(summary -> sb.append("Failure: ").append(summary).append("\n"));
     return sb.toString();
+  }
+
+  private static String renderResult(ToolCall toolCall) {
+    var response = toolCall.response();
+    var status = toolCall.status() == null ? ToolCall.Status.UNSPECIFIED : toolCall.status();
+    return switch (status) {
+      case COMPLETED, UNSPECIFIED -> response;
+      case FAILED ->
+          response == null || response.isEmpty() ? "[failed]" : "[failed: " + response + "]";
+      case NOT_RUN -> "[not run]";
+      case PENDING -> "[pending]";
+      case NO_RESULT -> "[no result]";
+    };
   }
 
   private static String render(MessageContent content) {

@@ -201,6 +201,32 @@ CORS can be enabled by configuring at least one allowed origin, for example:
 akka route update acme-ecommerce --cors-origin https://www.acme.org --cors-method GET --cors-method POST
 ----
 
+[#streaming]
+==== Routing streaming and long-running requests
+
+By default, a request through a route has 60 seconds to complete. Akka ends any request that takes longer, including server-sent event (SSE) streams and streaming gRPC calls.
+
+To allow up to 30 minutes, set `allowStreaming: true` in the <<descriptor,route descriptor>>. Declare a separate route rule for the streaming endpoint, next to the general rule for the rest of the service:
+
+[source,yaml]
+----
+host: ecommerce.acme.org
+routes:
+- prefix: /
+  route:
+    service: shopping-cart
+- prefix: /carts/updates
+  allowStreaming: true
+  route:
+    service: shopping-cart
+----
+
+Here, requests to paths under `/carts/updates` can take up to 30 minutes. All other requests keep the 60-second limit.
+
+NOTE: Limit the streaming rule to the paths that need it.
+
+In a multi-region project with a xref:operations:regions/setup.adoc#multi-region-resources[regional route] in each region, add the streaming rule to the route in every region.
+
 [#websockets]
 ==== WebSocket support
 

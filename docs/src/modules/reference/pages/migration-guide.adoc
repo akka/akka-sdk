@@ -2,6 +2,72 @@
 
 include::ROOT:partial$include.adoc[]
 
+== SDK 3.7.2
+
+[#migrating-from-the-evalkit-evaluators]
+=== Migrating from the EvalKit evaluators
+
+The evaluation runner of the TestKit no longer has its own evaluators and judges. The checks of an experiment are xref:sdk:evaluators.adoc[evaluator components], bound to the agent in the test configuration, and the runner reads their verdicts from the ledger. See xref:testing:evaluation/getting-started.adoc[Getting started with evaluation].
+
+[cols="1,1"]
+|===
+| SDK 3.7.1 | SDK 3.7.2
+
+| `Evaluators.replyShouldNotContain`, `shouldCallTool`, `shouldNotCallTools`, `replyShouldNotContainPaymentCard` and the other built-in evaluators
+| An `Evaluator` component in `src/test/java` that reads the interaction from the ledger, bound to the agent with `TestKit.Settings.withAdditionalConfig`
+
+| Evaluators given to `EvalCase.of(id, command, evaluators...)`
+| `EvalCase.of(id, command)`. The bound evaluators judge every case.
+
+| `EvalCase<C>` with the command type, for example `List<EvalCase<String>>`
+| `EvalCase<C, V>` with the command type and the reply type of the command handler. A case without an expected reply is an `EvalCase<C, Object>`, for example `List<EvalCase<String, Object>>`, and runs against a handler with any reply type. `EvalCase.of(id, command, expected)` declares a case with an expected reply. See xref:testing:evaluation/getting-started.adoc#expected-reply[Cases with an expected reply].
+
+| `Experiment` returned by `agent(...)`
+| `Experiment<V>` with the reply type of the command handler. `grade(Grader<V>)` compares the reply of an attempt with the expected reply of its case.
+
+| An evaluator with the component id `expected`
+| Refused by the experiment. The id names the comparison result of the runner, next to `target`. Rename the evaluator.
+
+| `Gate.passRateShouldBeAtLeast(rate)` and `Gate.passRateShouldBeAtLeast(evaluatorClass, rate)` with a rate outside 0.0 to 1.0
+| `IllegalArgumentException`. The rate is a share of the attempts.
+
+| `Judge.modelBased(testKit)`, `JudgeAgent`, `ModelBasedJudge`
+| A judge agent and a judge evaluator written by the project, with the criterion and the threshold as xref:sdk:evaluators/examples.adoc#judging[configuration properties of the evaluator]
+
+| `replyShouldMatch(pattern)` and `replyShouldNotMatch(pattern)` for a refusal
+| A judge criterion, gated on a pass rate
+
+| A custom evaluator that checks a stub for a side effect
+| A xref:sdk:agents/guardrails.adoc[`ToolCallGuardrail`] that denies the tool call, and `Gate.guardrailShouldDeny(name)` in the experiment
+
+| `Gate.passRateShouldBeAtLeast(Evaluators.ReplyLacks.class, rate)` with a built-in evaluator class
+| `Gate.passRateShouldBeAtLeast(MyEvaluator.class, rate)` with the class of the evaluator component
+
+| `EvalCaseParser`, `ToolBindings` and the replay of recorded interactions
+| Removed. `EvalCases.readJsonLines(path, commandType)` reads cases from a JSON Lines file.
+
+| `EvaluationResult` and the `ToxicityEvaluator`, `SummarizationEvaluator` and `HallucinationEvaluator` agents
+| Deprecated. A xref:sdk:evaluators/examples.adoc#judging[judge evaluator] bound to the agent, with the check as its criterion, see xref:#migrating-from-the-built-in-evaluator-agents[below]
+|===
+
+An evaluator can end with `effects().notApplicable(reason)` when the interaction gave it nothing to evaluate, see xref:sdk:evaluators.adoc#outcomes[Outcomes of an evaluation]. The telemetry attribute `akka.evaluation.outcome` has the new value `not_applicable`.
+
+[#migrating-from-the-built-in-evaluator-agents]
+=== Migrating from the built-in evaluator agents
+
+`ToxicityEvaluator`, `SummarizationEvaluator` and `HallucinationEvaluator` are agents that a component of the service calls with the text to check, and they reply with an `EvaluationResult`. Replace the call with a xref:sdk:evaluators/examples.adoc#judging[judge evaluator] bound to the agent whose replies it checks. The runtime triggers the judge evaluator after each interaction of that agent, without a call from the service, and records the verdict in the ledger. The check becomes the criterion of the binding:
+
+[source,conf,indent=0]
+----
+akka.javasdk.evaluation.evaluators.judge {
+  criterion = "The reply contains no toxic, offensive or harmful language."
+  threshold = 0.9
+  agents.activity-agent { trigger = interaction }
+}
+----
+
+For a summarization check, the criterion states that the reply keeps the facts of the source text. For a hallucination check, the criterion states that the reply claims nothing that the request and the tool results do not support. The xref:getting-started:planner-agent/eval.adoc[multi-agent tutorial] shows a judge evaluator with a fixed criterion and a typed verdict.
+
 == SDK 3.7.0
 
 [#migrating-from-text-guardrail]
@@ -26,6 +92,8 @@ A `ToolCallGuardrail` that replaces an `mcp-tool-request` entry behaves differen
 
 * The runtime records the `ToolCallGuardrail` decision in the ledger.
 * On the same MCP tool call, the runtime evaluates `ToolCallGuardrail` entries before `TextGuardrail` entries with `mcp-tool-request`. The `TextGuardrail` entries run only when no blocking `ToolCallGuardrail` stopped the call.
+
+The runtime records no guardrail decision for a `TextGuardrail`. The experiment runner therefore reports a turn that a `TextGuardrail` stopped as a failed `target` result, not as a `guardrail` result. When the agent maps the failure to a reply in `onFailure`, the attempt is inconclusive. `Gate.guardrailShouldStop(name)` and `Gate.guardrailShouldDeny(name)` do not see a `TextGuardrail`.
 
 Remove `use-for` from the migrated entry. The service fails to start when a `ModelCallGuardrail`, `AgentResponseGuardrail`, or `ToolCallGuardrail` entry defines `use-for`.
 

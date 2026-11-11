@@ -12,8 +12,10 @@ import akka.javasdk.CommandException;
 import akka.javasdk.DependencyProvider;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.AgentRegistry;
+import akka.javasdk.agent.Guardrail;
 import akka.javasdk.agent.MessageContent;
 import akka.javasdk.agent.ToolCallGuardrail;
+import akka.javasdk.ledger.ToolCall;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
@@ -25,9 +27,11 @@ import akkajavasdk.components.MyException;
 import akkajavasdk.components.mcp.TestMcpEndpoint;
 import akkajavasdk.protocol.SerializationTestProtos.SimpleMessage;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -141,6 +145,76 @@ public class AgentIntegrationTest extends TestKitSupport {
     var interaction = getLedgerClient().getInteraction(result.interactionId().get());
     assertThat(interaction.agentComponentId()).isEqualTo("some-agent");
     assertThat(interaction.finalResponseText()).isEqualTo("123456");
+  }
+
+  /** The recorded interaction carries the status of its tool calls. */
+  @Test
+  public void shouldRecordTheStatusOfAToolCall() {
+    var userQuestion = "What is the date today?";
+
+    testModelProvider
+        .whenMessage(s -> s.equals(userQuestion))
+        .reply(new ToolInvocationRequest("SomeAgentWithTool_getDateOfToday", ""));
+
+    testModelProvider
+        .whenToolResult(result -> result.content().equals("2025-01-01"))
+        .thenReply(result -> new AiResponse("Today is " + result.content()));
+
+    Agent.AgentReply<SomeAgentWithTool.SomeResponse> result =
+        componentClient
+            .forAgent()
+            .inSession(newSessionId())
+            .method(SomeAgentWithTool::query)
+            .withDetailedReply()
+            .invoke(userQuestion);
+
+    assertThat(result.value().response()).isEqualTo("Today is 2025-01-01");
+    var interaction = getLedgerClient().getInteraction(result.interactionId().get());
+
+    assertThat(interaction.toolCalls()).hasSize(1);
+    var toolCall = interaction.toolCalls().get(0);
+    assertThat(toolCall.status()).isEqualTo(ToolCall.Status.COMPLETED);
+    assertThat(toolCall.response()).isEqualTo("2025-01-01");
+  }
+
+  /** A tool that fails ends the tool round, so the recorded tool call has no result. */
+  @Test
+  public void shouldRecordNoResultForTheToolCallOfAFailedToolRound() {
+    var userQuestion = "How is the traffic today in Ghent?";
+    var sessionId = newSessionId();
+
+    testModelProvider
+        .whenUserMessage(msg -> msg.content().equals(userQuestion))
+        .reply(new ToolInvocationRequest("TrafficService_getTrafficNow", ""));
+
+    Assertions.assertThrows(
+        Exception.class,
+        () ->
+            componentClient
+                .forAgent()
+                .inSession(sessionId)
+                .method(SomeAgentWithFailingTool::query)
+                .invoke(userQuestion));
+
+    Awaitility.await()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () ->
+                assertThat(
+                        getLedgerClient()
+                            .getInteractions("some-agent-with-failing-tool", sessionId))
+                    .singleElement()
+                    .satisfies(
+                        interaction -> {
+                          assertThat(interaction.failed()).isTrue();
+                          assertThat(interaction.toolCalls())
+                              .singleElement()
+                              .satisfies(
+                                  call -> {
+                                    assertThat(call.status()).isEqualTo(ToolCall.Status.NO_RESULT);
+                                    assertThat(call.response()).isEmpty();
+                                  });
+                        }));
   }
 
   @Test
@@ -856,6 +930,69 @@ public class AgentIntegrationTest extends TestKitSupport {
     assertThat(result.response()).isEqualTo("Today is 2025-01-01");
     assertThat(RecordingModelCallGuard.newMessageTypesBySession.get(sessionId))
         .containsExactly(List.of("UserMessage"), List.of("ToolCallResponse"));
+  }
+
+  @Test
+  public void shouldExposeThinkingAndAttributesToResponseGuardrail() {
+    // given
+    testModelProvider
+        .whenMessage(s -> s.equals("think about it"))
+        .reply(
+            new AiResponse("thought through")
+                .withThinking("final thinking")
+                .withAttributes(Map.of("final-key", "final-value")));
+
+    // when
+    var sessionId = newSessionId();
+    var result =
+        componentClient
+            .forAgent()
+            .inSession(sessionId)
+            .method(NonBlockingGuardrailsTestAgent::ask)
+            .invoke("think about it");
+
+    // then
+    assertThat(result.response()).isEqualTo("thought through");
+    var reply = RecordingResponseGuard.replyBySession.get(sessionId);
+    assertThat(reply.thinking()).contains("final thinking");
+    assertThat(reply.attributes()).containsExactlyEntriesOf(Map.of("final-key", "final-value"));
+  }
+
+  @Test
+  public void shouldExposeThinkingAndAttributesToModelCallGuardrail() {
+    // given
+    testModelProvider
+        .whenMessage(s -> s.equals("what day is it, thinking?"))
+        .reply(
+            new AiResponse(
+                    new ToolInvocationRequest("NonBlockingGuardrailsTestAgent_getDateOfToday", ""))
+                .withThinking("I need the date")
+                .withAttributes(Map.of("tool-key", "tool-value")));
+    testModelProvider
+        .whenToolResult(result -> result.content().equals("2025-01-01"))
+        .thenReply(result -> new AiResponse("Today is " + result.content()));
+
+    // when
+    var sessionId = newSessionId();
+    var result =
+        componentClient
+            .forAgent()
+            .inSession(sessionId)
+            .method(NonBlockingGuardrailsTestAgent::ask)
+            .invoke("what day is it, thinking?");
+
+    // then
+    assertThat(result.response()).isEqualTo("Today is 2025-01-01");
+
+    var aiMessages = RecordingModelCallGuard.aiMessagesBySession.get(sessionId);
+    assertThat(aiMessages).hasSize(1);
+
+    var aiMessage = aiMessages.getFirst();
+    assertThat(aiMessage.toolCallRequests())
+        .extracting(Guardrail.Message.AiMessage.ToolCallRequest::name)
+        .containsExactly("NonBlockingGuardrailsTestAgent_getDateOfToday");
+    assertThat(aiMessage.thinking()).contains("I need the date");
+    assertThat(aiMessage.attributes()).containsExactlyEntriesOf(Map.of("tool-key", "tool-value"));
   }
 
   @Test

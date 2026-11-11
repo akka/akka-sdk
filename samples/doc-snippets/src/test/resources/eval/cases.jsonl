@@ -1,0 +1,3 @@
+{"id":"order-status","command":"Where is order o_42?"}
+{"id":"full-refund","command":"Order o_9 arrived broken. I want my money back."}
+{"id":"greeting","command":"hello?"}

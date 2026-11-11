@@ -142,7 +142,8 @@ private[javasdk] object HttpEndpointDescriptorFactory {
         new HttpEndpointMethodSpec.LowLevelRequestBody(parameter.description, parameter.required)
       else
         parameter.schemaType match {
-          case string: SpiJsonSchema.JsonSchemaString =>
+          // the runtime accepts a text request body only for a String parameter
+          case string: SpiJsonSchema.JsonSchemaString if parameterClass == classOf[String] =>
             new HttpEndpointMethodSpec.TextRequestBody(string.description)
           case json =>
             new HttpEndpointMethodSpec.JsonRequestBody(json)

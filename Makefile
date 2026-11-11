@@ -36,7 +36,7 @@ define antora_mounts
 endef
 
 .SILENT:
-.PHONY: check-optimize markdown whitepapers whitepapers-ci
+.PHONY: check-optimize rbac markdown whitepapers whitepapers-ci
 
 build: managed local open
 
@@ -53,7 +53,7 @@ prepare:
 	mkdir -p "${java_managed_attachments}"
 	cp akka-javasdk-testkit/src/main/resources/akka/javasdk/testkit/eval/eval-report.example.json "${java_managed_attachments}/"
 
-managed: check-optimize prepare apidocs attributes examples bundles
+managed: check-optimize prepare apidocs attributes examples rbac bundles
 
 attributes: apidocs
 	test -s target/docs-runtime-version.txt
@@ -75,6 +75,11 @@ attributes: apidocs
 	# see https://docs.docker.com/engine/release-notes/27/
 	echo ":minimum_docker_version: 27" \
 		>> "${managed_partials}/attributes.adoc"
+
+# The RBAC reference tables are generated from the documents that the Akka control plane serves.
+# Set RBAC_RESOURCES_URL or RBAC_RESOURCES_DIR to change the source, see docs/bin/generate-rbac-tables.mjs.
+rbac: prepare
+	node docs/bin/generate-rbac-tables.mjs "${src_managed}/modules/reference/partials/rbac"
 
 apidocs: prepare
 	mkdir -p "${java_managed_attachments}"
@@ -137,7 +142,7 @@ done:
 open:
 	open "${TARGET_DIR}/index.html"
 
-local: check-optimize docker-image examples optimize-content antora-local whitepapers done
+local: check-optimize docker-image examples rbac optimize-content antora-local whitepapers done
 
 prod: check-optimize docker-image managed optimize-content antora-prod done
 

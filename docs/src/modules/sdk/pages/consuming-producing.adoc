@@ -141,14 +141,14 @@ xref:consuming-producing.adoc#_starting_from_snapshot[] can be used for service-
 [#_event_consumer]
 === Event Consumer
 
-The consuming side can be a Consumer or a View, annotated with `@Consume.FromStream` with a `service` identifying the publishing service, and the `id` of the stream to subscribe to.
+The consuming side can be a Consumer or a View, annotated with `@Consume.FromServiceStream` with a `service` identifying the publishing service, and the `id` of the stream to subscribe to.
 
 [source,java,indent=0]
 .{sample-base-url}/event-sourced-customer-registry-subscriber/src/main/java/customer/application/CustomersByNameView.java[CustomersByNameView.java]
 ----
 include::example$event-sourced-customer-registry-subscriber/src/main/java/customer/application/CustomersByNameView.java[tag=view]
 ----
-<1> Annotate the Table Updater with `@Consume.FromStream` to subscribe to an event stream from another Akka service.
+<1> Annotate the Table Updater with `@Consume.FromServiceStream` to subscribe to an event stream from another Akka service.
 <2> The name of the Akka service publishing the event stream.
 <3> The public identifier of the specific stream. Corresponds to the `@Produce.ServiceStream id` in the service publishing the event stream.
 <4> Handler method per message type that the stream may contain.
@@ -242,7 +242,7 @@ Check xref:serialization.adoc[serialization] documentation for more details.
 
 It is possible to use environment variables to control the name of the service or topic that a consumer consumes from, this is useful for example for using the same image in staging and production deployments but having them consume from different source services.
 
-Referencing environment variables is done with the syntax `$\{VAR_NAME}` in the `service` parameter of the `@Consume.FromStream` annotation or `value` parameter of the `@Consume.FromTopic` annotation.
+Referencing environment variables is done with the syntax `$\{VAR_NAME}` in the `service` parameter of the `@Consume.FromServiceStream` annotation or `value` parameter of the `@Consume.FromTopic` annotation.
 
 WARNING: Changing the service or topic name after it has once been deployed means the consumer will start over from the beginning of the event stream.
 

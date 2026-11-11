@@ -29,7 +29,7 @@ Codex CLI::
 --
 [source]
 ----
-codex plugin marketplace upgrade ai-marketplace
+codex plugin marketplace upgrade akka-ai-marketplace
 ----
 --
 

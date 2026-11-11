@@ -13,6 +13,7 @@ import scala.jdk.CollectionConverters._
 
 import akka.annotation.InternalApi
 import akka.javasdk.impl.reflection.Reflect
+import akka.javasdk.impl.serialization.ProtobufJsonTypes
 import akka.runtime.sdk.spi.SpiSchema.SpiBoolean
 import akka.runtime.sdk.spi.SpiSchema.SpiByteString
 import akka.runtime.sdk.spi.SpiSchema.SpiClass
@@ -78,6 +79,14 @@ private[view] object ViewSchema {
   def forQuery(rootType: Type): SpiType = schemaFor(rootType, protobufPresence = false)
 
   private def schemaFor(rootType: Type, protobufPresence: Boolean): SpiType = {
+    rootType match {
+      case c: Class[_] if classOf[GeneratedMessageV3].isAssignableFrom(c) =>
+        val fullName = Reflect.protoDescriptorFor(c.asInstanceOf[Class[_ <: GeneratedMessageV3]]).getFullName
+        if (ProtobufJsonTypes.WrapperTypes.contains(fullName))
+          throw new IllegalArgumentException(
+            s"Protobuf type [$fullName] is not supported as a row or query type in views, use it as a field of a message")
+      case _ =>
+    }
     // Note: not tail recursive but trees should not ever be deep enough that it is a problem
     def loop(currentType: Type, seenClasses: Set[Class[_]]): SpiType =
       typeNameMap.get(currentType.getTypeName) match {
@@ -121,33 +130,43 @@ private[view] object ViewSchema {
     loop(rootType, Set.empty)
   }
 
-  private val ProtobufTimestampFullName = "google.protobuf.Timestamp"
+  private def protobufSchema(clazz: Class[_ <: GeneratedMessageV3], protobufPresence: Boolean): SpiNestableType =
+    protobufMessageSchema(Reflect.protoDescriptorFor(clazz), protobufPresence, Set.empty)
 
-  private def protobufSchema(clazz: Class[_ <: GeneratedMessageV3], protobufPresence: Boolean): SpiType = {
-    val descriptor = Reflect.protoDescriptorFor(clazz)
-    if (descriptor.getFullName == ProtobufTimestampFullName) SpiTimestamp
-    else protobufSchemaFromDescriptor(descriptor, protobufPresence, Set.empty)
+  private def protobufMessageSchema(
+      descriptor: Descriptors.Descriptor,
+      protobufPresence: Boolean,
+      seenMessages: Set[String]): SpiNestableType = {
+    val fullName = descriptor.getFullName
+    if (fullName == ProtobufJsonTypes.TimestampType) SpiTimestamp
+    else if (ProtobufJsonTypes.WrapperTypes.contains(fullName))
+      protobufFieldToSpiType(descriptor.findFieldByName("value"), protobufPresence, seenMessages)
+    else if (ProtobufJsonTypes.StringJsonTypes.contains(fullName)) SpiString
+    else if (ProtobufJsonTypes.UnsupportedTypes.contains(fullName))
+      throw new IllegalArgumentException(
+        s"Protobuf type [$fullName] is not supported in views, it does not have a fixed schema")
+    else if (seenMessages.contains(fullName)) new SpiClassRef(fullName)
+    else protobufSchemaFromDescriptor(descriptor, protobufPresence, seenMessages)
   }
 
   private def protobufFieldToSpiType(
       field: Descriptors.FieldDescriptor,
       protobufPresence: Boolean,
       seenMessages: Set[String]): SpiNestableType = {
-    import Descriptors.FieldDescriptor.JavaType
-    field.getJavaType match {
-      case JavaType.STRING      => SpiString
-      case JavaType.INT         => SpiInteger
-      case JavaType.LONG        => SpiLong
-      case JavaType.DOUBLE      => SpiDouble
-      case JavaType.FLOAT       => SpiFloat
-      case JavaType.BOOLEAN     => SpiBoolean
-      case JavaType.BYTE_STRING => SpiByteString
-      case JavaType.ENUM        => new SpiEnum(field.getEnumType.getFullName)
-      case JavaType.MESSAGE =>
-        val msgType = field.getMessageType
-        if (msgType.getFullName == ProtobufTimestampFullName) SpiTimestamp
-        else if (seenMessages.contains(msgType.getFullName)) new SpiClassRef(msgType.getFullName)
-        else protobufSchemaFromDescriptor(msgType, protobufPresence, seenMessages)
+    import Descriptors.FieldDescriptor.Type
+    // the view JSON holds unsigned values, uint32 needs a long, uint64 above Long.MaxValue is not supported
+    field.getType match {
+      case Type.STRING                              => SpiString
+      case Type.INT32 | Type.SINT32 | Type.SFIXED32 => SpiInteger
+      case Type.UINT32 | Type.FIXED32               => SpiLong
+      case Type.INT64 | Type.SINT64 | Type.SFIXED64 => SpiLong
+      case Type.UINT64 | Type.FIXED64               => SpiLong
+      case Type.DOUBLE                              => SpiDouble
+      case Type.FLOAT                               => SpiFloat
+      case Type.BOOL                                => SpiBoolean
+      case Type.BYTES                               => SpiByteString
+      case Type.ENUM                                => new SpiEnum(field.getEnumType.getFullName)
+      case Type.MESSAGE | Type.GROUP => protobufMessageSchema(field.getMessageType, protobufPresence, seenMessages)
     }
   }
 
@@ -157,6 +176,9 @@ private[view] object ViewSchema {
       seenMessages: Set[String]): SpiClass = {
     val seenIncludingThis = seenMessages + descriptor.getFullName
     val fields = descriptor.getFields.asScala.map { field =>
+      if (field.isMapField)
+        throw new IllegalArgumentException(
+          s"Protobuf map field [${field.getFullName}] is not supported in views. Use a repeated field of a message instead.")
       val baseType = protobufFieldToSpiType(field, protobufPresence, seenIncludingThis)
       // fields with explicit presence (message, oneof, optional) can be unset, the table stores an unset field as null
       val spiType =

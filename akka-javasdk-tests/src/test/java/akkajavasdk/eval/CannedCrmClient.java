@@ -4,8 +4,6 @@
 
 package akkajavasdk.eval;
 
-import akka.javasdk.testkit.eval.RecordedCall;
-import akka.javasdk.testkit.eval.ToolBindings;
 import akkajavasdk.components.agent.eval.CrmClient;
 import akkajavasdk.components.agent.eval.Customer;
 import akkajavasdk.components.agent.eval.Ticket;
@@ -14,11 +12,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * The mocked dependency: canned answers, nothing written down. The test fills it with plain Java
- * before the run; a replayed case fills it through {@link ToolBindings} with what production
- * recorded.
- */
+/** The mocked dependency: canned answers the test fills in with plain Java before the run. */
 final class CannedCrmClient implements CrmClient {
 
   private final Map<String, Customer> customers = new ConcurrentHashMap<>();
@@ -47,20 +41,5 @@ final class CannedCrmClient implements CrmClient {
 
   void addTickets(String customerId, Ticket... canned) {
     tickets.put(customerId, List.of(canned));
-  }
-
-  /** The name of every customer the CRM knows. */
-  List<String> names() {
-    return customers.values().stream().map(Customer::name).toList();
-  }
-
-  /** {@link ToolBindings.ResultLoader} for getCustomer. */
-  void loadCustomer(RecordedCall call) {
-    customers.put((String) call.argument("customerId"), call.resultAs(Customer.class));
-  }
-
-  /** {@link ToolBindings.ResultLoader} for openTickets; the recorded result is an array of them. */
-  void loadTickets(RecordedCall call) {
-    tickets.put((String) call.argument("customerId"), List.of(call.resultAs(Ticket[].class)));
   }
 }

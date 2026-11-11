@@ -17,8 +17,17 @@ public class SimpleEvaluator extends Evaluator {
 
   @Override
   public Effect evaluate(EvaluationContext context) {
-    Subject subject = context.subject();
+    return switch (context.subject()) {
+      case Subject.Interaction interaction -> evaluateInteraction(context, interaction);
+      case Subject.Workflow workflow ->
+          effects()
+              .complete(
+                  Evaluation.passed("evaluated run " + workflow.workflowId())
+                      .withAttributes(context.attributes()));
+    };
+  }
 
+  private Effect evaluateInteraction(EvaluationContext context, Subject.Interaction subject) {
     return switch (subject.interactionId()) {
       case "inconclusive" ->
           effects().inconclusive("cannot evaluate interaction " + subject.interactionId());

@@ -24,6 +24,11 @@ public interface EvaluatorResult {
   boolean isInconclusive();
 
   /**
+   * @return true if the evaluation was not applicable
+   */
+  boolean isNotApplicable();
+
+  /**
    * @return the verdict the evaluation completed with, or throws if it was not complete
    */
   Evaluation getEvaluation();
@@ -32,4 +37,9 @@ public interface EvaluatorResult {
    * @return the reason the evaluation was inconclusive, or throws if it was not inconclusive
    */
   String getInconclusiveReason();
+
+  /**
+   * @return the reason the evaluation was not applicable, or throws if it was not not applicable
+   */
+  String getNotApplicableReason();
 }

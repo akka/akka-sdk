@@ -56,7 +56,7 @@ An _event handler_ is the only piece of code that is allowed to _update_ the sta
 
 [[event_sourced_entity]]Event Sourced Entity:: A type of <<entity>> that stores its state using a journal of events, and restores its state by replaying that journal. These are discussed in more detail in xref:concepts:state-model.adoc#_the_event_sourced_state_model[Event Sourced state model].
 
-[[guardrails]]Guardrails:: A <<control_type,control type>> that checks an agent's input, tool call or output at a runtime boundary and blocks or passes it. The verdict of a guardrail is <<evidence>> in the <<ledger>>. See xref:concepts:controls.adoc#guardrails[Guardrails].
+[[guardrails]]Guardrails:: A <<control_type,control type>> that checks an agent's input, tool call or output at a runtime boundary and blocks or passes it. The runtime records each denial and failure of a guardrail in the <<ledger>> as <<evidence>>, and each allow by default (see xref:sdk:evaluators.adoc#_optional_ledger_records[optional ledger records]). See xref:concepts:controls.adoc#guardrails[Guardrails].
 
 [[control]]Control:: An obligation plus the mechanism that meets it. Every control has an id, is one of five <<control_type,control types>>, and produces verdicts that name it. See xref:concepts:controls.adoc[].
 
@@ -68,7 +68,7 @@ An _event handler_ is the only piece of code that is allowed to _update_ the sta
 
 [[key_value_entity]]Key Value Entity:: A Key Value Entity stores state in an update-in-place model, similar to a Key-Value store that supports CRUD (Create, Read, Update, Delete) operations. In Domain Driven Design (DDD) terms, a Value Entity is an "Entity." In contrast with "Value Objects," you reference Entities by an identifier and the value associated with that identifier can change (be updated) over time. These are discussed in more detail in xref:concepts:state-model.adoc#_the_key_value_state_model[Key Value state model].
 
-[[ledger]]Ledger:: The trace of what happened in an agentic system. Each interaction is saved in it as a <<record>>: the model calls, tool calls, token usage and outcome, and the verdicts of the <<control,controls>> that applied. An <<evaluator>> reads from it through an injected `LedgerClient`. See xref:concepts:evidence.adoc[] and xref:sdk:evaluators.adoc#_the_ledger_client[The ledger client].
+[[ledger]]Ledger:: The trace of what happened in an agentic system. Each interaction is saved in it as a <<record>>: the model calls, tool calls, token usage and outcome, and the verdicts of the <<control,controls>> that applied, except the xref:sdk:evaluators.adoc#_optional_ledger_records[optional ledger records] that the service turns off. An <<evaluator>> reads from it through an injected `LedgerClient`. See xref:concepts:evidence.adoc[] and xref:sdk:evaluators.adoc#_the_ledger_client[The ledger client].
 
 [[record]]Record:: The saved information about one interaction or event, as one entry in the <<ledger>>. See xref:concepts:evidence.adoc[].
 
@@ -189,17 +189,13 @@ Each section of the documentation keeps its own words for the parts of evaluatio
 | Developing
 | The component that the runtime triggers after an interaction to record a verdict.
 
-| evaluator
-| Testing
-| One check over the reply and the traced tool calls of an evaluation case.
-
 | evaluation case
 | Testing
-| One input to the agent and the evaluators that apply to it.
+| One command sent to the agent. The evaluators bound to the agent judge the interaction.
 
 | judge
 | Developing and Testing
-| A model that scores a reply against a criterion. In Developing it is an agent; in Testing it is a TestKit evaluator.
+| An agent that scores a reply against a criterion, called by an evaluator.
 
 | experiment
 | Reference (CLI)

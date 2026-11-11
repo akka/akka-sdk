@@ -8,6 +8,9 @@ import akka.javasdk.annotations.FunctionTool;
 @Component(id = "order-agent")
 public class OrderAgent extends Agent {
 
+  public static final String GET_ORDER = "getOrder";
+  public static final String ISSUE_REFUND = "issueRefund";
+
   private static final String SYSTEM_MESSAGE =
     """
     You are the support assistant of an online shop.
@@ -28,7 +31,7 @@ public class OrderAgent extends Agent {
   }
 
   @FunctionTool(
-    name = "getOrder",
+    name = GET_ORDER,
     description = "Look up an order by its id, for example o_42."
   )
   Order getOrder(String orderId) { // <3>
@@ -36,7 +39,7 @@ public class OrderAgent extends Agent {
   }
 
   @FunctionTool(
-    name = "issueRefund",
+    name = ISSUE_REFUND,
     description = "Refund an amount in cents to the customer of an order."
   )
   Refund issueRefund(String orderId, int amountCents) {

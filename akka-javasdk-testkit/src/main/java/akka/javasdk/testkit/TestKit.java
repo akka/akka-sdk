@@ -1244,6 +1244,7 @@ public class TestKit {
       componentClient =
           new ComponentClientImpl(
               componentClients,
+              startupContext.evaluationClient(),
               serializer,
               startupContext.agentRegistry().agentClassById(),
               Option.apply(startupContext.agentCapabilityConverter()),

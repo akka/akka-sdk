@@ -52,6 +52,25 @@ public class EvaluatorTestKitSample {
     assertThat(result.getEvaluation().passed()).isFalse();
   }
 
+  @Test
+  public void evaluatesAWorkflowRun() {
+    // tag::workflow-run[]
+    var stubLedger = TestLedgerClient.create()
+      .seed(sampleRecord("interaction-1"))
+      .seed(sampleRecord("interaction-2"));
+
+    var testKit = EvaluatorTestKit.of(() -> new AgentTeamRunEvaluator(stubLedger));
+
+    EvaluatorResult result = testKit.evaluate(
+      new Subject.Workflow("run-1", "evaluated-agent-team"), // <1>
+      Map.of("interactionIds", "interaction-1,interaction-2") // <2>
+    );
+
+    assertThat(result.getEvaluation().passed()).isTrue();
+    assertThat(result.getEvaluation().attributes()).containsEntry("agentCalls", "2");
+    // end::workflow-run[]
+  }
+
   private static InteractionRecord sampleRecord(String interactionId) {
     var metadata = new InteractionMetadata(
       new ModelConfig("openai", "gpt-4o", "", 0.0, 1.0, 0, 0),

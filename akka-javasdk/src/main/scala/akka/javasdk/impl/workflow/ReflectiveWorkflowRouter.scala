@@ -43,6 +43,7 @@ import akka.javasdk.workflow.WorkflowContext
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.ComponentClients
 import akka.runtime.sdk.spi.SpiEntity
+import akka.runtime.sdk.spi.SpiEvaluationClient
 import akka.runtime.sdk.spi.SpiMetadata
 import akka.runtime.sdk.spi.SpiWorkflow
 
@@ -68,7 +69,8 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
     serializer: Serializer,
     stateClass: Class[S],
     sdkExecutionContext: ExecutionContext,
-    runtimeComponentClients: ComponentClients)(implicit system: ActorSystem[_]) {
+    runtimeComponentClients: ComponentClients,
+    evaluationClient: SpiEvaluationClient)(implicit system: ActorSystem[_]) {
 
   private def decodeUserState(userState: Option[BytesPayload]): Option[S] =
     userState
@@ -121,7 +123,7 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
       }
       val otelContext = context.tracing().asInstanceOf[SpanTracingImpl].context
       val componentClient =
-        ComponentClientImpl(runtimeComponentClients, serializer, Map.empty, None, otelContext)(
+        ComponentClientImpl(runtimeComponentClients, evaluationClient, serializer, Map.empty, None, otelContext)(
           sdkExecutionContext,
           system)
       val workflowClient = componentClient.forWorkflow(workflowContext.workflowId())
@@ -172,7 +174,7 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
           }
         val otelContext = commandContext.tracing().asInstanceOf[SpanTracingImpl].context
         val componentClient =
-          ComponentClientImpl(runtimeComponentClients, serializer, Map.empty, None, otelContext)(
+          ComponentClientImpl(runtimeComponentClients, evaluationClient, serializer, Map.empty, None, otelContext)(
             sdkExecutionContext,
             system)
         val workflowClient = componentClient.forWorkflow(workflowContext.workflowId())

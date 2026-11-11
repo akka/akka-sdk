@@ -24,6 +24,7 @@ allowlisting
 [Aa]llowlists?
 allowMethods
 allowOrigins
+allowStreaming
 [Aa]lpakka
 anonymized
 [Aa]nthropic

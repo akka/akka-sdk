@@ -101,7 +101,7 @@ class HttpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers {
       val byMethodName = descriptor.methods.map(md => md.userMethod.getName -> md).toMap
 
       descriptor.mainPath shouldBe Some("/test-specs/")
-      descriptor.methods should have size 9
+      descriptor.methods should have size 10
 
       val parametersOnly = byMethodName("parametersOnly")
       parametersOnly.pathExpression shouldBe "parameters-only/{someString}/and/{someInt}"
@@ -145,6 +145,10 @@ class HttpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers {
       textBodyOnly.pathExpression shouldBe "text-body-only"
       textBodyOnly.httpMethod shouldBe HttpMethods.POST
       textBodyOnly.methodSpec shouldBe Spec(requestBody = Spec.textBody("some body"))
+
+      // the runtime parses a body that is not a String as JSON
+      val instantBodyOnly = byMethodName("instantBodyOnly")
+      instantBodyOnly.methodSpec shouldBe Spec(requestBody = Spec.jsonBody(Schema.string("some body")))
 
       val parametersAndArrayBody = byMethodName("parametersAndArrayBody")
       parametersAndArrayBody.pathExpression shouldBe "parameters-and-array-body/{someString}/and/{someInt}"

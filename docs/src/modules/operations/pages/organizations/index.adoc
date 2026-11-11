@@ -1,7 +1,7 @@
 = Organizations
 :page-summary: An organization is the root of the Akka management hierarchy. It holds the projects where services are deployed, the users who belong to it, and the regions its projects can use.
 :page-when-to-use: When you add users to an organization or a project, or need to know which organization, regions and roles apply to your work.
-:page-related: operations:organizations/manage-users.adoc, operations:projects/manage-project-access.adoc, operations:organizations/regions.adoc
+:page-related: operations:security/index.adoc, operations:security/organization-role-bindings.adoc, operations:security/project-role-bindings.adoc, operations:organizations/regions.adoc
 :page-persona: operator-platform
 
 include::ROOT:partial$include.adoc[]
@@ -12,9 +12,9 @@ To switch between organizations, you must specify the target organization's cont
 
 == Key concepts
 
-* xref:organizations/manage-users.adoc[*User Membership*]: A user can belong to multiple organizations, but membership does not automatically grant access to the organization's projects.
+* xref:operations:security/organization-role-bindings.adoc[*User Membership*]: A user can belong to multiple organizations, but membership does not automatically grant access to the organization's projects.
 * xref:organizations/regions.adoc[*Regions*]: Each organization has access to specific regions. Projects created within the organization are located in one or more of these regions.
-* xref:projects/manage-project-access.adoc[*Role-Based Access*]: Membership and project access within an organization are managed through role bindings.
+* xref:operations:security/index.adoc[*Role-Based Access*]: Membership and project access within an organization are managed through role bindings to built-in and custom roles.
 
 == Details
 
@@ -24,10 +24,11 @@ To switch between organizations, you must specify the target organization's cont
 
 == Who can do what
 
-Two pages in this section set who can do what:
+The pages in xref:operations:security/index.adoc[] set who can do what:
 
-* xref:organizations/manage-users.adoc[]: add users to the organization and give them organization roles.
-* xref:projects/manage-project-access.adoc[]: give organization members access to a project and its project roles.
+* xref:operations:security/organization-role-bindings.adoc[]: add users to the organization and give them organization roles or custom roles.
+* xref:operations:security/project-role-bindings.adoc[]: give users access to a project with a project role.
+* xref:operations:security/custom-roles.adoc[]: define your own roles.
 
 == Usage
 
@@ -45,4 +46,4 @@ NAME        ID                                     ROLES
 acme        1a4a9d5d-1234-5678-910a-9c8fb3700da7   superuser
 ----
 
-NOTE: You can refer to the organization in `akka` commands using either the "friendly name" or the "ID" with the `--organization` flag. See the page on xref:organizations/manage-users.adoc[managing organization users] to find more, including the use of organization roles.
+NOTE: You can refer to the organization in `akka` commands using either the "friendly name" or the "ID" with the `--organization` flag. See the page on xref:operations:security/organization-role-bindings.adoc[organization role bindings] to find more, including the use of organization roles.

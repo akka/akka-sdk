@@ -243,7 +243,6 @@ private[impl] object AgentImpl {
     toSpiModelProviderWithIdentityHeaders(modelProvider, config, componentId, globalIdentityHeaders(config))
 
   @tailrec
-  @nowarn("msg=deprecated")
   private def toSpiModelProviderWithIdentityHeaders(
       modelProvider: ModelProvider,
       config: Config,
@@ -348,7 +347,12 @@ private[impl] object AgentImpl {
             p.maxRetries(),
             p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq,
             identityHeaders),
-          thinking = p.thinking)
+          thinking = p.thinking,
+          api = p.api match {
+            case ModelProvider.OpenAiApi.CHAT_COMPLETIONS => SpiAgent.ModelProvider.OpenAiApi.ChatCompletions
+            case ModelProvider.OpenAiApi.RESPONSES        => SpiAgent.ModelProvider.OpenAiApi.Responses
+          },
+          reasoningEffort = p.reasoningEffort)
       case p: ModelProvider.AzureOpenAi =>
         new SpiAgent.ModelProvider.AzureOpenAi(
           endpoint = p.endpoint,
@@ -1007,6 +1011,10 @@ private[impl] final class AgentImpl(
             new ToolCallRequest(req.id, req.name, req.arguments)
           }.asJava
 
+          val attributes = res.attributes.asJava
+          val keptAttributes = ModelAttributes.keepStringValues(attributes)
+          ModelAttributes.logDroppedAttributes(componentId, sessionId, attributes, keptAttributes)
+
           new AiMessage(
             res.timestamp,
             res.content,
@@ -1014,7 +1022,7 @@ private[impl] final class AgentImpl(
             requests,
             res.thinking.toJava,
             toSessionTokenUsage(res.tokenUsage),
-            res.attributes.asJava)
+            keptAttributes)
 
         case res: SpiAgent.ToolCallResponse =>
           AgentImpl.toSessionToolCallResponse(
@@ -1041,7 +1049,6 @@ private[impl] final class AgentImpl(
     }
   }
 
-  @nowarn("msg=deprecated")
   private def mapSpiAgentException(func: Throwable => Any): Throwable => Any = {
 
     @nowarn("msg=deprecated")
