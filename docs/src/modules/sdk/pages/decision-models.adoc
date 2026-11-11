@@ -116,7 +116,7 @@ A failed call fails with an exception from `akka.javasdk.agent`:
 * `InternalServerException` when the model API answers with a server error status after the configured retries.
 * `ModelException` for other failures, such as a rejected request or an unusable response.
 
-An invalid request or configuration fails with an `IllegalArgumentException`: an unsupported state, no questions, duplicate question keys, more options or levels than the provider supports, or a provider without a model name or API key.
+An invalid request or configuration fails with an `IllegalArgumentException`: an unsupported state, no questions, duplicate question keys, more options or levels than the provider supports, a provider configuration section without a required key, or a provider without a model name or API key.
 
 The client retries a request up to `max-retries` times if it fails with a rate limit, a server error, a timeout or a connection failure. The `response-timeout` applies to each attempt.
 

@@ -29,8 +29,9 @@ import java.util.concurrent.CompletionStage;
  * <ul>
  *   <li>{@link IllegalArgumentException} for an invalid request or configuration: an unsupported
  *       state, no questions, duplicate question keys, more options or levels than the provider
- *       supports, no provider configured, an unknown provider, or a provider without a model name
- *       or API key. Configuration failures surface on the first call.
+ *       supports, no provider configured, an unknown provider, a provider configuration section
+ *       without a required key, or a provider without a model name or API key. Configuration
+ *       failures surface on the first call.
  *   <li>{@link akka.javasdk.agent.RateLimitException} when the model API answers with a rate limit
  *       status (429) after the configured retries.
  *   <li>{@link akka.javasdk.agent.ModelTimeoutException} when a request to the model API times out.

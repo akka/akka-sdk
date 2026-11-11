@@ -317,6 +317,26 @@ class DecisionModelClientImplSpec extends AnyWordSpec with Matchers with ScalaFu
         client(spi).model(DecisionModelProvider.fromConfig("missing")).state("t").questions(urgent).invoke())
       e.getMessage should include("Undefined decision model provider configuration [missing]")
     }
+
+    "fail with an IllegalArgumentException for a provider configuration without a required key" in {
+      val spi = new FakeSpiClient(_ => Future.successful(allAnswers))
+      val incomplete = ConfigFactory
+        .parseString("""
+          akka.javasdk.decision.escalation-model {
+            provider = "system-one"
+            model-name = "jev-1"
+          }
+          """)
+        .withFallback(DecisionModelClientImplSpec.config)
+      val e = intercept[IllegalArgumentException](
+        client(spi, config = incomplete)
+          .model(DecisionModelProvider.fromConfig("escalation-model"))
+          .state("t")
+          .questions(urgent)
+          .invoke())
+      e.getMessage should include("[akka.javasdk.decision.escalation-model]")
+      e.getMessage should include("api-key")
+    }
   }
 
   "The SystemOne provider" should {

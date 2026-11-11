@@ -33,6 +33,7 @@ import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiDecision
 import akka.runtime.sdk.spi.SpiDecisionModelClient
 import com.typesafe.config.Config
+import com.typesafe.config.ConfigException
 import io.opentelemetry.context.{ Context => OtelContext }
 
 /**
@@ -74,11 +75,18 @@ private[javasdk] object DecisionModelClientImpl {
       else if (!actualPath.contains('.') && config.hasPath(s"$ConfigPrefix.$actualPath")) s"$ConfigPrefix.$actualPath"
       else throw new IllegalArgumentException(s"Undefined decision model provider configuration [$actualPath]")
 
-    val providerConfig = config.getConfig(resolvedPath)
-    providerConfig.getString("provider") match {
-      case "system-one" => DecisionModelProvider.SystemOne.fromConfig(providerConfig)
-      case other =>
-        throw new IllegalArgumentException(s"Unknown decision model provider [$other] in config [$resolvedPath]")
+    try {
+      val providerConfig = config.getConfig(resolvedPath)
+      providerConfig.getString("provider") match {
+        case "system-one" => DecisionModelProvider.SystemOne.fromConfig(providerConfig)
+        case other =>
+          throw new IllegalArgumentException(s"Unknown decision model provider [$other] in config [$resolvedPath]")
+      }
+    } catch {
+      case e: ConfigException =>
+        throw new IllegalArgumentException(
+          s"Invalid decision model provider configuration [$resolvedPath]: ${e.getMessage}",
+          e)
     }
   }
 
