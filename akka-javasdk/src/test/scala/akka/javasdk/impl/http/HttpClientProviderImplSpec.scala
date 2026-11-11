@@ -4,6 +4,8 @@
 
 package akka.javasdk.impl.http
 
+import scala.jdk.CollectionConverters._
+
 import akka.actor.testkit.typed.scaladsl.LogCapturing
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.http.javadsl.model.HttpRequest
@@ -19,8 +21,6 @@ import io.opentelemetry.api.trace.TraceState
 import io.opentelemetry.context.{ Context => OtelContext }
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
-
-import scala.jdk.CollectionConverters._
 
 class HttpClientProviderImplSpec
     extends ScalaTestWithActorTestKit

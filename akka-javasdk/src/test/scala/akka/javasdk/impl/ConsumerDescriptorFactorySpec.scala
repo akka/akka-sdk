@@ -11,7 +11,6 @@ import akka.javasdk.testmodels.subscriptions.PubSubTestModels.EventStreamSubscri
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.HostWithPlatformServiceStreamConsumer
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.InvalidPlatformServiceStreamConsumer
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.PlatformServiceStreamConsumer
-import akka.javasdk.testmodels.subscriptions.PubSubTestModels.TemplatePlatformServiceStreamConsumer
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.ProtobufEventStreamConsumer
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToBytesFromTopic
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToEventSourcedEmployee
@@ -19,6 +18,7 @@ import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToTopicTy
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToTopicTypeLevelCombined
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToValueEntityTypeLevel
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToValueEntityWithDeletes
+import akka.javasdk.testmodels.subscriptions.PubSubTestModels.TemplatePlatformServiceStreamConsumer
 import akka.runtime.sdk.spi.ConsumerSource
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec

@@ -4,6 +4,8 @@
 
 package akka.javasdk.impl.grpc
 
+import scala.jdk.CollectionConverters._
+
 import akka.actor.testkit.typed.scaladsl.LogCapturing
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.javasdk.impl.Settings
@@ -17,8 +19,6 @@ import io.opentelemetry.api.trace.TraceState
 import io.opentelemetry.context.{ Context => OtelContext }
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
-
-import scala.jdk.CollectionConverters._
 
 class GrpcProviderClientImplSpec
     extends ScalaTestWithActorTestKit
