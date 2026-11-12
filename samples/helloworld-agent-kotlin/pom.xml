@@ -97,6 +97,9 @@
                 <annotationProcessor>
                   akka.javasdk.tooling.processor.ComponentAnnotationProcessor
                 </annotationProcessor>
+                <annotationProcessor>
+                  akka.javasdk.tooling.processor.InventoryProcessor
+                </annotationProcessor>
               </annotationProcessors>
               <annotationProcessorArgs>
                 <arg>akka.javasdk.groupId=${project.groupId}</arg>
