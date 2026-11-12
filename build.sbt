@@ -153,7 +153,8 @@ lazy val annotationProcessorTestProject: CompositeProject =
         libraryDependencies += Dependencies.scalaTest % Test,
         Compile / javacOptions ++= Seq(
           "-processor",
-          "akka.javasdk.tooling.processor.ComponentAnnotationProcessor",
+          "akka.javasdk.tooling.processor.ComponentAnnotationProcessor," +
+          "akka.javasdk.tooling.processor.InventoryProcessor",
           "-Aakka.javasdk.groupId=com.example",
           "-Aakka.javasdk.artifactId=test"),
         Compile / javacOptions ++= {
