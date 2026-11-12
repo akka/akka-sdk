@@ -52,7 +52,7 @@ public final class TestDecisionModelProvider implements DecisionModelProvider.Cu
   @Override
   public Decision decide(DecisionRequest request) {
     for (var rule : rules) {
-      if (rule.predicate.test(request)) return rule.answer(request);
+      if (rule.matcher.test(request)) return rule.answer(request);
     }
     throw new MissingDecisionResponseException(
         "No decision rule matches the request. The input is ["
@@ -76,8 +76,8 @@ public final class TestDecisionModelProvider implements DecisionModelProvider.Cu
   }
 
   /** A rule for requests that the given function accepts. */
-  public Rule whenRequest(Predicate<DecisionRequest> predicate) {
-    var rule = new Rule(predicate);
+  public Rule whenRequest(Predicate<DecisionRequest> matcher) {
+    var rule = new Rule(matcher);
     rules.addFirst(rule);
     return rule;
   }
@@ -92,12 +92,12 @@ public final class TestDecisionModelProvider implements DecisionModelProvider.Cu
    * does not ask are left out of the decision.
    */
   public static final class Rule {
-    private final Predicate<DecisionRequest> predicate;
+    private final Predicate<DecisionRequest> matcher;
     private final Map<String, Answer> answers = new ConcurrentHashMap<>();
     private volatile RuntimeException failure;
 
-    private Rule(Predicate<DecisionRequest> predicate) {
-      this.predicate = predicate;
+    private Rule(Predicate<DecisionRequest> matcher) {
+      this.matcher = matcher;
     }
 
     /**
