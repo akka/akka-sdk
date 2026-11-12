@@ -71,6 +71,7 @@ class InventoryProcessorSpec extends AnyWordSpec with Matchers {
         InventoryCompiler.compile("supported-annotations-only", DefaultOptions ++ Seq("-Xlint:processing", "-Werror"))
       withClue(result.diagnostics) { result.success shouldBe true }
       result.inventory("com.example", "shop") shouldBe defined
+      new String(result.inventory("com.example", "shop").get, UTF_8) shouldNot include("com.example.shop.ShopSetup")
     }
   }
 }

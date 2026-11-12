@@ -25,7 +25,8 @@ import javax.tools.StandardLocation;
   "akka.javasdk.annotations.Component",
   "akka.javasdk.annotations.http.HttpEndpoint",
   "akka.javasdk.annotations.GrpcEndpoint",
-  "akka.javasdk.annotations.mcp.McpEndpoint"
+  "akka.javasdk.annotations.mcp.McpEndpoint",
+  "akka.javasdk.annotations.Setup"
 })
 public class InventoryProcessor extends BaseAkkaProcessor {
 
@@ -83,6 +84,10 @@ public class InventoryProcessor extends BaseAkkaProcessor {
       for (TypeElement type :
           ElementFilter.typesIn(roundEnv.getElementsAnnotatedWith(annotation))) {
         var kind = ComponentKinds.kindFor(type, annotation);
+        if (kind.equals(ComponentKinds.SERVICE_SETUP)) {
+          continue;
+        }
+
         var className = processingEnv.getElementUtils().getBinaryName(type).toString();
         var component = findAnnotation(type, COMPONENT_ANNOTATION);
 
