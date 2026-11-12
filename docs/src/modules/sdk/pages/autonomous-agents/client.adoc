@@ -104,6 +104,72 @@ include::example$autonomous-agent-playground/src/test/java/demo/docs/ClientApiSa
 
 Both `suspend(...)` and `terminate(...)` accept an optional reason string, recorded on the corresponding `Suspended` and `Stopped` notifications.
 
+[#send-message]
+== Sending a message to a running agent
+
+Send a message to a running agent to add a constraint or to correct the course of the agent while it works on a task. The message is an `AgentMessage`: text with optional attachments. `sendMessage` returns a `MessageAcknowledgement` that says where the message went.
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[ClientApiSample.java]
+----
+include::example$autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[tag=send-message]
+----
+
+A message is for one task of the agent:
+
+* With a task id, set with `taskId(...)`, the message is for that task. When the task is queued or waits for its dependencies, the agent holds the message until the task starts.
+* Without a task id, the message is for the current task. When no task runs, the agent holds the message until the next task starts.
+
+=== When the model sees a message
+
+The model sees the message in its next request for the task of the message. That request is at the start of an iteration, or after the tool calls of a round when the model call continues. While a tool call runs, the message waits for it.
+
+A coordinator that waits for its workers in a blocking delegation makes no model call. Its model sees the message when the workers finish.
+
+The model sees that the message comes from an external sender, not who sent it.
+
+=== Message statuses
+
+The `status()` of the acknowledgement is one of the records of `MessageStatus`:
+
+[options="header", cols="1,3"]
+|===
+| Status | Meaning
+
+| `ForCurrentTask` | The message is for the current task. The model sees it in its next request for that task.
+| `Held` | The agent holds the message until its task starts, or until the next task starts when `taskId()` is empty.
+| `Consumed` | The agent stored the outcome of the model call that saw the message.
+| `Dropped` | The task ended before the agent consumed the message.
+| `Rejected` | The agent did not store the message. `reason()` says why.
+|===
+
+The agent rejects a message when:
+
+* the task of the message ended, or is not one of the tasks of the agent
+* the agent accepts no tasks
+* the agent already holds the maximum number of pending messages
+
+`Consumed` and `Dropped` are only the status of a retry and of a message in the agent state. A new message never has them.
+
+The agent consumes a message when it stores the outcome of the model call that saw the message. `Consumed` holds the id of that model call in `interactionId()`, and the ledger records the model call under that id. Read the record with `getInteraction(interactionId)` of the ledger client, see xref:sdk:evaluators.adoc#_the_ledger_client[The ledger client]. The agent drops a message whose task ends before the agent consumes it.
+
+=== Retrying a message with a message id
+
+Set a message id with `messageId(...)` when the call can run again, for example from a Workflow step or a Consumer. A message with the id of a known message gets the status of that message, with `duplicate()` set to `true`, and the agent stores nothing new. The agent knows an id while its message is pending, and while the message is among the 100 most recent consumed or dropped messages. The agent does not store a rejected message, so a retry of a rejected message is a new message. Without a message id, the runtime generates one, and a retry is a new message.
+
+=== Message limits and failures
+
+An agent holds at most 100 pending messages by default. All pending messages count, also the messages held for a queued task or for the next task. At the limit, the agent rejects a new message, and a retry of a known message still gets its status.
+
+Reference images and PDFs by URI. `attach(...)` throws an `IllegalArgumentException` for content with inline bytes.
+
+The call fails when the agent instance does not exist yet, and when the agent is stopped. An instance exists after its first `setup(...)` or task.
+
+=== Following a message after you send it
+
+`getState()` lists the pending messages and the most recent consumed or dropped messages with their status, see <<agent-state>>. The `MessagesConsumed` notification reports messages that the agent consumed, and the `MessagesDropped` notification reports messages that the agent dropped, see <<agent-notifications>>.
+
+[#agent-state]
 == Agent state
 
 Query the current state of an agent instance with `getState()`. The returned `AgentState` provides a snapshot of the agent's execution status.
@@ -115,6 +181,8 @@ include::example$autonomous-agent-playground/src/test/java/demo/docs/ClientApiSa
 ----
 
 The `currentTask()` returns an `Optional<TaskKey>` containing the `id` and `name` of the task the agent is actively processing. When the agent is idle or between tasks, it is empty.
+
+`pendingMessages()` and `recentMessages()` list the messages of <<send-message>> with their status.
 
 == Querying task results
 
@@ -176,7 +244,7 @@ The `ComponentClient` calls in this page use the synchronous form, which is the 
 include::example$autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[tag=async]
 ----
 
-The same shape applies to `suspendAsync()`, `resumeAsync()`, `terminateAsync()`, `assignTasksAsync(...)`, `runSingleTaskAsync(...)`, and the `forTask` operations. Each returns a `CompletionStage` that completes once the runtime acknowledges the operation. Mixing styles is fine: use synchronous calls where they read more clearly, async ones where the call needs to compose with other futures.
+The same shape applies to `suspendAsync()`, `resumeAsync()`, `terminateAsync()`, `assignTasksAsync(...)`, `runSingleTaskAsync(...)`, `sendMessageAsync(...)`, and the `forTask` operations. Each returns a `CompletionStage` that completes once the runtime acknowledges the operation. Mixing styles is fine: use synchronous calls where they read more clearly, async ones where the call needs to compose with other futures.
 
 == See also
 

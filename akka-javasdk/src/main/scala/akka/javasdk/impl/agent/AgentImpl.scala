@@ -520,7 +520,7 @@ private[impl] object AgentImpl {
       }
     }
 
-  private[agent] def toSpiMessageContent(messageContent: MessageContent): SpiAgent.MessageContent =
+  private[impl] def toSpiMessageContent(messageContent: MessageContent): SpiAgent.MessageContent =
     messageContent match {
       case content: MessageContent.TextMessageContent =>
         new SpiAgent.TextMessageContent(content.text())

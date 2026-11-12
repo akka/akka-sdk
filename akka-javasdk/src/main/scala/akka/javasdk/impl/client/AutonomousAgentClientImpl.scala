@@ -17,18 +17,25 @@ import akka.NotUsed
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
+import akka.javasdk.agent.autonomous.AgentMessage
 import akka.javasdk.agent.autonomous.AgentSetup
 import akka.javasdk.agent.autonomous.AgentState
 import akka.javasdk.agent.autonomous.AutonomousAgent
+import akka.javasdk.agent.autonomous.MessageAcknowledgement
+import akka.javasdk.agent.autonomous.MessageState
+import akka.javasdk.agent.autonomous.MessageStatus
 import akka.javasdk.agent.autonomous.Notification
 import akka.javasdk.agent.task.Task
 import akka.javasdk.agent.task.TaskKey
 import akka.javasdk.client.AutonomousAgentClient
+import akka.javasdk.impl.ForwardCompat.knownOr
 import akka.javasdk.impl.MetadataImpl
+import akka.javasdk.impl.agent.AgentImpl
 import akka.javasdk.impl.agent.autonomous.AgentSetupImpl
 import akka.javasdk.impl.agent.autonomous.CapabilityConverter
 import akka.javasdk.impl.serialization.Serializer
 import akka.runtime.sdk.spi.SpiAgent
+import akka.runtime.sdk.spi.SpiAutonomousAgent
 import akka.runtime.sdk.spi.SpiAutonomousAgent.{ Notification => SpiNotification }
 import akka.runtime.sdk.spi.{ ComponentClients => RuntimeComponentClients }
 import akka.stream.Materializer
@@ -132,7 +139,30 @@ private[javasdk] final class AutonomousAgentClientImpl(
           spiState.instructions,
           AutonomousAgentClientImpl.toTokenUsage(spiState.totalTokenUsage),
           spiState.currentTask.map(t => new TaskKey(t.id, t.name)).toJava,
-          spiState.pendingTaskIds.asJava)
+          spiState.pendingTaskIds.asJava,
+          AutonomousAgentClientImpl.toMessageStates(spiState.pendingMessages),
+          AutonomousAgentClientImpl.toMessageStates(spiState.recentMessages))
+      }
+      .asJava
+  }
+
+  override def sendMessageAsync(message: AgentMessage): CompletionStage[MessageAcknowledgement] = {
+    // log the id only, the text is user content
+    log.debug(
+      "sendMessage: agent [{}] instance [{}] message [{}]",
+      agentComponentId,
+      agentInstanceId,
+      message.messageId.orElse(""))
+    runtimeComponentClients.autonomousAgentClient
+      .sendMessage(
+        agentComponentId,
+        agentInstanceId,
+        AutonomousAgentClientImpl.toSpiMessage(message),
+        callMetadata.flatMap(_.asInstanceOf[MetadataImpl].context))
+      .map { spiAcknowledgement =>
+        val acknowledgement = AutonomousAgentClientImpl.toAcknowledgement(spiAcknowledgement)
+        log.debug("sendMessage: message [{}] acknowledged with [{}]", acknowledgement.messageId, acknowledgement.status)
+        acknowledgement
       }
       .asJava
   }
@@ -283,6 +313,10 @@ private[javasdk] final class AutonomousAgentClientImpl(
       new Notification.MessageReceived(m.from.componentId, m.from.instanceId, m.text)
     case c: SpiNotification.ContactAdded =>
       new Notification.ContactAdded(c.contact.componentId, c.contact.instanceId)
+    case m: SpiNotification.MessagesConsumed =>
+      new Notification.MessagesConsumed(m.taskId, m.messageIds.asJava, m.interactionId)
+    case m: SpiNotification.MessagesDropped =>
+      new Notification.MessagesDropped(m.taskId, m.messageIds.asJava)
 
     // Struggle signals
     case s: SpiNotification.TaskStruggleDetected =>
@@ -311,4 +345,39 @@ private[javasdk] object AutonomousAgentClientImpl {
       usage.cacheReadInputTokenCount,
       usage.cacheWriteInputTokenCount,
       usage.effectiveInputTokenCount)
+
+  def toSpiMessage(message: AgentMessage): SpiAutonomousAgent.Message =
+    new SpiAutonomousAgent.Message(
+      message.text,
+      message.attachments.asScala.iterator.map(AgentImpl.toSpiMessageContent).toSeq,
+      message.messageId.toScala,
+      message.taskId.toScala)
+
+  // A status that this SDK does not know, from a newer runtime, reads as None.
+  def toMessageStatus(status: SpiAutonomousAgent.MessageStatus): Option[MessageStatus] =
+    knownOr(Option.empty[MessageStatus]) {
+      status match {
+        case s: SpiAutonomousAgent.MessageStatus.ForCurrentTask => Some(new MessageStatus.ForCurrentTask(s.taskId))
+        case s: SpiAutonomousAgent.MessageStatus.Held           => Some(new MessageStatus.Held(s.taskId.toJava))
+        case s: SpiAutonomousAgent.MessageStatus.Consumed =>
+          Some(new MessageStatus.Consumed(s.taskId, s.interactionId))
+        case s: SpiAutonomousAgent.MessageStatus.Dropped  => Some(new MessageStatus.Dropped(s.taskId))
+        case s: SpiAutonomousAgent.MessageStatus.Rejected => Some(new MessageStatus.Rejected(s.reason))
+      }
+    }
+
+  // No public status fits a status that this SDK does not know, so the call fails, although the agent may have stored
+  // the message.
+  def toAcknowledgement(acknowledgement: SpiAutonomousAgent.MessageAcknowledgement): MessageAcknowledgement =
+    toMessageStatus(acknowledgement.status) match {
+      case Some(status) => new MessageAcknowledgement(acknowledgement.messageId, status, acknowledgement.duplicate)
+      case None =>
+        throw new IllegalStateException(
+          s"The runtime acknowledged message [${acknowledgement.messageId}] with status [${acknowledgement.status}], " +
+          "which this version of the Akka SDK does not know. Upgrade the Akka SDK.")
+    }
+
+  // The state leaves out a message with a status that this SDK does not know.
+  def toMessageStates(states: Seq[SpiAutonomousAgent.MessageState]): java.util.List[MessageState] =
+    states.flatMap(state => toMessageStatus(state.status).map(new MessageState(state.messageId, _))).asJava
 }

@@ -4,6 +4,8 @@
 
 package demo.docs;
 
+import akka.javasdk.agent.autonomous.AgentMessage;
+import akka.javasdk.agent.autonomous.MessageStatus;
 import akka.javasdk.agent.autonomous.Notification;
 import akka.javasdk.agent.task.TaskStatus;
 import akka.javasdk.client.ComponentClient;
@@ -98,7 +100,27 @@ class ClientApiSample {
     state.totalTokenUsage(); // cumulative token usage (inputTokens, outputTokens)
     state.currentTask(); // Optional<TaskKey> with the task currently being worked on
     state.pendingTaskIds(); // List<String> with ids of tasks queued but not yet started
+    state.pendingMessages(); // List<MessageState> with client messages that wait for the model
+    state.recentMessages(); // List<MessageState> with the latest consumed or dropped messages
     // end::get-state[]
+  }
+
+  void sendMessage(String agentInstanceId, String requestId) {
+    // tag::send-message[]
+    var acknowledgement = componentClient
+      .forAutonomousAgent(ReportAgent.class, agentInstanceId)
+      .sendMessage(
+        AgentMessage.of("Use the figures of the third quarter.").messageId(requestId)
+      );
+
+    switch (acknowledgement.status()) {
+      case MessageStatus.ForCurrentTask s -> log.info("For task {}", s.taskId());
+      case MessageStatus.Held s -> log.info("Held for task {}", s.taskId());
+      case MessageStatus.Consumed s -> log.info("Seen in {}", s.interactionId());
+      case MessageStatus.Dropped s -> log.info("Dropped, task {} ended", s.taskId());
+      case MessageStatus.Rejected s -> log.info("Rejected: {}", s.reason());
+    }
+    // end::send-message[]
   }
 
   void querySnapshot(String taskId) {

@@ -47,7 +47,10 @@ public sealed interface Notification {
   /** Conversation notifications: conversation creation, turns, participation. */
   sealed interface ConversationNotification extends Notification {}
 
-  /** Messaging notifications: contact introductions and message delivery. */
+  /**
+   * Messaging notifications: contact introductions, messages from other agents, and messages from
+   * clients that the agent consumed or dropped.
+   */
   sealed interface MessagingNotification extends Notification {}
 
   /**
@@ -260,6 +263,23 @@ public sealed interface Notification {
   record ContactAdded(String contactComponentId, String contactInstanceId)
       implements MessagingNotification {}
 
+  /**
+   * The agent consumed messages from clients for the task {@code taskId} in one model call. The
+   * ledger records that model call under {@code interactionId}.
+   *
+   * @see akka.javasdk.client.AutonomousAgentClient#sendMessage(AgentMessage)
+   */
+  record MessagesConsumed(String taskId, List<String> messageIds, String interactionId)
+      implements MessagingNotification {}
+
+  /**
+   * The agent dropped messages from clients for the task {@code taskId} because the task ended
+   * first.
+   *
+   * @see akka.javasdk.client.AutonomousAgentClient#sendMessage(AgentMessage)
+   */
+  record MessagesDropped(String taskId, List<String> messageIds) implements MessagingNotification {}
+
   // -- Struggle signals ------------------------------------------------------
 
   /**
@@ -272,16 +292,16 @@ public sealed interface Notification {
       implements StruggleNotification {}
 
   /**
-   * Derived signal: a task waiting on dependencies has been waiting longer than the configured
-   * threshold. Re-fires periodically until the dependency resolves.
+   * Derived signal: a task waiting on dependencies has been waiting longer than a threshold.
+   * Re-fires periodically until the dependency resolves.
    */
   record TaskDependencyStuck(
       String taskId, List<String> pendingDependencyTaskIds, long waitDurationSeconds)
       implements StruggleNotification {}
 
   /**
-   * Derived signal: a task is at or beyond a configurable fraction (default 80%) of its max
-   * iterations. Useful as a heads-up before the framework cancels with "max iterations".
+   * Derived signal: a task is at or beyond 80% of its max iterations. Useful as a heads-up before
+   * the framework cancels with "max iterations".
    */
   record TaskApproachingMaxIterations(
       String taskId, String taskName, int iteration, int maxIterations)
