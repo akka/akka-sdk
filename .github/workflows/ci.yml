@@ -479,6 +479,21 @@ jobs:
             exit 1
           fi
 
+      - name: ${{ matrix.sample }} regenerate after another tool
+        if: matrix.sample == 'helloworld-agent'
+        env:
+          DIR: ${{ matrix.sample }}
+        run: |-
+          cd samples/${DIR}
+          inventory=$(ls target/classes/META-INF/akka-javasdk-inventory_*.json)
+          sleep 2
+          echo '{}' > "${inventory}"
+          mvn compile --no-transfer-progress
+          if ! grep -q '"components"' "${inventory}"; then
+            echo "mvn compile kept an inventory that another tool wrote"
+            exit 1
+          fi
+
       - name: ${{ matrix.sample }} verify
         if: matrix.verify || matrix.it
         env:
