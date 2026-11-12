@@ -15,6 +15,7 @@ import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.jdk.CollectionConverters._
 
 import akka.actor.testkit.typed.scaladsl.LogCapturing
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
@@ -32,6 +33,7 @@ import com.typesafe.config.ConfigException
 import com.typesafe.config.ConfigFactory
 import io.opentelemetry.api.OpenTelemetry
 import io.opentelemetry.api.trace.Tracer
+import io.opentelemetry.context.ContextKey
 import io.opentelemetry.context.{ Context => TelemetryContext }
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
@@ -96,6 +98,107 @@ object ClassifierProviderSpec {
     override def classify(input: String): Classification =
       client.classify("toxicity", input)
   }
+
+  // Composes the classifiers named in its `members` config, like the documented ensemble.
+  class MembersEnsembleClassifier(context: ClassifierContext, client: ClassifierClient) extends Classifier {
+    private val members = context.config().getStringList("members").asScala.toList
+    override def classify(input: String): Classification = {
+      members.foreach(name => client.classify(name, input))
+      Classification.label(s"${context.name()}:$input")
+    }
+  }
+
+  private val cycleConfig = ConfigFactory.parseString(s"""
+    akka.javasdk.agent.classifiers {
+      "ensemble-a" {
+        class = "akka.javasdk.impl.agent.ClassifierProviderSpec$$MembersEnsembleClassifier"
+        members = ["ensemble-b"]
+      }
+      "ensemble-b" {
+        class = "akka.javasdk.impl.agent.ClassifierProviderSpec$$MembersEnsembleClassifier"
+        members = ["ensemble-a"]
+      }
+      "self" {
+        class = "akka.javasdk.impl.agent.ClassifierProviderSpec$$MembersEnsembleClassifier"
+        members = ["self"]
+      }
+      "diamond-top" {
+        class = "akka.javasdk.impl.agent.ClassifierProviderSpec$$MembersEnsembleClassifier"
+        members = ["diamond-left", "diamond-right"]
+      }
+      "diamond-left" {
+        class = "akka.javasdk.impl.agent.ClassifierProviderSpec$$MembersEnsembleClassifier"
+        members = ["no-context"]
+      }
+      "diamond-right" {
+        class = "akka.javasdk.impl.agent.ClassifierProviderSpec$$MembersEnsembleClassifier"
+        members = ["no-context"]
+      }
+      "no-context" { class = "akka.javasdk.impl.agent.ClassifierProviderSpec$$NoContextClassifier" }
+    }
+    """)
+
+  // Calls the `next` classifier in a continuation of a member call that completes on another thread.
+  class ChainedClassifier(context: ClassifierContext, client: ClassifierClient) extends Classifier {
+    private val next = context.config().getString("next")
+    override def classify(input: String): Classification = Classification.label("unused")
+    override def classifyAsync(input: String): CompletionStage[Classification] =
+      client
+        .classifyAsync("delayed", input)
+        .thenCompose[Classification](_ => client.classifyAsync(next, input))
+  }
+
+  class DelayedClassifier extends Classifier {
+    override def classify(input: String): Classification = Classification.label("unused")
+    override def classifyAsync(input: String): CompletionStage[Classification] =
+      CompletableFuture.supplyAsync[Classification](
+        () => Classification.label("delayed"),
+        CompletableFuture.delayedExecutor(50, TimeUnit.MILLISECONDS))
+  }
+
+  private val continuationCycleConfig = ConfigFactory.parseString(s"""
+    akka.javasdk.agent.classifiers {
+      "chained-a" {
+        class = "akka.javasdk.impl.agent.ClassifierProviderSpec$$ChainedClassifier"
+        next = "chained-b"
+      }
+      "chained-b" {
+        class = "akka.javasdk.impl.agent.ClassifierProviderSpec$$ChainedClassifier"
+        next = "chained-a"
+      }
+      "delayed" { class = "akka.javasdk.impl.agent.ClassifierProviderSpec$$DelayedClassifier" }
+    }
+    """)
+
+  val CallerKey: ContextKey[String] = ContextKey.named("caller")
+  @volatile var CallerSeenByClassifier: String = "unset"
+
+  // Records the caller value of the context that is current while the classifier runs.
+  class ContextRecordingClassifier extends Classifier {
+    override def classify(input: String): Classification = {
+      CallerSeenByClassifier = TelemetryContext.current().get(CallerKey)
+      Classification.label("recorded")
+    }
+  }
+
+  // Makes its own context current and does not close the scope.
+  class LeakyClassifier extends Classifier {
+    override def classify(input: String): Classification = {
+      TelemetryContext.current().`with`(CallerKey, "leaked").makeCurrent()
+      Classification.label("leaky")
+    }
+  }
+
+  private val contextConfig = ConfigFactory.parseString(s"""
+    akka.javasdk.agent.classifiers {
+      "recording" { class = "akka.javasdk.impl.agent.ClassifierProviderSpec$$ContextRecordingClassifier" }
+      "leaky" { class = "akka.javasdk.impl.agent.ClassifierProviderSpec$$LeakyClassifier" }
+      "leaky-ensemble" {
+        class = "akka.javasdk.impl.agent.ClassifierProviderSpec$$MembersEnsembleClassifier"
+        members = ["leaky"]
+      }
+    }
+    """)
 
   // Overrides the async variant instead of the sync one -- the poweruser shape. classify throwing
   // proves the SDK only ever invokes classifyAsync.
@@ -170,12 +273,16 @@ object ClassifierProviderSpec {
   private def wireClassifier(
       client: => ClassifierClient)(clz: Class[Classifier], context: ClassifierContext): Classifier =
     try {
-      try clz.getConstructor(classOf[ClassifierClient]).newInstance(client)
+      try clz.getConstructor(classOf[ClassifierContext], classOf[ClassifierClient]).newInstance(context, client)
       catch {
         case _: NoSuchMethodException =>
-          try clz.getConstructor(classOf[ClassifierContext]).newInstance(context)
+          try clz.getConstructor(classOf[ClassifierClient]).newInstance(client)
           catch {
-            case _: NoSuchMethodException => clz.getConstructor().newInstance()
+            case _: NoSuchMethodException =>
+              try clz.getConstructor(classOf[ClassifierContext]).newInstance(context)
+              catch {
+                case _: NoSuchMethodException => clz.getConstructor().newInstance()
+              }
           }
       }
     } catch {
@@ -318,6 +425,57 @@ class ClassifierProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecL
       val provider = newProvider(system, cfg)
       val result = provider.client.classifyAsync("ensemble", "hi").toCompletableFuture.get(3, TimeUnit.SECONDS)
       result.label() shouldBe java.util.Optional.of("classified:hi")
+    }
+
+    "fail a call that cycles through two classifiers with the chain in the message" in {
+      val provider = newProvider(system, cycleConfig)
+      intercept[IllegalStateException] {
+        provider.client.classify("ensemble-a", "x")
+      }.getMessage shouldBe "Classifier cycle detected: ensemble-a -> ensemble-b -> ensemble-a"
+
+      val failure = intercept[java.util.concurrent.ExecutionException] {
+        provider.client.classifyAsync("ensemble-b", "x").toCompletableFuture.get(3, TimeUnit.SECONDS)
+      }
+      failure.getCause shouldBe an[IllegalStateException]
+      failure.getCause.getMessage shouldBe "Classifier cycle detected: ensemble-b -> ensemble-a -> ensemble-b"
+    }
+
+    "fail a classifier that lists itself as a member" in {
+      val provider = newProvider(system, cycleConfig)
+      intercept[IllegalStateException] {
+        provider.client.classify("self", "x")
+      }.getMessage shouldBe "Classifier cycle detected: self -> self"
+    }
+
+    "not report a cycle for a classifier reached twice on separate paths" in {
+      val provider = newProvider(system, cycleConfig)
+      provider.client.classify("diamond-top", "x").label() shouldBe java.util.Optional.of("diamond-top:x")
+      // the chain is not left behind on the calling thread
+      TelemetryContext.current() shouldBe TelemetryContext.root()
+    }
+
+    "fail a cycle through a continuation of a member call" in {
+      val provider = newProvider(system, continuationCycleConfig)
+      val failure = intercept[java.util.concurrent.ExecutionException] {
+        provider.client.classifyAsync("chained-a", "x").toCompletableFuture.get(3, TimeUnit.SECONDS)
+      }
+      failure.getCause shouldBe an[IllegalStateException]
+      failure.getCause.getMessage shouldBe "Classifier cycle detected: chained-a -> chained-b -> chained-a"
+    }
+
+    "run a classifier without the context of the caller" in {
+      val provider = newProvider(system, contextConfig)
+      val recording = provider.spiConfiguredClassifiers.find(_.name == "recording").get.instance
+      val callerContext = TelemetryContext.root().`with`(CallerKey, "caller")
+      Await.result(recording.classify(new SpiClassifier.TextContent("x", callerContext)), 3.seconds)
+      CallerSeenByClassifier shouldBe null
+    }
+
+    "restore the context of the calling thread when a classifier leaves its own context current" in {
+      val provider = newProvider(system, contextConfig)
+      provider.client.classify("leaky-ensemble", "x").label() shouldBe java.util.Optional.of("leaky-ensemble:x")
+      TelemetryContext.current() shouldBe TelemetryContext.root()
+      provider.client.classify("leaky-ensemble", "x").label() shouldBe java.util.Optional.of("leaky-ensemble:x")
     }
 
     "invoke the overridden classifyAsync(...) and never the sync classify(...)" in {

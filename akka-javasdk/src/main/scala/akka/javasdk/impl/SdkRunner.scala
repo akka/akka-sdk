@@ -778,7 +778,7 @@ private final class Sdk(
   // rather than repeated at each injection site.
   @nowarn("msg=deprecated")
   private val deprecatedSanitizerClass: Class[_] = classOf[Sanitizer]
-  // Root-context handle for callers with no per-call telemetryContext (StartupContext/testkit);
+  // Handle for callers with no per-call telemetryContext (StartupContext/testkit);
   // components get a per-injection handle via classifierClient(telemetryContext) below.
   lazy private val classifierClient: ClassifierClient = classifierProvider.client
   lazy private val sanitizerClient: SanitizerClient = sanitizerProvider.client

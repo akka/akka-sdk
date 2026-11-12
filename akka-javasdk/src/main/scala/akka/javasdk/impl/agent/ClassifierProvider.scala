@@ -4,6 +4,7 @@
 
 package akka.javasdk.impl.agent
 
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.ConcurrentHashMap
@@ -11,8 +12,9 @@ import java.util.concurrent.ConcurrentHashMap
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
-import scala.jdk.FutureConverters._
 import scala.jdk.OptionConverters._
+import scala.util.Failure
+import scala.util.Success
 import scala.util.control.NonFatal
 
 import akka.actor.typed.ActorSystem
@@ -26,6 +28,7 @@ import akka.runtime.sdk.spi.SpiClassifier
 import akka.runtime.sdk.spi.SpiClassifierClient
 import akka.runtime.sdk.spi.SpiConfiguredClassifier
 import com.typesafe.config.Config
+import io.opentelemetry.context.ContextKey
 import io.opentelemetry.context.{ Context => TelemetryContext }
 
 /**
@@ -63,18 +66,38 @@ import io.opentelemetry.context.{ Context => TelemetryContext }
 
   /**
    * The client for call sites with no per-call `telemetryContext` -- a guardrail's `GuardrailContext`, another
-   * classifier's `ClassifierContext`, and the testkit. Its invocations carry a root OTel context.
+   * classifier's `ClassifierContext`, and the testkit. Its invocations carry a root OTel context that holds the call
+   * chain of the OTel context current at the call. [[SpiClassifierAdapter]] uses that chain to detect cycles.
    */
-  val client: ClassifierClient = clientFor(TelemetryContext.root())
+  val client: ClassifierClient =
+    newClient(() => ClassifierProvider.chainContext(ClassifierProvider.callChain(TelemetryContext.current())))
 
   /** A `ClassifierClient` whose invocations carry `telemetryContext` -- one per component injection. */
-  def clientFor(telemetryContext: TelemetryContext): ClassifierClient = new ClassifierClient {
+  def clientFor(telemetryContext: TelemetryContext): ClassifierClient = newClient(() => telemetryContext)
+
+  private def newClient(telemetryContext: () => TelemetryContext): ClassifierClient = new ClassifierClient {
     override def classifyAsync(name: String, input: String): CompletionStage[Classification] = {
       requireConfigured(name)
+      val context = telemetryContext()
+      val result = new CompletableFuture[Classification]()
       runtimeClassifierClient
-        .classify(name, new SpiClassifier.TextContent(input, telemetryContext))
+        .classify(name, new SpiClassifier.TextContent(input, context))
         .map(ClassifierProvider.toClassification)(ExecutionContext.parasitic)
-        .asJava
+        .onComplete { outcome =>
+          def complete(): Unit = outcome match {
+            case Success(classification) => result.complete(classification)
+            case Failure(exc)            => result.completeExceptionally(exc)
+          }
+          // A continuation that the caller registered on the stage runs inside complete(). With the call chain
+          // current, a classifier call from that continuation carries the chain.
+          if (ClassifierProvider.callChain(context).isEmpty) complete()
+          else {
+            val scope = context.makeCurrent()
+            try complete()
+            finally scope.close()
+          }
+        }(ExecutionContext.parasitic)
+      result
     }
 
     override def classify(name: String, input: String): Classification =
@@ -135,11 +158,23 @@ import io.opentelemetry.context.{ Context => TelemetryContext }
         name = c.name,
         implementationClass = c.implementationClass,
         config = c.config,
-        instance = new ClassifierProvider.SpiClassifierAdapter(() => getOrCreate(c.name)))
+        instance = new ClassifierProvider.SpiClassifierAdapter(c.name, () => getOrCreate(c.name)))
     }
 }
 
 @InternalApi private[javasdk] object ClassifierProvider {
+
+  // The names of the classifiers on the current call path, outermost first. Carried in the OTel context, which
+  // travels through the runtime inside SpiClassifier.TextContent, so it survives the runtime's dispatch.
+  private val CallChainKey: ContextKey[List[String]] = ContextKey.named("akka-classifier-call-chain")
+
+  private def callChain(context: TelemetryContext): List[String] = {
+    val chain = context.get(CallChainKey)
+    if (chain eq null) Nil else chain
+  }
+
+  private def chainContext(chain: List[String]): TelemetryContext =
+    if (chain.isEmpty) TelemetryContext.root() else TelemetryContext.root().`with`(CallChainKey, chain)
 
   private def toClassification(r: SpiClassifier.Classification): Classification =
     new Classification(
@@ -160,18 +195,36 @@ import io.opentelemetry.context.{ Context => TelemetryContext }
    * than at construction, so registration (`spiConfiguredClassifiers`) can happen before the classifier is safe to
    * construct; `getOrCreate` memoizes, so it is cheap after the first resolution. A failed construction, an exception
    * from the user code and a null stage all return a failed Future rather than throw.
+   *
+   * The user classifier runs with a root OTel context that holds the call chain extended by `name`. A nested call
+   * through the shared [[ClassifierProvider.client]] carries that chain, also from a continuation of a stage that the
+   * client returned. An invocation whose chain already holds `name` fails instead of recursing. The chain is lost when
+   * a classifier calls the client from a thread without the OTel context, such as its own executor, so a cycle through
+   * such a call is not detected.
    */
-  private final class SpiClassifierAdapter(resolve: () => Classifier) extends SpiClassifier {
+  private final class SpiClassifierAdapter(name: String, resolve: () => Classifier) extends SpiClassifier {
     override def classify(content: SpiClassifier.Content): Future[SpiClassifier.Classification] =
       content match {
         case text: SpiClassifier.TextContent =>
-          try {
-            val stage = resolve().classifyAsync(text.text)
-            if (stage eq null) Future.failed(new NullPointerException("Classifier.classifyAsync returned null"))
-            else ErrorHandling.asScalaUnwrapped(stage).map(fromClassification)(ExecutionContext.parasitic)
-          } catch {
-            case NonFatal(e) => Future.failed(e)
-          }
+          val chain = callChain(text.telemetryContext)
+          if (chain.contains(name))
+            Future.failed(new IllegalStateException(s"Classifier cycle detected: ${(chain :+ name).mkString(" -> ")}"))
+          else
+            try {
+              val previous = TelemetryContext.current()
+              val scope = chainContext(chain :+ name).makeCurrent()
+              val stage =
+                try resolve().classifyAsync(text.text)
+                finally {
+                  scope.close()
+                  // close() does nothing when the user code left another context current
+                  if (TelemetryContext.current() ne previous) previous.makeCurrent()
+                }
+              if (stage eq null) Future.failed(new NullPointerException("Classifier.classifyAsync returned null"))
+              else ErrorHandling.asScalaUnwrapped(stage).map(fromClassification)(ExecutionContext.parasitic)
+            } catch {
+              case NonFatal(e) => Future.failed(e)
+            }
       }
   }
 }
