@@ -548,8 +548,9 @@
             </build>
         </profile>
         <!-- Clean build output with a stale component descriptor or inventory: a service without a
-             descriptor, a descriptor with a service marker that does not match non-akka-service, or a
-             descriptor or inventory that another tool wrote after the last Maven compile. This happens with
+             descriptor, a descriptor with a service marker that does not match non-akka-service, a
+             descriptor or inventory that another tool wrote after the last Maven compile, or a descriptor
+             with components but no inventory, as build output from an earlier SDK has. This happens with
              build output from an earlier SDK version, after a change of non-akka-service, or after an IDE build.
              Maven profile file-based activation does not support wildcards or ${project.*}
              properties, so we use antrun instead. The profile only
@@ -592,9 +593,12 @@
                                                 <local name="descriptor.marked"/>
                                                 <local name="status.present"/>
                                                 <local name="status.uptodate"/>
+                                                <local name="descriptor.components"/>
+                                                <local name="inventory.present"/>
                                                 <local name="descriptor.stale"/>
                                                 <available property="descriptor.present" file="@{dir}/${descriptor.file}"/>
                                                 <available property="status.present" file="@{status-file}"/>
+                                                <available property="inventory.present" file="@{dir}/${inventory.file}"/>
                                                 <uptodate property="status.uptodate" targetfile="@{status-file}">
                                                     <srcfiles dir="@{dir}" includes="${descriptor.file},${inventory.file}"
                                                               erroronmissingdir="false"/>
@@ -603,6 +607,13 @@
                                                     <resourcecount when="greater" count="0">
                                                         <fileset dir="@{dir}" includes="${descriptor.file}" erroronmissingdir="false">
                                                             <containsregexp expression="service\s*=\s*true"/>
+                                                        </fileset>
+                                                    </resourcecount>
+                                                </condition>
+                                                <condition property="descriptor.components">
+                                                    <resourcecount when="greater" count="0">
+                                                        <fileset dir="@{dir}" includes="${descriptor.file}" erroronmissingdir="false">
+                                                            <containsregexp expression="components\s*\{"/>
                                                         </fileset>
                                                     </resourcecount>
                                                 </condition>
@@ -619,6 +630,10 @@
                                                         <and>
                                                             <isset property="status.present"/>
                                                             <not><isset property="status.uptodate"/></not>
+                                                        </and>
+                                                        <and>
+                                                            <isset property="descriptor.components"/>
+                                                            <not><isset property="inventory.present"/></not>
                                                         </and>
                                                     </or>
                                                 </condition>

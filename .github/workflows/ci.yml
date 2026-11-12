@@ -494,6 +494,20 @@ jobs:
             exit 1
           fi
 
+      - name: ${{ matrix.sample }} regenerate a missing inventory
+        if: matrix.sample == 'helloworld-agent'
+        env:
+          DIR: ${{ matrix.sample }}
+        run: |-
+          cd samples/${DIR}
+          inventory=$(ls target/classes/META-INF/akka-javasdk-inventory_*.json)
+          rm "${inventory}"
+          mvn compile --no-transfer-progress
+          if ! test -f "${inventory}"; then
+            echo "mvn compile did not write the missing inventory"
+            exit 1
+          fi
+
       - name: ${{ matrix.sample }} verify
         if: matrix.verify || matrix.it
         env:
