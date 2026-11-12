@@ -119,9 +119,15 @@ class QuestionSpec extends AnyWordSpec with Matchers {
     }
 
     "start a new builder from an existing question" in {
-      val copy = Question.predicate(urgent).whenFalse("No deadline is mentioned").build("urgent-2")
+      val copy = Question.predicate(urgent).build("urgent-2")
+      copy.key shouldBe "urgent-2"
+      copy.instructions shouldBe urgent.instructions
       copy.whenTrue shouldBe urgent.whenTrue
-      copy.whenFalse shouldBe Optional.of("No deadline is mentioned")
+      copy.whenFalse shouldBe urgent.whenFalse
+
+      val changed = Question.predicate(urgent).whenFalse("No deadline is mentioned").build("urgent-3")
+      changed.whenTrue shouldBe urgent.whenTrue
+      changed.whenFalse shouldBe Optional.of("No deadline is mentioned")
     }
   }
 
