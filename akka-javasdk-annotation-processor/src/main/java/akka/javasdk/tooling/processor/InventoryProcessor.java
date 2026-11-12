@@ -19,8 +19,8 @@ import javax.tools.StandardLocation;
 
 /**
  * Writes {@code META-INF/akka-javasdk-inventory_<groupId>_<artifactId>.json}, listing the
- * components and endpoints of the module. Writes nothing when an annotation processor reports an
- * error in the same compile.
+ * components and endpoints in the sources of the compile. Writes nothing when the compile has no
+ * component or endpoint, or when an annotation processor reports an error in the same compile.
  */
 @SupportedAnnotationTypes({
   "akka.javasdk.annotations.Component",
