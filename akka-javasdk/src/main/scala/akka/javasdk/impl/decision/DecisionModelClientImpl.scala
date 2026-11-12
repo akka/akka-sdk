@@ -82,7 +82,8 @@ private[javasdk] object DecisionModelClientImpl {
         case "system-one" => DecisionModelProvider.SystemOne.fromConfig(providerConfig)
         case "openai"     => DecisionModelProvider.OpenAi.fromConfig(providerConfig)
         case other =>
-          throw new IllegalArgumentException(s"Unknown decision model provider [$other] in config [$resolvedPath]")
+          throw new IllegalArgumentException(
+            s"Unknown decision model provider [$other] in config [$resolvedPath]. Use one of [system-one, openai].")
       }
     } catch {
       case e: ConfigException =>

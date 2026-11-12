@@ -327,6 +327,26 @@ class DecisionModelClientImplSpec extends AnyWordSpec with Matchers with ScalaFu
       e.getMessage should include("Undefined decision model provider configuration [missing]")
     }
 
+    "fail for an unknown provider name, naming the known ones" in {
+      val spi = new FakeSpiClient(_ => Future.successful(allAnswers))
+      val unknown = ConfigFactory
+        .parseString("""
+          akka.javasdk.decision.other-model {
+            provider = "other-api"
+          }
+          """)
+        .withFallback(DecisionModelClientImplSpec.config)
+      val e = intercept[IllegalArgumentException](
+        client(spi, config = unknown)
+          .model(DecisionModelProvider.fromConfig("other-model"))
+          .input("t")
+          .questions(urgent)
+          .invoke())
+      e.getMessage should include("Unknown decision model provider [other-api]")
+      e.getMessage should include("[akka.javasdk.decision.other-model]")
+      e.getMessage should include("Use one of [system-one, openai]")
+    }
+
     "fail with an IllegalArgumentException for a provider configuration without a required key" in {
       val spi = new FakeSpiClient(_ => Future.successful(allAnswers))
       val incomplete = ConfigFactory
