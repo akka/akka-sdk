@@ -73,7 +73,7 @@ private[javasdk] object ComponentLocator {
   // descriptors shipped by SDK modules, always loaded together with the service descriptor
   private val SdkProvidedDescriptorNames = Set("akka-javasdk-components_akka-javasdk-testkit.conf")
 
-  // Component type keys - these must be kept in sync with ComponentAnnotationProcessor.java
+  // Component type keys - these must be kept in sync with ComponentKinds.java
   // in the akka-javasdk-annotation-processor module
   val AgentKey = "agent"
   val AutonomousAgentKey = "autonomous-agent"

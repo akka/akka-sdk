@@ -492,7 +492,7 @@ class SdkRunner private (
  */
 @InternalApi
 private object ComponentType {
-  // Those are also defined in ComponentAnnotationProcessor, and must be the same
+  // Those are also defined in ComponentKinds, and must be the same
 
   val EventSourcedEntity = "event-sourced-entity"
   val KeyValueEntity = "key-value-entity"
