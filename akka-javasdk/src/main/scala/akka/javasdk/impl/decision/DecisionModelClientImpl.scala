@@ -126,8 +126,8 @@ private[javasdk] object DecisionModelClientImpl {
             s"A SystemOne score question supports at most [$MaxScoreLevels] levels, " +
             s"question [${q.key}] has [${q.levels.size}]")
         new SpiDecision.ScoreQuestion(q.key, q.instructions, q.levels.asScala.toSeq)
-      case q: Question.YesNo =>
-        new SpiDecision.PredicateQuestion(q.key, q.instructions, q.whenYes.toScala, q.whenNo.toScala)
+      case q: Question.Predicate =>
+        new SpiDecision.PredicateQuestion(q.key, q.instructions, q.whenTrue.toScala, q.whenFalse.toScala)
     }
 
   // the runtime fails the call when an answer is missing or does not match its question
@@ -141,7 +141,7 @@ private[javasdk] object DecisionModelClientImpl {
       case (key, a: SpiDecision.ScoreAnswer) =>
         key -> new Answer.Score(a.value, a.confidence, a.probabilities.map(Double.box).asJava)
       case (key, a: SpiDecision.PredicateAnswer) =>
-        key -> new Answer.YesNo(a.probability)
+        key -> new Answer.Predicate(a.probability)
     }
     new Decision(response.model, answers.asJava)
   }
@@ -175,10 +175,10 @@ private[javasdk] object DecisionModelClientImpl {
           throw new ModelException(
             s"The answer for question [${question.key}] has value [${s.value}], " +
             s"outside the levels of the question, 0 to ${score.levels.size - 1}")
-      case y: Answer.YesNo =>
-        if (y.probability < 0 || y.probability > 1)
+      case p: Answer.Predicate =>
+        if (p.probability < 0 || p.probability > 1)
           throw new ModelException(
-            s"The answer for question [${question.key}] has probability [${y.probability}], outside 0 to 1")
+            s"The answer for question [${question.key}] has probability [${p.probability}], outside 0 to 1")
     }
 
   def checkQuestions(questions: Seq[Question[_]]): Seq[Question[_]] = {

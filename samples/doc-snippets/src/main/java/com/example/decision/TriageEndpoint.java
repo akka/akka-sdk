@@ -40,11 +40,11 @@ public class TriageEndpoint {
     )
     .build("severity");
 
-  public static final Question<Answer.YesNo> URGENT = Question.yesNo(
+  public static final Question<Answer.Predicate> URGENT = Question.predicate(
     "Does the customer need a reply today?"
   )
-    .whenYes("The customer states a deadline of today or earlier")
-    .whenNo("There is no deadline requirement")
+    .whenTrue("The customer states a deadline of today or earlier")
+    .whenFalse("There is no deadline requirement")
     .build("urgent");
 
   // end::questions[]

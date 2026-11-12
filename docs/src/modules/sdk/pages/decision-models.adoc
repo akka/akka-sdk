@@ -29,7 +29,7 @@ include::example$doc-snippets/src/main/java/com/example/decision/TriageEndpoint.
 
 == Asking questions
 
-There are three question types. A choice question picks one of at least two options. A score question rates the input on a scale, such as a severity rating. You describe each level of the scale from lowest to highest, and the model answers with a position on that scale. A yes-or-no question returns the probability of the answer being yes.
+There are three question types. A choice question picks one of at least two options. A score question rates the input on a scale, such as a severity rating. You describe each level of the scale from lowest to highest, and the model answers with a position on that scale. A predicate question checks a condition and returns the probability that it is true.
 
 Create questions with the static factories on the `Question` class and define them as constants, so the request and the answer lookup use the same question:
 
@@ -67,7 +67,7 @@ include::example$doc-snippets/src/main/java/com/example/decision/TriageEndpoint.
 
 * `Answer.Choice` has the key of the selected option in `selected()`, a probability per option key in `probabilities()`, and how peaked the distribution over the options is in `confidence()`, from 0 to 1.
 * `Answer.Score` has the position along the levels, counted from 0, in `value()`, plus `probabilities()` and `confidence()`. The value can fall between two levels.
-* `Answer.YesNo` has the probability of the answer being yes in `probability()`.
+* `Answer.Predicate` has the probability that the condition is true in `probability()`.
 
 `Decision.model()` names the model version that answered. Log the model with the answers, because the thresholds you compare answers against depend on the model version.
 

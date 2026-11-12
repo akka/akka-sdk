@@ -45,7 +45,8 @@ public record Decision(String model, Map<String, Answer> answers) {
     switch (question) {
       case Question.Choice choice -> checkChoice(choice, answer);
       case Question.Score score -> checkScore(score, answer);
-      case Question.YesNo yesNo -> checkType(yesNo, answer, answer instanceof Answer.YesNo);
+      case Question.Predicate predicate ->
+          checkType(predicate, answer, answer instanceof Answer.Predicate);
     }
     @SuppressWarnings("unchecked")
     A typed = (A) answer;

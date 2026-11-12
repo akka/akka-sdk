@@ -23,7 +23,7 @@ import java.util.Objects;
 @JsonSubTypes({
   @JsonSubTypes.Type(value = Answer.Choice.class, name = "choice"),
   @JsonSubTypes.Type(value = Answer.Score.class, name = "score"),
-  @JsonSubTypes.Type(value = Answer.YesNo.class, name = "yes-no")
+  @JsonSubTypes.Type(value = Answer.Predicate.class, name = "predicate")
 })
 public sealed interface Answer {
 
@@ -61,10 +61,10 @@ public sealed interface Answer {
   }
 
   /**
-   * The answer to a {@link Question.YesNo}. Compare the probability with a threshold that fits the
-   * cost of a wrong answer in your use case.
+   * The answer to a {@link Question.Predicate}. Compare the probability with a threshold that fits
+   * the cost of a wrong answer in your use case.
    *
-   * @param probability the probability that the answer is yes, from 0 to 1
+   * @param probability the probability that the condition is true, from 0 to 1
    */
-  record YesNo(double probability) implements Answer {}
+  record Predicate(double probability) implements Answer {}
 }

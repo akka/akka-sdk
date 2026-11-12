@@ -69,7 +69,7 @@ class DecisionModelClientImplSpec extends AnyWordSpec with Matchers with ScalaFu
   private val route =
     Question.choice("Which team?").option("billing", "Payments").option("technical", "Bugs").build("route")
   private val severity = Question.score("How severe?").levels("low", "medium", "high").build("severity")
-  private val urgent = Question.yesNo("Urgent?").whenYes("Deadline today").build("urgent")
+  private val urgent = Question.predicate("Urgent?").whenTrue("Deadline today").build("urgent")
 
   private val allAnswers =
     new SpiDecision.Response(
@@ -100,9 +100,9 @@ class DecisionModelClientImplSpec extends AnyWordSpec with Matchers with ScalaFu
       choice.instructions shouldBe "Which team?"
       choice.options.map(o => o.key -> o.description) shouldBe Seq("billing" -> "Payments", "technical" -> "Bugs")
       spi.request.questions(1).asInstanceOf[SpiDecision.ScoreQuestion].levels shouldBe Seq("low", "medium", "high")
-      val yesNo = spi.request.questions(2).asInstanceOf[SpiDecision.PredicateQuestion]
-      yesNo.whenTrue shouldBe Some("Deadline today")
-      yesNo.whenFalse shouldBe None
+      val predicate = spi.request.questions(2).asInstanceOf[SpiDecision.PredicateQuestion]
+      predicate.whenTrue shouldBe Some("Deadline today")
+      predicate.whenFalse shouldBe None
 
       val provider = spi.provider.asInstanceOf[SpiDecision.SystemOne]
       provider.apiKey shouldBe "test-key"
@@ -175,7 +175,7 @@ class DecisionModelClientImplSpec extends AnyWordSpec with Matchers with ScalaFu
       val custom = new DecisionModelProvider.Custom {
         override def decide(request: DecisionModelProvider.DecisionRequest): Decision = {
           request.input shouldBe new Ticket("a", "b")
-          new Decision("custom", Map[String, Answer]("urgent" -> new Answer.YesNo(0.3)).asJava)
+          new Decision("custom", Map[String, Answer]("urgent" -> new Answer.Predicate(0.3)).asJava)
         }
       }
       val decision = client(spi).model(custom).input(new Ticket("a", "b")).questions(urgent).invoke()
@@ -189,7 +189,7 @@ class DecisionModelClientImplSpec extends AnyWordSpec with Matchers with ScalaFu
         override def decide(request: DecisionModelProvider.DecisionRequest): Decision =
           new Decision(
             "custom",
-            Map[String, Answer]("urgent" -> new Answer.YesNo(0.3), "extra" -> new Answer.YesNo(0.7)).asJava)
+            Map[String, Answer]("urgent" -> new Answer.Predicate(0.3), "extra" -> new Answer.Predicate(0.7)).asJava)
       }
       val decision = client(spi).model(custom).input("t").questions(urgent).invoke()
       decision.answers.asScala.keySet shouldBe Set("urgent")
@@ -208,7 +208,7 @@ class DecisionModelClientImplSpec extends AnyWordSpec with Matchers with ScalaFu
         .should(include("selects [marketing]"))
       customWith(new Answer.Score(3.5, 1.0, java.util.List.of[java.lang.Double]()), severity).getMessage
         .should(include("outside the levels"))
-      customWith(new Answer.YesNo(1.5), urgent).getMessage should include("outside 0 to 1")
+      customWith(new Answer.Predicate(1.5), urgent).getMessage should include("outside 0 to 1")
     }
 
     "use the test override before any other provider" in {
@@ -216,7 +216,7 @@ class DecisionModelClientImplSpec extends AnyWordSpec with Matchers with ScalaFu
       val overrideProvider = new OverrideDecisionModelProvider
       overrideProvider.set(new DecisionModelProvider.Custom {
         override def decide(request: DecisionModelProvider.DecisionRequest): Decision =
-          new Decision("override", Map[String, Answer]("urgent" -> new Answer.YesNo(0.5)).asJava)
+          new Decision("override", Map[String, Answer]("urgent" -> new Answer.Predicate(0.5)).asJava)
       })
       val decision = client(spi, overrideProvider = overrideProvider)
         .model(DecisionModelProvider.systemOne().withModelName("jev-3"))
@@ -229,7 +229,7 @@ class DecisionModelClientImplSpec extends AnyWordSpec with Matchers with ScalaFu
     "fail when a custom provider does not answer every question" in {
       val custom = new DecisionModelProvider.Custom {
         override def decide(request: DecisionModelProvider.DecisionRequest): Decision =
-          new Decision("custom", Map[String, Answer]("urgent" -> new Answer.YesNo(0.3)).asJava)
+          new Decision("custom", Map[String, Answer]("urgent" -> new Answer.Predicate(0.3)).asJava)
       }
       val spi = new FakeSpiClient(_ => Future.failed(new IllegalStateException("not expected")))
       val e = intercept[ModelException](client(spi).model(custom).input("t").questions(urgent, route).invoke())
@@ -250,7 +250,7 @@ class DecisionModelClientImplSpec extends AnyWordSpec with Matchers with ScalaFu
     "reject a request without questions or with duplicate keys" in {
       val spi = new FakeSpiClient(_ => Future.successful(allAnswers))
       intercept[IllegalArgumentException](client(spi).input("t").questions())
-      val sameKey = Question.yesNo("Other?").build("urgent")
+      val sameKey = Question.predicate("Other?").build("urgent")
       val e = intercept[IllegalArgumentException](client(spi).input("t").questions(urgent, sameKey))
       e.getMessage should include("Duplicate question keys [urgent]")
     }

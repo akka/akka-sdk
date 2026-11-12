@@ -28,7 +28,7 @@ import java.util.function.Predicate;
  *     .whenInput(ticket)
  *     .choice(ROUTE, "billing")
  *     .score(SEVERITY, 2)
- *     .yesNo(URGENT, 0.9);
+ *     .predicate(URGENT, 0.9);
  * }</pre>
  *
  * <p>The most recently added rule that matches the request answers it. A request that matches no
@@ -75,7 +75,7 @@ public final class TestDecisionModelProvider implements DecisionModelProvider.Cu
     return whenRequest(request -> true);
   }
 
-  /** A rule for requests that match the predicate. */
+  /** A rule for requests that the given function accepts. */
   public Rule whenRequest(Predicate<DecisionRequest> predicate) {
     var rule = new Rule(predicate);
     rules.addFirst(rule);
@@ -88,8 +88,8 @@ public final class TestDecisionModelProvider implements DecisionModelProvider.Cu
   }
 
   /**
-   * The answers to the requests that match one predicate. Add an answer per question. Answers for
-   * questions that the request does not ask are left out of the decision.
+   * The answers of one rule. Add an answer per question. Answers for questions that the request
+   * does not ask are left out of the decision.
    */
   public static final class Rule {
     private final Predicate<DecisionRequest> predicate;
@@ -144,14 +144,14 @@ public final class TestDecisionModelProvider implements DecisionModelProvider.Cu
     }
 
     /**
-     * Answer the question with the given probability of yes.
+     * Answer the question with the given probability that the condition is true.
      *
      * @throws IllegalArgumentException when the probability is outside 0 to 1
      */
-    public Rule yesNo(Question<Answer.YesNo> question, double probability) {
+    public Rule predicate(Question<Answer.Predicate> question, double probability) {
       if (probability < 0 || probability > 1)
         throw new IllegalArgumentException("Probability [" + probability + "] is outside 0 to 1");
-      return answer(question, new Answer.YesNo(probability));
+      return answer(question, new Answer.Predicate(probability));
     }
 
     /** Answer the question with the given answer. */
@@ -179,7 +179,7 @@ public final class TestDecisionModelProvider implements DecisionModelProvider.Cu
         throw new MissingDecisionResponseException(
             "The matching rule has no answer for questions "
                 + missing
-                + ". Add the answers to the rule, for example with choice, score or yesNo.");
+                + ". Add the answers to the rule, for example with choice, score or predicate.");
       return new Decision(MODEL_NAME, result);
     }
   }

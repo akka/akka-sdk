@@ -32,9 +32,9 @@ class QuestionSpec extends AnyWordSpec with Matchers {
 
   private val urgent =
     Question
-      .yesNo("Does the customer need a reply today?")
-      .whenYes("The customer states a deadline of today or earlier")
-      .whenNo("There is no deadline")
+      .predicate("Does the customer need a reply today?")
+      .whenTrue("The customer states a deadline of today or earlier")
+      .whenFalse("There is no deadline")
       .build("urgent")
 
   "A choice question" should {
@@ -106,22 +106,22 @@ class QuestionSpec extends AnyWordSpec with Matchers {
     }
   }
 
-  "A yes or no question" should {
+  "A predicate question" should {
     "keep the criteria" in {
-      urgent.whenYes shouldBe Optional.of("The customer states a deadline of today or earlier")
-      urgent.whenNo shouldBe Optional.of("There is no deadline")
+      urgent.whenTrue shouldBe Optional.of("The customer states a deadline of today or earlier")
+      urgent.whenFalse shouldBe Optional.of("There is no deadline")
     }
 
     "not need criteria" in {
-      val q = Question.yesNo("Is it spam?").build("spam")
-      q.whenYes shouldBe Optional.empty()
-      q.whenNo shouldBe Optional.empty()
+      val q = Question.predicate("Is it spam?").build("spam")
+      q.whenTrue shouldBe Optional.empty()
+      q.whenFalse shouldBe Optional.empty()
     }
 
     "start a new builder from an existing question" in {
-      val copy = Question.yesNo(urgent).whenNo("No deadline is mentioned").build("urgent-2")
-      copy.whenYes shouldBe urgent.whenYes
-      copy.whenNo shouldBe Optional.of("No deadline is mentioned")
+      val copy = Question.predicate(urgent).whenFalse("No deadline is mentioned").build("urgent-2")
+      copy.whenTrue shouldBe urgent.whenTrue
+      copy.whenFalse shouldBe Optional.of("No deadline is mentioned")
     }
   }
 
@@ -129,28 +129,28 @@ class QuestionSpec extends AnyWordSpec with Matchers {
     val choice =
       new Answer.Choice("billing", 0.9, Map[String, java.lang.Double]("billing" -> 0.95, "technical" -> 0.05).asJava)
     val score = new Answer.Score(1.4, 0.7, List[java.lang.Double](0.1, 0.4, 0.5).asJava)
-    val yesNo = new Answer.YesNo(0.8)
+    val predicate = new Answer.Predicate(0.8)
     val decision =
-      new Decision("jev-1", Map[String, Answer]("route" -> choice, "severity" -> score, "urgent" -> yesNo).asJava)
+      new Decision("jev-1", Map[String, Answer]("route" -> choice, "severity" -> score, "urgent" -> predicate).asJava)
 
     "return the typed answer for each question" in {
       val routeAnswer: Answer.Choice = decision.answer(route)
       routeAnswer.selected shouldBe "billing"
       val severityAnswer: Answer.Score = decision.answer(severity)
       severityAnswer.value shouldBe 1.4
-      val urgentAnswer: Answer.YesNo = decision.answer(urgent)
+      val urgentAnswer: Answer.Predicate = decision.answer(urgent)
       urgentAnswer.probability shouldBe 0.8
     }
 
     "fail for a question it has no answer for" in {
-      val other = Question.yesNo("Other?").build("other")
+      val other = Question.predicate("Other?").build("other")
       val e = intercept[IllegalArgumentException](decision.answer(other))
       e.getMessage should include("No answer for question [other]")
       e.getMessage should include("route")
     }
 
     "fail when the answer has another type than the question" in {
-      val sameKey = Question.yesNo("Route?").build("route")
+      val sameKey = Question.predicate("Route?").build("route")
       val e = intercept[IllegalArgumentException](decision.answer(sameKey))
       e.getMessage should include("[Choice]")
     }
@@ -178,7 +178,7 @@ class QuestionSpec extends AnyWordSpec with Matchers {
       val json = serializer.toJsonString(decision)
       json should include(""""type":"choice"""")
       json should include(""""type":"score"""")
-      json should include(""""type":"yes-no"""")
+      json should include(""""type":"predicate"""")
 
       val restored = serializer.fromJsonString(json, classOf[Decision])
       restored shouldBe decision

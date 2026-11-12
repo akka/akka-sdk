@@ -6,11 +6,10 @@ package akka.javasdk.decision;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
- * Builder stages for choice and yes or no questions. Start with {@link Question#choice(String)} or
- * {@link Question#yesNo(String)}. The stages only offer {@code build} once the question is valid.
+ * Builder stages for choice questions. Start with {@link Question#choice(String)}. The stages only
+ * offer {@code build} once the question is valid.
  */
 public final class ChoiceBuilder {
 
@@ -89,37 +88,6 @@ public final class ChoiceBuilder {
      */
     public Question.Choice build(String key) {
       return new Question.Choice(key, instructions, options);
-    }
-  }
-
-  /** A yes or no question. Optionally describe what counts as yes and as no, then build it. */
-  public static final class YesNo {
-    private final String instructions;
-    private final Optional<String> whenYes;
-    private final Optional<String> whenNo;
-
-    YesNo(String instructions, Optional<String> whenYes, Optional<String> whenNo) {
-      this.instructions = instructions;
-      this.whenYes = whenYes;
-      this.whenNo = whenNo;
-    }
-
-    /** Describe what counts as yes. */
-    public YesNo whenYes(String description) {
-      return new YesNo(instructions, Optional.of(description), whenNo);
-    }
-
-    /** Describe what counts as no. */
-    public YesNo whenNo(String description) {
-      return new YesNo(instructions, whenYes, Optional.of(description));
-    }
-
-    /**
-     * Build the question with the given key. The key identifies the question and its answer, so it
-     * must be the same everywhere the question is built, also across restarts and services.
-     */
-    public Question.YesNo build(String key) {
-      return new Question.YesNo(key, instructions, whenYes, whenNo);
     }
   }
 }

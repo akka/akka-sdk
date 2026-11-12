@@ -26,7 +26,8 @@ public class TestDecisionModelProviderTest {
   private static final Question<Answer.Score> SEVERITY =
       Question.score("How severe?").levels("low", "medium", "high").build("severity");
 
-  private static final Question<Answer.YesNo> URGENT = Question.yesNo("Urgent?").build("urgent");
+  private static final Question<Answer.Predicate> URGENT =
+      Question.predicate("Urgent?").build("urgent");
 
   private final TestDecisionModelProvider provider = new TestDecisionModelProvider();
 
@@ -41,7 +42,7 @@ public class TestDecisionModelProviderTest {
         .whenInput("ticket")
         .choice(ROUTE, "technical")
         .score(SEVERITY, 1.25)
-        .yesNo(URGENT, 0.9);
+        .predicate(URGENT, 0.9);
 
     var decision = provider.decide(request("ticket", ROUTE, SEVERITY, URGENT));
 
@@ -60,7 +61,7 @@ public class TestDecisionModelProviderTest {
 
   @Test
   public void leaveOutAnswersForQuestionsNotAsked() {
-    provider.always().choice(ROUTE, "billing").yesNo(URGENT, 0.1);
+    provider.always().choice(ROUTE, "billing").predicate(URGENT, 0.1);
 
     var decision = provider.decide(request("anything", URGENT));
 
@@ -69,10 +70,10 @@ public class TestDecisionModelProviderTest {
 
   @Test
   public void useTheMostRecentMatchingRule() {
-    provider.always().yesNo(URGENT, 0.1);
+    provider.always().predicate(URGENT, 0.1);
     provider
         .whenRequest(request -> request.input().toString().contains("today"))
-        .yesNo(URGENT, 0.95);
+        .predicate(URGENT, 0.95);
 
     assertThat(provider.decide(request("reply today", URGENT)).answer(URGENT).probability())
         .isEqualTo(0.95);
@@ -82,7 +83,7 @@ public class TestDecisionModelProviderTest {
 
   @Test
   public void failWhenNoRuleMatches() {
-    provider.whenInput("ticket").yesNo(URGENT, 0.5);
+    provider.whenInput("ticket").predicate(URGENT, 0.5);
 
     assertThatThrownBy(() -> provider.decide(request("other", URGENT)))
         .isInstanceOf(TestDecisionModelProvider.MissingDecisionResponseException.class)
@@ -92,7 +93,7 @@ public class TestDecisionModelProviderTest {
 
   @Test
   public void failWhenTheRuleDoesNotAnswerAQuestion() {
-    provider.whenInput("ticket").yesNo(URGENT, 0.5);
+    provider.whenInput("ticket").predicate(URGENT, 0.5);
 
     assertThatThrownBy(() -> provider.decide(request("ticket", URGENT, ROUTE)))
         .isInstanceOf(TestDecisionModelProvider.MissingDecisionResponseException.class)
@@ -115,12 +116,13 @@ public class TestDecisionModelProviderTest {
         .isInstanceOf(IllegalArgumentException.class);
     assertThatThrownBy(() -> rule.score(SEVERITY, 2.5))
         .isInstanceOf(IllegalArgumentException.class);
-    assertThatThrownBy(() -> rule.yesNo(URGENT, 1.5)).isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> rule.predicate(URGENT, 1.5))
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
   public void resetRemovesAllRules() {
-    provider.always().yesNo(URGENT, 0.5);
+    provider.always().predicate(URGENT, 0.5);
     provider.reset();
 
     assertThatThrownBy(() -> provider.decide(request("ticket", URGENT)))

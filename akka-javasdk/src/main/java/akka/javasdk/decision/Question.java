@@ -14,8 +14,9 @@ import java.util.Optional;
  * of the answer.
  *
  * <p>Create a question with {@link #choice(String)}, {@link #score(String)} or {@link
- * #yesNo(String)}. A question is immutable. To ask a variant of an existing question, pass it to
- * the factory of the same type, for example {@link #choice(Question)}, and build it with a new key.
+ * #predicate(String)}. A question is immutable. To ask a variant of an existing question, pass it
+ * to the factory of the same type, for example {@link #choice(Question)}, and build it with a new
+ * key.
  *
  * <p>The key identifies the question and its answer, in the request and in a stored {@link
  * Decision}. Use a short descriptive name, such as {@code "route"}. All questions in one request
@@ -24,7 +25,7 @@ import java.util.Optional;
  * @param <A> the type of the answer
  */
 public sealed interface Question<A extends Answer>
-    permits Question.Choice, Question.Score, Question.YesNo {
+    permits Question.Choice, Question.Score, Question.Predicate {
 
   /** The key that identifies the question and its answer. */
   String key();
@@ -77,25 +78,26 @@ public sealed interface Question<A extends Answer>
   }
 
   /**
-   * Start a question that the model answers with the probability of yes.
+   * Start a question that the model answers with the probability that a condition is true.
    *
-   * @param instructions the question, for example "Does the customer need a reply today?"
+   * @param instructions the condition, for example "Does the customer need a reply today?"
    */
-  static ChoiceBuilder.YesNo yesNo(String instructions) {
+  static PredicateBuilder predicate(String instructions) {
     requireText(instructions, "instructions");
-    return new ChoiceBuilder.YesNo(instructions, Optional.empty(), Optional.empty());
+    return new PredicateBuilder(instructions, Optional.empty(), Optional.empty());
   }
 
   /**
-   * Start a new yes or no question with the instructions and criteria of an existing one.
+   * Start a new predicate question with the instructions and criteria of an existing one.
    *
-   * @throws IllegalArgumentException when the question is not a yes or no question
+   * @throws IllegalArgumentException when the question is not a predicate question
    */
-  static ChoiceBuilder.YesNo yesNo(Question<Answer.YesNo> template) {
-    if (Objects.requireNonNull(template, "template") instanceof YesNo yesNo)
-      return new ChoiceBuilder.YesNo(yesNo.instructions(), yesNo.whenYes(), yesNo.whenNo());
+  static PredicateBuilder predicate(Question<Answer.Predicate> template) {
+    if (Objects.requireNonNull(template, "template") instanceof Predicate predicate)
+      return new PredicateBuilder(
+          predicate.instructions(), predicate.whenTrue(), predicate.whenFalse());
     throw new IllegalArgumentException(
-        "Question [" + template.key() + "] is not a yes or no question");
+        "Question [" + template.key() + "] is not a predicate question");
   }
 
   /**
@@ -155,19 +157,21 @@ public sealed interface Question<A extends Answer>
   }
 
   /**
-   * A yes or no question. Answered with an {@link Answer.YesNo}.
+   * A condition about the input. Answered with an {@link Answer.Predicate}.
    *
-   * @param whenYes what counts as yes, if given
-   * @param whenNo what counts as no, if given
+   * @param whenTrue what counts as true, if given
+   * @param whenFalse what counts as false, if given
    */
-  record YesNo(String key, String instructions, Optional<String> whenYes, Optional<String> whenNo)
-      implements Question<Answer.YesNo> {
+  record Predicate(
+      String key, String instructions, Optional<String> whenTrue, Optional<String> whenFalse)
+      implements Question<Answer.Predicate> {
 
-    public YesNo {
+    public Predicate {
       requireText(key, "key");
       requireText(instructions, "instructions");
-      Objects.requireNonNull(whenYes, "whenYes").ifPresent(text -> requireText(text, "whenYes"));
-      Objects.requireNonNull(whenNo, "whenNo").ifPresent(text -> requireText(text, "whenNo"));
+      Objects.requireNonNull(whenTrue, "whenTrue").ifPresent(text -> requireText(text, "whenTrue"));
+      Objects.requireNonNull(whenFalse, "whenFalse")
+          .ifPresent(text -> requireText(text, "whenFalse"));
     }
   }
 
