@@ -638,7 +638,8 @@ private final class Sdk(
   private val applicationConfig = ApplicationConfig(system).getConfig
   private val evaluationClient: SpiEvaluationClient =
     new GuardedEvaluationClient(spiEvaluationClient, applicationConfig)
-  private val sdkSettings = Settings(applicationConfig.getConfig("akka.javasdk"), spiSettings)
+  private val sdkConfig = applicationConfig.getConfig("akka.javasdk")
+  private val sdkSettings = Settings(sdkConfig, spiSettings)
 
   spiSettings.devMode.foreach { devMode =>
     if (devMode.backoffice.refreshToken.nonEmpty) {
@@ -670,10 +671,9 @@ private final class Sdk(
   private lazy val userServiceConfig = {
     // hiding these paths from the config provided to user
     val sensitivePaths = List("akka", "kalix.meta", "kalix.proxy", "kalix.runtime", "system")
-    val sdkConfig = applicationConfig.getObject("akka.javasdk")
     sensitivePaths
       .foldLeft(applicationConfig) { (conf, toHide) => conf.withoutPath(toHide) }
-      .withValue("akka.javasdk", sdkConfig)
+      .withValue("akka.javasdk", sdkConfig.root())
   }
 
   private lazy val grpcClientProvider = new GrpcClientProviderImpl(
@@ -685,16 +685,18 @@ private final class Sdk(
     grpcMockLookup)
 
   private lazy val overrideModelProvider = new OverrideModelProvider
-
   private lazy val overrideDecisionModelProvider = new OverrideDecisionModelProvider
+  private val allowDuplicateComponentIds = sdkConfig.getBoolean("allow-duplicate-component-ids")
 
   // validate service classes before instantiating
-  private val validation = componentClasses.foldLeft(Valid.instance().asInstanceOf[Validation]) {
-    case (validations, cls) =>
+  private val validation = componentClasses
+    .foldLeft(Valid.instance().asInstanceOf[Validation]) { case (validations, cls) =>
       val typeDef = new RuntimeTypeDef(cls)
       val componentValidation = Validations.validate(typeDef)
       validations.combine(componentValidation)
-  }
+    }
+    .combine(
+      Validations.uniqueComponentIds(componentClasses.map(new RuntimeTypeDef(_)).asJava, allowDuplicateComponentIds))
 
   validation match { // if any invalid component, log and throw
     case _: Valid => ()
