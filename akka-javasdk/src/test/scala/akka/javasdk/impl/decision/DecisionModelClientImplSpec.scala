@@ -24,6 +24,7 @@ import akka.runtime.sdk.spi.SpiDecision
 import akka.runtime.sdk.spi.SpiDecisionModelClient
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigResolveOptions
 import io.opentelemetry.context.Context
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
@@ -58,6 +59,14 @@ object DecisionModelClientImplSpec {
       other.model-name = "jev-2"
     }
     """))
+
+  // the shipped configuration without environment variables, so that an OPENAI_API_KEY
+  // set where the tests run does not change the defaults
+  def withoutEnvironment(config: String): Config =
+    ConfigFactory
+      .parseString(config)
+      .withFallback(ConfigFactory.defaultReferenceUnresolved())
+      .resolve(ConfigResolveOptions.noSystem())
 }
 
 class DecisionModelClientImplSpec extends AnyWordSpec with Matchers with ScalaFutures {
@@ -349,6 +358,158 @@ class DecisionModelClientImplSpec extends AnyWordSpec with Matchers with ScalaFu
       p.responseTimeout shouldBe java.time.Duration.ofSeconds(30)
       p.maxRetries shouldBe 2
       p shouldBe DecisionModelProvider.systemOne()
+    }
+  }
+
+  "The OpenAI provider" should {
+    val extraHeader: akka.http.javadsl.model.HttpHeader =
+      akka.http.javadsl.model.headers.RawHeader.create("x-extra", "yes")
+
+    def openAi(
+        apiKey: String = "key",
+        modelName: String = "model",
+        baseUrl: String = "http://localhost:9999/v1",
+        connectionTimeout: java.time.Duration = java.time.Duration.ofSeconds(1),
+        responseTimeout: java.time.Duration = java.time.Duration.ofSeconds(2),
+        maxRetries: Int = 3,
+        headers: java.util.List[akka.http.javadsl.model.HttpHeader] = java.util.List.of(extraHeader)) =
+      new DecisionModelProvider.OpenAi(
+        apiKey,
+        modelName,
+        baseUrl,
+        connectionTimeout,
+        responseTimeout,
+        maxRetries,
+        headers)
+
+    "load defaults from config" in {
+      val p = DecisionModelProvider.OpenAi.fromConfig(withoutEnvironment("").getConfig("akka.javasdk.decision.openai"))
+      p.apiKey shouldBe ""
+      p.modelName shouldBe ""
+      p.baseUrl shouldBe "https://api.openai.com/v1"
+      p.connectionTimeout shouldBe java.time.Duration.ofSeconds(15)
+      p.responseTimeout shouldBe java.time.Duration.ofSeconds(30)
+      p.maxRetries shouldBe 2
+      p.additionalModelRequestHeaders shouldBe empty
+      p shouldBe DecisionModelProvider.openAi()
+    }
+
+    "pass the configured provider to the runtime" in {
+      val spi = new FakeSpiClient(_ => Future.successful(allAnswers))
+      val config = withoutEnvironment("""
+        akka.javasdk.decision {
+          model-provider = openai
+          openai {
+            api-key = "k"
+            model-name = "gpt-6-luna"
+          }
+        }
+        """)
+      client(spi, config = config).input("t").questions(urgent).invoke()
+
+      val provider = spi.provider.asInstanceOf[SpiDecision.OpenAi]
+      provider.providerName shouldBe "openai"
+      provider.apiKey shouldBe "k"
+      provider.modelName shouldBe "gpt-6-luna"
+      provider.baseUrl shouldBe "https://api.openai.com/v1"
+      provider.modelSettings.modelConnectionTimeout shouldBe 15.seconds
+      provider.modelSettings.modelResponseTimeout shouldBe 30.seconds
+      provider.modelSettings.maxModelRetries shouldBe 2
+      provider.modelSettings.additionalModelRequestHeaders shouldBe empty
+      provider.modelSettings.identityHeaders shouldBe false
+    }
+
+    "add the extra headers of a config provider after the headers of an inherited section" in {
+      val spi = new FakeSpiClient(_ => Future.successful(allAnswers))
+      val config = withoutEnvironment("""
+        akka.javasdk.decision {
+          escalation = ${akka.javasdk.decision.openai}
+          escalation {
+            api-key = "k2"
+            model-name = "gpt-6-luna-2"
+            additional-model-request-headers = ["x-section:one"]
+          }
+        }
+        """)
+      client(spi, config = config)
+        .model(
+          DecisionModelProvider.fromConfig("escalation").withAdditionalModelRequestHeaders(List(extraHeader).asJava))
+        .input("t")
+        .questions(urgent)
+        .invoke()
+
+      val provider = spi.provider.asInstanceOf[SpiDecision.OpenAi]
+      provider.apiKey shouldBe "k2"
+      provider.modelName shouldBe "gpt-6-luna-2"
+      provider.modelSettings.additionalModelRequestHeaders.map(h => h.name -> h.value) shouldBe
+      Seq("x-section" -> "one", "x-extra" -> "yes")
+    }
+
+    "use a provider given in code" in {
+      val spi = new FakeSpiClient(_ => Future.successful(allAnswers))
+      client(spi)
+        .model(
+          DecisionModelProvider
+            .openAi()
+            .withApiKey("k")
+            .withModelName("gpt-6-luna")
+            .withBaseUrl("http://localhost:9999/v1"))
+        .input("t")
+        .questions(urgent)
+        .invoke()
+
+      val provider = spi.provider.asInstanceOf[SpiDecision.OpenAi]
+      provider.modelName shouldBe "gpt-6-luna"
+      provider.baseUrl shouldBe "http://localhost:9999/v1"
+    }
+
+    "fail without a model name" in {
+      val spi = new FakeSpiClient(_ => Future.successful(allAnswers))
+      val e = intercept[IllegalArgumentException](
+        client(spi).model(DecisionModelProvider.openAi().withApiKey("k")).input("t").questions(urgent).invoke())
+      e.getMessage should include("model name")
+    }
+
+    "fail without an API key, naming the OpenAI setting and variable" in {
+      val spi = new FakeSpiClient(_ => Future.successful(allAnswers))
+      val e = intercept[IllegalArgumentException](
+        client(spi)
+          .model(DecisionModelProvider.openAi().withModelName("gpt-6-luna"))
+          .input("t")
+          .questions(urgent)
+          .invoke())
+      e.getMessage should include("[akka.javasdk.decision.openai.api-key]")
+      e.getMessage should include("OPENAI_API_KEY")
+      (e.getMessage should not).include("SYSTEM_ONE_API_KEY")
+    }
+
+    "change only its own component in each with method" in {
+      val otherHeader: akka.http.javadsl.model.HttpHeader =
+        akka.http.javadsl.model.headers.RawHeader.create("x-other", "no")
+      val p = openAi()
+      p.withApiKey("key-2") shouldBe openAi(apiKey = "key-2")
+      p.withModelName("model-2") shouldBe openAi(modelName = "model-2")
+      p.withBaseUrl("http://localhost:9998/v1") shouldBe openAi(baseUrl = "http://localhost:9998/v1")
+      p.withConnectionTimeout(java.time.Duration.ofSeconds(4)) shouldBe
+      openAi(connectionTimeout = java.time.Duration.ofSeconds(4))
+      p.withResponseTimeout(java.time.Duration.ofSeconds(5)) shouldBe
+      openAi(responseTimeout = java.time.Duration.ofSeconds(5))
+      p.withMaxRetries(6) shouldBe openAi(maxRetries = 6)
+      p.withAdditionalModelRequestHeaders(java.util.List.of(otherHeader)) shouldBe
+      openAi(headers = java.util.List.of(otherHeader))
+    }
+
+    "reject more options than the API supports" in {
+      val spi = new FakeSpiClient(_ => Future.successful(allAnswers))
+      var choice = Question.choice("Pick").option("o0", "D0").option("o1", "D1")
+      (2 to 255).foreach(i => choice = choice.option(s"o$i", s"D$i"))
+      val e = intercept[IllegalArgumentException](
+        client(spi)
+          .model(DecisionModelProvider.openAi().withApiKey("k").withModelName("gpt-6-luna"))
+          .input("t")
+          .questions(choice.build("big-choice"))
+          .invoke())
+      e.getMessage shouldBe "A choice question supports at most [255] options, question [big-choice] has [256]"
     }
   }
 }
