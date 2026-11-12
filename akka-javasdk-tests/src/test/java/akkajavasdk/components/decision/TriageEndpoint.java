@@ -148,4 +148,21 @@ public class TriageEndpoint {
       return e.getClass().getSimpleName();
     }
   }
+
+  public record FailureResult(String exceptionClass, String message) {}
+
+  // asks two questions, so that a test can fail the call on one of them
+  @Post("/{provider}/route-and-urgent-failure")
+  public FailureResult routeAndUrgentFailure(String provider, StandInCall call) {
+    try {
+      decisionModelClient
+          .model(standIn(provider, call.baseUrl()))
+          .input(call.input())
+          .questions(ROUTE, URGENT)
+          .invoke();
+      return new FailureResult("no-failure", "");
+    } catch (RuntimeException e) {
+      return new FailureResult(e.getClass().getSimpleName(), e.getMessage());
+    }
+  }
 }

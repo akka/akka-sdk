@@ -9,6 +9,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import akka.javasdk.testkit.TestKitSupport;
 import akkajavasdk.Junit5LogCapturing;
 import akkajavasdk.components.decision.TriageEndpoint.ChoiceResult;
+import akkajavasdk.components.decision.TriageEndpoint.FailureResult;
 import akkajavasdk.components.decision.TriageEndpoint.PredicateResult;
 import akkajavasdk.components.decision.TriageEndpoint.ScoreResult;
 import akkajavasdk.components.decision.TriageEndpoint.StandInCall;
@@ -210,7 +211,8 @@ public class DecisionModelOpenAiIntegrationTest extends TestKitSupport {
   }
 
   @Test
-  public void failWithModelExceptionOnRefusal() throws InterruptedException {
+  public void failTheWholeCallWithModelExceptionWhenOneQuestionIsRefused()
+      throws InterruptedException {
     nextResponse.set(
         new StandInResponse(
             200,
@@ -218,16 +220,29 @@ public class DecisionModelOpenAiIntegrationTest extends TestKitSupport {
             {
               "model": "gpt-6-luna-2026-10-15",
               "answers": [
+                {
+                  "type": "choice",
+                  "name": "route",
+                  "choice": "billing",
+                  "probabilities": [
+                    { "value": "billing", "probability": 0.95 },
+                    { "value": "technical", "probability": 0.05 }
+                  ],
+                  "confidence": 0.93
+                },
                 {"type": "refusal", "name": "urgent"}
               ],
               "usage": {"input_tokens": 60, "output_tokens": 0}
             }
             """));
 
-    var result = call("/triage/openai/failure-class", "any", String.class);
+    var result = call("/triage/openai/route-and-urgent-failure", "any", FailureResult.class);
 
-    assertThat(result).isEqualTo("ModelException");
-    assertThat(capturedRequests.take().path()).isEqualTo("/v1/decisions");
+    assertThat(result.exceptionClass()).isEqualTo("ModelException");
+    assertThat(result.message()).contains("urgent").doesNotContain("route");
+    var captured = capturedRequests.take();
+    assertThat(captured.path()).isEqualTo("/v1/decisions");
+    assertThat(captured.body().get("questions").size()).isEqualTo(2);
   }
 
   @Test

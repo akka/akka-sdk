@@ -445,22 +445,34 @@ class DecisionModelClientImplSpec extends AnyWordSpec with Matchers with ScalaFu
       Seq("x-section" -> "one", "x-extra" -> "yes")
     }
 
-    "use a provider given in code" in {
+    "pass every setting of a provider given in code to the runtime" in {
       val spi = new FakeSpiClient(_ => Future.successful(allAnswers))
+      // every value differs from its default
       client(spi)
         .model(
           DecisionModelProvider
             .openAi()
             .withApiKey("k")
             .withModelName("gpt-6-luna")
-            .withBaseUrl("http://localhost:9999/v1"))
+            .withBaseUrl("http://localhost:9999/v1")
+            .withConnectionTimeout(java.time.Duration.ofSeconds(3))
+            .withResponseTimeout(java.time.Duration.ofSeconds(7))
+            .withMaxRetries(5)
+            .withAdditionalModelRequestHeaders(java.util.List.of(extraHeader)))
         .input("t")
         .questions(urgent)
         .invoke()
 
       val provider = spi.provider.asInstanceOf[SpiDecision.OpenAi]
+      provider.providerName shouldBe "openai"
+      provider.apiKey shouldBe "k"
       provider.modelName shouldBe "gpt-6-luna"
       provider.baseUrl shouldBe "http://localhost:9999/v1"
+      provider.modelSettings.modelConnectionTimeout shouldBe 3.seconds
+      provider.modelSettings.modelResponseTimeout shouldBe 7.seconds
+      provider.modelSettings.maxModelRetries shouldBe 5
+      provider.modelSettings.additionalModelRequestHeaders.map(h => h.name -> h.value) shouldBe Seq("x-extra" -> "yes")
+      provider.modelSettings.identityHeaders shouldBe false
     }
 
     "fail without a model name" in {
