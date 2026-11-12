@@ -185,4 +185,34 @@ public @interface Consume {
      */
     boolean ignoreUnknown() default false;
   }
+
+  /**
+   * Where a {@link akka.javasdk.consumer.Consumer} starts when it is deployed for the first time.
+   *
+   * <p>Without this annotation a new consumer processes the whole history of its source. With
+   * {@code latest} it starts from the time of its first deployment, with {@code timestamp} it
+   * starts from the given point in time. Exactly one of the two must be set. Events and state
+   * changes from before the start point are not consumed.
+   *
+   * <p>Supported for consumers of Event Sourced Entities, Key Value Entities, Workflows and service
+   * to service event streams. Not supported for consumers of message broker topics.
+   *
+   * <p>The start point is recorded on the first deployment and is permanent. The service refuses to
+   * start if it is removed or changed, except that a timestamp can change to {@code latest}. To
+   * start over from a different point, give the consumer a new component id.
+   *
+   * <p>See the "Consuming and producing" page of the Akka SDK documentation for details, including
+   * the behavior in development mode and in tests.
+   */
+  @Target(ElementType.TYPE)
+  @Retention(RetentionPolicy.RUNTIME)
+  @Documented
+  @interface StartFrom {
+
+    /** Start from the time of the first deployment of the consumer. */
+    boolean latest() default false;
+
+    /** Start from a point in time, an ISO-8601 instant such as {@code "2026-10-01T00:00:00Z"}. */
+    String timestamp() default "";
+  }
 }

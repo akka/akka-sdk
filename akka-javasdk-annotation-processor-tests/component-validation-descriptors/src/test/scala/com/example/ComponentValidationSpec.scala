@@ -56,6 +56,10 @@ abstract class AbstractComponentValidationSpec(val validationMode: ValidationMod
       assertInvalid("invalid/ComponentIdWithPipe.java", "@Component id must not contain the pipe character")
     }
 
+    "reject @Consume.StartFrom on a component that is not a Consumer" in {
+      assertInvalid("invalid/TimedActionWithStartFrom.java", "@Consume.StartFrom is only supported on a Consumer")
+    }
+
     // Multiple errors - verify all errors are reported together
     "report all validation errors for a component with multiple issues" in {
       assertInvalid(

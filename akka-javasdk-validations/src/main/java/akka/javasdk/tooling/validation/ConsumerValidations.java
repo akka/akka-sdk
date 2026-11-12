@@ -15,6 +15,8 @@ import static akka.javasdk.tooling.validation.Validations.subscriptionMethodMust
 import akka.javasdk.validation.ast.AnnotationDef;
 import akka.javasdk.validation.ast.MethodDef;
 import akka.javasdk.validation.ast.TypeDef;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -42,6 +44,7 @@ public class ConsumerValidations {
         .combine(topicPublicationValidations(typeDef))
         .combine(publishStreamIdMustBeFilled(typeDef))
         .combine(Validations.serviceStreamPlatformServiceValidation(typeDef))
+        .combine(startFromValidations(typeDef))
         .combine(ambiguousHandlerValidations(typeDef, effectType))
         .combine(strictlyPublicCommandHandlerArityShouldBeZeroOrOne(typeDef, effectType))
         .combine(missingHandlerValidations(typeDef, effectType))
@@ -58,8 +61,8 @@ public class ConsumerValidations {
    * @return a Validation result indicating success or failure
    */
   static Validation hasConsumeAnnotation(TypeDef typeDef) {
-    // Check for any annotation that starts with "akka.javasdk.annotations.Consume"
-    if (typeDef.hasAnnotationStartingWith("akka.javasdk.annotations.Consume")) {
+    // Any @Consume source annotation, @Consume.StartFrom alone is not a source
+    if (!Validations.doesNotHaveSubscription(typeDef)) {
       return Validation.Valid.instance();
     }
 
@@ -127,6 +130,61 @@ public class ConsumerValidations {
     }
 
     return Validation.Valid.instance();
+  }
+
+  /**
+   * Validates @Consume.StartFrom: exactly one of latest and timestamp is set, the timestamp parses,
+   * the source is not a topic and the consumer does not produce a service stream.
+   *
+   * @param typeDef the component class to validate
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation startFromValidations(TypeDef typeDef) {
+    Optional<AnnotationDef> startFrom = typeDef.findAnnotation(Validations.START_FROM);
+    if (startFrom.isEmpty()) {
+      return Validation.Valid.instance();
+    }
+
+    boolean latest = startFrom.get().getBooleanValue("latest").orElse(false);
+    String timestamp = startFrom.get().getStringValue("timestamp").orElse("");
+    List<String> errors = new ArrayList<>();
+
+    if (latest && !timestamp.isEmpty()) {
+      errors.add(
+          Validations.errorMessage(
+              typeDef, "@Consume.StartFrom must set either latest or timestamp, not both."));
+    }
+    if (!latest && timestamp.isEmpty()) {
+      errors.add(
+          Validations.errorMessage(typeDef, "@Consume.StartFrom must set latest or timestamp."));
+    }
+    if (!timestamp.isEmpty()) {
+      try {
+        Instant.parse(timestamp);
+      } catch (DateTimeParseException e) {
+        errors.add(
+            Validations.errorMessage(
+                typeDef,
+                "@Consume.StartFrom timestamp ["
+                    + timestamp
+                    + "] is not an ISO-8601 instant, for example 2026-10-01T00:00:00Z."));
+      }
+    }
+
+    if (hasTopicSubscription(typeDef)) {
+      errors.add(
+          Validations.errorMessage(
+              typeDef,
+              "@Consume.StartFrom is not supported for a Consumer with @Consume.FromTopic."));
+    }
+    if (typeDef.hasAnnotation("akka.javasdk.annotations.Produce.ServiceStream")) {
+      errors.add(
+          Validations.errorMessage(
+              typeDef,
+              "@Consume.StartFrom is not supported for a Consumer with @Produce.ServiceStream."));
+    }
+
+    return Validation.of(errors);
   }
 
   /**

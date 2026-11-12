@@ -49,6 +49,7 @@ public class ViewValidations {
             .combine(viewQueriesWithStreamUpdatesMustBeStreaming(typeDef))
             .combine(viewQueryMethodArityShouldBeZeroOrOne(typeDef))
             .combine(viewMultipleTableUpdatersMustHaveTableAnnotations(typeDef))
+            .combine(tableUpdatersMustNotHaveStartFrom(typeDef))
             .combine(functionToolOnlyOnQueryEffect(typeDef))
             .combine(functionToolMustNotBeOnNonPublicMethods(typeDef));
 
@@ -76,6 +77,19 @@ public class ViewValidations {
           Validations.errorMessage(typeDef, "A View itself should not be annotated with @Table."));
     }
     return Validation.Valid.instance();
+  }
+
+  /**
+   * Validates that the TableUpdaters of the View are not annotated with @Consume.StartFrom. The
+   * View class itself is covered by the check for components that are not a Consumer.
+   *
+   * @param typeDef the View class to validate
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation tableUpdatersMustNotHaveStartFrom(TypeDef typeDef) {
+    return typeDef.getNestedTypes().stream()
+        .map(Validations::startFromOnlyOnConsumer)
+        .reduce(Validation.Valid.instance(), Validation::combine);
   }
 
   /**

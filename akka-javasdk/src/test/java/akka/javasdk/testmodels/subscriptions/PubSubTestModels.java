@@ -48,6 +48,24 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
     }
   }
 
+  @Consume.StartFrom(latest = true)
+  @Consume.FromEventSourcedEntity(EmployeeEntity.class)
+  public static class SubscribeToEventSourcedEmployeeFromLatest extends Consumer {
+
+    public Effect onEvent(EmployeeEvent event) {
+      return effects().done();
+    }
+  }
+
+  @Consume.StartFrom(timestamp = "2026-10-01T00:00:00Z")
+  @Consume.FromEventSourcedEntity(EmployeeEntity.class)
+  public static class SubscribeToEventSourcedEmployeeFromTimestamp extends Consumer {
+
+    public Effect onEvent(EmployeeEvent event) {
+      return effects().done();
+    }
+  }
+
   @Consume.FromEventSourcedEntity(EmployeeEntity.class)
   public static class SubscribeToEventSourcedEmployee extends Consumer {
 

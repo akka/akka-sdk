@@ -4,6 +4,8 @@
 
 package akka.javasdk.impl
 
+import java.time.Instant
+
 import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.testmodels.keyvalueentity.CounterState
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.EventStreamPublishingConsumer
@@ -14,12 +16,15 @@ import akka.javasdk.testmodels.subscriptions.PubSubTestModels.PlatformServiceStr
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.ProtobufEventStreamConsumer
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToBytesFromTopic
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToEventSourcedEmployee
+import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToEventSourcedEmployeeFromLatest
+import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToEventSourcedEmployeeFromTimestamp
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToTopicTypeLevel
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToTopicTypeLevelCombined
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToValueEntityTypeLevel
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToValueEntityWithDeletes
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.TemplatePlatformServiceStreamConsumer
 import akka.runtime.sdk.spi.ConsumerSource
+import akka.runtime.sdk.spi.ConsumerStartFrom
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import protoconsumer.EventsForConsumer
@@ -27,6 +32,14 @@ import protoconsumer.EventsForConsumer
 class ConsumerDescriptorFactorySpec extends AnyWordSpec with Matchers {
 
   "Consumer descriptor factory" should {
+
+    "read the start point from @Consume.StartFrom" in {
+      ComponentDescriptorFactory.consumerStartFrom(classOf[SubscribeToEventSourcedEmployee]) shouldBe None
+      ComponentDescriptorFactory.consumerStartFrom(classOf[SubscribeToEventSourcedEmployeeFromLatest]) shouldBe Some(
+        ConsumerStartFrom.Latest)
+      ComponentDescriptorFactory.consumerStartFrom(classOf[SubscribeToEventSourcedEmployeeFromTimestamp]) shouldBe Some(
+        new ConsumerStartFrom.Timestamp(Instant.parse("2026-10-01T00:00:00Z")))
+    }
 
     "generate mapping with Event Sourced Subscription annotations" in {
       val desc = ComponentDescriptor.descriptorFor(classOf[SubscribeToEventSourcedEmployee], new Serializer)

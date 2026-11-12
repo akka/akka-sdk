@@ -78,6 +78,7 @@ import akka.javasdk.http.HttpClientProvider
 import akka.javasdk.http.RequestContext
 import akka.javasdk.impl.ComponentDescriptorFactory.consumerDestination
 import akka.javasdk.impl.ComponentDescriptorFactory.consumerSource
+import akka.javasdk.impl.ComponentDescriptorFactory.consumerStartFrom
 import akka.javasdk.impl.Sdk.StartupContext
 import akka.javasdk.impl.SdkRunner.extractSpiSettings
 import akka.javasdk.impl.SpiffeContextImpl
@@ -1177,8 +1178,7 @@ private final class Sdk(
             description = Reflect.readComponentDescription(clz),
             provided = false,
             protobufDescriptors = Reflect.protoCommandHandlerInputOutput(componentDescriptor),
-            // FIXME: read the start position from the consumer annotation
-            startFrom = None)
+            startFrom = consumerStartFrom(consumerClass))
 
       case clz if Reflect.isAutonomousAgent(clz) =>
         val componentId = Reflect.readComponentId(clz)
