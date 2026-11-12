@@ -40,11 +40,11 @@ public class TriageEndpoint {
     )
     .build("severity");
 
-  public static final Question<Answer.YesNo> URGENT = Question.yesNo(
+  public static final Question<Answer.Predicate> URGENT = Question.predicate(
     "Does the customer need a reply today?"
   )
-    .whenYes("The customer states a deadline of today or earlier")
-    .whenNo("There is no deadline requirement")
+    .whenTrue("The customer states a deadline of today or earlier")
+    .whenFalse("There is no deadline requirement")
     .build("urgent");
 
   // end::questions[]
@@ -62,7 +62,7 @@ public class TriageEndpoint {
   public Triage triage(Ticket ticket) {
     // tag::invoke[]
     Decision decision = decisionModelClient
-      .state(ticket)
+      .input(ticket)
       .questions(ROUTE, SEVERITY, URGENT)
       .invoke();
     // end::invoke[]
@@ -81,7 +81,7 @@ public class TriageEndpoint {
     // tag::model[]
     Decision decision = decisionModelClient
       .model(DecisionModelProvider.fromConfig("escalation-model"))
-      .state(ticket)
+      .input(ticket)
       .questions(URGENT)
       .invoke();
     // end::model[]

@@ -9,9 +9,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import akka.javasdk.testkit.TestKitSupport;
 import akkajavasdk.Junit5LogCapturing;
 import akkajavasdk.components.decision.TriageEndpoint.ChoiceResult;
+import akkajavasdk.components.decision.TriageEndpoint.PredicateResult;
 import akkajavasdk.components.decision.TriageEndpoint.ScoreResult;
 import akkajavasdk.components.decision.TriageEndpoint.StandInCall;
-import akkajavasdk.components.decision.TriageEndpoint.YesNoResult;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpServer;
@@ -72,10 +72,10 @@ public class DecisionModelSystemOneIntegrationTest extends TestKitSupport {
     if (standIn != null) standIn.stop(0);
   }
 
-  private <T> T call(String path, String state, Class<T> resultType) {
+  private <T> T call(String path, String input, Class<T> resultType) {
     return httpClient
         .POST(path)
-        .withRequestBody(new StandInCall(baseUrl, state))
+        .withRequestBody(new StandInCall(baseUrl, input))
         .responseBodyAs(resultType)
         .invoke()
         .body();
@@ -163,7 +163,7 @@ public class DecisionModelSystemOneIntegrationTest extends TestKitSupport {
   }
 
   @Test
-  public void sendYesNoQuestionAndReadTheAnswer() throws InterruptedException {
+  public void sendPredicateQuestionAndReadTheAnswer() throws InterruptedException {
     nextResponse.set(
         new StandInResponse(
             200,
@@ -178,7 +178,7 @@ public class DecisionModelSystemOneIntegrationTest extends TestKitSupport {
             """));
 
     var result =
-        call("/triage/system-one/urgent", "Need an answer before tomorrow", YesNoResult.class);
+        call("/triage/system-one/urgent", "Need an answer before tomorrow", PredicateResult.class);
 
     assertThat(result.probability()).isEqualTo(0.87);
 

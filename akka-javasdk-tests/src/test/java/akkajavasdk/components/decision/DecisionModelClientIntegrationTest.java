@@ -38,10 +38,10 @@ public class DecisionModelClientIntegrationTest extends TestKitSupport {
   public void answerQuestionsThroughTheInjectedClient() {
     var ticket = new Ticket("Site down", "The checkout page fails for every customer");
     testDecisionModel
-        .whenState(ticket)
+        .whenInput(ticket)
         .choice(ROUTE, "technical")
         .score(SEVERITY, 2)
-        .yesNo(URGENT, 0.9);
+        .predicate(URGENT, 0.9);
 
     var result =
         httpClient
@@ -57,7 +57,7 @@ public class DecisionModelClientIntegrationTest extends TestKitSupport {
 
   @Test
   public void failTheCallWhenTheModelGivesNoAnswer() {
-    testDecisionModel.whenState(new Ticket("other", "other")).yesNo(URGENT, 0.1);
+    testDecisionModel.whenInput(new Ticket("other", "other")).predicate(URGENT, 0.1);
 
     var failureClass =
         httpClient

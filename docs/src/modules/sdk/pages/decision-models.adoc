@@ -1,5 +1,5 @@
 = Decision models
-:page-summary: A decision model answers a fixed set of questions about a state with probabilities instead of generated text.
+:page-summary: A decision model answers a fixed set of questions about an input with probabilities instead of generated text.
 :page-when-to-use: Routing, triage, scoring, and yes-or-no decisions that need a probability, not generated text
 :page-related: sdk:agents.adoc, sdk:integrations/ai-and-models.adoc, sdk:model-provider-details.adoc
 :page-persona: builder-developer, builder-ai-ml
@@ -7,7 +7,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-A decision model answers a fixed set of questions about some state with probabilities instead of generated text. You call a decision model through the `DecisionModelClient`, which can be injected into endpoints, agents, workflows, consumers, timed actions, and the service setup.
+A decision model answers a fixed set of questions about an input with probabilities instead of generated text. You call a decision model through the `DecisionModelClient`, which can be injected into endpoints, agents, workflows, consumers, timed actions, and the service setup.
 
 == Overview
 
@@ -29,7 +29,7 @@ include::example$doc-snippets/src/main/java/com/example/decision/TriageEndpoint.
 
 == Asking questions
 
-There are three question types. A choice question picks one of at least two options. A score question rates the state on a scale, such as a severity rating. You describe each level of the scale from lowest to highest, and the model answers with a position on that scale. A yes-or-no question returns the probability of the answer being yes.
+There are three question types. A choice question picks one of at least two options. A score question rates the input on a scale, such as a severity rating. You describe each level of the scale from lowest to highest, and the model answers with a position on that scale. A predicate question checks a condition and returns the probability that it is true.
 
 Create questions with the static factories on the `Question` class and define them as constants, so the request and the answer lookup use the same question:
 
@@ -41,7 +41,7 @@ include::example$doc-snippets/src/main/java/com/example/decision/TriageEndpoint.
 
 The key given to `build` identifies the question and its answer. All questions in one request must have different keys. A stored decision is read back with the same keys, so keep a key stable once it is in use.
 
-The state and the questions are sent in one request:
+The input and the questions are sent in one request:
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/decision/TriageEndpoint.java[TriageEndpoint.java]
@@ -49,9 +49,9 @@ The state and the questions are sent in one request:
 include::example$doc-snippets/src/main/java/com/example/decision/TriageEndpoint.java[tag=invoke]
 ----
 
-A `String` state is sent as text. Any other object is serialized to JSON. The state must serialize to JSON text, an object or an array: the client rejects an empty string, a number, a boolean and a byte array with an `IllegalArgumentException`. In the previous example, `ticket` can be a string or an instance of your own JSON-serializable type like `Ticket`.
+A `String` input is sent as text. Any other object is serialized to JSON. The input must serialize to JSON text, an object or an array: the client rejects an empty string, a number, a boolean and a byte array with an `IllegalArgumentException`. In the previous example, `ticket` can be a string or an instance of your own JSON-serializable type like `Ticket`.
 
-The client sends the state and the questions to the model API as they are. Guardrails and sanitizers do not apply to a decision request. To mask sensitive text before the call, use the `SanitizerClient`, as described in xref:sdk:sanitization.adoc#_ad_hoc_sanitization[Ad hoc sanitization].
+The client sends the input and the questions to the model API as they are. Guardrails and sanitizers do not apply to a decision request. To mask sensitive text before the call, use the `SanitizerClient`, as described in xref:sdk:sanitization.adoc#_ad_hoc_sanitization[Ad hoc sanitization].
 
 Use `invokeAsync()` to get a `CompletionStage<Decision>` instead of blocking. `questions` also accepts a `Collection<Question<?>>`, for questions collected at run time.
 
@@ -67,7 +67,7 @@ include::example$doc-snippets/src/main/java/com/example/decision/TriageEndpoint.
 
 * `Answer.Choice` has the key of the selected option in `selected()`, a probability per option key in `probabilities()`, and how peaked the distribution over the options is in `confidence()`, from 0 to 1.
 * `Answer.Score` has the position along the levels, counted from 0, in `value()`, plus `probabilities()` and `confidence()`. The value can fall between two levels.
-* `Answer.YesNo` has the probability of the answer being yes in `probability()`.
+* `Answer.Predicate` has the probability that the condition is true in `probability()`.
 
 `Decision.model()` names the model version that answered. Log the model with the answers, because the thresholds you compare answers against depend on the model version.
 
@@ -118,7 +118,7 @@ A failed call fails with an exception from `akka.javasdk.agent`:
 * `InternalServerException` when the model API answers with a server error status after the configured retries.
 * `ModelException` for other failures, such as a rejected request or an unusable response.
 
-An invalid request or configuration fails with an `IllegalArgumentException`: an unsupported state, no questions, duplicate question keys, more options or levels than the provider supports, a provider configuration section without a required key, or a provider without a model name or API key.
+An invalid request or configuration fails with an `IllegalArgumentException`: an unsupported input, no questions, duplicate question keys, more options or levels than the provider supports, a provider configuration section without a required key, or a provider without a model name or API key.
 
 The client retries a request up to `max-retries` times if it fails with a rate limit, a server error, a timeout or a connection failure. The `response-timeout` applies to each attempt.
 
@@ -132,7 +132,7 @@ The testkit's `TestDecisionModelProvider` answers decision requests without a mo
 include::example$doc-snippets/src/test/java/com/example/decision/TriageEndpointIntegrationTest.java[tag=settings]
 ----
 
-Define the answers per state before the test calls the component:
+Define the answers per input before the test calls the component:
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/test/java/com/example/decision/TriageEndpointIntegrationTest.java[TriageEndpointIntegrationTest.java]

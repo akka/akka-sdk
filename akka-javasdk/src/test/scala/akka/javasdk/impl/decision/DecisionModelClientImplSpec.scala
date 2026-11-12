@@ -69,7 +69,7 @@ class DecisionModelClientImplSpec extends AnyWordSpec with Matchers with ScalaFu
   private val route =
     Question.choice("Which team?").option("billing", "Payments").option("technical", "Bugs").build("route")
   private val severity = Question.score("How severe?").levels("low", "medium", "high").build("severity")
-  private val urgent = Question.yesNo("Urgent?").whenYes("Deadline today").build("urgent")
+  private val urgent = Question.predicate("Urgent?").whenTrue("Deadline today").build("urgent")
 
   private val allAnswers =
     new SpiDecision.Response(
@@ -89,9 +89,9 @@ class DecisionModelClientImplSpec extends AnyWordSpec with Matchers with ScalaFu
 
   "The decision model client" should {
 
-    "send the state as JSON and the questions to the configured provider" in {
+    "send the input as JSON and the questions to the configured provider" in {
       val spi = new FakeSpiClient(_ => Future.successful(allAnswers))
-      client(spi).state(new Ticket("Refund", "Charged twice")).questions(route, severity, urgent).invoke()
+      client(spi).input(new Ticket("Refund", "Charged twice")).questions(route, severity, urgent).invoke()
 
       spi.request.stateJson shouldBe """{"subject":"Refund","body":"Charged twice"}"""
       spi.request.questions.map(_.key) shouldBe Seq("route", "severity", "urgent")
@@ -100,9 +100,9 @@ class DecisionModelClientImplSpec extends AnyWordSpec with Matchers with ScalaFu
       choice.instructions shouldBe "Which team?"
       choice.options.map(o => o.key -> o.description) shouldBe Seq("billing" -> "Payments", "technical" -> "Bugs")
       spi.request.questions(1).asInstanceOf[SpiDecision.ScoreQuestion].levels shouldBe Seq("low", "medium", "high")
-      val yesNo = spi.request.questions(2).asInstanceOf[SpiDecision.PredicateQuestion]
-      yesNo.whenTrue shouldBe Some("Deadline today")
-      yesNo.whenFalse shouldBe None
+      val predicate = spi.request.questions(2).asInstanceOf[SpiDecision.PredicateQuestion]
+      predicate.whenTrue shouldBe Some("Deadline today")
+      predicate.whenFalse shouldBe None
 
       val provider = spi.provider.asInstanceOf[SpiDecision.SystemOne]
       provider.apiKey shouldBe "test-key"
@@ -111,22 +111,22 @@ class DecisionModelClientImplSpec extends AnyWordSpec with Matchers with ScalaFu
       provider.modelSettings.modelResponseTimeout shouldBe 30.seconds
     }
 
-    "send a String state as a JSON string" in {
+    "send a String input as a JSON string" in {
       val spi = new FakeSpiClient(_ => Future.successful(allAnswers))
-      client(spi).state("Charged \"twice\"").questions(urgent).invokeAsync().asScala.futureValue
+      client(spi).input("Charged \"twice\"").questions(urgent).invokeAsync().asScala.futureValue
       spi.request.stateJson shouldBe "\"Charged \\\"twice\\\"\""
     }
 
     "accept questions as a collection" in {
       val spi = new FakeSpiClient(_ => Future.successful(allAnswers))
       val questions: java.util.Collection[Question[_]] = java.util.List.of(route, severity, urgent)
-      client(spi).state("ticket").questions(questions).invoke()
+      client(spi).input("ticket").questions(questions).invoke()
       spi.request.questions.map(_.key) shouldBe Seq("route", "severity", "urgent")
     }
 
     "return the answers as typed answers" in {
       val spi = new FakeSpiClient(_ => Future.successful(allAnswers))
-      val decision = client(spi).state("ticket").questions(route, severity, urgent).invoke()
+      val decision = client(spi).input("ticket").questions(route, severity, urgent).invoke()
 
       decision.model shouldBe "jev-1-2026"
       val routeAnswer = decision.answer(route)
@@ -140,7 +140,7 @@ class DecisionModelClientImplSpec extends AnyWordSpec with Matchers with ScalaFu
 
     "use the provider given to the client" in {
       val spi = new FakeSpiClient(_ => Future.successful(allAnswers))
-      client(spi).model(DecisionModelProvider.fromConfig("other")).state("t").questions(urgent).invoke()
+      client(spi).model(DecisionModelProvider.fromConfig("other")).input("t").questions(urgent).invoke()
       spi.provider.modelName shouldBe "jev-2"
 
       client(spi)
@@ -150,7 +150,7 @@ class DecisionModelClientImplSpec extends AnyWordSpec with Matchers with ScalaFu
             .withApiKey("key-3")
             .withModelName("jev-3")
             .withBaseUrl("http://localhost:9999"))
-        .state("t")
+        .input("t")
         .questions(urgent)
         .invoke()
       spi.provider.modelName shouldBe "jev-3"
@@ -163,7 +163,7 @@ class DecisionModelClientImplSpec extends AnyWordSpec with Matchers with ScalaFu
         akka.http.javadsl.model.headers.RawHeader.create("x-extra", "yes")
       client(spi)
         .model(DecisionModelProvider.fromConfig("other").withAdditionalModelRequestHeaders(List(extraHeader).asJava))
-        .state("t")
+        .input("t")
         .questions(urgent)
         .invoke()
       val settings = spi.provider.asInstanceOf[SpiDecision.SystemOne].modelSettings
@@ -174,11 +174,11 @@ class DecisionModelClientImplSpec extends AnyWordSpec with Matchers with ScalaFu
       val spi = new FakeSpiClient(_ => Future.failed(new IllegalStateException("not expected")))
       val custom = new DecisionModelProvider.Custom {
         override def decide(request: DecisionModelProvider.DecisionRequest): Decision = {
-          request.state shouldBe new Ticket("a", "b")
-          new Decision("custom", Map[String, Answer]("urgent" -> new Answer.YesNo(0.3)).asJava)
+          request.input shouldBe new Ticket("a", "b")
+          new Decision("custom", Map[String, Answer]("urgent" -> new Answer.Predicate(0.3)).asJava)
         }
       }
-      val decision = client(spi).model(custom).state(new Ticket("a", "b")).questions(urgent).invoke()
+      val decision = client(spi).model(custom).input(new Ticket("a", "b")).questions(urgent).invoke()
       decision.answer(urgent).probability shouldBe 0.3
       spi.request shouldBe null
     }
@@ -189,9 +189,9 @@ class DecisionModelClientImplSpec extends AnyWordSpec with Matchers with ScalaFu
         override def decide(request: DecisionModelProvider.DecisionRequest): Decision =
           new Decision(
             "custom",
-            Map[String, Answer]("urgent" -> new Answer.YesNo(0.3), "extra" -> new Answer.YesNo(0.7)).asJava)
+            Map[String, Answer]("urgent" -> new Answer.Predicate(0.3), "extra" -> new Answer.Predicate(0.7)).asJava)
       }
-      val decision = client(spi).model(custom).state("t").questions(urgent).invoke()
+      val decision = client(spi).model(custom).input("t").questions(urgent).invoke()
       decision.answers.asScala.keySet shouldBe Set("urgent")
     }
 
@@ -202,13 +202,13 @@ class DecisionModelClientImplSpec extends AnyWordSpec with Matchers with ScalaFu
           override def decide(request: DecisionModelProvider.DecisionRequest): Decision =
             new Decision("custom", Map[String, Answer](question.key -> answer).asJava)
         }
-        intercept[ModelException](client(spi).model(custom).state("t").questions(question).invoke())
+        intercept[ModelException](client(spi).model(custom).input("t").questions(question).invoke())
       }
       customWith(new Answer.Choice("marketing", 1.0, Map.empty[String, java.lang.Double].asJava), route).getMessage
         .should(include("selects [marketing]"))
       customWith(new Answer.Score(3.5, 1.0, java.util.List.of[java.lang.Double]()), severity).getMessage
         .should(include("outside the levels"))
-      customWith(new Answer.YesNo(1.5), urgent).getMessage should include("outside 0 to 1")
+      customWith(new Answer.Predicate(1.5), urgent).getMessage should include("outside 0 to 1")
     }
 
     "use the test override before any other provider" in {
@@ -216,11 +216,11 @@ class DecisionModelClientImplSpec extends AnyWordSpec with Matchers with ScalaFu
       val overrideProvider = new OverrideDecisionModelProvider
       overrideProvider.set(new DecisionModelProvider.Custom {
         override def decide(request: DecisionModelProvider.DecisionRequest): Decision =
-          new Decision("override", Map[String, Answer]("urgent" -> new Answer.YesNo(0.5)).asJava)
+          new Decision("override", Map[String, Answer]("urgent" -> new Answer.Predicate(0.5)).asJava)
       })
       val decision = client(spi, overrideProvider = overrideProvider)
         .model(DecisionModelProvider.systemOne().withModelName("jev-3"))
-        .state("t")
+        .input("t")
         .questions(urgent)
         .invoke()
       decision.model shouldBe "override"
@@ -229,17 +229,17 @@ class DecisionModelClientImplSpec extends AnyWordSpec with Matchers with ScalaFu
     "fail when a custom provider does not answer every question" in {
       val custom = new DecisionModelProvider.Custom {
         override def decide(request: DecisionModelProvider.DecisionRequest): Decision =
-          new Decision("custom", Map[String, Answer]("urgent" -> new Answer.YesNo(0.3)).asJava)
+          new Decision("custom", Map[String, Answer]("urgent" -> new Answer.Predicate(0.3)).asJava)
       }
       val spi = new FakeSpiClient(_ => Future.failed(new IllegalStateException("not expected")))
-      val e = intercept[ModelException](client(spi).model(custom).state("t").questions(urgent, route).invoke())
+      val e = intercept[ModelException](client(spi).model(custom).input("t").questions(urgent, route).invoke())
       e.getMessage should include("No answer for question [route]")
     }
 
     "map runtime failures to the agent exceptions" in {
       def failWith(reason: SpiAgent.FailureReason): Throwable = {
         val spi = new FakeSpiClient(_ => Future.failed(new SpiAgent.AgentException("boom", reason)))
-        client(spi).state("t").questions(urgent).invokeAsync().asScala.failed.futureValue
+        client(spi).input("t").questions(urgent).invokeAsync().asScala.failed.futureValue
       }
       failWith(SpiAgent.ModelFailure) shouldBe a[ModelException]
       failWith(SpiAgent.RateLimitFailure) shouldBe a[RateLimitException]
@@ -249,26 +249,26 @@ class DecisionModelClientImplSpec extends AnyWordSpec with Matchers with ScalaFu
 
     "reject a request without questions or with duplicate keys" in {
       val spi = new FakeSpiClient(_ => Future.successful(allAnswers))
-      intercept[IllegalArgumentException](client(spi).state("t").questions())
-      val sameKey = Question.yesNo("Other?").build("urgent")
-      val e = intercept[IllegalArgumentException](client(spi).state("t").questions(urgent, sameKey))
+      intercept[IllegalArgumentException](client(spi).input("t").questions())
+      val sameKey = Question.predicate("Other?").build("urgent")
+      val e = intercept[IllegalArgumentException](client(spi).input("t").questions(urgent, sameKey))
       e.getMessage should include("Duplicate question keys [urgent]")
     }
 
-    "reject a state that is not JSON text, an object or an array" in {
+    "reject an input that is not JSON text, an object or an array" in {
       val spi = new FakeSpiClient(_ => Future.successful(allAnswers))
-      val number = intercept[IllegalArgumentException](client(spi).state(42))
+      val number = intercept[IllegalArgumentException](client(spi).input(42))
       number.getMessage should include("java.lang.Integer")
-      intercept[IllegalArgumentException](client(spi).state(true))
-      intercept[IllegalArgumentException](client(spi).state(1.5))
-      intercept[IllegalArgumentException](client(spi).state(Array[Byte](1, 2)))
-      intercept[IllegalArgumentException](client(spi).state(" "))
-      intercept[NullPointerException](client(spi).state(null))
+      intercept[IllegalArgumentException](client(spi).input(true))
+      intercept[IllegalArgumentException](client(spi).input(1.5))
+      intercept[IllegalArgumentException](client(spi).input(Array[Byte](1, 2)))
+      intercept[IllegalArgumentException](client(spi).input(" "))
+      intercept[NullPointerException](client(spi).input(null))
     }
 
-    "fail with an IllegalArgumentException for a state that cannot be serialized" in {
+    "fail with an IllegalArgumentException for an input that cannot be serialized" in {
       val spi = new FakeSpiClient(_ => Future.successful(allAnswers))
-      val e = intercept[IllegalArgumentException](client(spi).state(new Object {}).questions(urgent).invoke())
+      val e = intercept[IllegalArgumentException](client(spi).input(new Object {}).questions(urgent).invoke())
       e.getMessage should include("cannot be serialized to JSON")
     }
 
@@ -277,26 +277,26 @@ class DecisionModelClientImplSpec extends AnyWordSpec with Matchers with ScalaFu
       var choice = Question.choice("Pick").option("o0", "D0").option("o1", "D1")
       (2 to 255).foreach(i => choice = choice.option(s"o$i", s"D$i"))
       val tooManyOptions = choice.build("big-choice")
-      val e1 = intercept[IllegalArgumentException](client(spi).state("t").questions(tooManyOptions).invoke())
+      val e1 = intercept[IllegalArgumentException](client(spi).input("t").questions(tooManyOptions).invoke())
       e1.getMessage should include("at most [255] options")
 
       val tooManyLevels =
         Question.score("Rate").levels("l0", "l1", (2 to 10).map(i => s"l$i"): _*).build("big-score")
-      val e2 = intercept[IllegalArgumentException](client(spi).state("t").questions(tooManyLevels).invoke())
+      val e2 = intercept[IllegalArgumentException](client(spi).input("t").questions(tooManyLevels).invoke())
       e2.getMessage should include("at most [10] levels")
     }
 
     "fail when no provider is configured" in {
       val spi = new FakeSpiClient(_ => Future.successful(allAnswers))
       val e = intercept[IllegalArgumentException](
-        client(spi, config = ConfigFactory.load()).state("t").questions(urgent).invoke())
+        client(spi, config = ConfigFactory.load()).input("t").questions(urgent).invoke())
       e.getMessage should include("akka.javasdk.decision.model-provider")
     }
 
     "fail when the provider has no model name" in {
       val spi = new FakeSpiClient(_ => Future.successful(allAnswers))
       val e = intercept[IllegalArgumentException](
-        client(spi).model(DecisionModelProvider.systemOne()).state("t").questions(urgent).invoke())
+        client(spi).model(DecisionModelProvider.systemOne()).input("t").questions(urgent).invoke())
       e.getMessage should include("model name")
     }
 
@@ -305,7 +305,7 @@ class DecisionModelClientImplSpec extends AnyWordSpec with Matchers with ScalaFu
       val e = intercept[IllegalArgumentException](
         client(spi)
           .model(DecisionModelProvider.systemOne().withModelName("jev-1"))
-          .state("t")
+          .input("t")
           .questions(urgent)
           .invoke())
       e.getMessage should include("API key")
@@ -314,7 +314,7 @@ class DecisionModelClientImplSpec extends AnyWordSpec with Matchers with ScalaFu
     "fail for an undefined provider configuration" in {
       val spi = new FakeSpiClient(_ => Future.successful(allAnswers))
       val e = intercept[IllegalArgumentException](
-        client(spi).model(DecisionModelProvider.fromConfig("missing")).state("t").questions(urgent).invoke())
+        client(spi).model(DecisionModelProvider.fromConfig("missing")).input("t").questions(urgent).invoke())
       e.getMessage should include("Undefined decision model provider configuration [missing]")
     }
 
@@ -331,7 +331,7 @@ class DecisionModelClientImplSpec extends AnyWordSpec with Matchers with ScalaFu
       val e = intercept[IllegalArgumentException](
         client(spi, config = incomplete)
           .model(DecisionModelProvider.fromConfig("escalation-model"))
-          .state("t")
+          .input("t")
           .questions(urgent)
           .invoke())
       e.getMessage should include("[akka.javasdk.decision.escalation-model]")

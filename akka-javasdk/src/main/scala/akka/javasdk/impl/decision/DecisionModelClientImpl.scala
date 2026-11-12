@@ -126,8 +126,8 @@ private[javasdk] object DecisionModelClientImpl {
             s"A SystemOne score question supports at most [$MaxScoreLevels] levels, " +
             s"question [${q.key}] has [${q.levels.size}]")
         new SpiDecision.ScoreQuestion(q.key, q.instructions, q.levels.asScala.toSeq)
-      case q: Question.YesNo =>
-        new SpiDecision.PredicateQuestion(q.key, q.instructions, q.whenYes.toScala, q.whenNo.toScala)
+      case q: Question.Predicate =>
+        new SpiDecision.PredicateQuestion(q.key, q.instructions, q.whenTrue.toScala, q.whenFalse.toScala)
     }
 
   // the runtime fails the call when an answer is missing or does not match its question
@@ -141,7 +141,7 @@ private[javasdk] object DecisionModelClientImpl {
       case (key, a: SpiDecision.ScoreAnswer) =>
         key -> new Answer.Score(a.value, a.confidence, a.probabilities.map(Double.box).asJava)
       case (key, a: SpiDecision.PredicateAnswer) =>
-        key -> new Answer.YesNo(a.probability)
+        key -> new Answer.Predicate(a.probability)
     }
     new Decision(response.model, answers.asJava)
   }
@@ -175,10 +175,10 @@ private[javasdk] object DecisionModelClientImpl {
           throw new ModelException(
             s"The answer for question [${question.key}] has value [${s.value}], " +
             s"outside the levels of the question, 0 to ${score.levels.size - 1}")
-      case y: Answer.YesNo =>
-        if (y.probability < 0 || y.probability > 1)
+      case p: Answer.Predicate =>
+        if (p.probability < 0 || p.probability > 1)
           throw new ModelException(
-            s"The answer for question [${question.key}] has probability [${y.probability}], outside 0 to 1")
+            s"The answer for question [${question.key}] has probability [${p.probability}], outside 0 to 1")
     }
 
   def checkQuestions(questions: Seq[Question[_]]): Seq[Question[_]] = {
@@ -190,19 +190,19 @@ private[javasdk] object DecisionModelClientImpl {
     questions
   }
 
-  def checkState(state: Any): Any = {
-    Objects.requireNonNull(state, "state")
-    state match {
+  def checkInput(input: Any): Any = {
+    Objects.requireNonNull(input, "input")
+    input match {
       case s: String =>
         if (s.isBlank)
-          throw new IllegalArgumentException("The decision state must not be an empty string")
+          throw new IllegalArgumentException("The decision input must not be an empty string")
       case _: java.lang.Number | _: java.lang.Boolean | _: Array[Byte] =>
         throw new IllegalArgumentException(
-          s"The decision state type [${state.getClass.getName}] is not supported, because it does not " +
+          s"The decision input type [${input.getClass.getName}] is not supported, because it does not " +
           "serialize to JSON text, an object or an array. Send a String, or wrap the value in a record.")
       case _ =>
     }
-    state
+    input
   }
 
   def mapSpiException(exc: Throwable): Throwable =
@@ -244,33 +244,33 @@ private[javasdk] final class DecisionModelClientImpl(
   def withTelemetryContext(context: OtelContext): DecisionModelClientImpl =
     new DecisionModelClientImpl(spiClient, serializer, config, overrideProvider, provider, Some(context))
 
-  override def state(state: Any): DecisionModelClient.StateRequest =
-    new StateRequestImpl(checkState(state))
+  override def input(input: Any): DecisionModelClient.InputRequest =
+    new InputRequestImpl(checkInput(input))
 
-  private final class StateRequestImpl(state: Any) extends DecisionModelClient.StateRequest {
+  private final class InputRequestImpl(input: Any) extends DecisionModelClient.InputRequest {
     override def questions(questions: Question[_]*): DecisionModelClient.Request =
-      new RequestImpl(state, checkQuestions(questions.toVector))
+      new RequestImpl(input, checkQuestions(questions.toVector))
 
     override def questions(questions: ju.Collection[Question[_]]): DecisionModelClient.Request =
-      new RequestImpl(state, checkQuestions(Objects.requireNonNull(questions, "questions").asScala.toVector))
+      new RequestImpl(input, checkQuestions(Objects.requireNonNull(questions, "questions").asScala.toVector))
   }
 
-  private final class RequestImpl(state: Any, questions: Seq[Question[_]]) extends DecisionModelClient.Request {
+  private final class RequestImpl(input: Any, questions: Seq[Question[_]]) extends DecisionModelClient.Request {
 
     override def invoke(): Decision =
       try invokeAsync().toCompletableFuture.get()
       catch unwrapExecutionExceptionCatcher
 
-    override def invokeAsync(): CompletionStage[Decision] = decide(state, questions).asJava
+    override def invokeAsync(): CompletionStage[Decision] = decide(input, questions).asJava
   }
 
-  private def decide(state: Any, questions: Seq[Question[_]]): Future[Decision] =
+  private def decide(input: Any, questions: Seq[Question[_]]): Future[Decision] =
     try {
       overrideProvider.get.orElse(provider).getOrElse(DecisionModelProvider.fromConfig()) match {
         case p: DecisionModelProvider.Custom =>
-          val request = new DecisionModelProvider.DecisionRequest(state, questions.asJava)
+          val request = new DecisionModelProvider.DecisionRequest(input, questions.asJava)
           Future(checkDecision(p.decide(request), questions))
-        case p: DecisionModelProvider.SystemOne => decideWithRuntime(p, state, questions)
+        case p: DecisionModelProvider.SystemOne => decideWithRuntime(p, input, questions)
         case p: DecisionModelProvider.FromConfig =>
           val resolved = providerFromConfig(config, p.configPath)
           val withHeaders =
@@ -280,7 +280,7 @@ private[javasdk] final class DecisionModelClientImpl(
               headers.addAll(p.additionalModelRequestHeaders)
               resolved.withAdditionalModelRequestHeaders(headers)
             }
-          decideWithRuntime(withHeaders, state, questions)
+          decideWithRuntime(withHeaders, input, questions)
       }
     } catch {
       case NonFatal(e) => Future.failed(e)
@@ -288,17 +288,17 @@ private[javasdk] final class DecisionModelClientImpl(
 
   private def decideWithRuntime(
       provider: DecisionModelProvider.SystemOne,
-      state: Any,
+      input: Any,
       questions: Seq[Question[_]]): Future[Decision] = {
-    val stateJson =
-      try serializer.toJsonString(state)
+    val inputJson =
+      try serializer.toJsonString(input)
       catch {
         case NonFatal(exc) =>
           throw new IllegalArgumentException(
-            s"The decision state of type [${state.getClass.getName}] cannot be serialized to JSON",
+            s"The decision input of type [${input.getClass.getName}] cannot be serialized to JSON",
             exc)
       }
-    val request = new SpiDecision.Request(stateJson, questions.map(toSpiQuestion))
+    val request = new SpiDecision.Request(inputJson, questions.map(toSpiQuestion))
     spiClient.decide(toSpiProvider(provider), request, telemetryContext).transform(toDecision, mapSpiException)
   }
 }

@@ -26,22 +26,23 @@ public class TestDecisionModelProviderTest {
   private static final Question<Answer.Score> SEVERITY =
       Question.score("How severe?").levels("low", "medium", "high").build("severity");
 
-  private static final Question<Answer.YesNo> URGENT = Question.yesNo("Urgent?").build("urgent");
+  private static final Question<Answer.Predicate> URGENT =
+      Question.predicate("Urgent?").build("urgent");
 
   private final TestDecisionModelProvider provider = new TestDecisionModelProvider();
 
   private static DecisionModelProvider.DecisionRequest request(
-      Object state, Question<?>... questions) {
-    return new DecisionModelProvider.DecisionRequest(state, List.of(questions));
+      Object input, Question<?>... questions) {
+    return new DecisionModelProvider.DecisionRequest(input, List.of(questions));
   }
 
   @Test
   public void answerWithProbabilitiesForEveryOptionAndLevel() {
     provider
-        .whenState("ticket")
+        .whenInput("ticket")
         .choice(ROUTE, "technical")
         .score(SEVERITY, 1.25)
-        .yesNo(URGENT, 0.9);
+        .predicate(URGENT, 0.9);
 
     var decision = provider.decide(request("ticket", ROUTE, SEVERITY, URGENT));
 
@@ -60,7 +61,7 @@ public class TestDecisionModelProviderTest {
 
   @Test
   public void leaveOutAnswersForQuestionsNotAsked() {
-    provider.always().choice(ROUTE, "billing").yesNo(URGENT, 0.1);
+    provider.always().choice(ROUTE, "billing").predicate(URGENT, 0.1);
 
     var decision = provider.decide(request("anything", URGENT));
 
@@ -69,10 +70,10 @@ public class TestDecisionModelProviderTest {
 
   @Test
   public void useTheMostRecentMatchingRule() {
-    provider.always().yesNo(URGENT, 0.1);
+    provider.always().predicate(URGENT, 0.1);
     provider
-        .whenRequest(request -> request.state().toString().contains("today"))
-        .yesNo(URGENT, 0.95);
+        .whenRequest(request -> request.input().toString().contains("today"))
+        .predicate(URGENT, 0.95);
 
     assertThat(provider.decide(request("reply today", URGENT)).answer(URGENT).probability())
         .isEqualTo(0.95);
@@ -82,17 +83,17 @@ public class TestDecisionModelProviderTest {
 
   @Test
   public void failWhenNoRuleMatches() {
-    provider.whenState("ticket").yesNo(URGENT, 0.5);
+    provider.whenInput("ticket").predicate(URGENT, 0.5);
 
     assertThatThrownBy(() -> provider.decide(request("other", URGENT)))
         .isInstanceOf(TestDecisionModelProvider.MissingDecisionResponseException.class)
         .hasMessageContaining("[urgent]")
-        .hasMessageContaining("whenState(state) or always()");
+        .hasMessageContaining("whenInput(input) or always()");
   }
 
   @Test
   public void failWhenTheRuleDoesNotAnswerAQuestion() {
-    provider.whenState("ticket").yesNo(URGENT, 0.5);
+    provider.whenInput("ticket").predicate(URGENT, 0.5);
 
     assertThatThrownBy(() -> provider.decide(request("ticket", URGENT, ROUTE)))
         .isInstanceOf(TestDecisionModelProvider.MissingDecisionResponseException.class)
@@ -101,7 +102,7 @@ public class TestDecisionModelProviderTest {
 
   @Test
   public void failWithTheGivenException() {
-    provider.whenState("ticket").failWith(new IllegalStateException("model down"));
+    provider.whenInput("ticket").failWith(new IllegalStateException("model down"));
 
     assertThatThrownBy(() -> provider.decide(request("ticket", URGENT)))
         .isInstanceOf(IllegalStateException.class)
@@ -115,12 +116,13 @@ public class TestDecisionModelProviderTest {
         .isInstanceOf(IllegalArgumentException.class);
     assertThatThrownBy(() -> rule.score(SEVERITY, 2.5))
         .isInstanceOf(IllegalArgumentException.class);
-    assertThatThrownBy(() -> rule.yesNo(URGENT, 1.5)).isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> rule.predicate(URGENT, 1.5))
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
   public void resetRemovesAllRules() {
-    provider.always().yesNo(URGENT, 0.5);
+    provider.always().predicate(URGENT, 0.5);
     provider.reset();
 
     assertThatThrownBy(() -> provider.decide(request("ticket", URGENT)))

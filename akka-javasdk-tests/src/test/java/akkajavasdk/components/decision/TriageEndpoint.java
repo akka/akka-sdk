@@ -37,10 +37,10 @@ public class TriageEndpoint {
               "Blocking, no workaround")
           .build("severity");
 
-  public static final Question<Answer.YesNo> URGENT =
-      Question.yesNo("Does the customer need a reply today?")
-          .whenYes("The customer states a deadline of today or earlier")
-          .whenNo("There is no deadline requirement")
+  public static final Question<Answer.Predicate> URGENT =
+      Question.predicate("Does the customer need a reply today?")
+          .whenTrue("The customer states a deadline of today or earlier")
+          .whenFalse("There is no deadline requirement")
           .build("urgent");
 
   private final DecisionModelClient decisionModelClient;
@@ -51,7 +51,7 @@ public class TriageEndpoint {
 
   @Post
   public TriageResult triage(Ticket ticket) {
-    var decision = decisionModelClient.state(ticket).questions(ROUTE, SEVERITY, URGENT).invoke();
+    var decision = decisionModelClient.input(ticket).questions(ROUTE, SEVERITY, URGENT).invoke();
     return new TriageResult(
         decision.answer(ROUTE).selected(),
         decision.answer(SEVERITY).value(),
@@ -62,7 +62,7 @@ public class TriageEndpoint {
   @Post("/failure-class")
   public String failureClass(Ticket ticket) {
     try {
-      decisionModelClient.state(ticket).questions(ROUTE, SEVERITY, URGENT).invoke();
+      decisionModelClient.input(ticket).questions(ROUTE, SEVERITY, URGENT).invoke();
       return "no-failure";
     } catch (RuntimeException e) {
       return e.getClass().getSimpleName();
@@ -71,14 +71,14 @@ public class TriageEndpoint {
 
   // routes for calling a SystemOne stand-in server through the runtime
 
-  public record StandInCall(String baseUrl, String state) {}
+  public record StandInCall(String baseUrl, String input) {}
 
   public record ChoiceResult(
       String selected, double confidence, Map<String, Double> probabilities, String model) {}
 
   public record ScoreResult(double value, double confidence, List<Double> probabilities) {}
 
-  public record YesNoResult(double probability) {}
+  public record PredicateResult(double probability) {}
 
   private static DecisionModelProvider.SystemOne standIn(String baseUrl) {
     return DecisionModelProvider.systemOne()
@@ -93,7 +93,7 @@ public class TriageEndpoint {
     var decision =
         decisionModelClient
             .model(standIn(call.baseUrl()))
-            .state(call.state())
+            .input(call.input())
             .questions(ROUTE)
             .invoke();
     var answer = decision.answer(ROUTE);
@@ -106,7 +106,7 @@ public class TriageEndpoint {
     var decision =
         decisionModelClient
             .model(standIn(call.baseUrl()))
-            .state(call.state())
+            .input(call.input())
             .questions(SEVERITY)
             .invoke();
     var answer = decision.answer(SEVERITY);
@@ -114,14 +114,14 @@ public class TriageEndpoint {
   }
 
   @Post("/system-one/urgent")
-  public YesNoResult urgentWithSystemOne(StandInCall call) {
+  public PredicateResult urgentWithSystemOne(StandInCall call) {
     var decision =
         decisionModelClient
             .model(standIn(call.baseUrl()))
-            .state(call.state())
+            .input(call.input())
             .questions(URGENT)
             .invoke();
-    return new YesNoResult(decision.answer(URGENT).probability());
+    return new PredicateResult(decision.answer(URGENT).probability());
   }
 
   @Post("/system-one/failure-class")
@@ -129,7 +129,7 @@ public class TriageEndpoint {
     try {
       decisionModelClient
           .model(standIn(call.baseUrl()))
-          .state(call.state())
+          .input(call.input())
           .questions(URGENT)
           .invoke();
       return "no-failure";

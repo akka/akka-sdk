@@ -25,10 +25,10 @@ public class TriageEndpointIntegrationTest extends TestKitSupport {
 
     // tag::rules[]
     testDecisionModel
-      .whenState(ticket)
+      .whenInput(ticket)
       .choice(TriageEndpoint.ROUTE, "billing")
       .score(TriageEndpoint.SEVERITY, 2)
-      .yesNo(TriageEndpoint.URGENT, 0.9);
+      .predicate(TriageEndpoint.URGENT, 0.9);
     // end::rules[]
 
     var triage = httpClient
