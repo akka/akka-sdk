@@ -57,11 +57,12 @@ private[javasdk] object DecisionModelClientImpl {
 
   private val ConfigPrefix = "akka.javasdk.decision"
 
-  // limits of the SystemOne API, checked before the call so that the failure names the question
+  // limits of the SystemOne API and the OpenAI Decisions API, which are the same,
+  // checked before the call so that the failure names the question
   private val MaxChoiceOptions = 255
   private val MaxScoreLevels = 10
 
-  def providerFromConfig(config: Config, configPath: String): DecisionModelProvider.SystemOne = {
+  def providerFromConfig(config: Config, configPath: String): DecisionModelProvider = {
     val actualPath =
       if (configPath == "") config.getString(s"$ConfigPrefix.model-provider")
       else configPath
@@ -79,6 +80,7 @@ private[javasdk] object DecisionModelClientImpl {
       val providerConfig = config.getConfig(resolvedPath)
       providerConfig.getString("provider") match {
         case "system-one" => DecisionModelProvider.SystemOne.fromConfig(providerConfig)
+        case "openai"     => DecisionModelProvider.OpenAi.fromConfig(providerConfig)
         case other =>
           throw new IllegalArgumentException(s"Unknown decision model provider [$other] in config [$resolvedPath]")
       }
@@ -90,31 +92,77 @@ private[javasdk] object DecisionModelClientImpl {
     }
   }
 
-  def toSpiProvider(provider: DecisionModelProvider.SystemOne): SpiDecision.ModelProvider = {
-    if (provider.modelName.isBlank)
+  /**
+   * @param extraHeaders
+   *   added after the headers of the provider
+   */
+  def toSpiProvider(provider: DecisionModelProvider, extraHeaders: Seq[HttpHeader] = Nil): SpiDecision.ModelProvider =
+    provider match {
+      case p: DecisionModelProvider.SystemOne =>
+        new SpiDecision.SystemOne(
+          apiKey = p.apiKey,
+          modelName = p.modelName,
+          baseUrl = p.baseUrl,
+          modelSettings = checkedModelSettings(
+            modelName = p.modelName,
+            apiKey = p.apiKey,
+            configSection = "system-one",
+            apiKeyVariable = "SYSTEM_ONE_API_KEY",
+            connectionTimeout = p.connectionTimeout,
+            responseTimeout = p.responseTimeout,
+            maxRetries = p.maxRetries,
+            headers = toScalaHeaders(p.additionalModelRequestHeaders) ++ extraHeaders))
+      case p: DecisionModelProvider.OpenAi =>
+        new SpiDecision.OpenAi(
+          apiKey = p.apiKey,
+          modelName = p.modelName,
+          baseUrl = p.baseUrl,
+          modelSettings = checkedModelSettings(
+            modelName = p.modelName,
+            apiKey = p.apiKey,
+            configSection = "openai",
+            apiKeyVariable = "OPENAI_API_KEY",
+            connectionTimeout = p.connectionTimeout,
+            responseTimeout = p.responseTimeout,
+            maxRetries = p.maxRetries,
+            headers = toScalaHeaders(p.additionalModelRequestHeaders) ++ extraHeaders))
+      case other =>
+        throw new IllegalArgumentException(
+          s"The decision model provider [${other.getClass.getName}] does not call a model API")
+    }
+
+  private def checkedModelSettings(
+      modelName: String,
+      apiKey: String,
+      configSection: String,
+      apiKeyVariable: String,
+      connectionTimeout: java.time.Duration,
+      responseTimeout: java.time.Duration,
+      maxRetries: Int,
+      headers: Seq[HttpHeader]): SpiAgent.ModelSettings = {
+    if (modelName.isBlank)
       throw new IllegalArgumentException("The decision model provider needs a model name")
-    if (provider.apiKey.isBlank)
+    if (apiKey.isBlank)
       throw new IllegalArgumentException(
-        "The decision model provider needs an API key. Set [akka.javasdk.decision.system-one.api-key] " +
-        "or the SYSTEM_ONE_API_KEY environment variable.")
-    new SpiDecision.SystemOne(
-      apiKey = provider.apiKey,
-      modelName = provider.modelName,
-      baseUrl = provider.baseUrl,
-      modelSettings = new SpiAgent.ModelSettings(
-        provider.connectionTimeout.toScala,
-        provider.responseTimeout.toScala,
-        provider.maxRetries,
-        provider.additionalModelRequestHeaders.asScala.map(_.asInstanceOf[HttpHeader]).toSeq,
-        identityHeaders = false))
+        s"The decision model provider needs an API key. Set [$ConfigPrefix.$configSection.api-key] " +
+        s"or the $apiKeyVariable environment variable.")
+    new SpiAgent.ModelSettings(
+      connectionTimeout.toScala,
+      responseTimeout.toScala,
+      maxRetries,
+      headers,
+      identityHeaders = false)
   }
+
+  private def toScalaHeaders(headers: ju.List[akka.http.javadsl.model.HttpHeader]): Seq[HttpHeader] =
+    headers.asScala.map(_.asInstanceOf[HttpHeader]).toSeq
 
   def toSpiQuestion(question: Question[_]): SpiDecision.Question =
     question match {
       case q: Question.Choice =>
         if (q.options.size > MaxChoiceOptions)
           throw new IllegalArgumentException(
-            s"A SystemOne choice question supports at most [$MaxChoiceOptions] options, " +
+            s"A choice question supports at most [$MaxChoiceOptions] options, " +
             s"question [${q.key}] has [${q.options.size}]")
         new SpiDecision.ChoiceQuestion(
           q.key,
@@ -123,7 +171,7 @@ private[javasdk] object DecisionModelClientImpl {
       case q: Question.Score =>
         if (q.levels.size > MaxScoreLevels)
           throw new IllegalArgumentException(
-            s"A SystemOne score question supports at most [$MaxScoreLevels] levels, " +
+            s"A score question supports at most [$MaxScoreLevels] levels, " +
             s"question [${q.key}] has [${q.levels.size}]")
         new SpiDecision.ScoreQuestion(q.key, q.instructions, q.levels.asScala.toSeq)
       case q: Question.Predicate =>
@@ -270,24 +318,19 @@ private[javasdk] final class DecisionModelClientImpl(
         case p: DecisionModelProvider.Custom =>
           val request = new DecisionModelProvider.DecisionRequest(input, questions.asJava)
           Future(checkDecision(p.decide(request), questions))
-        case p: DecisionModelProvider.SystemOne => decideWithRuntime(p, input, questions)
+        case p: DecisionModelProvider.SystemOne => decideWithRuntime(toSpiProvider(p), input, questions)
+        case p: DecisionModelProvider.OpenAi    => decideWithRuntime(toSpiProvider(p), input, questions)
         case p: DecisionModelProvider.FromConfig =>
-          val resolved = providerFromConfig(config, p.configPath)
-          val withHeaders =
-            if (p.additionalModelRequestHeaders.isEmpty) resolved
-            else {
-              val headers = new ju.ArrayList[akka.http.javadsl.model.HttpHeader](resolved.additionalModelRequestHeaders)
-              headers.addAll(p.additionalModelRequestHeaders)
-              resolved.withAdditionalModelRequestHeaders(headers)
-            }
-          decideWithRuntime(withHeaders, input, questions)
+          val spiProvider =
+            toSpiProvider(providerFromConfig(config, p.configPath), toScalaHeaders(p.additionalModelRequestHeaders))
+          decideWithRuntime(spiProvider, input, questions)
       }
     } catch {
       case NonFatal(e) => Future.failed(e)
     }
 
   private def decideWithRuntime(
-      provider: DecisionModelProvider.SystemOne,
+      provider: SpiDecision.ModelProvider,
       input: Any,
       questions: Seq[Question[_]]): Future[Decision] = {
     val inputJson =
@@ -299,6 +342,6 @@ private[javasdk] final class DecisionModelClientImpl(
             exc)
       }
     val request = new SpiDecision.Request(inputJson, questions.map(toSpiQuestion))
-    spiClient.decide(toSpiProvider(provider), request, telemetryContext).transform(toDecision, mapSpiException)
+    spiClient.decide(provider, request, telemetryContext).transform(toDecision, mapSpiException)
   }
 }

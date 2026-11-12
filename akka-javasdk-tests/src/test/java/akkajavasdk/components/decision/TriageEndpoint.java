@@ -69,7 +69,8 @@ public class TriageEndpoint {
     }
   }
 
-  // routes for calling a SystemOne stand-in server through the runtime
+  // routes for calling a SystemOne or OpenAI stand-in server through the runtime,
+  // the provider path segment is system-one or openai
 
   public record StandInCall(String baseUrl, String input) {}
 
@@ -80,19 +81,29 @@ public class TriageEndpoint {
 
   public record PredicateResult(double probability) {}
 
-  private static DecisionModelProvider.SystemOne standIn(String baseUrl) {
-    return DecisionModelProvider.systemOne()
-        .withApiKey("test-key")
-        .withModelName("jev-latest")
-        .withBaseUrl(baseUrl)
-        .withMaxRetries(0);
+  private static DecisionModelProvider standIn(String provider, String baseUrl) {
+    return switch (provider) {
+      case "system-one" ->
+          DecisionModelProvider.systemOne()
+              .withApiKey("test-key")
+              .withModelName("jev-latest")
+              .withBaseUrl(baseUrl)
+              .withMaxRetries(0);
+      case "openai" ->
+          DecisionModelProvider.openAi()
+              .withApiKey("test-key")
+              .withModelName("gpt-6-luna")
+              .withBaseUrl(baseUrl)
+              .withMaxRetries(0);
+      default -> throw new IllegalArgumentException("Unknown stand-in provider [" + provider + "]");
+    };
   }
 
-  @Post("/system-one/route")
-  public ChoiceResult routeWithSystemOne(StandInCall call) {
+  @Post("/{provider}/route")
+  public ChoiceResult routeWithStandIn(String provider, StandInCall call) {
     var decision =
         decisionModelClient
-            .model(standIn(call.baseUrl()))
+            .model(standIn(provider, call.baseUrl()))
             .input(call.input())
             .questions(ROUTE)
             .invoke();
@@ -101,11 +112,11 @@ public class TriageEndpoint {
         answer.selected(), answer.confidence(), answer.probabilities(), decision.model());
   }
 
-  @Post("/system-one/severity")
-  public ScoreResult severityWithSystemOne(StandInCall call) {
+  @Post("/{provider}/severity")
+  public ScoreResult severityWithStandIn(String provider, StandInCall call) {
     var decision =
         decisionModelClient
-            .model(standIn(call.baseUrl()))
+            .model(standIn(provider, call.baseUrl()))
             .input(call.input())
             .questions(SEVERITY)
             .invoke();
@@ -113,22 +124,22 @@ public class TriageEndpoint {
     return new ScoreResult(answer.value(), answer.confidence(), answer.probabilities());
   }
 
-  @Post("/system-one/urgent")
-  public PredicateResult urgentWithSystemOne(StandInCall call) {
+  @Post("/{provider}/urgent")
+  public PredicateResult urgentWithStandIn(String provider, StandInCall call) {
     var decision =
         decisionModelClient
-            .model(standIn(call.baseUrl()))
+            .model(standIn(provider, call.baseUrl()))
             .input(call.input())
             .questions(URGENT)
             .invoke();
     return new PredicateResult(decision.answer(URGENT).probability());
   }
 
-  @Post("/system-one/failure-class")
-  public String systemOneFailureClass(StandInCall call) {
+  @Post("/{provider}/failure-class")
+  public String standInFailureClass(String provider, StandInCall call) {
     try {
       decisionModelClient
-          .model(standIn(call.baseUrl()))
+          .model(standIn(provider, call.baseUrl()))
           .input(call.input())
           .questions(URGENT)
           .invoke();
