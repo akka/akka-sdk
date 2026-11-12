@@ -1,0 +1,150 @@
+= Decision models
+:page-summary: A decision model answers a fixed set of questions about a state with probabilities instead of generated text.
+:page-when-to-use: Routing, triage, scoring, and yes-or-no decisions that need a probability, not generated text
+:page-related: sdk:agents.adoc, sdk:integrations/ai-and-models.adoc, sdk:model-provider-details.adoc
+:page-persona: builder-developer, builder-ai-ml
+
+
+include::ROOT:partial$include.adoc[]
+
+A decision model answers a fixed set of questions about some state with probabilities instead of generated text. You call a decision model through the `DecisionModelClient`, which can be injected into endpoints, agents, workflows, consumers, timed actions, and the service setup.
+
+== Overview
+
+A large language model (LLM) generates text and can call tools. Many agentic applications also contain fixed decision points that need no generated text: route a ticket to a team, score a severity, check a yes-or-no condition. A decision model is a small model trained for such decisions. It answers each question with a probability distribution over the answers that the question defines, so your code can compare probabilities against thresholds.
+
+Use a decision model for routing, triage, severity scoring, and yes-or-no checks. Use an xref:sdk:agents.adoc[Agent] when the response needs generated text or tool calls. A workflow can combine both: a decision model picks the path, and an agent produces the text.
+
+A decision model is not an LLM judge. An LLM judge is a language model that reads an output and a rubric and generates critiques and scores as text. A decision model only returns probabilities for the fixed answers of its questions. To evaluate agent output with an LLM judge, see xref:sdk:evaluators.adoc[Evaluators].
+
+== Injecting the client
+
+To inject the client into a class, pass it as a constructor argument, the same way you inject other Akka SDK components:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/decision/TriageEndpoint.java[TriageEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/decision/TriageEndpoint.java[tags=imports;injection]
+----
+
+== Asking questions
+
+There are three question types. A choice question picks one of at least two options. A score question rates the state on a scale, such as a severity rating. You describe each level of the scale from lowest to highest, and the model answers with a position on that scale. A yes-or-no question returns the probability of the answer being yes.
+
+Create questions with the static factories on the `Question` class and define them as constants, so the request and the answer lookup use the same question:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/decision/TriageEndpoint.java[TriageEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/decision/TriageEndpoint.java[tag=questions]
+----
+
+The key given to `build` identifies the question and its answer. All questions in one request must have different keys. A stored decision is read back with the same keys, so keep a key stable once it is in use.
+
+The state and the questions are sent in one request:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/decision/TriageEndpoint.java[TriageEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/decision/TriageEndpoint.java[tag=invoke]
+----
+
+A `String` state is sent as text. Any other object is serialized to JSON. The state must serialize to JSON text, an object or an array: the client rejects an empty string, a number, a boolean and a byte array with an `IllegalArgumentException`. In the previous example, `ticket` can be a string or an instance of your own JSON-serializable type like `Ticket`.
+
+The client sends the state and the questions to the model API as they are. Guardrails and sanitizers do not apply to a decision request. To mask sensitive text before the call, use the `SanitizerClient`, as described in xref:sdk:sanitization.adoc#_ad_hoc_sanitization[Ad hoc sanitization].
+
+Use `invokeAsync()` to get a `CompletionStage<Decision>` instead of blocking. `questions` also accepts a `Collection<Question<?>>`, for questions collected at run time.
+
+== Reading the decision
+
+Read each answer with `Decision.answer(Question)`, which returns the answer type of the question:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/decision/TriageEndpoint.java[TriageEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/decision/TriageEndpoint.java[tag=read]
+----
+
+* `Answer.Choice` has the key of the selected option in `selected()`, a probability per option key in `probabilities()`, and how peaked the distribution over the options is in `confidence()`, from 0 to 1.
+* `Answer.Score` has the position along the levels, counted from 0, in `value()`, plus `probabilities()` and `confidence()`. The value can fall between two levels.
+* `Answer.YesNo` has the probability of the answer being yes in `probability()`.
+
+`Decision.model()` names the model version that answered. Log the model with the answers, because the thresholds you compare answers against depend on the model version.
+
+A `Decision` can be stored in component state, for example in workflow state, and returned from endpoints. The JSON representation of each answer carries a type tag, so a stored decision reads back.
+
+== Configuring the model provider
+
+The client uses the provider configured in `akka.javasdk.decision.model-provider`. Set it to the name of a provider configuration section. The `system-one` section configures a model that implements the SystemOne API of link:{url-typesafe-jev}[TypeSafe Jev, window="new"]:
+
+[source,hocon]
+.src/main/resources/application.conf
+----
+akka.javasdk.decision {
+  model-provider = "system-one"
+  system-one {
+    model-name = "jev-latest"
+  }
+}
+----
+
+The API key defaults to the `SYSTEM_ONE_API_KEY` environment variable. A call without an API key or model name fails with an `IllegalArgumentException`. Pin a model version once you have tuned your thresholds, because an alias such as `jev-latest` can move to a new version.
+
+To use a different provider for one call, define a configuration section that inherits the provider defaults, and pass its name to `DecisionModelClient.model`:
+
+[source,hocon]
+.src/main/resources/application.conf
+----
+akka.javasdk.decision {
+  escalation-model = ${akka.javasdk.decision.system-one}
+  escalation-model.model-name = "jev-1.14.0"
+}
+----
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/decision/TriageEndpoint.java[TriageEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/decision/TriageEndpoint.java[tag=model]
+----
+
+`DecisionModelProvider.systemOne()` creates a SystemOne provider in code, with `withApiKey`, `withModelName`, and `withBaseUrl` to adjust it. Implement `DecisionModelProvider.Custom` to answer requests without a SystemOne API.
+
+== Handling failures
+
+A failed call fails with an exception from `akka.javasdk.agent`:
+
+* `RateLimitException` when the model API answers with a rate limit status after the configured retries.
+* `ModelTimeoutException` when a request to the model API times out.
+* `InternalServerException` when the model API answers with a server error status after the configured retries.
+* `ModelException` for other failures, such as a rejected request or an unusable response.
+
+An invalid request or configuration fails with an `IllegalArgumentException`: an unsupported state, no questions, duplicate question keys, more options or levels than the provider supports, a provider configuration section without a required key, or a provider without a model name or API key.
+
+The client retries a request up to `max-retries` times if it fails with a rate limit, a server error, a timeout or a connection failure. The `response-timeout` applies to each attempt.
+
+== Testing
+
+The testkit's `TestDecisionModelProvider` answers decision requests without a model. Register it in the testkit settings:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/decision/TriageEndpointIntegrationTest.java[TriageEndpointIntegrationTest.java]
+----
+include::example$doc-snippets/src/test/java/com/example/decision/TriageEndpointIntegrationTest.java[tag=settings]
+----
+
+Define the answers per state before the test calls the component:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/decision/TriageEndpointIntegrationTest.java[TriageEndpointIntegrationTest.java]
+----
+include::example$doc-snippets/src/test/java/com/example/decision/TriageEndpointIntegrationTest.java[tag=rules]
+----
+
+The most recently added rule that matches the request answers it. A request that matches no rule, or asks a question that the matching rule does not answer, fails with `MissingDecisionResponseException`. Use `always()` for a rule that matches every request, `failWith(exception)` to test failure handling, and `reset()` to remove all rules between tests.
+
+== See also
+
+* xref:sdk:agents.adoc[Agents]: generated text and tool calls, where a decision model does not fit
+* xref:sdk:evaluators.adoc[Evaluators]: evaluate agent output with an LLM judge
+* xref:sdk:integrations/ai-and-models.adoc[AI & models]: the model integrations of the SDK
+* xref:sdk:model-provider-details.adoc[Model provider details]: configuration reference for model providers

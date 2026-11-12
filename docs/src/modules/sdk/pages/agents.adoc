@@ -181,3 +181,4 @@ Test agents with the testkit's `TestModelProvider`, which substitutes configured
 * xref:sdk:autonomous-agents.adoc[Autonomous Agents]
 * xref:sdk:agents/guardrails.adoc[Guardrails]
 * xref:sdk:agents/memory.adoc[Agent Memory]
+* xref:sdk:decision-models.adoc[Decision models] — probability answers to fixed questions, without generated text
