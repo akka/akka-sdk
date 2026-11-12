@@ -9,7 +9,7 @@ import java.util.Collection;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Asks a decision model a set of questions about a state. A decision model answers each question
+ * Asks a decision model a set of questions about an input. A decision model answers each question
  * with probabilities instead of generated text.
  *
  * <p>Inject this client into endpoints, agents, workflows, consumers, timed actions and the service
@@ -17,14 +17,14 @@ import java.util.concurrent.CompletionStage;
  *
  * <pre>{@code
  * Decision decision =
- *     decisionModelClient.state(ticket).questions(ROUTE, SEVERITY).invoke();
+ *     decisionModelClient.input(ticket).questions(ROUTE, SEVERITY).invoke();
  * Answer.Choice route = decision.answer(ROUTE);
  * }</pre>
  *
  * <p>The client uses the provider configured in {@code akka.javasdk.decision.model-provider} unless
  * you choose one with {@link #model(DecisionModelProvider)}.
  *
- * <p>The client sends the state and the questions to the model API as they are. Guardrails and
+ * <p>The client sends the input and the questions to the model API as they are. Guardrails and
  * sanitizers do not apply to a decision request. To mask sensitive text before the call, use the
  * {@link akka.javasdk.SanitizerClient}.
  *
@@ -32,7 +32,7 @@ import java.util.concurrent.CompletionStage;
  *
  * <ul>
  *   <li>{@link IllegalArgumentException} for an invalid request or configuration: an unsupported
- *       state, no questions, duplicate question keys, more options or levels than the provider
+ *       input, no questions, duplicate question keys, more options or levels than the provider
  *       supports, no provider configured, an unknown provider, a provider configuration section
  *       without a required key, or a provider without a model name or API key. Configuration
  *       failures surface on the first call.
@@ -56,21 +56,21 @@ public interface DecisionModelClient {
   DecisionModelClient model(DecisionModelProvider provider);
 
   /**
-   * Start a request about the given state. A {@code String} is sent as text. Any other object is
+   * Start a request about the given input. A {@code String} is sent as text. Any other object is
    * serialized to JSON.
    *
-   * @throws IllegalArgumentException when the state is an empty string, or of a type that does not
+   * @throws IllegalArgumentException when the input is an empty string, or of a type that does not
    *     serialize to JSON text, an object or an array, such as a number, a boolean or a byte array
-   * @throws NullPointerException when the state is null
+   * @throws NullPointerException when the input is null
    */
-  StateRequest state(Object state);
+  InputRequest input(Object input);
 
-  /** A request with a state. Add the questions. */
+  /** A request with an input. Add the questions. */
   @DoNotInherit
-  interface StateRequest {
+  interface InputRequest {
 
     /**
-     * The questions to ask about the state.
+     * The questions to ask about the input.
      *
      * @throws IllegalArgumentException when there are no questions or two questions have the same
      *     key
@@ -78,7 +78,7 @@ public interface DecisionModelClient {
     Request questions(Question<?>... questions);
 
     /**
-     * The questions to ask about the state, for questions collected at run time.
+     * The questions to ask about the input, for questions collected at run time.
      *
      * @throws IllegalArgumentException when there are no questions or two questions have the same
      *     key

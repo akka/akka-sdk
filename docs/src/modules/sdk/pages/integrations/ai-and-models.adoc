@@ -28,7 +28,7 @@ You can plug in any model by implementing the `ModelProvider.Custom` interface. 
 
 == Decision models
 
-A decision model answers a fixed set of questions about a state with probabilities instead of generated text. The SDK provides the `DecisionModelClient` for calling decision models from any component. See xref:sdk:decision-models.adoc[].
+A decision model answers a fixed set of questions about an input with probabilities instead of generated text. The SDK provides the `DecisionModelClient` for calling decision models from any component. See xref:sdk:decision-models.adoc[].
 
 == See also
 

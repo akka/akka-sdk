@@ -21,11 +21,11 @@ import java.util.function.Predicate;
 /**
  * A {@link DecisionModelProvider} for tests that answers decision requests without a model.
  * Register it with {@link TestKit.Settings#withDecisionModelProvider(DecisionModelProvider)} and
- * define the answers per state.
+ * define the answers per input.
  *
  * <pre>{@code
  * testDecisionModel
- *     .whenState(ticket)
+ *     .whenInput(ticket)
  *     .choice(ROUTE, "billing")
  *     .score(SEVERITY, 2)
  *     .yesNo(URGENT, 0.9);
@@ -55,19 +55,19 @@ public final class TestDecisionModelProvider implements DecisionModelProvider.Cu
       if (rule.predicate.test(request)) return rule.answer(request);
     }
     throw new MissingDecisionResponseException(
-        "No decision rule matches the request. The state is ["
-            + request.state()
+        "No decision rule matches the request. The input is ["
+            + request.input()
             + "] of type ["
-            + request.state().getClass().getName()
+            + request.input().getClass().getName()
             + "], the questions are "
             + request.questions().stream().map(Question::key).toList()
-            + ". Add a rule with whenState(state) or always().");
+            + ". Add a rule with whenInput(input) or always().");
   }
 
-  /** A rule for requests about a state that equals the given state. */
-  public Rule whenState(Object state) {
-    Objects.requireNonNull(state, "state");
-    return whenRequest(request -> state.equals(request.state()));
+  /** A rule for requests about an input that equals the given input. */
+  public Rule whenInput(Object input) {
+    Objects.requireNonNull(input, "input");
+    return whenRequest(request -> input.equals(request.input()));
   }
 
   /** A rule for every request. */

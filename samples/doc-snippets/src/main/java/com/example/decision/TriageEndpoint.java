@@ -62,7 +62,7 @@ public class TriageEndpoint {
   public Triage triage(Ticket ticket) {
     // tag::invoke[]
     Decision decision = decisionModelClient
-      .state(ticket)
+      .input(ticket)
       .questions(ROUTE, SEVERITY, URGENT)
       .invoke();
     // end::invoke[]
@@ -81,7 +81,7 @@ public class TriageEndpoint {
     // tag::model[]
     Decision decision = decisionModelClient
       .model(DecisionModelProvider.fromConfig("escalation-model"))
-      .state(ticket)
+      .input(ticket)
       .questions(URGENT)
       .invoke();
     // end::model[]

@@ -56,7 +56,7 @@ public sealed interface Question<A extends Answer>
   }
 
   /**
-   * Start a question that places the state on an ordered scale of at least two levels.
+   * Start a question that places the input on an ordered scale of at least two levels.
    *
    * @param instructions what the model should rate, for example "How severe is the reported issue?"
    */
@@ -136,7 +136,7 @@ public sealed interface Question<A extends Answer>
   }
 
   /**
-   * Place the state on an ordered scale. Answered with an {@link Answer.Score}.
+   * Place the input on an ordered scale. Answered with an {@link Answer.Score}.
    *
    * @param levels at least two level descriptions, from lowest to highest
    */

@@ -51,7 +51,7 @@ public class TriageEndpoint {
 
   @Post
   public TriageResult triage(Ticket ticket) {
-    var decision = decisionModelClient.state(ticket).questions(ROUTE, SEVERITY, URGENT).invoke();
+    var decision = decisionModelClient.input(ticket).questions(ROUTE, SEVERITY, URGENT).invoke();
     return new TriageResult(
         decision.answer(ROUTE).selected(),
         decision.answer(SEVERITY).value(),
@@ -62,7 +62,7 @@ public class TriageEndpoint {
   @Post("/failure-class")
   public String failureClass(Ticket ticket) {
     try {
-      decisionModelClient.state(ticket).questions(ROUTE, SEVERITY, URGENT).invoke();
+      decisionModelClient.input(ticket).questions(ROUTE, SEVERITY, URGENT).invoke();
       return "no-failure";
     } catch (RuntimeException e) {
       return e.getClass().getSimpleName();
@@ -71,7 +71,7 @@ public class TriageEndpoint {
 
   // routes for calling a SystemOne stand-in server through the runtime
 
-  public record StandInCall(String baseUrl, String state) {}
+  public record StandInCall(String baseUrl, String input) {}
 
   public record ChoiceResult(
       String selected, double confidence, Map<String, Double> probabilities, String model) {}
@@ -93,7 +93,7 @@ public class TriageEndpoint {
     var decision =
         decisionModelClient
             .model(standIn(call.baseUrl()))
-            .state(call.state())
+            .input(call.input())
             .questions(ROUTE)
             .invoke();
     var answer = decision.answer(ROUTE);
@@ -106,7 +106,7 @@ public class TriageEndpoint {
     var decision =
         decisionModelClient
             .model(standIn(call.baseUrl()))
-            .state(call.state())
+            .input(call.input())
             .questions(SEVERITY)
             .invoke();
     var answer = decision.answer(SEVERITY);
@@ -118,7 +118,7 @@ public class TriageEndpoint {
     var decision =
         decisionModelClient
             .model(standIn(call.baseUrl()))
-            .state(call.state())
+            .input(call.input())
             .questions(URGENT)
             .invoke();
     return new YesNoResult(decision.answer(URGENT).probability());
@@ -129,7 +129,7 @@ public class TriageEndpoint {
     try {
       decisionModelClient
           .model(standIn(call.baseUrl()))
-          .state(call.state())
+          .input(call.input())
           .questions(URGENT)
           .invoke();
       return "no-failure";

@@ -31,14 +31,14 @@ public class TestDecisionModelProviderTest {
   private final TestDecisionModelProvider provider = new TestDecisionModelProvider();
 
   private static DecisionModelProvider.DecisionRequest request(
-      Object state, Question<?>... questions) {
-    return new DecisionModelProvider.DecisionRequest(state, List.of(questions));
+      Object input, Question<?>... questions) {
+    return new DecisionModelProvider.DecisionRequest(input, List.of(questions));
   }
 
   @Test
   public void answerWithProbabilitiesForEveryOptionAndLevel() {
     provider
-        .whenState("ticket")
+        .whenInput("ticket")
         .choice(ROUTE, "technical")
         .score(SEVERITY, 1.25)
         .yesNo(URGENT, 0.9);
@@ -71,7 +71,7 @@ public class TestDecisionModelProviderTest {
   public void useTheMostRecentMatchingRule() {
     provider.always().yesNo(URGENT, 0.1);
     provider
-        .whenRequest(request -> request.state().toString().contains("today"))
+        .whenRequest(request -> request.input().toString().contains("today"))
         .yesNo(URGENT, 0.95);
 
     assertThat(provider.decide(request("reply today", URGENT)).answer(URGENT).probability())
@@ -82,17 +82,17 @@ public class TestDecisionModelProviderTest {
 
   @Test
   public void failWhenNoRuleMatches() {
-    provider.whenState("ticket").yesNo(URGENT, 0.5);
+    provider.whenInput("ticket").yesNo(URGENT, 0.5);
 
     assertThatThrownBy(() -> provider.decide(request("other", URGENT)))
         .isInstanceOf(TestDecisionModelProvider.MissingDecisionResponseException.class)
         .hasMessageContaining("[urgent]")
-        .hasMessageContaining("whenState(state) or always()");
+        .hasMessageContaining("whenInput(input) or always()");
   }
 
   @Test
   public void failWhenTheRuleDoesNotAnswerAQuestion() {
-    provider.whenState("ticket").yesNo(URGENT, 0.5);
+    provider.whenInput("ticket").yesNo(URGENT, 0.5);
 
     assertThatThrownBy(() -> provider.decide(request("ticket", URGENT, ROUTE)))
         .isInstanceOf(TestDecisionModelProvider.MissingDecisionResponseException.class)
@@ -101,7 +101,7 @@ public class TestDecisionModelProviderTest {
 
   @Test
   public void failWithTheGivenException() {
-    provider.whenState("ticket").failWith(new IllegalStateException("model down"));
+    provider.whenInput("ticket").failWith(new IllegalStateException("model down"));
 
     assertThatThrownBy(() -> provider.decide(request("ticket", URGENT)))
         .isInstanceOf(IllegalStateException.class)

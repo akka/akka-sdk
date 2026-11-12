@@ -243,12 +243,12 @@ public sealed interface DecisionModelProvider
   /**
    * A request as given to a {@link Custom} provider.
    *
-   * @param state the state as passed to {@link DecisionModelClient#state(Object)}
+   * @param input the input as passed to {@link DecisionModelClient#input(Object)}
    * @param questions the questions in request order
    */
-  record DecisionRequest(Object state, List<Question<?>> questions) {
+  record DecisionRequest(Object input, List<Question<?>> questions) {
     public DecisionRequest {
-      Objects.requireNonNull(state, "state");
+      Objects.requireNonNull(input, "input");
       questions = List.copyOf(Objects.requireNonNull(questions, "questions"));
     }
   }

@@ -72,10 +72,10 @@ public class DecisionModelSystemOneIntegrationTest extends TestKitSupport {
     if (standIn != null) standIn.stop(0);
   }
 
-  private <T> T call(String path, String state, Class<T> resultType) {
+  private <T> T call(String path, String input, Class<T> resultType) {
     return httpClient
         .POST(path)
-        .withRequestBody(new StandInCall(baseUrl, state))
+        .withRequestBody(new StandInCall(baseUrl, input))
         .responseBodyAs(resultType)
         .invoke()
         .body();
