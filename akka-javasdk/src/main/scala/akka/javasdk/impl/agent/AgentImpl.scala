@@ -283,7 +283,9 @@ private[impl] object AgentImpl {
             identityHeaders),
           thinkingBudgetTokens = p.thinkingBudgetTokens,
           cacheSystemMessages = p.cacheSystemMessages,
-          cacheTools = p.cacheTools)
+          cacheTools = p.cacheTools,
+          adaptiveThinking = p.adaptiveThinking,
+          effort = p.effort)
       case p: ModelProvider.GoogleAIGemini =>
         new SpiAgent.ModelProvider.GoogleAIGemini(
           p.apiKey(),
