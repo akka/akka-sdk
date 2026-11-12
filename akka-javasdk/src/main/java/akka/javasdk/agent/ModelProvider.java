@@ -199,6 +199,7 @@ public sealed interface ModelProvider {
       /**
        * How much effort the model spends on thinking and on the reply, such as "low", "medium" or
        * "high". The values that a model accepts depend on the model. Empty for the model default.
+       * For Claude Opus 4.5, Opus 4.6, Sonnet 4.6 and newer models.
        */
       String effort,
       /** Additional HTTP headers to include in each request to the model API */
