@@ -469,6 +469,16 @@ jobs:
           # must also compile without the profile!
           mvn test-compile --no-transfer-progress
 
+      - name: ${{ matrix.sample }} inventory
+        env:
+          DIR: ${{ matrix.sample }}
+        run: |-
+          cd samples/${DIR}
+          if ! ls target/classes/META-INF/akka-javasdk-inventory_*.json; then
+            echo "${DIR} wrote no service inventory"
+            exit 1
+          fi
+
       - name: ${{ matrix.sample }} verify
         if: matrix.verify || matrix.it
         env:
