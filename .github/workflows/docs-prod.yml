@@ -56,7 +56,7 @@ jobs:
 
       - name: Build API docs and Antora site
         env:
-          NEXUS_DIR: ${{ github.workspace }}/nexus
+          NEXUS_DIR: ${{ github.workspace }}/akka-optimize
         run: |
           make managed prod
 
