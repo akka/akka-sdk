@@ -189,7 +189,7 @@ public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
                 + ex.getMessage());
         throw new RuntimeException(ex);
       }
-      return true;
+      return false;
     } else {
       return false;
     }

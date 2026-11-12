@@ -1,0 +1,25 @@
+{
+  "formatVersion": 1,
+  "groupId": "com.example",
+  "artifactId": "shop",
+  "componentLibrary": false,
+  "components": [
+    {
+      "kind": "event-sourced-entity",
+      "id": "orders",
+      "class": "com.example.shop.OrderEntity"
+    },
+    {
+      "kind": "http-endpoint",
+      "class": "com.example.shop.ShopEndpoint"
+    },
+    {
+      "kind": "agent",
+      "id": "support",
+      "class": "com.example.shop.SupportAgent",
+      "name": "Support",
+      "description": "Answers \"customer\" questions\nabout orders, café \\ more",
+      "role": "support"
+    }
+  ]
+}
