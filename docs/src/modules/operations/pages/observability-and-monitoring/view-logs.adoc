@@ -65,7 +65,7 @@ Akka does not set the trace context around every method it calls. Logs written f
 * guardrails and evaluators
 * the other methods of an autonomous agent
 
-In production, Akka adds the fields when it writes the JSON log, from the current span. A log pattern that reads `%X{trace_id}`, for example in a `logback-test.xml` of your own, does not show the trace ID. The same applies to code that copies the MDC to another thread.
+In production, Akka adds the fields when it writes the JSON log, from the current span. A log pattern that reads `+%X{trace_id}+`, for example in a `logback-test.xml` of your own, does not show the trace ID. The same applies to code that copies the MDC to another thread.
 
 == See also
 
