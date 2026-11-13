@@ -13,6 +13,7 @@ import scala.concurrent.duration.DurationInt
 
 import akka.Done
 import akka.javasdk.evaluation.ConfiguredDurableEvaluator
+import akka.javasdk.evaluation.CurrentContextDurableEvaluator
 import akka.javasdk.evaluation.Subject
 import akka.javasdk.evaluation.TranscriptQualityEvaluator
 import akka.javasdk.impl.evaluation.DurableEvaluatorImpl.RecordStepName
@@ -139,6 +140,33 @@ class DurableEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionValu
       await(impl.invokeStep(Some(persistedState), stepCommand("fetchTranscript", telemetryContext = telemetryContext)))
 
       stepContexts.flatten.map(_.get(key)) should contain("evaluation-1")
+    }
+
+    "run the start and a step with their telemetry context as current context" in {
+      val key = CurrentContextDurableEvaluator.KEY
+      val impl =
+        new DurableEvaluatorImpl[CurrentContextDurableEvaluator.State, CurrentContextDurableEvaluator](
+          evaluationId,
+          classOf[CurrentContextDurableEvaluator],
+          classOf[CurrentContextDurableEvaluator.State],
+          _ => new CurrentContextDurableEvaluator,
+          new RecorderProbe,
+          serializer,
+          ExecutionContext.global,
+          _ => ConfigFactory.empty())
+      val started = await(impl.handleEvaluationStart(None, trigger(), OtelContext.root().`with`(key, "start-1")))
+        .asInstanceOf[SpiWorkflow.CommandTransitionalEffect]
+      val startState = started.persistence.asInstanceOf[SpiWorkflow.UpdateState].newState
+
+      val result = await(
+        impl.invokeStep(
+          Some(startState),
+          stepCommand("finish", telemetryContext = OtelContext.root().`with`(key, "step-1"))))
+        .asInstanceOf[SpiWorkflow.StepTransitionalEffect]
+
+      val outcome =
+        serializer.fromBytes(classOf[Outcome], result.transition.asInstanceOf[SpiWorkflow.StepTransition].input.get)
+      outcome.evaluation().explanation() shouldBe "start-1 at the start, step-1 in the step"
     }
 
     "pass the config for the evaluated agent on the context at the start and in a step" in {

@@ -654,6 +654,9 @@ private final class Sdk(
     }
   }
 
+  // The type does not guarantee this is a Java concurrent Executor, but we know it is, since supplied from runtime
+  private val userExecutor: Executor = OtelContext.taskWrapping(sdkExecutionContext.asInstanceOf[Executor])
+
   private val sdkTracerFactory: () => Tracer = () => tracerFactory(TraceInstrumentation.InstrumentationScopeName)
 
   private lazy val httpClientProvider = new HttpClientProviderImpl(
@@ -1435,8 +1438,8 @@ private final class Sdk(
     case a if a == classOf[Retries]            => retries
     case r if r == classOf[AgentRegistry]      => agentRegistry
     case e if e == classOf[Executor]           =>
-      // The type does not guarantee this is a Java concurrent Executor, but we know it is, since supplied from runtime
-      sdkExecutionContext.asInstanceOf[Executor]
+      // Each task runs with the OpenTelemetry context that is current where the task is submitted
+      userExecutor
     case s if s == deprecatedSanitizerClass  => sanitizer
     case c if c == classOf[ClassifierClient] => classifierClient(telemetryContext)
     case s if s == classOf[SanitizerClient]  => sanitizerClient

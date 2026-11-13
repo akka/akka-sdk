@@ -31,6 +31,7 @@ import akka.javasdk.impl.evaluation.DurableEvaluatorProtocol.Outcome
 import akka.javasdk.impl.evaluation.DurableEvaluatorProtocol.StateEnvelope
 import akka.javasdk.impl.evaluation.DurableEvaluatorProtocol.TriggerSource
 import akka.javasdk.impl.serialization.Serializer
+import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.impl.workflow.WorkflowDescriptor
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.SpiEntity
@@ -167,26 +168,28 @@ private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
       Future.successful(new SpiWorkflow.ReadOnlyEffect(ack, SpiMetadata.empty))
     } else {
       Future {
-        val subject = EvaluationConversions.toSdkSubject(trigger.subject)
-        val attributes = trigger.attributes.asJava
-        val triggerSource = toProtocolTriggerSource(trigger.source)
-        val evaluator = factory(Option(telemetryContext))
-        val context = new EvaluationContextImpl(workflowId, subject, attributes, configFor(subject))
-        evaluator._internalSetup(evaluator.emptyState(), context)
-        val effect = evaluator.onEvaluation(context)
-        effect match {
-          case EffectImpl(persistence, transition) =>
-            // the envelope is always persisted on start, even without a state update, so the
-            // trigger survives recovery and a duplicate start is detected
-            val newUserState = persistence match {
-              case UpdateState(newState) => Some(newState)
-              case NoPersistence         => None
-            }
-            new SpiWorkflow.CommandTransitionalEffect(
-              envelopePersistence(triggerSource, subject, attributes, newUserState),
-              toSpiTransition(transition),
-              ack,
-              SpiMetadata.empty)
+        Telemetry.withCurrent(Option(telemetryContext)) {
+          val subject = EvaluationConversions.toSdkSubject(trigger.subject)
+          val attributes = trigger.attributes.asJava
+          val triggerSource = toProtocolTriggerSource(trigger.source)
+          val evaluator = factory(Option(telemetryContext))
+          val context = new EvaluationContextImpl(workflowId, subject, attributes, configFor(subject))
+          evaluator._internalSetup(evaluator.emptyState(), context)
+          val effect = evaluator.onEvaluation(context)
+          effect match {
+            case EffectImpl(persistence, transition) =>
+              // the envelope is always persisted on start, even without a state update, so the
+              // trigger survives recovery and a duplicate start is detected
+              val newUserState = persistence match {
+                case UpdateState(newState) => Some(newState)
+                case NoPersistence         => None
+              }
+              new SpiWorkflow.CommandTransitionalEffect(
+                envelopePersistence(triggerSource, subject, attributes, newUserState),
+                toSpiTransition(transition),
+                ack,
+                SpiMetadata.empty)
+          }
         }
       }
     }
@@ -220,26 +223,28 @@ private[javasdk] final class DurableEvaluatorImpl[S, E <: DurableEvaluator[S]](
           s"known steps: [${stepMethods.keys.mkString(", ")}]"))
 
       Future {
-        val evaluator = factory(Option(stepCommand.telemetryContext))
-        val subject = envelope.subject().toSubject()
-        evaluator._internalSetup(
-          decodeUserState(envelope),
-          new EvaluationContextImpl(workflowId, subject, envelope.attributes(), configFor(subject)))
-        val effect =
-          if (stepMethod.getParameterCount == 1) {
-            val input = stepCommand.input match {
-              case Some(payload) => serializer.fromBytes(stepMethod.getParameterTypes()(0), payload)
-              case None          => null
+        Telemetry.withCurrent(Option(stepCommand.telemetryContext)) {
+          val evaluator = factory(Option(stepCommand.telemetryContext))
+          val subject = envelope.subject().toSubject()
+          evaluator._internalSetup(
+            decodeUserState(envelope),
+            new EvaluationContextImpl(workflowId, subject, envelope.attributes(), configFor(subject)))
+          val effect =
+            if (stepMethod.getParameterCount == 1) {
+              val input = stepCommand.input match {
+                case Some(payload) => serializer.fromBytes(stepMethod.getParameterTypes()(0), payload)
+                case None          => null
+              }
+              invokeStepMethod(stepMethod, evaluator, Some(input))
+            } else {
+              invokeStepMethod(stepMethod, evaluator, None)
             }
-            invokeStepMethod(stepMethod, evaluator, Some(input))
-          } else {
-            invokeStepMethod(stepMethod, evaluator, None)
+          effect match {
+            case EffectImpl(persistence, transition) =>
+              new SpiWorkflow.StepTransitionalEffect(
+                toSpiPersistence(persistence, envelope, subject),
+                toSpiTransition(transition))
           }
-        effect match {
-          case EffectImpl(persistence, transition) =>
-            new SpiWorkflow.StepTransitionalEffect(
-              toSpiPersistence(persistence, envelope, subject),
-              toSpiTransition(transition))
         }
       }
     }

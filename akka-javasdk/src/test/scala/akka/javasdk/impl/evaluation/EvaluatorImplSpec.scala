@@ -40,6 +40,28 @@ class EvaluatorImplSpec extends AnyWordSpec with Matchers {
       factoryContext.map(_.get(key)) shouldBe Some("evaluation-1")
     }
 
+    "run the evaluator with the telemetry context of the evaluation as current context" in {
+      val key = ContextKey.named[String]("test")
+      var seen: Option[String] = None
+      val impl = new EvaluatorImpl[Evaluator](
+        _ =>
+          new Evaluator {
+            override def evaluate(context: EvaluationContext): Evaluator.Effect = {
+              seen = Option(OtelContext.current().get(key))
+              effects().inconclusive("context seen")
+            }
+          },
+        classOf[Evaluator],
+        _ => ConfigFactory.empty())
+
+      Await.result(
+        impl.evaluate(new SpiEvaluator.EvaluationContext(trigger, OtelContext.root().`with`(key, "evaluation-1"))),
+        3.seconds)
+
+      seen shouldBe Some("evaluation-1")
+      OtelContext.current().get(key) shouldBe null
+    }
+
     "pass the config for the evaluated agent on the context" in {
       var seen: Option[Config] = None
       val impl = new EvaluatorImpl[Evaluator](

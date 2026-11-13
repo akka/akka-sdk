@@ -100,6 +100,7 @@ private[impl] final class TimedActionImpl[TA <: TimedAction](
     }
 
     traceId.foreach(id => MDC.put(Telemetry.TRACE_ID, id))
+    val telemetryScope = Telemetry.makeCurrent(telemetryContext)
     try {
       val commandContext =
         new CommandContextImpl(regionInfo.selfRegion, metadata, timerClient, telemetryContext, tracerFactory)
@@ -115,6 +116,7 @@ private[impl] final class TimedActionImpl[TA <: TimedAction](
         // command handler threw an "unexpected" error, also covers HandlerNotFoundException
         Future.successful(handleUnexpectedException(command, ex))
     } finally {
+      telemetryScope.close()
       if (traceId.isDefined) MDC.remove(Telemetry.TRACE_ID)
     }
   }

@@ -147,6 +147,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
         telemetryContext,
         tracerFactory)
 
+    val telemetryScope = Telemetry.makeCurrent(telemetryContext)
     try {
       entity._internalSetCommandContext(Optional.of(cmdContext))
       entity._internalSetCurrentState(state, command.isDeleted)
@@ -252,6 +253,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
     } finally {
       entity._internalSetCommandContext(Optional.empty())
       entity._internalClearCurrentState()
+      telemetryScope.close()
       if (traceId.isDefined) MDC.remove(Telemetry.TRACE_ID)
     }
 

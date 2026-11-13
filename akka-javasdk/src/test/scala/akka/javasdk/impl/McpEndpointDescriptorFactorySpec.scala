@@ -8,15 +8,22 @@ import scala.concurrent.ExecutionContext
 import scala.jdk.CollectionConverters._
 
 import akka.javasdk.impl.mcp.TestMcpEndpoints
+import akka.runtime.sdk.spi.HttpRequestHeaders
+import akka.runtime.sdk.spi.JwtClaims
+import akka.runtime.sdk.spi.McpEndpointConstructionContext
 import akka.runtime.sdk.spi.McpEndpointDescriptor.TextContent
 import akka.runtime.sdk.spi.McpEndpointDescriptor.ToolCallResult
+import akka.runtime.sdk.spi.RequestPrincipal
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaArray
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaObject
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaString
+import akka.runtime.sdk.spi.SpiSpiffeContext
 import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.Logger
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.read.ListAppender
+import io.opentelemetry.api.trace.Span
+import io.opentelemetry.context.{ Context => TelemetryContext }
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -85,7 +92,7 @@ class McpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers with Sc
         val exception = structuredDescriptor.tools
           .find(_.toolDescription.name == tool)
           .get
-          .call(null, Map.empty)
+          .call(constructionContext(), Map.empty)
           .failed
           .futureValue
         exception shouldBe an[IllegalStateException]
@@ -97,11 +104,23 @@ class McpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers with Sc
       val exception = structuredDescriptor.tools
         .find(_.toolDescription.name == "async-fail")
         .get
-        .call(null, Map.empty)
+        .call(constructionContext(), Map.empty)
         .failed
         .futureValue
       exception shouldBe an[IllegalStateException]
       exception.getMessage should ===("failed: async")
+    }
+
+    "call a tool with the telemetry context of the request as current context" in {
+      val descriptor =
+        McpEndpointDescriptorFactory(
+          classOf[TestMcpEndpoints.CurrentContextMcpEndpoint],
+          _ => new TestMcpEndpoints.CurrentContextMcpEndpoint)
+      val key = TestMcpEndpoints.CurrentContextMcpEndpoint.KEY
+      val context = constructionContext(TelemetryContext.root().`with`(key, "request-1"))
+
+      textOf(descriptor.tools.head.call(context, Map.empty).futureValue) should ===("request-1")
+      TelemetryContext.current().get(key) shouldBe null
     }
 
     "leave empty optional fields out of structured content" in {
@@ -190,9 +209,23 @@ class McpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers with Sc
       classOf[TestMcpEndpoints.StructuredOutputMcpEndpoint],
       _ => new TestMcpEndpoints.StructuredOutputMcpEndpoint)
 
+  // the test endpoint factories ignore the construction context, only its telemetry context is read
+  private def constructionContext(context: TelemetryContext = TelemetryContext.root()): McpEndpointConstructionContext =
+    new McpEndpointConstructionContext {
+      override def telemetryContext: TelemetryContext = context
+      override def openTelemetrySpan: Option[Span] = None
+      override def principal: RequestPrincipal = ???
+      override def jwt: Option[JwtClaims] = None
+      override def requestHeaders: HttpRequestHeaders = ???
+      override def spiffeContext: Option[SpiSpiffeContext] = None
+    }
+
   private def call(toolName: String): ToolCallResult =
-    // the test endpoint factory ignores the construction context
-    structuredDescriptor.tools.find(_.toolDescription.name == toolName).get.call(null, Map.empty).futureValue
+    structuredDescriptor.tools
+      .find(_.toolDescription.name == toolName)
+      .get
+      .call(constructionContext(), Map.empty)
+      .futureValue
 
   private def textOf(result: ToolCallResult): String = {
     result.structuredContent shouldBe empty

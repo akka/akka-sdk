@@ -104,6 +104,7 @@ private[impl] final class ConsumerImpl[C <: Consumer](
     }
 
     traceId.foreach(id => MDC.put(Telemetry.TRACE_ID, id))
+    val telemetryScope = Telemetry.makeCurrent(telemetryContext)
     try {
       val messageContext =
         new MessageContextImpl(
@@ -125,6 +126,7 @@ private[impl] final class ConsumerImpl[C <: Consumer](
         // command handler threw an "unexpected" error, also covers HandlerNotFoundException
         Future.successful(handleUnexpectedException(message, ex))
     } finally {
+      telemetryScope.close()
       if (traceId.isDefined) MDC.remove(Telemetry.TRACE_ID)
     }
   }

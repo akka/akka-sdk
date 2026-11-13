@@ -36,6 +36,7 @@ import akka.javasdk.impl.ErrorHandling
 import akka.javasdk.impl.ForwardCompat.knownOr
 import akka.javasdk.impl.agent.ConfiguredGuardrail.UseFor
 import akka.javasdk.impl.telemetry.SpanTracingImpl
+import akka.javasdk.impl.telemetry.Telemetry
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiAgentGuardrails
 import akka.runtime.sdk.spi.SpiConfiguredGuardrail
@@ -208,7 +209,7 @@ import org.slf4j.LoggerFactory
       extends SpiGuardrail.ToolCall {
 
     override def decide(ctx: SpiGuardrail.ToolCallContext): Future[SpiGuardrail.Decision] =
-      toSpiDecision(
+      toSpiDecision(Telemetry.withCurrent(Option(ctx.telemetryContext)) {
         guardrail.decideAsync(
           new ToolCallGuardrailCallContextImpl(
             ctx.agentId,
@@ -218,7 +219,8 @@ import org.slf4j.LoggerFactory
             ctx.sessionId,
             toToolOrigin(ctx.origin),
             Option(ctx.telemetryContext),
-            tracerFactory)))
+            tracerFactory))
+      })
   }
 
   // An origin that this SDK does not know, or a null, maps to ToolOrigin.Unknown.
@@ -237,7 +239,7 @@ import org.slf4j.LoggerFactory
       extends SpiGuardrail.ModelCall {
 
     override def decide(ctx: SpiGuardrail.ModelCallContext): Future[SpiGuardrail.Decision] =
-      toSpiDecision(
+      toSpiDecision(Telemetry.withCurrent(Option(ctx.telemetryContext)) {
         guardrail.decideAsync(
           new ModelCallGuardrailCallContextImpl(
             ctx.systemMessage,
@@ -246,7 +248,8 @@ import org.slf4j.LoggerFactory
             ctx.sessionId,
             ctx.modelName,
             Option(ctx.telemetryContext),
-            tracerFactory)))
+            tracerFactory))
+      })
   }
 
   final class AgentResponseGuardrailAdapter(
@@ -256,7 +259,7 @@ import org.slf4j.LoggerFactory
       extends SpiGuardrail.AgentResponse {
 
     override def decide(ctx: SpiGuardrail.AgentResponseContext): Future[SpiGuardrail.Decision] =
-      toSpiDecision(
+      toSpiDecision(Telemetry.withCurrent(Option(ctx.telemetryContext)) {
         guardrail.decideAsync(
           new AgentResponseGuardrailCallContextImpl(
             new Message.AiMessage(ctx.response, java.util.List.of(), ctx.thinking.toJava, ctx.attributes.asJava),
@@ -264,7 +267,8 @@ import org.slf4j.LoggerFactory
             ctx.sessionId,
             ctx.modelName,
             Option(ctx.telemetryContext),
-            tracerFactory)))
+            tracerFactory))
+      })
   }
 
   // Maps a conversation entry from its SPI representation onto the public guardrail-facing ADT,

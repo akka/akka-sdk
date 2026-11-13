@@ -39,6 +39,7 @@ import com.typesafe.config.ConfigFactory
 import io.opentelemetry.api.OpenTelemetry
 import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.Context
+import io.opentelemetry.context.ContextKey
 import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
@@ -110,7 +111,8 @@ object GuardrailProviderSpec {
 
   private def toolCallContext(
       toolName: String,
-      origin: SpiGuardrail.ToolOrigin = SpiGuardrail.ToolOrigin.FunctionTool): SpiGuardrail.ToolCallContext =
+      origin: SpiGuardrail.ToolOrigin = SpiGuardrail.ToolOrigin.FunctionTool,
+      telemetryContext: Context = Context.root()): SpiGuardrail.ToolCallContext =
     new SpiGuardrail.ToolCallContext(
       toolName = toolName,
       toolCallId = "call-1",
@@ -118,7 +120,7 @@ object GuardrailProviderSpec {
       agentId = "tool-agent",
       sessionId = "session-1",
       origin = origin,
-      telemetryContext = Context.root())
+      telemetryContext = telemetryContext)
 
   // A ToolOrigin that this SDK does not know.
   private def unknownToolOrigin: SpiGuardrail.ToolOrigin = {
@@ -164,6 +166,24 @@ object GuardrailProviderSpec {
       new Decision.Deny(s"${ctx.agentId}|${ctx.sessionId}|${ctx.modelName}|${ctx.reply.text}")
   }
 
+  private val TestContextKey = ContextKey.named[String]("test")
+
+  // These report the value of TestContextKey in the current OpenTelemetry context as the deny reason.
+  class CurrentContextToolGuard extends ToolCallGuardrail {
+    override def decide(ctx: ToolCallGuardrail.CallContext): Decision =
+      new Decision.Deny(Context.current().get(TestContextKey))
+  }
+
+  class CurrentContextModelCallGuard extends ModelCallGuardrail {
+    override def decide(ctx: ModelCallGuardrail.CallContext): Decision =
+      new Decision.Deny(Context.current().get(TestContextKey))
+  }
+
+  class CurrentContextResponseGuard extends AgentResponseGuardrail {
+    override def decide(ctx: AgentResponseGuardrail.CallContext): Decision =
+      new Decision.Deny(Context.current().get(TestContextKey))
+  }
+
   class MyModelCallGuard extends ModelCallGuardrail {
     override def decide(ctx: ModelCallGuardrail.CallContext): Decision = new Decision.Allow()
   }
@@ -184,7 +204,8 @@ object GuardrailProviderSpec {
   private def agentResponseContext(
       response: String,
       thinking: Option[String] = None,
-      attributes: Map[String, AnyRef] = Map.empty): SpiGuardrail.AgentResponseContext =
+      attributes: Map[String, AnyRef] = Map.empty,
+      telemetryContext: Context = Context.root()): SpiGuardrail.AgentResponseContext =
     new SpiGuardrail.AgentResponseContext(
       response = response,
       thinking = thinking,
@@ -192,16 +213,18 @@ object GuardrailProviderSpec {
       agentId = "model-agent",
       sessionId = "session-1",
       modelName = "test-model",
-      telemetryContext = Context.root())
+      telemetryContext = telemetryContext)
 
-  private def modelCallContext(messages: Seq[SpiAgent.ContextMessage]): SpiGuardrail.ModelCallContext =
+  private def modelCallContext(
+      messages: Seq[SpiAgent.ContextMessage],
+      telemetryContext: Context = Context.root()): SpiGuardrail.ModelCallContext =
     new SpiGuardrail.ModelCallContext(
       systemMessage = "system prompt",
       messages = messages,
       agentId = "model-agent",
       sessionId = "session-1",
       modelName = "test-model",
-      telemetryContext = Context.root())
+      telemetryContext = telemetryContext)
 
   private def spiUserMessage(text: String): SpiAgent.ContextMessage =
     new SpiAgent.ContextMessage.UserMessage(Seq(new SpiAgent.TextMessageContent(text)), sanitized = false)
@@ -1240,6 +1263,51 @@ class GuardrailProviderSpec
         Await.result(g.guardrails.agentResponseGuardrails.head.decide(agentResponseContext("final reply")), 3.seconds)
       decision shouldBe a[SpiGuardrail.Deny]
       reasonOf(decision) shouldBe "model-agent|session-1|test-model|final reply"
+    }
+
+    "run a guardrail with the telemetry context of the call as current context" in {
+      val cfg = ConfigFactory
+        .parseString(s"""
+          akka.javasdk.agent.guardrails {
+            "tool guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$CurrentContextToolGuard"
+              agents = ["context-agent"]
+              category = TOOL_POLICY
+            }
+            "model guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$CurrentContextModelCallGuard"
+              agents = ["context-agent"]
+              category = MODEL_POLICY
+            }
+            "response guard" {
+              class = "akka.javasdk.impl.agent.GuardrailProviderSpec$$CurrentContextResponseGuard"
+              agents = ["context-agent"]
+              category = MODEL_POLICY
+            }
+          }
+        """)
+        .withFallback(config)
+
+      val provider = new GuardrailProvider(system, cfg, testTracerFactory)
+      val g = provider.agentGuardrails("context-agent", role = None)
+      def contextWith(value: String) = Context.root().`with`(TestContextKey, value)
+
+      val toolGuardrail = g.withToolGuardrails(Seq(toolDescriptor("some-tool"))).head.toolCallGuardrails.head
+      val toolDecision =
+        toolGuardrail.decide(toolCallContext("some-tool", telemetryContext = contextWith("tool-call"))).futureValue
+      reasonOf(toolDecision) shouldBe "tool-call"
+
+      val modelDecision = g.guardrails.modelCallGuardrails.head
+        .decide(modelCallContext(toolRoundMessages, contextWith("model-call")))
+        .futureValue
+      reasonOf(modelDecision) shouldBe "model-call"
+
+      val responseDecision = g.guardrails.agentResponseGuardrails.head
+        .decide(agentResponseContext("final reply", telemetryContext = contextWith("response")))
+        .futureValue
+      reasonOf(responseDecision) shouldBe "response"
+
+      Context.current().get(TestContextKey) shouldBe null
     }
 
     "register an AgentResponseGuardrail with its settings" in {

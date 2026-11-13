@@ -12,6 +12,9 @@ import java.util.Optional;
  * Factory for manually creating open telemetry spans in addition to those automatically provided by
  * the runtime and SDK.
  *
+ * <p>The parent span is the current OpenTelemetry span while a handler runs, and in each task that
+ * the handler submits to the injected {@code java.util.concurrent.Executor}.
+ *
  * <p>Not for user extension. Injectable into endpoint constructors or available through component
  * command contexts.
  */

@@ -160,6 +160,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
     // smuggling 0 arity method called from component client through here
     val cmd = command.payload.getOrElse(BytesPayload.empty)
 
+    val telemetryScope = Telemetry.makeCurrent(telemetryContext)
     try {
       val effect = router.handleCommand(
         userState = userState,
@@ -182,6 +183,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
       case NonFatal(error) =>
         throw WorkflowException(workflowId, command.name, s"unexpected failure: $error", Some(error))
     } finally {
+      telemetryScope.close()
       if (traceId.isDefined) MDC.remove(Telemetry.TRACE_ID)
     }
 
@@ -201,6 +203,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
     val timerScheduler =
       new TimerSchedulerImpl(timerClient, context.componentCallMetadata)
 
+    val telemetryScope = Telemetry.makeCurrent(telemetryContext)
     try {
       val handleStep = router.handleStep(
         userState,
@@ -225,6 +228,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
         log.error(message, ex)
         throw WorkflowException(message, Some(ex))
     } finally {
+      telemetryScope.close()
       if (traceId.isDefined) MDC.remove(Telemetry.TRACE_ID)
     }
   }

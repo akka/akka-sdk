@@ -10,6 +10,8 @@ import scala.jdk.OptionConverters._
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.runtime.sdk.spi.SpiMetadataEntry
+import io.opentelemetry.context.{ Context => OtelContext }
+import io.opentelemetry.context.Scope
 import io.opentelemetry.context.propagation.TextMapGetter
 import io.opentelemetry.context.propagation.TextMapSetter
 import org.slf4j.Logger
@@ -33,6 +35,23 @@ private[akka] object Telemetry {
 
     override def keys(carrier: Metadata): java.lang.Iterable[String] =
       carrier.getAllKeys
+  }
+
+  /**
+   * Makes the context the current OpenTelemetry context of the calling thread, until the returned scope is closed. The
+   * scope must be closed on the same thread.
+   */
+  def makeCurrent(context: Option[OtelContext]): Scope =
+    context match {
+      case Some(ctx) => ctx.makeCurrent()
+      case None      => Scope.noop()
+    }
+
+  /** Runs the block with the context as the current OpenTelemetry context, on the calling thread only. */
+  def withCurrent[T](context: Option[OtelContext])(block: => T): T = {
+    val scope = makeCurrent(context)
+    try block
+    finally scope.close()
   }
 
   lazy val builderSetter: TextMapSetter[mutable.Builder[SpiMetadataEntry, _]] = (carrier, key, value) => {

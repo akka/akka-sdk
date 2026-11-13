@@ -17,6 +17,7 @@ import akka.javasdk.evaluation.Subject
 import akka.javasdk.impl.evaluation.EvaluatorEffectImpl.CompleteEffect
 import akka.javasdk.impl.evaluation.EvaluatorEffectImpl.InconclusiveEffect
 import akka.javasdk.impl.evaluation.EvaluatorEffectImpl.NotApplicableEffect
+import akka.javasdk.impl.telemetry.Telemetry
 import akka.runtime.sdk.spi.SpiEvaluator
 import com.typesafe.config.Config
 import io.opentelemetry.context.{ Context => OtelContext }
@@ -72,8 +73,10 @@ private[impl] final class EvaluatorImpl[E <: Evaluator](
     try {
       val subject = EvaluationConversions.toSdkSubject(spiContext.subject)
       val context = new EvaluationContextImpl(spiContext, subject, configFor(subject))
-      val evaluator = factory(Option(spiContext.telemetryContext))
-      val effect = evaluator.evaluate(context)
+      val telemetryContext = Option(spiContext.telemetryContext)
+      val effect = Telemetry.withCurrent(telemetryContext) {
+        factory(telemetryContext).evaluate(context)
+      }
       toSpiEffect(effect)
     } catch {
       // a thrown exception is a failure (distinct from the deliberate inconclusive() outcome); the

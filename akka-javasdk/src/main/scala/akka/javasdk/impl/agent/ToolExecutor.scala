@@ -16,6 +16,7 @@ import akka.annotation.InternalApi
 import akka.javasdk.agent.MessageContent
 import akka.javasdk.impl.agent.FunctionTools.FunctionToolInvoker
 import akka.javasdk.impl.serialization.Serializer
+import akka.javasdk.impl.telemetry.Telemetry
 import akka.runtime.sdk.spi.SpiAgent
 
 /**
@@ -107,7 +108,7 @@ class ToolExecutor(functionTools: Map[String, FunctionToolInvoker], serializer: 
         }
       }
 
-    (toolInvoker, toolInvoker.invoke(methodInput))
+    (toolInvoker, Telemetry.withCurrent(Option(request.telemetryContext))(toolInvoker.invoke(methodInput)))
   }
 
   private def textResult(toolInvoker: FunctionToolInvoker, toolResult: Any): String =

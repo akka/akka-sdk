@@ -784,6 +784,7 @@ private[impl] final class AgentImpl(
       val agentContext =
         new AgentContextImpl(sessionId, regionInfo.selfRegion, metadata, telemetryContext, tracerFactory)
 
+      val telemetryScope = Telemetry.makeCurrent(telemetryContext)
       try {
         // we need the agent at this scope.
         // therefore, we initialize it exceptionally outside the router
@@ -928,6 +929,7 @@ private[impl] final class AgentImpl(
         case NonFatal(error) =>
           throw AgentException(command.name, s"Unexpected failure: $error", Some(error))
       } finally {
+        telemetryScope.close()
         if (traceId.isDefined) MDC.remove(Telemetry.TRACE_ID)
       }
 

@@ -197,7 +197,7 @@ The following types can be injected in Service Setup, HTTP Endpoints, gRPC Endpo
 | `akka.javasdk.Retries`
 | Utility for retrying calls
 | `java.util.concurrent.Executor`
-| An executor which runs each task in a virtual thread, and is safe to use for blocking async work, for example with `CompletableFuture.supplyAsync(() -> blocking, executor)`
+| An executor which runs each task in a virtual thread, and is safe to use for blocking async work, for example with `CompletableFuture.supplyAsync(() -> blocking, executor)`. Each task runs with the OpenTelemetry context that is current where the code submits the task, so spans created in the task belong to the same trace.
 | `akka.javasdk.ledger.LedgerClient`
 | For fetching recorded agent interactions from the ledger, primarily for evaluators, see xref:evaluators.adoc[]
 | `akka.javasdk.agent.ClassifierClient`

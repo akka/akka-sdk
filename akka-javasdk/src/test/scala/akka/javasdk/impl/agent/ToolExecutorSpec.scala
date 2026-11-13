@@ -19,6 +19,7 @@ import akka.javasdk.impl.serialization.Serializer
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiMetadata
 import io.opentelemetry.context.{ Context => TelemetryContext }
+import io.opentelemetry.context.ContextKey
 import org.scalatest.TestSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
@@ -63,6 +64,25 @@ class ToolExecutorSpec extends AnyWordSpecLike with TestSuite with Matchers {
       val req = toolRequest("method", """{ "value": "bar" }""")
       val result = executor.execute(req)
       result shouldBe "bar"
+    }
+
+    "call a tool function with the telemetry context of the tool call as current context" in {
+      val key = ContextKey.named[String]("test")
+      class TestClass {
+        def method(): String = TelemetryContext.current().get(key)
+      }
+      val functionTool = functionToolFor(new TestClass)
+      val executor = new ToolExecutor(Map("method" -> functionTool), serializer)
+
+      val req =
+        new SpiAgent.ToolCallCommand(
+          "001",
+          "method",
+          "{}",
+          SpiMetadata.empty,
+          TelemetryContext.root.`with`(key, "call-1"))
+      executor.execute(req) shouldBe "call-1"
+      TelemetryContext.current().get(key) shouldBe null
     }
 
     "call a tool function returning void" in {

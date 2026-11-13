@@ -110,6 +110,7 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
     val cmdContext =
       new CommandContextImpl(entityId, command.name, regionInfo.selfRegion, metadata, telemetryContext, tracerFactory)
 
+    val telemetryScope = Telemetry.makeCurrent(telemetryContext)
     try {
       entity._internalSetCommandContext(Optional.of(cmdContext))
       entity._internalSetCurrentState(state, command.isDeleted)
@@ -201,6 +202,7 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
     } finally {
       entity._internalSetCommandContext(Optional.empty())
       entity._internalClearCurrentState()
+      telemetryScope.close()
       if (traceId.isDefined) MDC.remove(Telemetry.TRACE_ID)
     }
 

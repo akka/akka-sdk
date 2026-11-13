@@ -10,6 +10,8 @@ import akka.javasdk.annotations.mcp.McpResource;
 import akka.javasdk.annotations.mcp.McpTool;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.google.protobuf.Timestamp;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.ContextKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -179,6 +181,18 @@ public class TestMcpEndpoints {
         description = "returns a null field Jackson writes")
     public AlwaysIncluded alwaysIncludedNullTitle() {
       return new AlwaysIncluded(null);
+    }
+  }
+
+  @McpEndpoint(serverName = "current-context")
+  public static class CurrentContextMcpEndpoint {
+    public static final ContextKey<String> KEY = ContextKey.named("test");
+
+    @McpTool(
+        name = "current-context",
+        description = "returns the value of KEY in the current OpenTelemetry context")
+    public String currentContext() {
+      return Context.current().get(KEY);
     }
   }
 

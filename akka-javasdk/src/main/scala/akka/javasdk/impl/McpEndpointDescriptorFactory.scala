@@ -39,6 +39,7 @@ import akka.javasdk.impl.ErrorHandling.asScalaUnwrapped
 import akka.javasdk.impl.ErrorHandling.unwrapInvocationTargetExceptionCatcher
 import akka.javasdk.impl.JwtDescriptorFactory.deriveJWTOptions
 import akka.javasdk.impl.serialization.Serializer
+import akka.javasdk.impl.telemetry.Telemetry
 import akka.parboiled2.util.Base64
 import akka.runtime.sdk.spi.ComponentOptions
 import akka.runtime.sdk.spi.McpEndpointConstructionContext
@@ -233,7 +234,11 @@ object McpEndpointDescriptorFactory {
           new ToolDescription(toolName, annotation.description(), inputSchema, toolAnnotations, toolOutput.outputSchema)
 
         val requiredParameterNames = inputSchema.required.toSet
-        def invokeTool(context: McpEndpointConstructionContext, params: Map[String, Any]): AnyRef = {
+        // runs on the sdk executor, where the request context is not current
+        def invokeTool(context: McpEndpointConstructionContext, params: Map[String, Any]): AnyRef =
+          Telemetry.withCurrent(Option(context.telemetryContext))(invokeToolMethod(context, params))
+
+        def invokeToolMethod(context: McpEndpointConstructionContext, params: Map[String, Any]): AnyRef = {
           val endpointInstance = instanceFactory.apply(context)
           try {
             if (method.getParameterCount == 0) {
