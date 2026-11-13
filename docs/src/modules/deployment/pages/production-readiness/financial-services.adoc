@@ -28,7 +28,7 @@ Start by writing down which requirements apply to your firm and your workload: t
 
 == Model risk management and validation
 
-Rules that often apply to financial firms: SR 11-7, the US guidance from the Federal Reserve on how banks manage the risk of models. Other regions have similar guidance.
+The questions below are based on rules that often apply to financial firms, such as SR 11-7, the US guidance from the Federal Reserve on how banks manage the risk of models. Other regions have similar guidance.
 
 * [ ] Does your model risk policy treat the agent, the model it calls, or both as a model that needs inventory and validation?
 * [ ] Who owns the validation, and is that person independent of the team that builds the agent?
@@ -38,7 +38,7 @@ Rules that often apply to financial firms: SR 11-7, the US guidance from the Fed
 
 == Evidence and recordkeeping
 
-Rules that often apply to financial firms: the SEC and FINRA rules on which business records a firm must keep and for how long. Other regulators have similar rules.
+The questions below are based on rules that often apply to financial firms, such as the SEC and FINRA rules on which business records a firm must keep and for how long. Other regulators have similar rules.
 
 * [ ] Which interactions, decisions, and communications does your compliance team treat as records?
 * [ ] What retention period and storage format does your compliance team require for each kind of record?
@@ -48,7 +48,7 @@ Rules that often apply to financial firms: the SEC and FINRA rules on which busi
 
 == Fair lending and bias testing
 
-Rules that often apply to financial firms: laws that prohibit unfair treatment of customers in lending, and consumer protection rules.
+The questions below are based on rules that often apply to financial firms, such as laws that prohibit unfair treatment of customers in lending, and consumer protection rules.
 
 * [ ] Does the workload influence a decision that affects a customer, such as credit, pricing, eligibility, or service level?
 * [ ] Which groups and outcomes does your compliance team require you to test, and with which data?
@@ -65,7 +65,7 @@ Rules that often apply to financial firms: laws that prohibit unfair treatment o
 
 == Third-party concentration risk for model providers
 
-Rules that often apply to financial firms: DORA, the EU regulation on digital operational resilience, which includes requirements for the ICT providers that a firm depends on. Other regulators have third-party risk guidance.
+The questions below are based on rules that often apply to financial firms, such as DORA, the EU regulation on digital operational resilience, which includes requirements for the ICT providers that a firm depends on. Other regulators have third-party risk guidance.
 
 * [ ] Does your third-party risk policy classify the model provider as a critical or important third party?
 * [ ] Which contractual terms does your policy require from the provider, for example audit rights, incident notice, and exit support?
@@ -75,7 +75,7 @@ Rules that often apply to financial firms: DORA, the EU regulation on digital op
 
 == Operational resilience
 
-Rules that often apply to financial firms: DORA, the EU regulation that requires firms to withstand and recover from technology disruptions, and the operational resilience rules of other regulators.
+The questions below are based on rules that often apply to financial firms, such as DORA, the EU regulation that requires firms to withstand and recover from technology disruptions. Other regulators have similar operational resilience rules.
 
 * [ ] Is the workload part of an important business service, and which impact tolerance and recovery objectives apply to it?
 * [ ] Do the recovery objectives of the workload match those of the services that depend on it? See xref:deployment:production-readiness/disaster-recovery.adoc[].
