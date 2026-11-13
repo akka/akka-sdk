@@ -97,6 +97,29 @@
                 <annotationProcessor>
                   akka.javasdk.tooling.processor.ComponentAnnotationProcessor
                 </annotationProcessor>
+              </annotationProcessors>
+              <annotationProcessorArgs>
+                <arg>akka.javasdk.groupId=${project.groupId}</arg>
+                <arg>akka.javasdk.artifactId=${project.artifactId}</arg>
+                <arg>akka.javasdk.componentLibrary=${non-akka-service}</arg>
+              </annotationProcessorArgs>
+              <annotationProcessorPaths>
+                <annotationProcessorPath>
+                  <groupId>io.akka</groupId>
+                  <artifactId>akka-javasdk-annotation-processor</artifactId>
+                  <version>${project.parent.version}</version>
+                </annotationProcessorPath>
+              </annotationProcessorPaths>
+            </configuration>
+          </execution>
+          <execution>
+            <id>kapt-inventory</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>kapt</goal>
+            </goals>
+            <configuration>
+              <annotationProcessors>
                 <annotationProcessor>
                   akka.javasdk.tooling.processor.InventoryProcessor
                 </annotationProcessor>
