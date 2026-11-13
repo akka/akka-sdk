@@ -324,9 +324,10 @@ object McpEndpointDescriptorFactory {
                     s"Tool [$toolName] defined in [$methodLocation] returned null instead of a CompletionStage"))
                 else asScalaUnwrapped(stage)
               }
-              .map(toToolCallResult)
+              .map(result => Telemetry.withCurrentContext(telemetryContextOf(context))(toToolCallResult(result)))
           } else { (context, params) =>
-            Future(toToolCallResult(invokeTool(context, params)))
+            Future(
+              Telemetry.withCurrentContext(telemetryContextOf(context))(toToolCallResult(invokeTool(context, params))))
           }
 
         new ToolMethodDescriptor(
