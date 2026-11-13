@@ -16,6 +16,7 @@ import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
 
 import akka.javasdk.ledger.ActivityRecord
+import akka.javasdk.ledger.ClassificationRecord
 import akka.javasdk.ledger.EvaluationRecord
 import akka.javasdk.ledger.GuardrailDecisionRecord
 import akka.javasdk.ledger.InteractionRecord
@@ -136,6 +137,47 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
   private def spiModelResponse(tokenUsage: SpiAgent.SpiTokenUsage): SpiLedger.ModelResponse =
     new SpiLedger.ModelResponse("m1", "", tokenUsage, "", Seq.empty)
 
+  /** An SPI ledger client that holds no records. */
+  private class EmptySpiLedgerClient extends SpiLedgerClient {
+    override def getInteraction(interactionId: String): Future[SpiLedger.InteractionRecord] =
+      Future.failed(new NoSuchElementException(interactionId))
+
+    override def getEvaluation(evaluationId: String): Future[SpiLedger.EvaluationRecord] =
+      Future.failed(new NoSuchElementException(evaluationId))
+
+    override def getClassification(classificationId: String): Future[SpiLedger.ClassificationRecord] =
+      Future.failed(new NoSuchElementException(classificationId))
+
+    override def getEvaluations(
+        interactionId: String,
+        from: Option[Instant],
+        limit: Int): Future[Seq[SpiLedger.EvaluationRecord]] =
+      Future.successful(Seq.empty)
+
+    override def getWorkflowEvaluations(
+        workflowComponentId: String,
+        workflowId: String,
+        from: Option[Instant],
+        limit: Int): Future[Seq[SpiLedger.EvaluationRecord]] =
+      Future.successful(Seq.empty)
+
+    override def getInteractions(
+        agentComponentId: String,
+        sessionId: String,
+        from: Option[Instant],
+        limit: Int): Future[Seq[SpiLedger.InteractionRecord]] =
+      Future.successful(Seq.empty)
+
+    override def getGuardrailDecisions(
+        interactionId: String,
+        from: Option[Instant],
+        limit: Int): Future[Seq[SpiLedger.GuardrailDecisionRecord]] =
+      Future.successful(Seq.empty)
+
+    override def getFlowRecords(flowId: String, fromPosition: Long, limit: Int): Future[SpiLedger.FlowPage] =
+      Future.successful(new SpiLedger.FlowPage(Seq.empty, fromPosition, hasMore = false))
+  }
+
   "Mapping an interaction record" should {
 
     "carry the token counts of each model response" in {
@@ -207,22 +249,7 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
 
     "read the newest records of the run through the SPI client" in {
       var requested: Option[(String, String, Option[Instant], Int)] = None
-      val spiLedgerClient = new SpiLedgerClient {
-        override def getInteraction(interactionId: String): Future[SpiLedger.InteractionRecord] =
-          Future.failed(new NoSuchElementException(interactionId))
-
-        override def getEvaluation(evaluationId: String): Future[SpiLedger.EvaluationRecord] =
-          Future.failed(new NoSuchElementException(evaluationId))
-
-        override def getClassification(classificationId: String): Future[SpiLedger.ClassificationRecord] =
-          Future.failed(new NoSuchElementException(classificationId))
-
-        override def getEvaluations(
-            interactionId: String,
-            from: Option[Instant],
-            limit: Int): Future[Seq[SpiLedger.EvaluationRecord]] =
-          Future.successful(Seq.empty)
-
+      val spiLedgerClient = new EmptySpiLedgerClient {
         override def getWorkflowEvaluations(
             workflowComponentId: String,
             workflowId: String,
@@ -231,22 +258,6 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
           requested = Some((workflowComponentId, workflowId, from, limit))
           Future.successful(Seq(spiWorkflowEvaluationRecord))
         }
-
-        override def getInteractions(
-            agentComponentId: String,
-            sessionId: String,
-            from: Option[Instant],
-            limit: Int): Future[Seq[SpiLedger.InteractionRecord]] =
-          Future.successful(Seq.empty)
-
-        override def getGuardrailDecisions(
-            interactionId: String,
-            from: Option[Instant],
-            limit: Int): Future[Seq[SpiLedger.GuardrailDecisionRecord]] =
-          Future.successful(Seq.empty)
-
-        override def getFlowRecords(flowId: String, fromPosition: Long, limit: Int): Future[SpiLedger.FlowPage] =
-          Future.successful(new SpiLedger.FlowPage(Seq.empty, fromPosition, hasMore = false))
       }
       val client = new LedgerClientImpl(spiLedgerClient, ExecutionContext.parasitic)
 
@@ -254,6 +265,75 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
 
       records.asScala.map(_.evaluationId()) shouldEqual Seq("evaluation-2")
       requested shouldBe Some(("order-workflow", "workflow-1", None, 100))
+    }
+  }
+
+  "Fetching a classification with an unknown id" should {
+
+    "throw NoSuchElementException from the blocking variant" in {
+      val client = new LedgerClientImpl(new EmptySpiLedgerClient, ExecutionContext.parasitic)
+
+      intercept[NoSuchElementException] {
+        client.getClassification("unknown")
+      }
+    }
+
+    "fail the stage of the async variant with NoSuchElementException" in {
+      val client = new LedgerClientImpl(new EmptySpiLedgerClient, ExecutionContext.parasitic)
+
+      val failure = intercept[CompletionException] {
+        client.getClassificationAsync("unknown").toCompletableFuture.join()
+      }
+      failure.getCause shouldBe a[NoSuchElementException]
+    }
+  }
+
+  "Mapping a classification record" should {
+
+    "carry the result, the attributes and the references" in {
+      val record = LedgerClientImpl.toClassificationRecord(
+        new SpiLedger.ClassificationRecord(
+          classificationId = "classification-1",
+          classifierComponentId = "sentiment-classifier",
+          label = Some("positive"),
+          score = Some(0.9),
+          confidence = Some(0.8),
+          attributes = Map("source" -> "judge"),
+          flowId = Some("flow-1"),
+          evaluationId = Some("evaluation-1"),
+          timestamp = Instant.EPOCH))
+
+      record shouldEqual new ClassificationRecord(
+        "classification-1",
+        "sentiment-classifier",
+        Optional.of(0.9),
+        Optional.of("positive"),
+        Optional.of(0.8),
+        Map("source" -> "judge").asJava,
+        Optional.of("flow-1"),
+        Optional.of("evaluation-1"),
+        Instant.EPOCH)
+    }
+
+    "carry empty optionals for a classification without a result or references" in {
+      val record = LedgerClientImpl.toClassificationRecord(
+        new SpiLedger.ClassificationRecord(
+          classificationId = "classification-2",
+          classifierComponentId = "sentiment-classifier",
+          label = None,
+          score = None,
+          confidence = None,
+          attributes = Map.empty,
+          flowId = None,
+          evaluationId = None,
+          timestamp = Instant.EPOCH))
+
+      record.label() shouldEqual Optional.empty()
+      record.score() shouldEqual Optional.empty()
+      record.confidence() shouldEqual Optional.empty()
+      record.attributes() shouldEqual util.Map.of()
+      record.flowId() shouldEqual Optional.empty()
+      record.evaluationId() shouldEqual Optional.empty()
     }
   }
 

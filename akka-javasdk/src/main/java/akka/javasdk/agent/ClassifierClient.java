@@ -25,7 +25,9 @@ public interface ClassifierClient {
    * @throws IllegalArgumentException if no classifier is configured with that name
    * @throws IllegalStateException if the call reaches a classifier that is already on the path of
    *     nested classifier calls that leads to it
+   * @deprecated Use {@link #classifyWithResult(String, String)}.
    */
+  @Deprecated(since = "3.7.2", forRemoval = true)
   Classification classify(String name, String input);
 
   /**
@@ -34,6 +36,27 @@ public interface ClassifierClient {
    * leads to it.
    *
    * @throws IllegalArgumentException if no classifier is configured with that name
+   * @deprecated Use {@link #classifyWithResultAsync(String, String)}.
    */
+  @Deprecated(since = "3.7.2", forRemoval = true)
   CompletionStage<Classification> classifyAsync(String name, String input);
+
+  /**
+   * Classifies {@code input} with the classifier configured under {@code name}, blocking for the
+   * result. The result carries the id of the record of the classification in the ledger.
+   *
+   * @throws IllegalArgumentException if no classifier is configured with that name
+   * @throws IllegalStateException if the call reaches a classifier that is already on the path of
+   *     nested classifier calls that leads to it
+   */
+  ClassificationResult classifyWithResult(String name, String input);
+
+  /**
+   * Async variant of {@link #classifyWithResult}. The returned stage fails with {@code
+   * IllegalStateException} if the call reaches a classifier that is already on the path of nested
+   * classifier calls that leads to it.
+   *
+   * @throws IllegalArgumentException if no classifier is configured with that name
+   */
+  CompletionStage<ClassificationResult> classifyWithResultAsync(String name, String input);
 }

@@ -22,6 +22,7 @@ import akka.javasdk.SanitizerContext
 import akka.javasdk.SanitizerException
 import akka.javasdk.TextSanitizer
 import akka.javasdk.agent.Classification
+import akka.javasdk.agent.ClassificationResult
 import akka.javasdk.agent.ClassifierClient
 import akka.runtime.sdk.spi.SpiDataSanitizer
 import akka.runtime.sdk.spi.SpiLogSanitizer
@@ -103,7 +104,7 @@ object SanitizerProviderSpec {
   // holding a reference to the classifier itself.
   class ClassifierBackedSanitizer(client: ClassifierClient) extends TextSanitizer {
     override def sanitize(text: String): String =
-      client.classify("labeller", text).label().orElse("no label")
+      client.classifyWithResult("labeller", text).classification().label().orElse("no label")
   }
 
   val ConstructionCount = new AtomicInteger(0)
@@ -154,7 +155,8 @@ object SanitizerProviderSpec {
 
   // Asks for more than a LogSanitizer constructor can take.
   class ClassifierBackedLogSanitizer(client: ClassifierClient) extends LogSanitizer {
-    override def sanitize(message: String): String = client.classify("labeller", message).label().orElse("")
+    override def sanitize(message: String): String =
+      client.classifyWithResult("labeller", message).classification().label().orElse("")
   }
 
   // One sanitize for both interfaces. sanitizeAsync shows which path the runtime entry took.
@@ -267,6 +269,10 @@ object SanitizerProviderSpec {
     override def classify(name: String, input: String): Classification = Classification.label(s"$name:$input")
     override def classifyAsync(name: String, input: String): CompletionStage[Classification] =
       CompletableFuture.completedFuture(classify(name, input))
+    override def classifyWithResult(name: String, input: String): ClassificationResult =
+      new ClassificationResult(java.util.Optional.empty(), classify(name, input))
+    override def classifyWithResultAsync(name: String, input: String): CompletionStage[ClassificationResult] =
+      CompletableFuture.completedFuture(classifyWithResult(name, input))
   }
 
   // Simplified stand-in for Sdk.wiredInstance: injects a ClassifierClient or SanitizerContext by constructor

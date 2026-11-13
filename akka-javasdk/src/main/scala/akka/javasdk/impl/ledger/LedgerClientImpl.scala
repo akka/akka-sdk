@@ -21,6 +21,7 @@ import akka.javasdk.evaluation.Evaluation
 import akka.javasdk.impl.ErrorHandling
 import akka.javasdk.impl.ForwardCompat.knownOr
 import akka.javasdk.ledger.ActivityRecord
+import akka.javasdk.ledger.ClassificationRecord
 import akka.javasdk.ledger.EvaluationRecord
 import akka.javasdk.ledger.Failure
 import akka.javasdk.ledger.FlowPage
@@ -66,6 +67,15 @@ private[javasdk] final class LedgerClientImpl(spiLedgerClient: SpiLedgerClient, 
 
   override def getEvaluationAsync(evaluationId: String): CompletionStage[EvaluationRecord] =
     spiLedgerClient.getEvaluation(evaluationId).map(LedgerClientImpl.toEvaluationRecord).asJava
+
+  override def getClassification(classificationId: String): ClassificationRecord =
+    try getClassificationAsync(classificationId).toCompletableFuture.join()
+    catch {
+      case e: CompletionException => throw ErrorHandling.unwrapCompletionException(e)
+    }
+
+  override def getClassificationAsync(classificationId: String): CompletionStage[ClassificationRecord] =
+    spiLedgerClient.getClassification(classificationId).map(LedgerClientImpl.toClassificationRecord).asJava
 
   override def getEvaluations(interactionId: String): util.List[EvaluationRecord] =
     try getEvaluationsAsync(interactionId).toCompletableFuture.join()
@@ -171,6 +181,18 @@ private[ledger] object LedgerClientImpl {
       toEvaluationSubject(record.subject),
       record.attributes.asJava,
       toEvaluationOutcome(record.outcome),
+      record.timestamp)
+
+  def toClassificationRecord(record: SpiLedger.ClassificationRecord): ClassificationRecord =
+    new ClassificationRecord(
+      record.classificationId,
+      record.classifierComponentId,
+      record.score.map(Double.box).toJava,
+      record.label.toJava,
+      record.confidence.map(Double.box).toJava,
+      record.attributes.asJava,
+      record.flowId.toJava,
+      record.evaluationId.toJava,
       record.timestamp)
 
   private def toEvaluationSubject(subject: SpiLedger.EvaluationSubject): EvaluationRecord.Subject =

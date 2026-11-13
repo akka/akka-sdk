@@ -20,6 +20,7 @@ import scala.util.control.NonFatal
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.javasdk.agent.Classification
+import akka.javasdk.agent.ClassificationResult
 import akka.javasdk.agent.Classifier
 import akka.javasdk.agent.ClassifierClient
 import akka.javasdk.agent.ClassifierContext
@@ -76,17 +77,17 @@ import io.opentelemetry.context.{ Context => TelemetryContext }
   def clientFor(telemetryContext: TelemetryContext): ClassifierClient = newClient(() => telemetryContext)
 
   private def newClient(telemetryContext: () => TelemetryContext): ClassifierClient = new ClassifierClient {
-    override def classifyAsync(name: String, input: String): CompletionStage[Classification] = {
+    override def classifyWithResultAsync(name: String, input: String): CompletionStage[ClassificationResult] = {
       requireConfigured(name)
       val context = telemetryContext()
-      val result = new CompletableFuture[Classification]()
+      val result = new CompletableFuture[ClassificationResult]()
       runtimeClassifierClient
-        .classify(name, new SpiClassifier.TextContent(input, context))
-        .map(ClassifierProvider.toClassification)(ExecutionContext.parasitic)
+        .classifyWithResult(name, new SpiClassifier.TextContent(input, context))
+        .map(ClassifierProvider.toClassificationResult)(ExecutionContext.parasitic)
         .onComplete { outcome =>
           def complete(): Unit = outcome match {
-            case Success(classification) => result.complete(classification)
-            case Failure(exc)            => result.completeExceptionally(exc)
+            case Success(classificationResult) => result.complete(classificationResult)
+            case Failure(exc)                  => result.completeExceptionally(exc)
           }
           // A continuation that the caller registered on the stage runs inside complete(). With the call chain
           // current, a classifier call from that continuation carries the chain.
@@ -100,11 +101,17 @@ import io.opentelemetry.context.{ Context => TelemetryContext }
       result
     }
 
-    override def classify(name: String, input: String): Classification =
-      try classifyAsync(name, input).toCompletableFuture.join()
+    override def classifyWithResult(name: String, input: String): ClassificationResult =
+      try classifyWithResultAsync(name, input).toCompletableFuture.join()
       catch {
         case e: CompletionException => throw ErrorHandling.unwrapCompletionException(e)
       }
+
+    override def classifyAsync(name: String, input: String): CompletionStage[Classification] =
+      classifyWithResultAsync(name, input).thenApply(_.classification())
+
+    override def classify(name: String, input: String): Classification =
+      classifyWithResult(name, input).classification()
   }
 
   private def requireConfigured(name: String): Unit =
@@ -175,6 +182,9 @@ import io.opentelemetry.context.{ Context => TelemetryContext }
 
   private def chainContext(chain: List[String]): TelemetryContext =
     if (chain.isEmpty) TelemetryContext.root() else TelemetryContext.root().`with`(CallChainKey, chain)
+
+  private def toClassificationResult(result: SpiClassifier.ClassificationResult): ClassificationResult =
+    new ClassificationResult(result.classificationId.toJava, toClassification(result.classification))
 
   private def toClassification(r: SpiClassifier.Classification): Classification =
     new Classification(

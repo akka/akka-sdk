@@ -77,6 +77,8 @@ include::example$doc-snippets/src/main/java/com/example/classifier/ClassifierUsa
 ----
 <1> `classify` blocks for the result. Component handlers run on virtual threads, so blocking is safe. Use `classifyAsync` for the non-blocking variant. Both throw `IllegalArgumentException` if no classifier is configured with that name.
 
+The runtime records each classification in the ledger. Use `classifyWithResult` or `classifyWithResultAsync` to also get the id of that record. Pass the id to `LedgerClient.getClassification` to fetch the record. The id is empty when the ledger is disabled.
+
 For a guardrail that consults a classifier to reach its decision, see xref:sdk:agents/guardrails.adoc#_classifier_backed_guardrails[Classifier-backed guardrails].
 
 == Composing classifiers
