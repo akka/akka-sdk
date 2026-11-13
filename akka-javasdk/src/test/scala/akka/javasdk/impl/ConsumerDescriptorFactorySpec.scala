@@ -9,6 +9,7 @@ import java.time.Instant
 import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.testmodels.keyvalueentity.CounterState
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.AclEventStreamPublishingConsumer
+import akka.javasdk.testmodels.subscriptions.PubSubTestModels.DenyAclEventStreamPublishingConsumer
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.EventStreamPublishingConsumer
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.EventStreamSubscriptionConsumer
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.HostWithPlatformServiceStreamConsumer
@@ -28,6 +29,7 @@ import akka.runtime.sdk.spi.ConsumerDestination
 import akka.runtime.sdk.spi.ConsumerSource
 import akka.runtime.sdk.spi.ConsumerStartFrom
 import akka.runtime.sdk.spi.ServiceNamePattern
+import akka.runtime.sdk.spi.SpiffePattern
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import protoconsumer.EventsForConsumer
@@ -50,6 +52,16 @@ class ConsumerDescriptorFactorySpec extends AnyWordSpec with Matchers {
       val streamDest = dest.get.asInstanceOf[ConsumerDestination.ServiceStreamDestination]
       streamDest.streamId shouldBe "employee_events_acl"
       streamDest.acl.get.allow.collect { case p: ServiceNamePattern => p.pattern } shouldBe List("other-service")
+    }
+
+    "pass deny matchers and a gRPC deny code of @Acl on a service stream producer" in {
+      val dest = ComponentDescriptorFactory.consumerDestination(
+        classOf[DenyAclEventStreamPublishingConsumer].asInstanceOf[Class[akka.javasdk.consumer.Consumer]])
+      val acl = dest.get.asInstanceOf[ConsumerDestination.ServiceStreamDestination].acl.get
+      acl.allow.collect { case p: SpiffePattern => p.pattern } shouldBe List("svc/other-service/**")
+      acl.deny.collect { case p: ServiceNamePattern => p.pattern } shouldBe List("blocked-service")
+      acl.denyHttpCode shouldBe None
+      acl.denyGrpcCode.map(_.getNumber) shouldBe Some(5)
     }
 
     "have no ACL on a service stream producer without @Acl" in {

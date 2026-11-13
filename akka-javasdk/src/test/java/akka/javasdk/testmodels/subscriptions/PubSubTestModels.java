@@ -154,6 +154,19 @@ class PubSubTestModels { // TODO shall we remove this class and move things to A
     }
   }
 
+  @Consume.FromEventSourcedEntity(value = EmployeeEntity.class)
+  @Produce.ServiceStream(id = "employee_events_acl_deny")
+  @Acl(
+      allow = @Acl.Matcher(spiffe = "svc/other-service/**"),
+      deny = @Acl.Matcher(service = "blocked-service"),
+      denyCode = 5)
+  public static class DenyAclEventStreamPublishingConsumer extends Consumer {
+
+    public Effect transform(EmployeeEvent event) {
+      return effects().produce(event.toString());
+    }
+  }
+
   @Consume.FromServiceStream(
       service = "employee_service",
       id = "employee_events",

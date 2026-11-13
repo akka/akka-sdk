@@ -201,8 +201,8 @@ public class Validations {
    * Validates that @Acl annotation is not used on non-endpoint components.
    *
    * <p>@Acl is only allowed on classes annotated with @HttpEndpoint, @GrpcEndpoint, @McpEndpoint,
-   * or @Produce.ServiceStream, and on methods within such classes, except
-   * for @Produce.ServiceStream where it is only allowed on the class.
+   * or @Produce.ServiceStream, and on methods within such classes. For @Produce.ServiceStream it is
+   * only allowed on the class.
    *
    * @param typeDef the component class to validate
    * @return a Validation result indicating success or failure
