@@ -72,6 +72,10 @@
       "class": "com.example.inventory.ShopMcpEndpoint"
     },
     {
+      "kind": "http-endpoint",
+      "class": "com.example.inventory.StatusEndpoint"
+    },
+    {
       "kind": "evaluator",
       "id": "tone",
       "class": "com.example.inventory.ToneEvaluator"
@@ -90,6 +94,69 @@
       "kind": "timed-action",
       "id": "notifier-b",
       "class": "com.example.inventory.b.Notifier"
+    }
+  ],
+  "routes": [
+    {
+      "protocol": "http",
+      "class": "com.example.inventory.ShopEndpoint",
+      "method": "shop",
+      "httpMethod": "GET",
+      "path": "/shop/",
+      "acl": { "allow": [{ "principal": "INTERNET" }], "denyCode": 403 },
+      "jwt": { "bearerToken": true, "issuers": ["shop-issuer"] }
+    },
+    {
+      "protocol": "http",
+      "class": "com.example.inventory.ShopEndpoint",
+      "method": "health",
+      "httpMethod": "GET",
+      "path": "/shop/health",
+      "acl": { "allow": [{ "principal": "INTERNET" }], "denyCode": 403 },
+      "jwt": { "bearerToken": true, "issuers": ["shop-issuer"] }
+    },
+    {
+      "protocol": "http",
+      "class": "com.example.inventory.ShopEndpoint",
+      "method": "removeItem",
+      "httpMethod": "DELETE",
+      "path": "/shop/items/{id}",
+      "acl": { "allow": [{ "principal": "INTERNET" }], "denyCode": 403 },
+      "jwt": { "bearerToken": true, "issuers": ["admin-issuer"] }
+    },
+    {
+      "protocol": "http",
+      "class": "com.example.inventory.ShopEndpoint",
+      "method": "addItem",
+      "httpMethod": "POST",
+      "path": "/shop/items/{id}",
+      "acl": { "allow": [{ "service": "billing" }], "deny": [{ "spiffe": "spiffe://acme.com/blocked/**" }], "denyCode": 404 },
+      "jwt": { "bearerToken": true, "staticClaims": [{ "claim": "role", "values": ["admin", "${SHOP_ROLE}"] }] }
+    },
+    {
+      "protocol": "http",
+      "class": "com.example.inventory.ShopEndpoint",
+      "method": "updates",
+      "httpMethod": "GET",
+      "path": "/shop/updates",
+      "webSocket": true,
+      "acl": { "allow": [{ "principal": "INTERNET" }], "denyCode": 403 },
+      "jwt": { "bearerToken": true, "issuers": ["shop-issuer"] }
+    },
+    {
+      "protocol": "mcp",
+      "class": "com.example.inventory.ShopMcpEndpoint",
+      "httpMethod": "POST",
+      "path": "/shop-mcp",
+      "acl": { "allow": [{ "service": "assistant", "scope": "PARENT_PROJECT" }], "denyCode": 403 }
+    },
+    {
+      "protocol": "http",
+      "class": "com.example.inventory.StatusEndpoint",
+      "method": "status",
+      "httpMethod": "PATCH",
+      "path": "/status",
+      "acl": { "denyAll": true, "denyCode": 403 }
     }
   ]
 }

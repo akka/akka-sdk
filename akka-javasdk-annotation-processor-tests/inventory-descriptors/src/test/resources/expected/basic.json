@@ -21,5 +21,15 @@
       "description": "Answers \"customer\" questions\nabout orders, café \\ more",
       "role": "support"
     }
+  ],
+  "routes": [
+    {
+      "protocol": "http",
+      "class": "com.example.shop.ShopEndpoint",
+      "method": "list",
+      "httpMethod": "GET",
+      "path": "/shop/",
+      "acl": { "denyAll": true, "denyCode": 403 }
+    }
   ]
 }

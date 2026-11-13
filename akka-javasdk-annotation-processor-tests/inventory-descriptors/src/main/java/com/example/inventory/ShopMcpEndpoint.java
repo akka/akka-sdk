@@ -4,7 +4,9 @@
 
 package com.example.inventory;
 
+import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.mcp.McpEndpoint;
 
-@McpEndpoint(serverName = "shop")
+@McpEndpoint(serverName = "shop", path = "/shop-mcp")
+@Acl(allow = @Acl.Matcher(service = "assistant", scope = Acl.Scope.PARENT_PROJECT))
 public class ShopMcpEndpoint {}

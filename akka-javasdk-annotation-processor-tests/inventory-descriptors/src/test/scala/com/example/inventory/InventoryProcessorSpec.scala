@@ -73,5 +73,23 @@ class InventoryProcessorSpec extends AnyWordSpec with Matchers {
       result.inventory("com.example", "shop") shouldBe defined
       new String(result.inventory("com.example", "shop").get, UTF_8) shouldNot include("com.example.shop.ShopSetup")
     }
+
+    "deny every caller of a route without @Acl" in {
+      val result = InventoryCompiler.compile("routes-default-deny")
+      withClue(result.diagnostics) { result.success shouldBe true }
+      new String(result.inventory("com.example", "shop").get, UTF_8) shouldBe expected("routes-default-deny.json")
+    }
+
+    "use the method-level @Acl and @JWT in place of the class-level ones" in {
+      val result = InventoryCompiler.compile("routes-method-override")
+      withClue(result.diagnostics) { result.success shouldBe true }
+      new String(result.inventory("com.example", "shop").get, UTF_8) shouldBe expected("routes-method-override.json")
+    }
+
+    "write an empty routes array when the compile has no endpoint" in {
+      val result = InventoryCompiler.compile("no-endpoint")
+      withClue(result.diagnostics) { result.success shouldBe true }
+      new String(result.inventory("com.example", "shop").get, UTF_8) should include("  \"routes\": []\n}")
+    }
   }
 }
