@@ -127,6 +127,7 @@ private[javasdk] object DecisionModelClientImpl {
             responseTimeout = p.responseTimeout,
             maxRetries = p.maxRetries,
             headers = toScalaHeaders(p.additionalModelRequestHeaders) ++ extraHeaders))
+      // Not reached: decide answers a Custom provider itself and resolves FromConfig to SystemOne or OpenAi first.
       case other =>
         throw new IllegalArgumentException(
           s"The decision model provider [${other.getClass.getName}] does not call a model API")
