@@ -16,6 +16,7 @@ import akkajavasdk.components.tracing.SpanRecordingAgent;
 import akkajavasdk.components.tracing.SpanRecordingEntity;
 import akkajavasdk.components.tracing.SpanRecordingWorkflow;
 import io.opentelemetry.api.trace.SpanContext;
+import io.opentelemetry.sdk.trace.data.SpanData;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
@@ -40,15 +41,20 @@ public class CurrentSpanScopesTest extends TestKitSupport {
     return SpanRecorder.recorded(key);
   }
 
-  // the recorded span belongs to a trace the runtime exported spans for
-  private void assertCurrentSpanOfRuntimeTrace(SpanContext recorded) {
+  // the recorded span is an exported runtime span with the expected name
+  private void assertCurrentSpanNamed(SpanContext recorded, String expectedName) {
     assertThat(recorded.isValid()).isTrue();
     Awaitility.await()
         .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(testKit.getInMemorySpanExporter().getFinishedSpanItems())
-                    .anyMatch(span -> span.getTraceId().equals(recorded.getTraceId())));
+                    .filteredOn(
+                        span ->
+                            span.getTraceId().equals(recorded.getTraceId())
+                                && span.getSpanId().equals(recorded.getSpanId()))
+                    .extracting(SpanData::getName)
+                    .containsExactly(expectedName));
   }
 
   @Test
@@ -56,7 +62,8 @@ public class CurrentSpanScopesTest extends TestKitSupport {
     var id = UUID.randomUUID().toString();
     componentClient.forEventSourcedEntity(id).method(SpanRecordingEntity::record).invoke();
 
-    assertCurrentSpanOfRuntimeTrace(awaitRecorded("entity:" + id));
+    assertCurrentSpanNamed(
+        awaitRecorded("entity:" + id), "Event Sourced Entity: span-recording-entity Record");
   }
 
   @Test
@@ -64,7 +71,7 @@ public class CurrentSpanScopesTest extends TestKitSupport {
     var id = UUID.randomUUID().toString();
     componentClient.forEventSourcedEntity(id).method(SpanRecordingEntity::record).invoke();
 
-    assertCurrentSpanOfRuntimeTrace(awaitRecorded("consumer:" + id));
+    assertCurrentSpanNamed(awaitRecorded("consumer:" + id), "Consumer: span-recording-consumer");
   }
 
   @Test
@@ -76,6 +83,7 @@ public class CurrentSpanScopesTest extends TestKitSupport {
     var recorded = awaitRecorded("view:" + id);
     assertThat(recorded.isValid()).isTrue();
     assertThat(recorded.getTraceId()).isEqualTo(awaitRecorded("entity:" + id).getTraceId());
+    assertCurrentSpanNamed(recorded, "Event Sourced Entity: span-recording-entity Record");
   }
 
   @Test
@@ -83,7 +91,8 @@ public class CurrentSpanScopesTest extends TestKitSupport {
     var id = UUID.randomUUID().toString();
     componentClient.forWorkflow(id).method(SpanRecordingWorkflow::start).invoke();
 
-    assertCurrentSpanOfRuntimeTrace(awaitRecorded("workflow:" + id));
+    assertCurrentSpanNamed(
+        awaitRecorded("workflow:" + id), "Workflow: span-recording-workflow recordStep");
   }
 
   @Test
@@ -102,6 +111,6 @@ public class CurrentSpanScopesTest extends TestKitSupport {
         .method(SpanRecordingAgent::query)
         .invoke(question);
 
-    assertCurrentSpanOfRuntimeTrace(awaitRecorded("agent-tool"));
+    assertCurrentSpanNamed(awaitRecorded("agent-tool"), "Tool call: SpanRecordingAgent_recordSpan");
   }
 }
