@@ -9,6 +9,10 @@
       "class": "com.example.shop.HealthEndpoint"
     },
     {
+      "kind": "mcp-endpoint",
+      "class": "com.example.shop.ShopMcpEndpoint"
+    },
+    {
       "kind": "http-endpoint",
       "class": "com.example.shop.StatusEndpoint"
     }
@@ -21,6 +25,13 @@
       "httpMethod": "GET",
       "path": "/health/live",
       "acl": { "allow": [{ "principal": "ALL" }], "denyCode": 403 }
+    },
+    {
+      "protocol": "mcp",
+      "class": "com.example.shop.ShopMcpEndpoint",
+      "httpMethod": "POST",
+      "path": "/mcp",
+      "acl": { "denyAll": true, "denyCode": 403 }
     },
     {
       "protocol": "http",

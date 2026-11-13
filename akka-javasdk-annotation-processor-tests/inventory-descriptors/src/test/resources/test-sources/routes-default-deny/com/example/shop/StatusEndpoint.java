@@ -10,4 +10,9 @@ public class StatusEndpoint {
   public String status() {
     return "ok";
   }
+
+  @Get("/secret")
+  String secret() {
+    return "secret";
+  }
 }
