@@ -201,18 +201,29 @@ public class Validations {
    * Validates that @Acl annotation is not used on non-endpoint components.
    *
    * <p>@Acl is only allowed on classes annotated with @HttpEndpoint, @GrpcEndpoint, @McpEndpoint,
-   * or @Produce.ServiceStream, and on methods within such classes.
+   * or @Produce.ServiceStream, and on methods within such classes. For @Produce.ServiceStream it is
+   * only allowed on the class.
    *
    * @param typeDef the component class to validate
    * @return a Validation result indicating success or failure
    */
   public static Validation aclValidation(TypeDef typeDef) {
-    // @Acl is also allowed on consumers with @Produce.ServiceStream
-    if (typeDef.hasAnnotation("akka.javasdk.annotations.Produce.ServiceStream")) {
-      return Validation.Valid.instance();
-    }
-
     List<String> errors = new ArrayList<>();
+
+    // @Acl is allowed on the class of consumers with @Produce.ServiceStream, the ACL is per stream
+    if (typeDef.hasAnnotation("akka.javasdk.annotations.Produce.ServiceStream")) {
+      for (MethodDef method : typeDef.getMethods()) {
+        if (method.hasAnnotation(ACL_ANNOTATION)) {
+          errors.add(
+              errorMessage(
+                  method,
+                  "@Acl annotation is not allowed on methods of classes annotated with"
+                      + " @Produce.ServiceStream, the ACL applies to the whole stream and is"
+                      + " declared on the class."));
+        }
+      }
+      return Validation.of(errors);
+    }
 
     if (typeDef.hasAnnotation(ACL_ANNOTATION)) {
       errors.add(
@@ -495,7 +506,7 @@ public class Validations {
       return Validation.Valid.instance();
     }
 
-    // @Acl is allowed on methods of consumers with @Produce.ServiceStream
+    // method-level @Acl on consumers with @Produce.ServiceStream is rejected by aclValidation
     if (typeDef.hasAnnotation("akka.javasdk.annotations.Produce.ServiceStream")) {
       return Validation.Valid.instance();
     }

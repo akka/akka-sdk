@@ -68,6 +68,17 @@ akka.javasdk.evaluation.evaluators.judge {
 
 For a summarization check, the criterion states that the reply keeps the facts of the source text. For a hallucination check, the criterion states that the reply claims nothing that the request and the tool results do not support. The xref:getting-started:planner-agent/eval.adoc[multi-agent tutorial] shows a judge evaluator with a fixed criterion and a typed verdict.
 
+[#acl-on-service-streams]
+=== @Acl on service streams
+
+The SDK now sends the `@Acl` of a Consumer with `@Produce.ServiceStream` to the runtime. This affects services that upgrade:
+
+* A class-level `@Acl` that had no effect now restricts who can consume the stream.
+* `@Acl` on a method of a Consumer with `@Produce.ServiceStream` fails compilation. Move it to the class.
+* `denyCode` on the class-level `@Acl` is a gRPC status code.
+
+See xref:sdk:consuming-producing.adoc#_event_producer[Event Producer].
+
 == SDK 3.7.0
 
 [#migrating-from-text-guardrail]

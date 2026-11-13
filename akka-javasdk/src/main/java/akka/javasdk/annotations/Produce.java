@@ -33,6 +33,10 @@ public @interface Produce {
    * components or external systems. Consuming services replay the stream, so the handler runs again
    * for already transformed events. The handler may be invoked in parallel and without ordering
    * guarantees, so it should not keep state or depend on the order of events.
+   *
+   * <p>Add {@link Acl} to the class to control which services can consume the stream. It applies to
+   * the whole stream and is not allowed on methods. Without {@link Acl}, all services in the same
+   * project can consume the stream, and it is not available from the internet.
    */
   @Target(ElementType.TYPE)
   @Retention(RetentionPolicy.RUNTIME)

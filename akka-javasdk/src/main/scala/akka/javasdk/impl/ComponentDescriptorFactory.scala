@@ -285,7 +285,9 @@ private[impl] object ComponentDescriptorFactory {
       Some(new ConsumerDestination.TopicDestination(topicName))
     } else if (hasStreamPublication(clazz)) {
       val streamAnn = clazz.getAnnotation(classOf[ServiceStream])
-      Some(new ConsumerDestination.ServiceStreamDestination(streamAnn.id()))
+      // only class-level @Acl maps onto the per-stream ACL; the runtime reads denyCode as a gRPC code
+      val acl = AclDescriptorFactory.deriveAclOptions(clazz.annotationOption[Acl], isGrpc = true)
+      Some(new ConsumerDestination.ServiceStreamDestination(streamAnn.id(), acl))
     } else {
       None
     }
