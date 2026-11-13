@@ -233,6 +233,7 @@ Add these to the sign-offs in the checklist for your deployment model. Adjust th
 == See also
 
 * xref:deployment:production-readiness/index.adoc[]
+* xref:deployment:production-readiness/financial-services.adoc[]
 * xref:concepts:governance-and-the-runtime.adoc[]
 * xref:sdk:agents/guardrails.adoc[Guardrails]
 * xref:sdk:evaluators.adoc[Evaluators]

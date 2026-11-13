@@ -52,6 +52,8 @@ If you serve or train models with Akka Optimize, see also xref:deployment:produc
 
 If you run agents or call models from your application, see also xref:deployment:production-readiness/agentic-ai.adoc[].
 
+If you run an AI workload at a financial firm, see also xref:deployment:production-readiness/financial-services.adoc[].
+
 == Readiness pages
 
 Akka behaves identically across deployment models. What changes is how much of the operational surface you run; see xref:deployment:index.adoc[Choose how you run Akka] for how the models compare. The pages below cover Dedicated, BYOC, and BYOK8s, and mark where an item or an owner differs by model:
