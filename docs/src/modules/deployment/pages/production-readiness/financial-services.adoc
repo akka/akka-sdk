@@ -8,10 +8,33 @@ include::ROOT:partial$include.adoc[]
 
 [IMPORTANT]
 ====
-*This page is guidance, not legal or regulatory advice.* Your compliance team decides which rules apply to your workload and what they require. Akka does not interpret regulations or state retention periods. The rules named on this page often apply to financial firms, depending on the business and the jurisdiction. The list is not complete, and Akka does not say whether a rule applies to you.
+*This page is guidance, not legal or regulatory advice.* Your compliance team decides which rules apply to your workload and what they require. Akka does not interpret regulations or state retention periods.
 ====
 
 AI workloads at a financial firm often meet requirements that other workloads do not. This page lists the topics that come up most often, as questions for you to ask your own risk and compliance teams. It is not a gate and it adds no sign-offs to the xref:deployment:production-readiness/checklist.adoc[production readiness checklist] or the xref:deployment:production-readiness/agentic-ai.adoc[agentic AI checklist].
+
+The questions are based on rules that often apply to financial firms, depending on the business and the jurisdiction. The table lists them. It is not complete, and Akka does not say whether a rule applies to you. Other regions have similar rules.
+
+[cols="2,5,3",options="header"]
+|===
+|Rule |What it covers |Sections
+
+|SR 11-7
+|US guidance from the Federal Reserve on how banks manage the risk of models.
+|Model risk
+
+|SEC and FINRA recordkeeping rules
+|Which business records a firm must keep and for how long.
+|Evidence and recordkeeping
+
+|Fair lending and consumer protection laws
+|Prohibition of unfair treatment of customers in lending, and protection of consumers.
+|Fair lending, disclosure
+
+|DORA
+|EU regulation on digital operational resilience, including requirements for the ICT providers that a firm depends on.
+|Provider concentration, operational resilience
+|===
 
 Start by writing down which requirements apply to your firm and your workload: the regulators you answer to, the internal policies you follow, and the products and customers the workload touches. The questions below assume that you have this list.
 
@@ -28,8 +51,6 @@ Start by writing down which requirements apply to your firm and your workload: t
 
 == Model risk management and validation
 
-The questions below are based on rules that often apply to financial firms, such as SR 11-7, the US guidance from the Federal Reserve on how banks manage the risk of models. Other regions have similar guidance.
-
 * [ ] Does your model risk policy treat the agent, the model it calls, or both as a model that needs inventory and validation?
 * [ ] Who owns the validation, and is that person independent of the team that builds the agent?
 * [ ] What counts as a material change that triggers revalidation: a new model version, a prompt change, a new tool, or a change to retrieval data?
@@ -38,8 +59,6 @@ The questions below are based on rules that often apply to financial firms, such
 
 == Evidence and recordkeeping
 
-The questions below are based on rules that often apply to financial firms, such as the SEC and FINRA rules on which business records a firm must keep and for how long. Other regulators have similar rules.
-
 * [ ] Which interactions, decisions, and communications does your compliance team treat as records?
 * [ ] What retention period and storage format does your compliance team require for each kind of record?
 * [ ] Does the evidence you keep today cover those records: the prompt, the model, the tool calls, the guardrail outcomes, and the final result?
@@ -47,8 +66,6 @@ The questions below are based on rules that often apply to financial firms, such
 * [ ] Can you retrieve and produce the records for an auditor or a regulator within the time that they allow?
 
 == Fair lending and bias testing
-
-The questions below are based on rules that often apply to financial firms, such as laws that prohibit unfair treatment of customers in lending, and consumer protection rules.
 
 * [ ] Does the workload influence a decision that affects a customer, such as credit, pricing, eligibility, or service level?
 * [ ] Which groups and outcomes does your compliance team require you to test, and with which data?
@@ -65,8 +82,6 @@ The questions below are based on rules that often apply to financial firms, such
 
 == Third-party concentration risk for model providers
 
-The questions below are based on rules that often apply to financial firms, such as DORA, the EU regulation on digital operational resilience, which includes requirements for the ICT providers that a firm depends on. Other regulators have third-party risk guidance.
-
 * [ ] Does your third-party risk policy classify the model provider as a critical or important third party?
 * [ ] Which contractual terms does your policy require from the provider, for example audit rights, incident notice, and exit support?
 * [ ] How many workloads depend on the same provider, model, or region?
@@ -74,8 +89,6 @@ The questions below are based on rules that often apply to financial firms, such
 * [ ] What happens to the workload if the provider retires the model that you use?
 
 == Operational resilience
-
-The questions below are based on rules that often apply to financial firms, such as DORA, the EU regulation that requires firms to withstand and recover from technology disruptions. Other regulators have similar operational resilience rules.
 
 * [ ] Is the workload part of an important business service, and which impact tolerance and recovery objectives apply to it?
 * [ ] Do the recovery objectives of the workload match those of the services that depend on it? See xref:deployment:production-readiness/disaster-recovery.adoc[].
