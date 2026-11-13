@@ -101,6 +101,22 @@ Access these documentation files for detailed patterns:
 - `akka-context/reference/config/reference.html.md` - Full configuration reference
 - `ai-coding-assistant-guidelines.html.md` - Best practices
 
+### SDK source code
+
+To check a class, a method signature, or the Javadoc of an SDK API, read the SDK source code. Do not use `javap` or list the contents of jar files.
+
+Unpack the sources of the SDK version that the project uses:
+
+```shell
+mvn -q dependency:unpack-dependencies -Dclassifier=sources \
+  -DincludeGroupIds=io.akka -DincludeArtifactIds=akka-javasdk-testkit,akka-javasdk \
+  -DoutputDirectory=target/akka-sdk-sources
+```
+
+- The public API is in `target/akka-sdk-sources/akka/javasdk/`. Classes in `impl` packages are internal. Do not use them in service code.
+- A search from the project root skips `target/`. Search in `target/akka-sdk-sources` explicitly.
+- Run the command again after `mvn clean`. After a change of the SDK version, delete `target/akka-sdk-sources` first, then run the command.
+
 ### When to Read Documentation
 
 **MANDATORY - Always read documentation BEFORE coding for:**
@@ -110,7 +126,7 @@ Access these documentation files for detailed patterns:
 - **Autonomous Agents** - ALWAYS read `autonomous-agents.html.md` first time in session (durable execution, tasks, multi-agent coordination)
 - **First-time component generation** - Read relevant doc for ANY component type not yet created in this session
 - **User-specified features you're uncertain about**
-- **API mismatches or errors**
+- **API mismatches or errors** - read the SDK source code, see "SDK source code"
 
 **Use memorized patterns for:**
 - Similar components already created in session (after documentation has been read once)
