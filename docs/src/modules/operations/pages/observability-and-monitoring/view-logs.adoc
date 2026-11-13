@@ -53,11 +53,11 @@ Akka adds the fields to logs written from:
 * command handlers of entities, workflows, timed actions and agents
 * consumers and view updaters
 * workflow steps and agent function tools
-* HTTP endpoint methods, and MCP endpoint tools, prompts and resources
+* HTTP and gRPC endpoint methods, and MCP endpoint tools, prompts and resources
 
 If you start a span with `tracing().startSpan(...)` and make it current, logs written in that scope carry the ID of your span.
 
-Akka sets the trace context on the thread that calls your code. Logs written later on another thread, for example in a callback on a returned `CompletionStage`, do not include the fields. Logs written in gRPC endpoint methods do not include the fields.
+Akka sets the trace context on the thread that calls your code. Logs written later on another thread, for example in a callback on a returned `CompletionStage`, do not include the fields.
 
 == See also
 
