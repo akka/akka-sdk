@@ -1,0 +1,37 @@
+package demo.activities.application;
+
+import akka.Done;
+import akka.javasdk.annotations.Component;
+import akka.javasdk.eventsourcedentity.EventSourcedEntity;
+import demo.activities.domain.Preferences;
+import demo.activities.domain.PreferencesEvent;
+import java.util.List;
+
+@Component(id = "preferences")
+public class PreferencesEntity extends EventSourcedEntity<Preferences, PreferencesEvent> {
+
+  public record AddPreference(String preference) {}
+
+  @Override
+  public Preferences emptyState() {
+    return new Preferences(List.of());
+  }
+
+  public Effect<Done> addPreference(AddPreference command) {
+    return effects()
+      .persist(new PreferencesEvent.PreferenceAdded(command.preference()))
+      .thenReply(__ -> Done.done());
+  }
+
+  public Effect<Preferences> getPreferences() {
+    return effects().reply(currentState());
+  }
+
+  @Override
+  public Preferences applyEvent(PreferencesEvent event) {
+    return switch (event) {
+      case PreferencesEvent.PreferenceAdded evt -> currentState()
+        .addPreference(evt.preference());
+    };
+  }
+}
