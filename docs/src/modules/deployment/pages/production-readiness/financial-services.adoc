@@ -8,7 +8,7 @@ include::ROOT:partial$include.adoc[]
 
 [IMPORTANT]
 ====
-*This page is guidance, not legal or regulatory advice.* Your compliance team decides which rules apply to your workload and what they require. Akka does not interpret regulations or state retention periods. The regulations named on this page are commonly relevant to financial services, and the list is not complete.
+*This page is guidance, not legal or regulatory advice.* Your compliance team decides which rules apply to your workload and what they require. Akka does not interpret regulations or state retention periods. The rules named on this page often apply to financial firms, depending on the business and the jurisdiction. The list is not complete, and Akka does not say whether a rule applies to you.
 ====
 
 AI workloads at a financial firm often meet requirements that other workloads do not. This page lists the topics that come up most often, as questions for you to ask your own risk and compliance teams. It is not a gate and it adds no sign-offs to the xref:deployment:production-readiness/checklist.adoc[production readiness checklist] or the xref:deployment:production-readiness/agentic-ai.adoc[agentic AI checklist].
@@ -28,7 +28,7 @@ Start by writing down which requirements apply to your firm and your workload: t
 
 == Model risk management and validation
 
-Regulation commonly relevant: SR 11-7 (US supervisory guidance on model risk management), and equivalent guidance in other jurisdictions.
+Rules that often apply to financial firms: SR 11-7, the US guidance from the Federal Reserve on how banks manage the risk of models. Other regions have similar guidance.
 
 * [ ] Does your model risk policy treat the agent, the model it calls, or both as a model that needs inventory and validation?
 * [ ] Who owns the validation, and is that person independent of the team that builds the agent?
@@ -38,7 +38,7 @@ Regulation commonly relevant: SR 11-7 (US supervisory guidance on model risk man
 
 == Evidence and recordkeeping
 
-Regulations commonly relevant: SEC and FINRA recordkeeping rules, and the recordkeeping rules of your other regulators.
+Rules that often apply to financial firms: the SEC and FINRA rules on which business records a firm must keep and for how long. Other regulators have similar rules.
 
 * [ ] Which interactions, decisions, and communications does your compliance team treat as records?
 * [ ] What retention period and storage format does your compliance team require for each kind of record?
@@ -48,7 +48,7 @@ Regulations commonly relevant: SEC and FINRA recordkeeping rules, and the record
 
 == Fair lending and bias testing
 
-Regulations commonly relevant: fair lending and equal credit opportunity rules, and consumer protection rules.
+Rules that often apply to financial firms: laws that prohibit unfair treatment of customers in lending, and consumer protection rules.
 
 * [ ] Does the workload influence a decision that affects a customer, such as credit, pricing, eligibility, or service level?
 * [ ] Which groups and outcomes does your compliance team require you to test, and with which data?
@@ -65,7 +65,7 @@ Regulations commonly relevant: fair lending and equal credit opportunity rules, 
 
 == Third-party concentration risk for model providers
 
-Regulation commonly relevant: DORA (EU Digital Operational Resilience Act), and third-party risk guidance from your other regulators.
+Rules that often apply to financial firms: DORA, the EU regulation on digital operational resilience, which includes requirements for the ICT providers that a firm depends on. Other regulators have third-party risk guidance.
 
 * [ ] Does your third-party risk policy classify the model provider as a critical or important third party?
 * [ ] Which contractual terms does your policy require from the provider, for example audit rights, incident notice, and exit support?
@@ -75,7 +75,7 @@ Regulation commonly relevant: DORA (EU Digital Operational Resilience Act), and 
 
 == Operational resilience
 
-Regulations commonly relevant: DORA, and the operational resilience rules of your other regulators.
+Rules that often apply to financial firms: DORA, the EU regulation that requires firms to withstand and recover from technology disruptions, and the operational resilience rules of other regulators.
 
 * [ ] Is the workload part of an important business service, and which impact tolerance and recovery objectives apply to it?
 * [ ] Do the recovery objectives of the workload match those of the services that depend on it? See xref:deployment:production-readiness/disaster-recovery.adoc[].
