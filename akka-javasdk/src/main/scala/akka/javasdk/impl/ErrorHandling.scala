@@ -39,6 +39,15 @@ private[javasdk] object ErrorHandling {
     }
   }
 
+  def withMdcCorrelationId[T](correlationId: Option[String])(block: => T): T =
+    correlationId match {
+      case Some(id) =>
+        MDC.put(CorrelationIdMdcKey, id)
+        try block
+        finally MDC.remove(CorrelationIdMdcKey)
+      case None => block
+    }
+
   /**
    * For Java
    */
