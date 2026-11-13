@@ -9,17 +9,26 @@ flowchart TD
         agent["in-cluster agent or service"]
         endpoint["KalixModelEndpoint<br/>models + apiKeySecret"]
         svc["Service (ExternalName)<br/>CNAME to gateway envoy"]
-        docs["docs-engine"]
-        tiny["tiny-engine"]
+        docs["docs-engine<br/>vLLM"]
+        tiny["tiny-engine<br/>vLLM"]
+    end
+    subgraph kuberay["kuberay namespace"]
+        ray["Ray cluster (KubeRay)<br/>training runs and candidate serving"]
+    end
+    subgraph gpus["GPU node pool"]
+        gpu["GPU devices<br/>one DRA ResourceClaim per project namespace"]
     end
     subgraph gwsys["agentgateway-system"]
         gw["gateway envoy<br/>listener per endpoint FQDN<br/>Bearer key + request surface + model table"]
     end
     client -->|"https://host/v1"| route
     route -->|"Host rewritten to internal FQDN<br/>l5d-dst-override to gateway svc"| svc
-    agent -->|"http://endpoint.project.svc.cluster.local/v1<br/>Authorization: Bearer"| svc
+    agent -->|"calls the endpoint through its route"| route
     endpoint -.->|"renders"| svc
     svc -.->|"DNS only (CNAME)"| gw
     endpoint -.->|"listener, table rows, key policy"| gw
     gw -->|"model: docs<br/>mesh: only gateway identity admitted"| docs
     gw -->|"model: tiny<br/>mesh: only gateway identity admitted"| tiny
+    docs -.->|"DRA ResourceClaim"| gpu
+    tiny -.->|"DRA ResourceClaim"| gpu
+    ray -.->|"claims GPUs outside per-project allocations"| gpu
