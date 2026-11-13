@@ -144,6 +144,21 @@
       "jwt": { "bearerToken": true, "issuers": ["shop-issuer"] }
     },
     {
+      "protocol": "grpc",
+      "class": "com.example.inventory.ShopGrpcEndpoint",
+      "service": "com.example.inventory.ShopService",
+      "method": "GetItem",
+      "acl": { "allow": [{ "service": "*" }], "denyCode": 7 }
+    },
+    {
+      "protocol": "grpc",
+      "class": "com.example.inventory.ShopGrpcEndpoint",
+      "service": "com.example.inventory.ShopService",
+      "method": "ListItems",
+      "acl": { "allow": [{ "principal": "ALL" }], "denyCode": 5 },
+      "jwt": { "bearerToken": true, "staticClaims": [{ "claim": "sub", "pattern": "^user-.*$" }] }
+    },
+    {
       "protocol": "mcp",
       "class": "com.example.inventory.ShopMcpEndpoint",
       "httpMethod": "POST",
