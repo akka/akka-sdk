@@ -17,11 +17,11 @@ import akka.runtime.sdk.spi.RequestPrincipal
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaArray
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaObject
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaString
+import akka.runtime.sdk.spi.SpiSpiffeContext
 import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.Logger
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.read.ListAppender
-import akka.runtime.sdk.spi.SpiSpiffeContext
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.SpanContext
 import io.opentelemetry.api.trace.TraceFlags
