@@ -75,9 +75,11 @@ A `Decision` can be stored in component state, for example in workflow state, an
 
 == Configuring the model provider
 
-The client uses the provider configured in `akka.javasdk.decision.model-provider`. Set it to the name of a provider configuration section. Two sections are predefined. The `system-one` section configures a model that implements the SystemOne API of link:{url-typesafe-jev}[TypeSafe Jev, window="new"]. The `openai` section configures a model of the link:{url-openai-decisions}[OpenAI Decisions API, window="new"].
+The client uses the provider configured in `akka.javasdk.decision.model-provider`. Set it to the name of a provider configuration section. Two sections are predefined: `system-one` and `openai`.
 
-To use a SystemOne model:
+=== SystemOne decision models
+
+The `system-one` section configures a model that implements the SystemOne API of link:{url-typesafe-jev}[TypeSafe Jev, window="new"]:
 
 [source,hocon]
 .src/main/resources/application.conf
@@ -92,7 +94,9 @@ akka.javasdk.decision {
 
 The API key defaults to the `SYSTEM_ONE_API_KEY` environment variable. A call without an API key or model name fails with an `IllegalArgumentException`. Pin a model version once you have tuned your thresholds, because an alias such as `jev-latest` can move to a new version.
 
-To use a model of the OpenAI Decisions API:
+=== OpenAI decision models
+
+The `openai` section configures a model of the link:{url-openai-decisions}[OpenAI Decisions API, window="new"]:
 
 [source,hocon]
 .src/main/resources/application.conf
@@ -105,11 +109,11 @@ akka.javasdk.decision {
 }
 ----
 
-The API key defaults to the `OPENAI_API_KEY` environment variable, which the OpenAI model provider of agents also reads. As for SystemOne, a call without an API key or model name fails with an `IllegalArgumentException`. The `base-url` setting includes the version path of the API, as in the default `https://api.openai.com/v1`.
+The API key defaults to the `OPENAI_API_KEY` environment variable, which the OpenAI model provider of agents also reads. A call without an API key or model name fails with an `IllegalArgumentException`. The `base-url` setting includes the version path of the API, as in the default `https://api.openai.com/v1`.
 
-An OpenAI predicate question has no separate criteria. With the `openai` provider, the client adds the `whenTrue` and `whenFalse` texts of a predicate question to its instructions, as lines that start with `True when:` and `False when:`.
+=== Choosing a provider for one call
 
-To use a different provider for one call, define a configuration section that inherits the provider defaults, and pass its name to `DecisionModelClient.model`:
+To use a different provider for one call, define a configuration section that inherits the provider defaults. Pass `DecisionModelProvider.fromConfig` with the section name to `DecisionModelClient.model`:
 
 [source,hocon]
 .src/main/resources/application.conf

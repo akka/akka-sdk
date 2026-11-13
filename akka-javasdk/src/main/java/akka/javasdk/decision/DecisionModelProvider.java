@@ -231,9 +231,6 @@ public sealed interface DecisionModelProvider
 
   /**
    * A model of the OpenAI Decisions API. The request goes to {@code /decisions} under the base URL.
-   * The client adds the {@link Question.Predicate#whenTrue() whenTrue} and {@link
-   * Question.Predicate#whenFalse() whenFalse} of a predicate question to its instructions, as lines
-   * that start with {@code True when:} and {@code False when:}.
    *
    * @param apiKey the API key, sent as a bearer token. A call without an API key fails.
    * @param modelName the model name, for example {@code gpt-6-luna}
