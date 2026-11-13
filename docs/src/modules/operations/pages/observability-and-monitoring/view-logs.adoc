@@ -51,13 +51,21 @@ Use the trace ID to find the trace of a log message in your tracing backend. For
 Akka adds the fields to logs written from:
 
 * command handlers of entities, workflows, timed actions and agents
-* consumers and view updaters
+* consumers and view updaters. A view updater has the span of the event, which is the span that wrote the event.
 * workflow steps and agent function tools
 * HTTP and gRPC endpoint methods, and MCP endpoint tools, prompts and resources
 
 If you start a span with `tracing().startSpan(...)` and make it current, logs written in that scope carry the ID of your span.
 
 Akka sets the trace context on the thread that calls your code. Logs written later on another thread, for example in a callback on a returned `CompletionStage`, do not include the fields.
+
+Akka does not set the trace context around every method it calls. Logs written from these do not include the fields:
+
+* the `map` and `onFailure` functions of an agent effect
+* guardrails and evaluators
+* the other methods of an autonomous agent
+
+In production, Akka adds the fields when it writes the JSON log, from the current span. A log pattern that reads `%X{trace_id}`, for example in a `logback-test.xml` of your own, does not show the trace ID. The same applies to code that copies the MDC to another thread.
 
 == See also
 
