@@ -21,6 +21,7 @@ import java.util.Objects;
 public sealed interface DecisionModelProvider
     permits DecisionModelProvider.FromConfig,
         DecisionModelProvider.SystemOne,
+        DecisionModelProvider.OpenAi,
         DecisionModelProvider.Custom {
 
   /** The provider configured in {@code akka.javasdk.decision.model-provider}. */
@@ -137,7 +138,7 @@ public sealed interface DecisionModelProvider
           config.getDuration("response-timeout"),
           config.getInt("max-retries"),
           config.getStringList("additional-model-request-headers").stream()
-              .map(SystemOne::parseHeader)
+              .map(DecisionModelProvider::parseHeader)
               .toList());
     }
 
@@ -211,14 +212,151 @@ public sealed interface DecisionModelProvider
       return new SystemOne(
           apiKey, modelName, baseUrl, connectionTimeout, responseTimeout, maxRetries, headers);
     }
+  }
 
-    private static HttpHeader parseHeader(String entry) {
-      int colonIdx = entry.indexOf(':');
-      if (colonIdx < 0)
-        throw new IllegalArgumentException(
-            "Invalid header format [" + entry + "], expected 'name:value'");
-      return RawHeader.create(entry.substring(0, colonIdx), entry.substring(colonIdx + 1));
+  /**
+   * An OpenAI provider with the defaults of {@code akka.javasdk.decision.openai}. Set the API key
+   * and the model name.
+   */
+  static OpenAi openAi() {
+    return new OpenAi(
+        "",
+        "",
+        "https://api.openai.com/v1",
+        Duration.ofSeconds(15),
+        Duration.ofSeconds(30),
+        2,
+        List.of());
+  }
+
+  /**
+   * A model of the OpenAI Decisions API. The request goes to {@code /decisions} under the base URL.
+   *
+   * @param apiKey the API key, sent as a bearer token. A call without an API key fails.
+   * @param modelName the model name, for example {@code gpt-6-luna}
+   * @param baseUrl the base URL of the API, including the version path, for example {@code
+   *     https://api.openai.com/v1}
+   * @param connectionTimeout fail the request when connecting takes longer than this
+   * @param responseTimeout fail the request when the answer takes longer than this. The timeout
+   *     applies to each attempt.
+   * @param maxRetries if the request fails with a rate limit, a server error, a timeout or a
+   *     connection failure, retry this many times
+   * @param additionalModelRequestHeaders HTTP headers added to each request
+   */
+  record OpenAi(
+      String apiKey,
+      String modelName,
+      String baseUrl,
+      Duration connectionTimeout,
+      Duration responseTimeout,
+      int maxRetries,
+      List<HttpHeader> additionalModelRequestHeaders)
+      implements DecisionModelProvider {
+
+    public OpenAi {
+      Objects.requireNonNull(apiKey, "apiKey");
+      Objects.requireNonNull(modelName, "modelName");
+      Objects.requireNonNull(baseUrl, "baseUrl");
+      Objects.requireNonNull(connectionTimeout, "connectionTimeout");
+      Objects.requireNonNull(responseTimeout, "responseTimeout");
+      additionalModelRequestHeaders =
+          List.copyOf(
+              Objects.requireNonNull(
+                  additionalModelRequestHeaders, "additionalModelRequestHeaders"));
     }
+
+    /** Read the provider from a configuration section such as {@code openai}. */
+    public static OpenAi fromConfig(Config config) {
+      return new OpenAi(
+          config.getString("api-key"),
+          config.getString("model-name"),
+          config.getString("base-url"),
+          config.getDuration("connection-timeout"),
+          config.getDuration("response-timeout"),
+          config.getInt("max-retries"),
+          config.getStringList("additional-model-request-headers").stream()
+              .map(DecisionModelProvider::parseHeader)
+              .toList());
+    }
+
+    public OpenAi withApiKey(String apiKey) {
+      return new OpenAi(
+          apiKey,
+          modelName,
+          baseUrl,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public OpenAi withModelName(String modelName) {
+      return new OpenAi(
+          apiKey,
+          modelName,
+          baseUrl,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public OpenAi withBaseUrl(String baseUrl) {
+      return new OpenAi(
+          apiKey,
+          modelName,
+          baseUrl,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public OpenAi withConnectionTimeout(Duration connectionTimeout) {
+      return new OpenAi(
+          apiKey,
+          modelName,
+          baseUrl,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public OpenAi withResponseTimeout(Duration responseTimeout) {
+      return new OpenAi(
+          apiKey,
+          modelName,
+          baseUrl,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public OpenAi withMaxRetries(int maxRetries) {
+      return new OpenAi(
+          apiKey,
+          modelName,
+          baseUrl,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          additionalModelRequestHeaders);
+    }
+
+    public OpenAi withAdditionalModelRequestHeaders(List<HttpHeader> headers) {
+      return new OpenAi(
+          apiKey, modelName, baseUrl, connectionTimeout, responseTimeout, maxRetries, headers);
+    }
+  }
+
+  private static HttpHeader parseHeader(String entry) {
+    int colonIdx = entry.indexOf(':');
+    if (colonIdx < 0)
+      throw new IllegalArgumentException(
+          "Invalid header format [" + entry + "], expected 'name:value'");
+    return RawHeader.create(entry.substring(0, colonIdx), entry.substring(colonIdx + 1));
   }
 
   /**
