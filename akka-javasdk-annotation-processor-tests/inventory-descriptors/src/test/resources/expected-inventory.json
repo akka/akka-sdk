@@ -1,0 +1,95 @@
+{
+  "formatVersion": 1,
+  "groupId": "com.example",
+  "artifactId": "test",
+  "componentLibrary": false,
+  "components": [
+    {
+      "kind": "durable-evaluator",
+      "id": "audit",
+      "class": "com.example.inventory.AuditEvaluator"
+    },
+    {
+      "kind": "consumer",
+      "id": "cart-consumer",
+      "class": "com.example.inventory.CartConsumer"
+    },
+    {
+      "kind": "key-value-entity",
+      "id": "cart",
+      "class": "com.example.inventory.CartEntity"
+    },
+    {
+      "kind": "view",
+      "id": "carts",
+      "class": "com.example.inventory.CartsView"
+    },
+    {
+      "kind": "timed-action",
+      "id": "cleanup",
+      "class": "com.example.inventory.CleanupAction"
+    },
+    {
+      "kind": "event-sourced-entity",
+      "id": "counter",
+      "class": "com.example.inventory.CounterEntity"
+    },
+    {
+      "kind": "timed-action",
+      "id": "nested-action",
+      "class": "com.example.inventory.Outer$NestedAction"
+    },
+    {
+      "kind": "autonomous-agent",
+      "id": "planner",
+      "class": "com.example.inventory.PlannerAgent",
+      "description": "Plans tasks",
+      "role": "planner"
+    },
+    {
+      "kind": "timed-action",
+      "id": "report",
+      "class": "com.example.inventory.ReportAction"
+    },
+    {
+      "kind": "agent",
+      "id": "role-agent",
+      "class": "com.example.inventory.RoleAgent",
+      "name": "Role Agent",
+      "description": "Answers questions",
+      "role": "helper"
+    },
+    {
+      "kind": "http-endpoint",
+      "class": "com.example.inventory.ShopEndpoint"
+    },
+    {
+      "kind": "grpc-endpoint",
+      "class": "com.example.inventory.ShopGrpcEndpoint"
+    },
+    {
+      "kind": "mcp-endpoint",
+      "class": "com.example.inventory.ShopMcpEndpoint"
+    },
+    {
+      "kind": "evaluator",
+      "id": "tone",
+      "class": "com.example.inventory.ToneEvaluator"
+    },
+    {
+      "kind": "workflow",
+      "id": "transfer",
+      "class": "com.example.inventory.TransferWorkflow"
+    },
+    {
+      "kind": "timed-action",
+      "id": "notifier-a",
+      "class": "com.example.inventory.a.Notifier"
+    },
+    {
+      "kind": "timed-action",
+      "id": "notifier-b",
+      "class": "com.example.inventory.b.Notifier"
+    }
+  ]
+}

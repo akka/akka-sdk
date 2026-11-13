@@ -120,6 +120,9 @@
                             <annotationProcessor>
                                 akka.javasdk.tooling.processor.ComponentAnnotationProcessor
                             </annotationProcessor>
+                            <annotationProcessor>
+                                akka.javasdk.tooling.processor.InventoryProcessor
+                            </annotationProcessor>
                         </annotationProcessors>
                         <annotationProcessorPaths>
                             <path>
@@ -544,9 +547,11 @@
                 </plugins>
             </build>
         </profile>
-        <!-- Clean build output with a stale component descriptor: a service without a descriptor, or a
-             descriptor with a service marker that does not match non-akka-service. This happens with build
-             output from an earlier SDK version or after a change of non-akka-service.
+        <!-- Clean build output with a stale component descriptor or inventory: a service without a
+             descriptor, a descriptor with a service marker that does not match non-akka-service, a
+             descriptor or inventory that another tool wrote after the last Maven compile, or a descriptor
+             with components but no inventory, as build output from an earlier SDK has. This happens with
+             build output from an earlier SDK version, after a change of non-akka-service, or after an IDE build.
              Maven profile file-based activation does not support wildcards or ${project.*}
              properties, so we use antrun instead. The profile only
              activates when target/classes already exists (previous build output present). -->
@@ -574,21 +579,41 @@
                                     <target xmlns:if="ant:if">
                                         <property name="descriptor.file"
                                                   value="META-INF/akka-javasdk-components_${project.groupId}_${project.artifactId}.conf"/>
+                                        <property name="inventory.file"
+                                                  value="META-INF/akka-javasdk-inventory_${project.groupId}_${project.artifactId}.json"/>
                                         <condition property="descriptor.marker.expected" value="false" else="true">
                                             <istrue value="${non-akka-service}"/>
                                         </condition>
                                         <macrodef name="clean-on-stale-descriptor">
                                             <attribute name="dir"/>
+                                            <attribute name="status-file"/>
                                             <attribute name="clean-when-missing"/>
                                             <sequential>
                                                 <local name="descriptor.present"/>
                                                 <local name="descriptor.marked"/>
+                                                <local name="status.present"/>
+                                                <local name="status.uptodate"/>
+                                                <local name="descriptor.components"/>
+                                                <local name="inventory.present"/>
                                                 <local name="descriptor.stale"/>
                                                 <available property="descriptor.present" file="@{dir}/${descriptor.file}"/>
+                                                <available property="status.present" file="@{status-file}"/>
+                                                <available property="inventory.present" file="@{dir}/${inventory.file}"/>
+                                                <uptodate property="status.uptodate" targetfile="@{status-file}">
+                                                    <srcfiles dir="@{dir}" includes="${descriptor.file},${inventory.file}"
+                                                              erroronmissingdir="false"/>
+                                                </uptodate>
                                                 <condition property="descriptor.marked" value="true" else="false">
                                                     <resourcecount when="greater" count="0">
                                                         <fileset dir="@{dir}" includes="${descriptor.file}" erroronmissingdir="false">
                                                             <containsregexp expression="service\s*=\s*true"/>
+                                                        </fileset>
+                                                    </resourcecount>
+                                                </condition>
+                                                <condition property="descriptor.components">
+                                                    <resourcecount when="greater" count="0">
+                                                        <fileset dir="@{dir}" includes="${descriptor.file}" erroronmissingdir="false">
+                                                            <containsregexp expression="components\s*\{"/>
                                                         </fileset>
                                                     </resourcecount>
                                                 </condition>
@@ -602,14 +627,25 @@
                                                             <isset property="descriptor.present"/>
                                                             <not><equals arg1="${descriptor.marked}" arg2="${descriptor.marker.expected}"/></not>
                                                         </and>
+                                                        <and>
+                                                            <isset property="status.present"/>
+                                                            <not><isset property="status.uptodate"/></not>
+                                                        </and>
+                                                        <and>
+                                                            <isset property="descriptor.components"/>
+                                                            <not><isset property="inventory.present"/></not>
+                                                        </and>
                                                     </or>
                                                 </condition>
                                                 <delete dir="@{dir}" if:set="descriptor.stale"/>
                                             </sequential>
                                         </macrodef>
                                         <clean-on-stale-descriptor dir="target/classes"
+                                                                   status-file="target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst"
                                                                    clean-when-missing="${descriptor.marker.expected}"/>
-                                        <clean-on-stale-descriptor dir="target/test-classes" clean-when-missing="false"/>
+                                        <clean-on-stale-descriptor dir="target/test-classes"
+                                                                   status-file="target/maven-status/maven-compiler-plugin/testCompile/default-testCompile/createdFiles.lst"
+                                                                   clean-when-missing="false"/>
                                     </target>
                                 </configuration>
                             </execution>
