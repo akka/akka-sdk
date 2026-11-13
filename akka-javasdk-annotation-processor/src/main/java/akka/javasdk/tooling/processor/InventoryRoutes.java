@@ -162,9 +162,10 @@ final class InventoryRoutes {
 
     var classAcl = AnnotationValues.find(type, ACL_ANNOTATION);
     var classJwt = AnnotationValues.find(type, JWT_ANNOTATION);
-    var publicMethods =
+    var annotatedMethods =
         ElementFilter.methodsIn(elements.getAllMembers(type)).stream()
             .filter(method -> method.getModifiers().contains(Modifier.PUBLIC))
+            .filter(InventoryRoutes::hasAclOrJwt)
             .toList();
 
     List<InventoryRoute> routes = new ArrayList<>();
@@ -175,8 +176,8 @@ final class InventoryRoutes {
       }
 
       var methodName = method.getSimpleName();
-      var implementation =
-          publicMethods.stream()
+      var annotatedMethod =
+          annotatedMethods.stream()
               .filter(candidate -> candidate.getSimpleName().contentEquals(methodName))
               .findFirst();
 
@@ -190,14 +191,19 @@ final class InventoryRoutes {
               Optional.empty(),
               false,
               acl(
-                  implementation.flatMap(m -> AnnotationValues.find(m, ACL_ANNOTATION)),
+                  annotatedMethod.flatMap(m -> AnnotationValues.find(m, ACL_ANNOTATION)),
                   classAcl,
                   DEFAULT_GRPC_DENY_CODE),
               jwt(
-                  implementation.flatMap(m -> AnnotationValues.find(m, JWT_ANNOTATION)),
+                  annotatedMethod.flatMap(m -> AnnotationValues.find(m, JWT_ANNOTATION)),
                   classJwt)));
     }
     return routes;
+  }
+
+  private static boolean hasAclOrJwt(ExecutableElement method) {
+    return AnnotationValues.find(method, ACL_ANNOTATION).isPresent()
+        || AnnotationValues.find(method, JWT_ANNOTATION).isPresent();
   }
 
   private static Optional<String> grpcServiceName(TypeElement serviceInterface) {

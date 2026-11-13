@@ -100,6 +100,14 @@ class InventoryProcessorSpec extends AnyWordSpec with Matchers {
       json should include("\"acl\": { \"denyAll\": true, \"denyCode\": 7 }")
     }
 
+    "read the method-level @Acl of a gRPC route from the public method that carries it" in {
+      val result = InventoryCompiler.compile("grpc-method-overload")
+      withClue(result.diagnostics) { result.success shouldBe true }
+      val json = new String(result.inventory("com.example", "shop").get, UTF_8)
+      json should include(
+        "\"method\": \"GetItem\",\n      \"acl\": { \"allow\": [{ \"principal\": \"INTERNET\" }], \"denyCode\": 7 }")
+    }
+
     "report an error for a gRPC endpoint without exactly one interface" in {
       val result = InventoryCompiler.compile("grpc-without-interface")
       result.success shouldBe false
