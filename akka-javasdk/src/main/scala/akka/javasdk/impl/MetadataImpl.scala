@@ -187,22 +187,10 @@ private[javasdk] class MetadataImpl private (val entries: Seq[SpiMetadataEntry])
 
   override def asMetadata(): Metadata = this
 
-  lazy val traceId: Option[String] = {
-    val otelContext = W3CTraceContextPropagator
-      .getInstance()
-      .extract(OtelContext.current(), asMetadata(), metadataGetter)
-
-    Span.fromContext(otelContext).getSpanContext.getTraceId match {
-      case "00000000000000000000000000000000" =>
-        None // when no traceId returns io.opentelemetry.api.trace.TraceId.INVALID
-      case traceId => Some(traceId)
-    }
-  }
-
   lazy val context: Option[OtelContext] = {
     val otelContext = W3CTraceContextPropagator
       .getInstance()
-      .extract(OtelContext.current(), asMetadata(), metadataGetter)
+      .extract(OtelContext.root(), asMetadata(), metadataGetter)
 
     Span.fromContext(otelContext).getSpanContext.getTraceId match {
       case "00000000000000000000000000000000" =>
