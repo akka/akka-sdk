@@ -136,7 +136,7 @@ The following is a list of all natively supported model configurations. Remember
 
 |===
 
-Use `adaptive-thinking` and `effort` for Claude Opus 4.6, Sonnet 4.6 and newer models, and `thinking-budget-tokens` for older models, such as Claude Haiku 4.5. The agent sends the effort with each request to the model, also for a structured response. With a `thinking-budget-tokens` above 0, the agent sends the thinking back to the model. With `adaptive-thinking` it does not, neither in the request that follows a round of tool calls nor from session memory. An agent with both `adaptive-thinking` and a `thinking-budget-tokens` above 0 fails before it calls the model.
+Use `adaptive-thinking` and `effort` for Claude Opus 4.6, Sonnet 4.6 and newer models, and `thinking-budget-tokens` for older models, such as Claude Haiku 4.5. The agent sends the effort with each request to the model, also for a structured response. With a `thinking-budget-tokens` above 0, the agent sends the thinking back to the model. With `adaptive-thinking` it does not, neither in the request that follows a round of tool calls nor from session memory. The service starts with both `adaptive-thinking` and a `thinking-budget-tokens` above 0. Each request to an agent with both fails before the agent calls the model. An autonomous agent instance with both fails when it starts.
 
 Example configuration for adaptive thinking:
 
