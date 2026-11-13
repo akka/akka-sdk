@@ -281,16 +281,20 @@ final class InventoryRoutes {
 
   private static Optional<InventoryRoute.Jwt> jwt(
       Optional<AnnotationMirror> methodJwt, Optional<AnnotationMirror> classJwt) {
-    return methodJwt
-        .or(() -> classJwt)
-        .map(
-            jwt ->
-                new InventoryRoute.Jwt(
-                    AnnotationValues.enumConstants(jwt, "validate").contains("BEARER_TOKEN"),
-                    AnnotationValues.strings(jwt, "bearerTokenIssuers"),
-                    AnnotationValues.mirrors(jwt, "staticClaims").stream()
-                        .map(InventoryRoutes::claim)
-                        .toList()));
+    return methodJwt.or(() -> classJwt).map(InventoryRoutes::jwt);
+  }
+
+  private static InventoryRoute.Jwt jwt(AnnotationMirror jwt) {
+    if (!AnnotationValues.enumConstants(jwt, "validate").contains("BEARER_TOKEN")) {
+      return new InventoryRoute.Jwt(false, List.of(), List.of());
+    }
+
+    return new InventoryRoute.Jwt(
+        true,
+        AnnotationValues.strings(jwt, "bearerTokenIssuers"),
+        AnnotationValues.mirrors(jwt, "staticClaims").stream()
+            .map(InventoryRoutes::claim)
+            .toList());
   }
 
   private static InventoryRoute.Claim claim(AnnotationMirror claim) {

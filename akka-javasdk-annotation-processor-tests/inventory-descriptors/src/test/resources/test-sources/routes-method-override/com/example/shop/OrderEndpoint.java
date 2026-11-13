@@ -11,7 +11,10 @@ import akka.javasdk.annotations.http.HttpEndpoint;
 @JWT(
     validate = JWT.JwtMethodMode.BEARER_TOKEN,
     bearerTokenIssuers = {"issuer-a", "issuer-b"},
-    staticClaims = @JWT.StaticClaim(claim = "tenant", values = "acme"))
+    staticClaims = {
+      @JWT.StaticClaim(claim = "tenant", values = "acme"),
+      @JWT.StaticClaim(claim = "role", pattern = "^ops-\\d+$")
+    })
 public class OrderEndpoint {
 
   @Get("/{id}")

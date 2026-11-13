@@ -17,7 +17,7 @@
       "httpMethod": "DELETE",
       "path": "/orders/{id}",
       "acl": { "deny": [{ "principal": "INTERNET" }], "denyCode": 403 },
-      "jwt": { "bearerToken": false, "staticClaims": [{ "claim": "role", "pattern": "^ops-\\d+$" }] }
+      "jwt": { "bearerToken": false }
     },
     {
       "protocol": "http",
@@ -26,7 +26,7 @@
       "httpMethod": "GET",
       "path": "/orders/{id}",
       "acl": { "allow": [{ "service": "frontend" }], "denyCode": 401 },
-      "jwt": { "bearerToken": true, "issuers": ["issuer-a", "issuer-b"], "staticClaims": [{ "claim": "tenant", "values": ["acme"] }] }
+      "jwt": { "bearerToken": true, "issuers": ["issuer-a", "issuer-b"], "staticClaims": [{ "claim": "tenant", "values": ["acme"] }, { "claim": "role", "pattern": "^ops-\\d+$" }] }
     }
   ]
 }
