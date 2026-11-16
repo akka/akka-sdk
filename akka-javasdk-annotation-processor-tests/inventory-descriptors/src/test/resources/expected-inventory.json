@@ -148,7 +148,8 @@
       "class": "com.example.inventory.ShopGrpcEndpoint",
       "service": "com.example.inventory.ShopService",
       "method": "GetItem",
-      "acl": { "allow": [{ "service": "*" }], "denyCode": 7 }
+      "acl": { "allow": [{ "service": "*" }], "denyCode": 7 },
+      "jwt": { "bearerToken": true, "issuers": ["grpc-issuer"] }
     },
     {
       "protocol": "grpc",
@@ -159,11 +160,20 @@
       "jwt": { "bearerToken": true, "staticClaims": [{ "claim": "sub", "pattern": "^user-.*$" }] }
     },
     {
+      "protocol": "grpc",
+      "class": "com.example.inventory.ShopGrpcEndpoint",
+      "service": "com.example.inventory.ShopService",
+      "method": "RemoveItem",
+      "acl": { "allow": [{ "service": "*" }], "denyCode": 7 },
+      "jwt": { "bearerToken": true, "issuers": ["admin-issuer"] }
+    },
+    {
       "protocol": "mcp",
       "class": "com.example.inventory.ShopMcpEndpoint",
       "httpMethod": "POST",
       "path": "/shop-mcp",
-      "acl": { "allow": [{ "service": "assistant", "scope": "PARENT_PROJECT" }], "denyCode": 403 }
+      "acl": { "allow": [{ "service": "assistant", "scope": "PARENT_PROJECT" }], "denyCode": 403 },
+      "jwt": { "bearerToken": true, "issuers": ["mcp-issuer"] }
     },
     {
       "protocol": "http",

@@ -10,6 +10,7 @@ import akka.javasdk.annotations.JWT;
 
 @GrpcEndpoint
 @Acl(allow = @Acl.Matcher(service = "*"))
+@JWT(validate = JWT.JwtMethodMode.BEARER_TOKEN, bearerTokenIssuers = "grpc-issuer")
 public class ShopGrpcEndpoint implements ShopGrpcService {
 
   @Override
@@ -24,5 +25,11 @@ public class ShopGrpcEndpoint implements ShopGrpcService {
       staticClaims = @JWT.StaticClaim(claim = "sub", pattern = "^user-.*$"))
   public String listItems(String filter) {
     return filter;
+  }
+
+  @Override
+  @JWT(validate = JWT.JwtMethodMode.BEARER_TOKEN, bearerTokenIssuers = "admin-issuer")
+  public String removeItem(String id) {
+    return id;
   }
 }

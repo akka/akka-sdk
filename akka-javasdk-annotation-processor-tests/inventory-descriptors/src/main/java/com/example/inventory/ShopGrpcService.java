@@ -9,6 +9,8 @@ public interface ShopGrpcService {
 
   String listItems(String filter);
 
+  String removeItem(String id);
+
   default String ping() {
     return "pong";
   }
