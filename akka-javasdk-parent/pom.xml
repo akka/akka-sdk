@@ -734,7 +734,7 @@
         <profile>
             <id>standalone</id>
             <properties>
-                <docker.base.image>eclipse-temurin:21.0.1_12-jre-jammy</docker.base.image>
+                <docker.base.image>eclipse-temurin:25.0.5_8-jre-resolute</docker.base.image>
             </properties>
             <dependencyManagement>
                 <dependencies>
