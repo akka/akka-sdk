@@ -22,25 +22,32 @@ object WorkflowDescriptor {
       method.getName
     }
   }
-}
 
-class WorkflowDescriptor(workflow: Workflow[_]) {
+  /** The names of the steps of a workflow class, each once, sorted. */
+  def stepNames(workflowClass: Class[_]): Seq[String] =
+    stepMethods(workflowClass).filterNot(_.isSynthetic).map(stepMethodName).distinct.sorted
 
-  // lookup for StepMethods in this class, and its super classes
-  // stops when it reaches Any
-  private val stepMethods = {
+  // The methods that return StepEffect in the class, its super classes and its interfaces.
+  // The lookup stops at Object.
+  private def stepMethods(workflowClass: Class[_]): Seq[Method] = {
     def allMethods(c: Class[_]): Seq[Method] = {
       if (c == null || c == classOf[Object]) Seq.empty
       else c.getDeclaredMethods.toSeq ++ allMethods(c.getSuperclass) ++ c.getInterfaces.flatMap(allMethods)
     }
 
-    allMethods(workflow.getClass)
-      .filter(m => m.getReturnType == classOf[StepEffect])
+    allMethods(workflowClass).filter(m => m.getReturnType == classOf[StepEffect])
+  }
+}
+
+class WorkflowDescriptor(workflow: Workflow[_]) {
+
+  private val stepMethods =
+    WorkflowDescriptor
+      .stepMethods(workflow.getClass)
       .map { m =>
         new StepMethod(stepMethodName(m), m)
       }
       .toList
-  }
 
   def findStepMethodByName(name: String): Option[StepMethod] =
     stepMethods.find(_.methodName() == name)

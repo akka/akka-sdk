@@ -125,6 +125,7 @@ import akka.javasdk.impl.timer.TimerSchedulerImpl
 import akka.javasdk.impl.view.ViewDescriptorFactory
 import akka.javasdk.impl.workflow.WorkflowContextImpl
 import akka.javasdk.impl.workflow.WorkflowImpl
+import akka.javasdk.impl.workflow.{ WorkflowDescriptor => SdkWorkflowDescriptor }
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.keyvalueentity.KeyValueEntityContext
 import akka.javasdk.ledger.LedgerClient
@@ -1191,8 +1192,7 @@ private final class Sdk(
             provided = false,
             protobufDescriptors = protobufDescriptors.toVector,
             componentType = WorkflowType,
-            // FIXME: pass the workflow step names
-            stepNames = Nil)
+            stepNames = SdkWorkflowDescriptor.stepNames(clz))
 
       case clz if Reflect.isTimedAction(clz) =>
         val componentId = Reflect.readComponentId(clz)
