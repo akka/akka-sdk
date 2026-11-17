@@ -47,11 +47,14 @@ public abstract class BaseAkkaProcessor extends AbstractProcessor {
 
   /** Returns the class output file at {@code path}, or empty when the file does not exist. */
   protected Optional<FileObject> existingOutputResource(String path) throws IOException {
-    var resource = processingEnv.getFiler().getResource(StandardLocation.CLASS_OUTPUT, "", path);
-    try (var in = resource.openInputStream()) {
-      return Optional.of(resource);
+    try {
+      var resource = processingEnv.getFiler().getResource(StandardLocation.CLASS_OUTPUT, "", path);
+      try (var in = resource.openInputStream()) {
+        return Optional.of(resource);
+      }
     } catch (NoSuchFileException | FileNotFoundException ex) {
       // javac throws NoSuchFileException. IntelliJ's JPS throws FileNotFoundException.
+      // ECJ throws FileNotFoundException from getResource.
       return Optional.empty();
     }
   }

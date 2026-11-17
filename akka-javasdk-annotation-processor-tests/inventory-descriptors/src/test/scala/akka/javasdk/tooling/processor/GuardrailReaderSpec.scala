@@ -20,10 +20,19 @@ class GuardrailReaderSpec extends AnyWordSpec with Matchers {
     ConfigFactory.parseString(hocon).resolve()
 
   private def read(config: Config): List[InventoryGuardrail] =
-    GuardrailReader.read(config).asScala.toList
+    GuardrailReader.read(config, _ => ()).asScala.toList
+
+  private def readWithWarnings(config: Config): (List[InventoryGuardrail], List[String]) = {
+    val warnings = List.newBuilder[String]
+    val guardrails = GuardrailReader.read(config, warning => warnings += warning).asScala.toList
+    (guardrails, warnings.result())
+  }
+
+  private def unresolved(hocon: String): Config =
+    ConfigFactory.parseString(hocon).resolve(ConfigResolveOptions.noSystem().setAllowUnresolved(true))
 
   private def failure(config: Config): String =
-    intercept[InventoryException](GuardrailReader.read(config)).getMessage
+    intercept[InventoryException](GuardrailReader.read(config, _ => ())).getMessage
 
   "GuardrailReader" should {
 
@@ -53,7 +62,28 @@ class GuardrailReaderSpec extends AnyWordSpec with Matchers {
           java.util.List.of("a", "b"),
           java.util.List.of("r"),
           java.util.List.of("t1", "t2"),
-          Optional.of("CTRL-7")))
+          Optional.of("CTRL-7"),
+          java.util.List.of()))
+    }
+
+    "drop duplicate list entries" in {
+      val config = parse("""
+        |akka.javasdk.agent.guardrails {
+        |  refund-limit {
+        |    class = "com.example.RefundLimitGuard"
+        |    category = POLICY
+        |    agents = [b, a, b]
+        |    agent-roles = [r, r]
+        |    tools = [t, t]
+        |  }
+        |}
+        |""".stripMargin)
+
+      val guardrail = read(config).head
+
+      guardrail.agents() shouldBe java.util.List.of("a", "b")
+      guardrail.agentRoles() shouldBe java.util.List.of("r")
+      guardrail.tools() shouldBe java.util.List.of("t")
     }
 
     "apply the defaults" in {
@@ -77,7 +107,8 @@ class GuardrailReaderSpec extends AnyWordSpec with Matchers {
           java.util.List.of("*"),
           java.util.List.of(),
           java.util.List.of(),
-          Optional.empty()))
+          Optional.empty(),
+          java.util.List.of()))
     }
 
     "leave out disabled guardrails" in {
@@ -172,6 +203,92 @@ class GuardrailReaderSpec extends AnyWordSpec with Matchers {
       message should include("category")
     }
 
+    "fail on a blank class" in {
+      val config = parse("""
+        |akka.javasdk.agent.guardrails {
+        |  refund-limit {
+        |    class = " "
+        |    category = POLICY
+        |    agents = ["*"]
+        |  }
+        |}
+        |""".stripMargin)
+
+      val message = failure(config)
+
+      message should include("refund-limit")
+      message should include("blank value [class]")
+    }
+
+    "fail on a control-id that is not a string" in {
+      val config = parse("""
+        |akka.javasdk.agent.guardrails {
+        |  refund-limit {
+        |    class = "com.example.RefundLimitGuard"
+        |    category = POLICY
+        |    agents = ["*"]
+        |    control-id = 42
+        |  }
+        |}
+        |""".stripMargin)
+
+      val message = failure(config)
+
+      message should include("refund-limit")
+      message should include("wrong type, expected a string [control-id]")
+    }
+
+    "fail on a blank control-id" in {
+      val config = parse("""
+        |akka.javasdk.agent.guardrails {
+        |  refund-limit {
+        |    class = "com.example.RefundLimitGuard"
+        |    category = POLICY
+        |    agents = ["*"]
+        |    control-id = ""
+        |  }
+        |}
+        |""".stripMargin)
+
+      val message = failure(config)
+
+      message should include("refund-limit")
+      message should include("blank value [control-id]")
+    }
+
+    "fail on a control-id longer than 256 characters" in {
+      val config = parse(s"""
+        |akka.javasdk.agent.guardrails {
+        |  refund-limit {
+        |    class = "com.example.RefundLimitGuard"
+        |    category = POLICY
+        |    agents = ["*"]
+        |    control-id = "${"x" * 257}"
+        |  }
+        |}
+        |""".stripMargin)
+
+      val message = failure(config)
+
+      message should include("refund-limit")
+      message should include("value longer than 256 characters [control-id]")
+    }
+
+    "accept a control-id of 256 characters" in {
+      val config = parse(s"""
+        |akka.javasdk.agent.guardrails {
+        |  refund-limit {
+        |    class = "com.example.RefundLimitGuard"
+        |    category = POLICY
+        |    agents = ["*"]
+        |    control-id = "${"x" * 256}"
+        |  }
+        |}
+        |""".stripMargin)
+
+      read(config).head.controlId() shouldBe Optional.of("x" * 256)
+    }
+
     "fail on an unknown fail-mode" in {
       val config = parse("""
         |akka.javasdk.agent.guardrails {
@@ -191,23 +308,71 @@ class GuardrailReaderSpec extends AnyWordSpec with Matchers {
       message should include("sometimes")
     }
 
-    "fail on an unresolved recorded value" in {
-      val config = ConfigFactory
-        .parseString("""
-          |akka.javasdk.agent.guardrails {
-          |  refund-limit {
-          |    class = "com.example.RefundLimitGuard"
-          |    category = POLICY
-          |    agents = ${GUARDRAIL_AGENTS}
-          |  }
-          |}
-          |""".stripMargin)
-        .resolve(ConfigResolveOptions.noSystem().setAllowUnresolved(true))
+    "record unresolved values as unknown and warn for each" in {
+      val config = unresolved("""
+        |akka.javasdk.agent.guardrails {
+        |  refund-limit {
+        |    class = ${GUARDRAIL_CLASS}
+        |    category = POLICY
+        |    report-only = ${GUARDRAIL_REPORT_ONLY}
+        |    fail-mode = ${GUARDRAIL_FAIL_MODE}
+        |    agents = ["*"]
+        |    tools = ${GUARDRAIL_TOOLS}
+        |    control-id = ${GUARDRAIL_CONTROL_ID}
+        |  }
+        |}
+        |""".stripMargin)
 
-      val message = failure(config)
+      val (guardrails, warnings) = readWithWarnings(config)
 
-      message should include("refund-limit")
-      message should include("agents")
+      val guardrail = guardrails.head
+      guardrail.unknownKeys() shouldBe java.util.List.of("class", "control-id", "fail-mode", "report-only", "tools")
+      guardrail.category() shouldBe "POLICY"
+      guardrail.agents() shouldBe java.util.List.of("*")
+      warnings should have size 5
+      warnings.head should startWith("The service inventory lists [class] of guardrail [refund-limit] as unknown.")
+    }
+
+    "list a guardrail with unresolved selectors" in {
+      val config = unresolved("""
+        |akka.javasdk.agent.guardrails {
+        |  refund-limit {
+        |    class = "com.example.RefundLimitGuard"
+        |    category = POLICY
+        |    agents = ${GUARDRAIL_AGENTS}
+        |    agent-roles = ${GUARDRAIL_AGENT_ROLES}
+        |  }
+        |}
+        |""".stripMargin)
+
+      val (guardrails, warnings) = readWithWarnings(config)
+
+      guardrails.map(_.name()) shouldBe List("refund-limit")
+      guardrails.head.unknownKeys() shouldBe java.util.List.of("agent-roles", "agents")
+      warnings should have size 2
+    }
+
+    "list an unresolved guardrail entry with every field unknown" in {
+      val config = unresolved("""
+        |akka.javasdk.agent.guardrails {
+        |  refund-limit = ${REFUND_GUARD}
+        |}
+        |""".stripMargin)
+
+      val (guardrails, warnings) = readWithWarnings(config)
+
+      guardrails.map(_.name()) shouldBe List("refund-limit")
+      guardrails.head.unknownKeys() shouldBe java.util.List.of(
+        "agent-roles",
+        "agents",
+        "category",
+        "class",
+        "control-id",
+        "fail-mode",
+        "report-only",
+        "tools")
+      warnings should have size 8
+      warnings.foreach(_ should include("of guardrail [refund-limit] as unknown"))
     }
   }
 }

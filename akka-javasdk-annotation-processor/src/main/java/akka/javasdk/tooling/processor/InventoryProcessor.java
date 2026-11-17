@@ -133,7 +133,7 @@ public class InventoryProcessor extends BaseAkkaProcessor {
     List<InventoryGuardrail> guardrails;
     try {
       var config = InventoryConfig.merge(readApplicationConf(), readSdkDefaults());
-      guardrails = GuardrailReader.read(config);
+      guardrails = GuardrailReader.read(config, this::warning);
     } catch (InventoryException ex) {
       error(ex.getMessage());
       return;
@@ -164,7 +164,10 @@ public class InventoryProcessor extends BaseAkkaProcessor {
           processingEnv
               .getFiler()
               .getResource(StandardLocation.CLASS_PATH, SDK_DEFAULTS_PACKAGE, SDK_DEFAULTS_FILE);
-      return InventoryConfig.parse(resource.toUri().toURL());
+      try (var reader = resource.openReader(true)) {
+        return InventoryConfig.parse(
+            reader, SDK_DEFAULTS_PATH, include -> warnSkippedInclude(SDK_DEFAULTS_PATH, include));
+      }
     } catch (NoSuchFileException | FileNotFoundException ex) {
       throw new InventoryException(
           "Akka SDK annotation processor cannot find "
@@ -185,11 +188,25 @@ public class InventoryProcessor extends BaseAkkaProcessor {
         debug("No application.conf found for the inventory");
         return Optional.empty();
       }
-      return Optional.of(InventoryConfig.parse(resource.get().toUri().toURL()));
+      return Optional.of(
+          InventoryConfig.parse(
+              resource.get().toUri().toURL(),
+              include -> warnSkippedInclude(APPLICATION_CONF, include)));
     } catch (IOException ex) {
       throw new InventoryException(
           "Akka SDK annotation processor cannot read " + APPLICATION_CONF + ": " + ex.getMessage(),
           ex);
     }
+  }
+
+  private void warnSkippedInclude(String file, String include) {
+    warning(
+        "The service inventory does not evaluate include "
+            + include
+            + " in "
+            + file
+            + ". Define the guardrails in "
+            + APPLICATION_CONF
+            + ".");
   }
 }

@@ -7,6 +7,7 @@ package com.example.inventory
 import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.Files
 import java.nio.file.Paths
+import javax.tools.Diagnostic
 
 import com.example.inventory.InventoryCompiler.DefaultOptions
 import org.scalatest.matchers.should.Matchers
@@ -97,11 +98,57 @@ class InventoryProcessorSpec extends AnyWordSpec with Matchers {
            |      "reportOnly": false,
            |      "failMode": "fail-closed",
            |      "agents": ["*"],
-           |      "agentRoles": []
+           |      "agentRoles": [],
+           |      "tools": []
            |    }
            |  ]
            |}
            |""".stripMargin)
+    }
+
+    "write unresolved guardrail values as unknown and warn for each" in {
+      val result = InventoryCompiler.compile("basic", applicationConf = Some("unresolved-guardrail.conf"))
+      withClue(result.diagnostics) { result.success shouldBe true }
+      new String(result.inventory("com.example", "shop").get, UTF_8) should endWith("""|  "guardrails": [
+           |    {
+           |      "name": "refund-limit",
+           |      "class": "com.example.eval.RefundLimitGuard",
+           |      "category": "POLICY",
+           |      "reportOnly": "unknown",
+           |      "failMode": "fail-closed",
+           |      "agents": "unknown",
+           |      "agentRoles": [],
+           |      "tools": [],
+           |      "controlId": "unknown"
+           |    },
+           |    {
+           |      "name": "shared-guard",
+           |      "class": "unknown",
+           |      "category": "unknown",
+           |      "reportOnly": "unknown",
+           |      "failMode": "unknown",
+           |      "agents": "unknown",
+           |      "agentRoles": "unknown",
+           |      "tools": "unknown",
+           |      "controlId": "unknown"
+           |    }
+           |  ]
+           |}
+           |""".stripMargin)
+
+      val warnings = result.diagnostics.filter(_.getKind == Diagnostic.Kind.WARNING).map(_.getMessage(null))
+      warnings.count(_.contains("of guardrail [refund-limit] as unknown")) shouldBe 3
+      warnings.count(_.contains("of guardrail [shared-guard] as unknown")) shouldBe 8
+      warnings.mkString should include("application.conf")
+    }
+
+    "warn about an include in application.conf" in {
+      val result = InventoryCompiler.compile("basic", applicationConf = Some("include-guardrails.conf"))
+      withClue(result.diagnostics) { result.success shouldBe true }
+      val warnings = result.diagnostics.filter(_.getKind == Diagnostic.Kind.WARNING).map(_.getMessage(null))
+      warnings.mkString should include(
+        "The service inventory does not evaluate include \"refund-limit.conf\" in application.conf")
+      new String(result.inventory("com.example", "shop").get, UTF_8) should endWith("  \"guardrails\": []\n}\n")
     }
 
     "write no inventory when a guardrail is invalid" in {

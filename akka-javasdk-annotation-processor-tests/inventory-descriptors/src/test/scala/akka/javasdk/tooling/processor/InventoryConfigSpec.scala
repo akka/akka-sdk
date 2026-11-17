@@ -21,7 +21,7 @@ class InventoryConfigSpec extends AnyWordSpec with Matchers {
   private def sdkDefaults: Config = {
     val resource = getClass.getClassLoader.getResource("akka/javasdk/governance.conf")
     require(resource != null, "Resource not found: akka/javasdk/governance.conf")
-    InventoryConfig.parse(resource)
+    InventoryConfig.parse(resource, _ => ())
   }
 
   private def write(folder: Path, name: String, content: String): URL =
@@ -31,8 +31,8 @@ class InventoryConfigSpec extends AnyWordSpec with Matchers {
     write(Files.createTempDirectory("inventory-config"), "application.conf", content)
 
   private def read(application: URL): List[InventoryGuardrail] = {
-    val config = InventoryConfig.merge(Optional.of(InventoryConfig.parse(application)), sdkDefaults)
-    GuardrailReader.read(config).asScala.toList
+    val config = InventoryConfig.merge(Optional.of(InventoryConfig.parse(application, _ => ())), sdkDefaults)
+    GuardrailReader.read(config, _ => ()).asScala.toList
   }
 
   "InventoryConfig" should {
@@ -69,12 +69,10 @@ class InventoryConfigSpec extends AnyWordSpec with Matchers {
         |}
         |""".stripMargin)
 
-      val exception = intercept[InventoryException](read(application))
-
-      exception.getMessage should include("unresolved substitution")
+      read(application).head.unknownKeys() shouldBe java.util.List.of("category")
     }
 
-    "follow a relative include" in {
+    "skip and report each include" in {
       val folder = Files.createTempDirectory("inventory-config")
       write(
         folder,
@@ -86,15 +84,38 @@ class InventoryConfigSpec extends AnyWordSpec with Matchers {
           |  agents = ["*"]
           |}
           |""".stripMargin)
-      val application = write(folder, "application.conf", "include \"guardrails.conf\"\n")
+      val application = write(
+        folder,
+        "application.conf",
+        """
+          |include "guardrails.conf"
+          |include classpath("shared.conf")
+          |include required(file("local.conf"))
+          |include url("http://example.com/remote.conf")
+          |""".stripMargin)
+      val includes = List.newBuilder[String]
 
-      read(application).map(_.name()) shouldBe List("refund-limit")
+      val config = InventoryConfig.parse(application, include => includes += include)
+
+      config.isEmpty shouldBe true
+      includes.result() shouldBe List(
+        "\"guardrails.conf\"",
+        "classpath(\"shared.conf\")",
+        "file(\"local.conf\")",
+        "url(\"http://example.com/remote.conf\")")
+    }
+
+    "report a syntax error with the reader description" in {
+      val exception = intercept[InventoryException](
+        InventoryConfig.parse(new java.io.StringReader("akka { "), "akka/javasdk/governance.conf", _ => ()))
+
+      exception.getMessage should include("akka/javasdk/governance.conf")
     }
 
     "report a syntax error with the file" in {
       val application = applicationConf("akka { ")
 
-      val exception = intercept[InventoryException](InventoryConfig.parse(application))
+      val exception = intercept[InventoryException](InventoryConfig.parse(application, _ => ()))
 
       exception.getMessage should include("application.conf")
     }
