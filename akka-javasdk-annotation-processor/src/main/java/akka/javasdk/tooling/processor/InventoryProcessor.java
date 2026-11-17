@@ -12,15 +12,15 @@ import java.util.Optional;
 import java.util.Set;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.ElementFilter;
 import javax.tools.StandardLocation;
 
 /**
  * Writes {@code META-INF/akka-javasdk-inventory_<groupId>_<artifactId>.json}, listing the
- * components and endpoints in the sources of the compile. Writes nothing when the compile has no
- * component or endpoint, or when an annotation processor reports an error in the same compile.
+ * components, endpoints and endpoint routes in the sources of the compile. Writes nothing when the
+ * compile has no component or endpoint, or when an annotation processor reports an error in the
+ * same compile.
  */
 @SupportedAnnotationTypes({
   "akka.javasdk.annotations.Component",
@@ -42,6 +42,7 @@ public class InventoryProcessor extends BaseAkkaProcessor {
   private static final String AGENT_ROLE_ANNOTATION = "akka.javasdk.annotations.AgentRole";
 
   private final List<InventoryComponent> components = new ArrayList<>();
+  private final List<InventoryRoute> routes = new ArrayList<>();
 
   private boolean alreadyRan = false;
   private String groupId;
@@ -81,6 +82,8 @@ public class InventoryProcessor extends BaseAkkaProcessor {
 
   private void collectComponents(
       Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+    var inventoryRoutes = new InventoryRoutes(processingEnv);
+
     for (TypeElement annotation : annotations) {
       for (TypeElement type :
           ElementFilter.typesIn(roundEnv.getElementsAnnotatedWith(annotation))) {
@@ -90,22 +93,25 @@ public class InventoryProcessor extends BaseAkkaProcessor {
         }
 
         var className = processingEnv.getElementUtils().getBinaryName(type).toString();
-        var component = findAnnotation(type, COMPONENT_ANNOTATION);
+        var component = AnnotationValues.find(type, COMPONENT_ANNOTATION);
 
         Optional<String> role = Optional.empty();
         if (kind.equals(ComponentKinds.AGENT) || kind.equals(ComponentKinds.AUTONOMOUS_AGENT)) {
           role =
-              findAnnotation(type, AGENT_ROLE_ANNOTATION).flatMap(m -> explicitValue(m, "value"));
+              AnnotationValues.find(type, AGENT_ROLE_ANNOTATION)
+                  .flatMap(m -> AnnotationValues.string(m, "value"));
         }
 
         components.add(
             new InventoryComponent(
                 kind,
-                component.flatMap(m -> explicitValue(m, "id")),
+                component.flatMap(m -> AnnotationValues.string(m, "id")),
                 className,
-                component.flatMap(m -> explicitValue(m, "name")),
-                component.flatMap(m -> explicitValue(m, "description")),
+                component.flatMap(m -> AnnotationValues.string(m, "name")),
+                component.flatMap(m -> AnnotationValues.string(m, "description")),
                 role));
+
+        routes.addAll(inventoryRoutes.routesOf(type, kind));
       }
     }
   }
@@ -114,7 +120,7 @@ public class InventoryProcessor extends BaseAkkaProcessor {
     var path = INVENTORY_FILE_PREFIX + groupId + "_" + artifactId + INVENTORY_FILE_SUFFIX;
     var componentLibrary =
         Boolean.parseBoolean(processingEnv.getOptions().get(OPTION_COMPONENT_LIBRARY));
-    var inventory = new Inventory(groupId, artifactId, componentLibrary, components);
+    var inventory = new Inventory(groupId, artifactId, componentLibrary, components, routes);
 
     try {
       var resource =
@@ -130,27 +136,5 @@ public class InventoryProcessor extends BaseAkkaProcessor {
               + ": "
               + ex.getMessage());
     }
-  }
-
-  private static Optional<AnnotationMirror> findAnnotation(
-      TypeElement type, String annotationName) {
-    for (AnnotationMirror mirror : type.getAnnotationMirrors()) {
-      var annotationType = (TypeElement) mirror.getAnnotationType().asElement();
-      if (annotationType.getQualifiedName().contentEquals(annotationName)) {
-        return Optional.of(mirror);
-      }
-    }
-    return Optional.empty();
-  }
-
-  /** Returns the explicit, non-empty string value of an annotation element. */
-  private static Optional<String> explicitValue(AnnotationMirror mirror, String elementName) {
-    return mirror.getElementValues().entrySet().stream()
-        .filter(entry -> entry.getKey().getSimpleName().contentEquals(elementName))
-        .map(entry -> entry.getValue().getValue())
-        .filter(String.class::isInstance)
-        .map(String.class::cast)
-        .filter(value -> !value.isEmpty())
-        .findFirst();
   }
 }

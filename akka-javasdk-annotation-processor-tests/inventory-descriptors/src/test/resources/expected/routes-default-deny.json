@@ -1,0 +1,45 @@
+{
+  "formatVersion": 1,
+  "groupId": "com.example",
+  "artifactId": "shop",
+  "componentLibrary": false,
+  "components": [
+    {
+      "kind": "http-endpoint",
+      "class": "com.example.shop.HealthEndpoint"
+    },
+    {
+      "kind": "mcp-endpoint",
+      "class": "com.example.shop.ShopMcpEndpoint"
+    },
+    {
+      "kind": "http-endpoint",
+      "class": "com.example.shop.StatusEndpoint"
+    }
+  ],
+  "routes": [
+    {
+      "protocol": "http",
+      "class": "com.example.shop.HealthEndpoint",
+      "method": "live",
+      "httpMethod": "GET",
+      "path": "/health/live",
+      "acl": { "allow": [{ "principal": "ALL" }], "denyCode": 403 }
+    },
+    {
+      "protocol": "mcp",
+      "class": "com.example.shop.ShopMcpEndpoint",
+      "httpMethod": "POST",
+      "path": "/mcp",
+      "acl": { "denyAll": true, "denyCode": 403 }
+    },
+    {
+      "protocol": "http",
+      "class": "com.example.shop.StatusEndpoint",
+      "method": "status",
+      "httpMethod": "GET",
+      "path": "/status/",
+      "acl": { "denyAll": true, "denyCode": 403 }
+    }
+  ]
+}
