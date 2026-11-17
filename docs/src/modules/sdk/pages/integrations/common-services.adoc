@@ -86,7 +86,7 @@ See xref:sdk:component-and-service-calls.adoc#_calling_akka_services_over_http[C
 
 Ask for a generated client with `grpcClientProvider.grpcClientFor(<client class>, "<service-name>")`. The client is generated from the `.proto` file of the service, so the compiler checks the contract at build time. A gRPC call suits a service with many callers, or callers in another project.
 
-Callers need the `.proto` file of the service. You can copy it into each caller or publish it in a shared library.
+Callers need the `.proto` file of the service. You can copy it into each caller or publish it in a shared library. A shared library suits a service with many callers, because the callers depend on one versioned contract.
 
 See xref:sdk:component-and-service-calls.adoc#_calling_akka_services_over_grpc[Calling Akka services over gRPC] and xref:sdk:grpc-endpoints.adoc[].
 
@@ -170,6 +170,7 @@ Publish a contract that you can keep stable, not the internal state of the servi
 * In a service-to-service stream, transform internal events into public event types and leave out what consumers do not need, such as who made a change and why. See xref:sdk:consuming-producing.adoc[Event Producer].
 * Keep each event below 1 MB. An event above that size cannot be consumed by other services. See xref:sdk:dev-best-practices.adoc#_the_1_mb_replication_ceiling[The 1 MB replication ceiling].
 * For gRPC, follow the rules for compatible changes to protobuf messages. See xref:sdk:grpc-endpoints.adoc[].
+* When several services use the same `.proto` file, publish it as a versioned shared library instead of copying it into each service. Change the version of the library with the contract. Each service then upgrades to a new version in its own release, and the compatibility rules let services on different versions keep working together. See xref:sdk:component-and-service-calls.adoc#_calling_akka_services_over_grpc[Calling Akka services over gRPC].
 
 [#duplicates-and-retries]
 == Handling duplicates and retries
