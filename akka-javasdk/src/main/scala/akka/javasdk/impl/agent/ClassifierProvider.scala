@@ -81,8 +81,8 @@ import io.opentelemetry.context.{ Context => TelemetryContext }
       val context = telemetryContext()
       val result = new CompletableFuture[Classification]()
       runtimeClassifierClient
-        .classify(name, new SpiClassifier.TextContent(input, context))
-        .map(ClassifierProvider.toClassification)(ExecutionContext.parasitic)
+        .classifyWithResult(name, new SpiClassifier.TextContent(input, context))
+        .map(r => ClassifierProvider.toClassification(r.classification))(ExecutionContext.parasitic)
         .onComplete { outcome =>
           def complete(): Unit = outcome match {
             case Success(classification) => result.complete(classification)

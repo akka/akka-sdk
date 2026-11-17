@@ -688,17 +688,17 @@
         <dependency>
             <groupId>io.akka</groupId>
             <artifactId>akka-runtime-core_2.13</artifactId>
-            <version>1.7.6</version>
+            <version>1.7.6-10-89d0cd55-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.akka</groupId>
             <artifactId>akka-runtime-dev_2.13</artifactId>
-            <version>1.7.6</version>
+            <version>1.7.6-10-89d0cd55-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.akka</groupId>
             <artifactId>akka-sdk-spi_2.13</artifactId>
-            <version>1.7.6</version>
+            <version>1.7.6-10-89d0cd55-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>

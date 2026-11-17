@@ -34,8 +34,10 @@ abstract class AbstractAclAnnotationValidationSpec(val validationMode: Validatio
       assertValid("valid/ValidConsumerWithServiceStreamAndAcl.java")
     }
 
-    "accept @Acl on method of Consumer with @Produce.ServiceStream" in {
-      assertValid("valid/ValidConsumerWithServiceStreamAndMethodAcl.java")
+    "reject @Acl on method of Consumer with @Produce.ServiceStream" in {
+      assertInvalid(
+        "invalid/AclOnMethodOfServiceStreamConsumer.java",
+        "@Acl annotation is not allowed on methods of classes annotated with @Produce.ServiceStream, the ACL applies to the whole stream and is declared on the class")
     }
 
     "accept a SPIFFE @Acl pattern with a trailing ** and single-segment wildcards" in {
