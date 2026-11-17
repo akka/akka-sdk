@@ -259,10 +259,14 @@ object ClassifierProviderSpec {
 
     def register(configured: Seq[SpiConfiguredClassifier]): Unit = byName = configured.map(c => c.name -> c).toMap
 
-    override def classify(name: String, content: SpiClassifier.Content): Future[SpiClassifier.Classification] =
+    override def classifyWithResult(
+        name: String,
+        content: SpiClassifier.Content): Future[SpiClassifier.ClassificationResult] =
       byName.get(name) match {
-        case Some(c) => Future(c.instance.classify(content))(ExecutionContext.parasitic).flatten
-        case None    => Future.failed(new IllegalArgumentException(s"No classifier registered with name [$name]"))
+        case Some(c) =>
+          Future(c.instance.classify(content))(ExecutionContext.parasitic).flatten
+            .map(new SpiClassifier.ClassificationResult(None, _))(ExecutionContext.parasitic)
+        case None => Future.failed(new IllegalArgumentException(s"No classifier registered with name [$name]"))
       }
   }
 

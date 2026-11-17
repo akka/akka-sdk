@@ -134,7 +134,7 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
       timestamp = Instant.EPOCH)
 
   private def spiModelResponse(tokenUsage: SpiAgent.SpiTokenUsage): SpiLedger.ModelResponse =
-    new SpiLedger.ModelResponse("m1", "", tokenUsage, "", Seq.empty)
+    new SpiLedger.ModelResponse("m1", "", tokenUsage, "", Seq.empty, Seq.empty)
 
   "Mapping an interaction record" should {
 
