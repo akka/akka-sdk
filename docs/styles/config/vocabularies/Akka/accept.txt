@@ -24,6 +24,7 @@ allowlisting
 [Aa]llowlists?
 allowMethods
 allowOrigins
+allowStreaming
 [Aa]lpakka
 anonymized
 [Aa]nthropic
@@ -235,6 +236,7 @@ iss
 Jamf
 jank
 Javadoc
+Jev
 jmesPath
 Json
 Jules
@@ -390,6 +392,7 @@ Rebase
 rebase
 rebased
 recompiles
+recordkeeping
 recoverability
 recurse
 redeliveries
@@ -490,6 +493,7 @@ substring
 [Ss]ubtasks?
 subtree
 Swiggy
+SystemOne
 Szymanski
 Tabnine
 teardown
@@ -528,6 +532,7 @@ Trivy
 truststore
 tsc
 Tubi
+TypeSafe
 [Tt]ypesafe
 uid
 UIs

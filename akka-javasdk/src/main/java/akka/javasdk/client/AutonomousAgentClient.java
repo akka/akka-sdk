@@ -74,6 +74,16 @@ public interface AutonomousAgentClient {
    * Apply per-instance configuration to this agent. The instructions override the static
    * instructions from the agent's definition, and capabilities extend the static capabilities.
    *
+   * <p>Call this once per instance, before any operation that triggers iteration, such as {@link
+   * #runSingleTask} or {@link #assignTasks}. A repeated call with the same instructions and the
+   * same capabilities in the same order succeeds. A retry is therefore safe. A call with a
+   * different setup throws an exception, and the agent keeps the setup it has.
+   *
+   * <p>The comparison also covers values that the capabilities take from the deployed components
+   * and from configuration: the descriptions, accepted tasks and request schemas of other agents,
+   * the result schemas of tasks, and default limits. A retry after a deployment that changed one of
+   * these values fails.
+   *
    * @param setup the per-instance configuration
    */
   default void setup(AgentSetup setup) {
@@ -85,7 +95,8 @@ public interface AutonomousAgentClient {
   }
 
   /**
-   * Async variant of {@link #setup}.
+   * Async variant of {@link #setup}. The returned stage fails when the agent already has a
+   * different setup.
    *
    * @param setup the per-instance configuration
    */

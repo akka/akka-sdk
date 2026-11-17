@@ -153,7 +153,8 @@ lazy val annotationProcessorTestProject: CompositeProject =
         libraryDependencies += Dependencies.scalaTest % Test,
         Compile / javacOptions ++= Seq(
           "-processor",
-          "akka.javasdk.tooling.processor.ComponentAnnotationProcessor",
+          "akka.javasdk.tooling.processor.ComponentAnnotationProcessor," +
+          "akka.javasdk.tooling.processor.InventoryProcessor",
           "-Aakka.javasdk.groupId=com.example",
           "-Aakka.javasdk.artifactId=test"),
         Compile / javacOptions ++= {
@@ -172,7 +173,7 @@ lazy val akkaJavaSdkEnforcer =
       autoScalaLibrary := false, // pure Java, no Scala dependency
       Compile / javacOptions ++= Seq("-encoding", "UTF-8", "--release", "11"),
       libraryDependencies ++= Seq(
-        "org.apache.maven.enforcer" % "enforcer-api" % "3.6.3" % Provided,
+        "org.apache.maven.enforcer" % "enforcer-api" % "3.7.0" % Provided,
         "org.apache.maven" % "maven-core" % "3.10.0" % Provided,
         "javax.inject" % "javax.inject" % "1" % Provided,
         Dependencies.junitJupiter % Test,

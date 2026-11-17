@@ -28,6 +28,7 @@ A route rule is a rule that defines how requests should be matched, and what the
 |*name*   |string                               |A name for this rule. Only used for debugging purposes.
 |*prefix* |string _required_                    |The prefix to match for this route. Must start with a `/`.
 |*route*  |<<RouteDestination>> _required_ |The destination for requests matched by this rule.
+|*allowStreaming* |boolean |Allows requests matched by this rule up to 30 minutes to complete, instead of 60 seconds. Use it for streaming endpoints. Defaults to `false`. See xref:operations:services/invoke-service.adoc#streaming[Routing streaming and long-running requests].
 |===
 
 === RouteDestination

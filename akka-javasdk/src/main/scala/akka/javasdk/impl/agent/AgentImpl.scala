@@ -89,11 +89,9 @@ import akka.stream.SystemMaterializer
 import akka.util.ByteString
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigException
-import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.LoggerFactory
-import org.slf4j.MDC
 
 /**
  * INTERNAL API
@@ -243,7 +241,6 @@ private[impl] object AgentImpl {
     toSpiModelProviderWithIdentityHeaders(modelProvider, config, componentId, globalIdentityHeaders(config))
 
   @tailrec
-  @nowarn("msg=deprecated")
   private def toSpiModelProviderWithIdentityHeaders(
       modelProvider: ModelProvider,
       config: Config,
@@ -348,7 +345,12 @@ private[impl] object AgentImpl {
             p.maxRetries(),
             p.additionalModelRequestHeaders().asScala.map(_.asInstanceOf[HttpHeader]).toSeq,
             identityHeaders),
-          thinking = p.thinking)
+          thinking = p.thinking,
+          api = p.api match {
+            case ModelProvider.OpenAiApi.CHAT_COMPLETIONS => SpiAgent.ModelProvider.OpenAiApi.ChatCompletions
+            case ModelProvider.OpenAiApi.RESPONSES        => SpiAgent.ModelProvider.OpenAiApi.Responses
+          },
+          reasoningEffort = p.reasoningEffort)
       case p: ModelProvider.AzureOpenAi =>
         new SpiAgent.ModelProvider.AzureOpenAi(
           endpoint = p.endpoint,
@@ -769,10 +771,6 @@ private[impl] final class AgentImpl(
     Future {
 
       val telemetryContext = Option(command.telemetryContext)
-      val traceId = telemetryContext.flatMap { context =>
-        Option(Span.fromContextOrNull(context)).map(_.getSpanContext.getTraceId)
-      }
-      traceId.foreach(id => MDC.put(Telemetry.TRACE_ID, id))
 
       // smuggling 0 arity methods called from the component client through here
       val cmdPayload = command.payload.getOrElse(BytesPayload.empty)
@@ -780,6 +778,7 @@ private[impl] final class AgentImpl(
       val agentContext =
         new AgentContextImpl(sessionId, regionInfo.selfRegion, metadata, telemetryContext, tracerFactory)
 
+      val traceScope = Telemetry.makeCurrent(telemetryContext)
       try {
         // we need the agent at this scope.
         // therefore, we initialize it exceptionally outside the router
@@ -864,7 +863,9 @@ private[impl] final class AgentImpl(
             val onSuccessAsSent = (sentUserMessage: SpiAgent.UserMessage, results: Seq[SpiAgent.Response]) =>
               onSuccess(sessionMemoryClient, sentUserMessage, userMessageAt, agentRole, results)
             val callToolFunction = (request: SpiAgent.ToolCallCommand) =>
-              Future(toolExecutor.executeMultimodal(request))(sdkExecutionContext)
+              Future {
+                Telemetry.withCurrentContext(Option(request.telemetryContext))(toolExecutor.executeMultimodal(request))
+              }(sdkExecutionContext)
 
             if (guardrails.hasLegacyModelGuardrails)
               new SpiAgent.RequestModelEffect(
@@ -924,7 +925,7 @@ private[impl] final class AgentImpl(
         case NonFatal(error) =>
           throw AgentException(command.name, s"Unexpected failure: $error", Some(error))
       } finally {
-        if (traceId.isDefined) MDC.remove(Telemetry.TRACE_ID)
+        traceScope.close()
       }
 
     }(sdkExecutionContext)
@@ -1007,6 +1008,10 @@ private[impl] final class AgentImpl(
             new ToolCallRequest(req.id, req.name, req.arguments)
           }.asJava
 
+          val attributes = res.attributes.asJava
+          val keptAttributes = ModelAttributes.keepStringValues(attributes)
+          ModelAttributes.logDroppedAttributes(componentId, sessionId, attributes, keptAttributes)
+
           new AiMessage(
             res.timestamp,
             res.content,
@@ -1014,7 +1019,7 @@ private[impl] final class AgentImpl(
             requests,
             res.thinking.toJava,
             toSessionTokenUsage(res.tokenUsage),
-            res.attributes.asJava)
+            keptAttributes)
 
         case res: SpiAgent.ToolCallResponse =>
           AgentImpl.toSessionToolCallResponse(
@@ -1041,7 +1046,6 @@ private[impl] final class AgentImpl(
     }
   }
 
-  @nowarn("msg=deprecated")
   private def mapSpiAgentException(func: Throwable => Any): Throwable => Any = {
 
     @nowarn("msg=deprecated")

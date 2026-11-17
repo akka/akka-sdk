@@ -4,96 +4,105 @@
 
 package akka.javasdk.testkit.eval;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import akka.javasdk.JsonSupport;
+import java.util.Optional;
 
 /**
- * One evaluation case: the command sent to the agent and the evaluators to run against the agent's
- * reply and tool calls.
+ * One evaluation case: the command sent to the agent, and optionally the reply the agent is
+ * expected to give. What the agent must do with the command is checked by the {@link
+ * akka.javasdk.evaluation.Evaluator} components bound to the agent in the configuration of the
+ * test. A case with an expected reply is also graded by the runner, see {@link Experiment#grade}.
  *
  * <p>The command is what the agent's command handler takes. It is a String for a handler that takes
  * the user message directly, or the handler's own type, such as a record with several fields. All
  * cases of one experiment must have the same command type.
  *
- * <pre>{@code
- * EvalCase.of("tier", "Which tier is cust_1 on?", Evaluators.shouldCallTools("getCustomer"));
+ * <p>The expected reply is what the command handler returns: a String for a handler that replies
+ * with the model text, or the type given to {@code responseConformsTo}. The expected reply is never
+ * sent to the agent. Within one experiment, either every case has an expected reply or none has.
  *
- * EvalCase.of(
- *     "tier-of-the-caller",
- *     new Ask("cust_1", "Which tier am I on?"),
- *     Evaluators.shouldCallTools("getCustomer"));
+ * <pre>{@code
+ * EvalCase.of("tier", "Which tier is cust_1 on?");
+ *
+ * EvalCase.of("tier-of-the-caller", new Ask("cust_1", "Which tier am I on?"));
+ *
+ * EvalCase.of("refund-route", "I want my money back", new Route("open-refund"));
  * }</pre>
  *
- * <p>The stubs the agent's tools call are prepared before the experiment runs, in the test. A case
- * derived from a recording also carries the tool calls production made, and the runner loads their
- * results into the stubs through the {@link ToolBindings} given to it before the case's turn.
+ * <p>A case without an expected reply that is kept in a field is declared with {@code Object} as
+ * the reply type, {@code EvalCase<String, Object>}, so it runs against an agent with any reply
+ * type.
+ *
+ * <p>When the handler replies with a sealed interface and the expected reply is one of its
+ * subtypes, give {@link ExperimentRunner#cases} the type arguments, so the reply type of the
+ * experiment is the interface and not the subtype:
+ *
+ * <pre>{@code
+ * runner.<String, Reply>cases(EvalCase.of("refund", "I want my money back", new OpenRefund()))
+ *     .agent(Router::route);
+ * }</pre>
  *
  * @param <C> the command handler's parameter type
- * @param id unique within the suite; names the case in the report
+ * @param <V> the command handler's reply type
+ * @param id unique within the experiment; names the case in the report
  * @param command the command sent to the agent
- * @param recordedCalls the tool calls a recording carried, in recorded order. Empty for a case
- *     written by hand
- * @param evaluators the checks over the reply and the tool calls: built-ins from {@link
- *     Evaluators}, a {@link Judge} criterion, or a custom {@link Evaluator}. Each is a class
- *     annotated with {@link EvalLabel}. Empty when the case only collects evidence
+ * @param expected the reply the agent is expected to give; empty when the case has none
  */
-public record EvalCase<C>(
-    String id, C command, List<RecordedCall> recordedCalls, List<Evaluator> evaluators) {
+public record EvalCase<C, V>(String id, C command, Optional<V> expected) {
 
   public EvalCase {
-
     if (id == null || id.isBlank()) throw new IllegalArgumentException("case id required");
-
     if (command == null) throw new IllegalArgumentException("command required");
-
     if (command instanceof String text && text.isBlank())
       throw new IllegalArgumentException("command required");
-
-    if (recordedCalls == null) throw new IllegalArgumentException("recordedCalls required");
-
-    if (recordedCalls.stream().anyMatch(Objects::isNull))
-      throw new IllegalArgumentException("recorded call required");
-
-    if (evaluators == null) throw new IllegalArgumentException("evaluators required");
-
-    if (evaluators.stream().anyMatch(Objects::isNull))
-      throw new IllegalArgumentException("evaluator required");
-
-    for (var evaluator : evaluators) Evaluators.label(evaluator.getClass());
-
-    recordedCalls = List.copyOf(recordedCalls);
-    evaluators = List.copyOf(evaluators);
-  }
-
-  public static <C> EvalCase<C> of(String id, C command, Evaluator... evaluators) {
-    return new EvalCase<>(id, command, List.of(), List.of(evaluators));
+    if (expected == null) throw new IllegalArgumentException("expected required");
   }
 
   /**
-   * The command as the text a {@link Judge} reads: a String command as is, any other command as
-   * JSON. This is what the {@link Interaction} carries as its input.
+   * Creates a case without an expected reply.
+   *
+   * @param <C> the command handler parameter type
+   * @param <V> the command handler reply type
+   * @param id unique within the experiment; names the case in the report
+   * @param command the command sent to the agent
+   * @return the evaluation case
+   * @throws IllegalArgumentException when {@code id} is null or blank, or {@code command} is null
+   *     or blank text
+   */
+  public static <C, V> EvalCase<C, V> of(String id, C command) {
+    return new EvalCase<>(id, command, Optional.empty());
+  }
+
+  /**
+   * Creates a case with an expected reply.
+   *
+   * @param <C> the command handler parameter type
+   * @param <V> the command handler reply type
+   * @param id unique within the experiment; names the case in the report
+   * @param command the command sent to the agent
+   * @param expected the reply the agent is expected to give, not null
+   * @return the evaluation case
+   * @throws IllegalArgumentException when {@code id} is null or blank, {@code command} is null or
+   *     blank text, or {@code expected} is null
+   */
+  public static <C, V> EvalCase<C, V> of(String id, C command, V expected) {
+    if (expected == null) throw new IllegalArgumentException("expected reply required");
+    return new EvalCase<>(id, command, Optional.of(expected));
+  }
+
+  /**
+   * Returns the command formatted as text: a String command as is, or any other command encoded as
+   * JSON.
+   *
+   * @return the command as text
    */
   public String commandText() {
-    return Interaction.asText(command);
+    return asText(command);
   }
 
-  /** The same case with these evaluators added. */
-  public EvalCase<C> withEvaluators(Evaluator... more) {
-    var next = new ArrayList<>(evaluators);
-    next.addAll(List.of(more));
-    return new EvalCase<>(id, command, recordedCalls, next);
-  }
-
-  /**
-   * The same case without the evaluators of these classes, for example {@code
-   * Evaluators.TokenBudget.class} under a mocked model that reports no tokens.
-   */
-  @SafeVarargs
-  public final EvalCase<C> withoutEvaluators(Class<? extends Evaluator>... types) {
-    var dropped = Set.of(types);
-    var next = evaluators.stream().filter(e -> !dropped.contains(e.getClass())).toList();
-    return new EvalCase<>(id, command, recordedCalls, next);
+  static String asText(Object value) {
+    if (value == null) return "";
+    if (value instanceof String text) return text;
+    return JsonSupport.encodeToString(value);
   }
 }

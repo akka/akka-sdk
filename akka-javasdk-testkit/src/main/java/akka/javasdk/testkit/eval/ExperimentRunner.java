@@ -6,16 +6,22 @@ package akka.javasdk.testkit.eval;
 
 import akka.japi.function.Function2;
 import akka.javasdk.agent.Agent;
-import akka.javasdk.testkit.AgentTrace;
+import akka.javasdk.evaluation.Evaluation;
+import akka.javasdk.impl.evaluation.AgentEvaluatorBindings;
+import akka.javasdk.ledger.EvaluationRecord;
+import akka.javasdk.ledger.GuardrailDecisionRecord;
+import akka.javasdk.ledger.InteractionRecord;
+import akka.javasdk.ledger.LedgerClient;
 import akka.javasdk.testkit.TestKit;
-import akka.javasdk.testkit.eval.Evaluator.EvalResult;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashSet;
@@ -26,35 +32,45 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Runs cases against an agent and collects the results. Sequential and in-process; the only output
- * is the report file written at the end of the run.
+ * Runs cases against an agent and collects the verdicts of the evaluators bound to it. Sequential
+ * and in-process; the only output is the report file written at the end of the run.
  *
- * <p>Per case: load the recorded tool calls, if any, into the bound stubs, call the agent in a
- * fresh session, read the evidence the runtime traced for that session, and evaluate the
- * expectations over it. The stubs a hand written case needs are prepared before the run, in the
- * test.
+ * <p>Per case: call the agent in a fresh session, read the interaction and the guardrail decisions
+ * the runtime recorded in the ledger, and wait for the evaluation that every bound {@link
+ * akka.javasdk.evaluation.Evaluator} records about the interaction. The evaluators and their
+ * bindings come from the configuration the TestKit runs with, under {@code
+ * akka.javasdk.evaluation.evaluators}; a test adds bindings for its own evaluators and disables
+ * production ones with {@code TestKit.Settings.withAdditionalConfig}. The stubs the agent's tools
+ * call are prepared before the run, in the test.
  *
- * <p>An experiment is built in steps, each step offering only what comes next: the cases with
- * optional evaluators and {@link ToolBindings}, the agent, an optional {@link Gate}, then {@link
- * Experiment#run}. Without a gate every case must pass, which suits a mocked model. With a real
- * model gate on rates instead.
+ * <p>An experiment is built in steps, each step offering only what comes next: the cases, the
+ * agent, an optional {@link Gate}, then {@link Experiment#run}. Without a gate every case must
+ * pass, which suits a mocked model. With a real model gate on rates instead. {@link
+ * Experiment#evaluationTimeout} sets how long an attempt waits for the verdicts.
+ *
+ * <p>{@link #cases} runs the cases as an evaluation and {@link #attacks} as an attack. When an
+ * enforcing guardrail denial stopped the interaction, the runner reports a {@link #GUARDRAIL}
+ * result, also when the agent mapped the denial to a reply in {@code onFailure}. It passes in an
+ * attack and fails in an evaluation, and replaces the {@link #TARGET} failure of the call. A
+ * fail-closed guardrail that failed to decide stays a {@link #TARGET} failure.
  *
  * <p>{@link Experiment#repeat} runs every case several times. One execution of one case is an
- * attempt, and the gate, the rates and the spend count attempts. The report names the requirements
- * that passed in some runs and failed in others.
+ * attempt, and the gate, the rates and the spend count attempts. The report names the evaluators
+ * that passed in some runs and failed in others of the same case.
  *
  * <p>{@link Experiment#run} writes the report as JSON to {@code target/eval-reports/<name>-<start
  * time>.json}, see {@link EvalReport#reportFile}.
  *
  * <p>The cases carry the command the agent's command handler takes, so the handler's own type is
- * passed through unchanged.
+ * passed through unchanged. A case may also carry the reply the handler is expected to return. The
+ * runner then compares the two, with {@link Experiment#grade} or by equality, and records the
+ * outcome as the {@link #EXPECTED} result of the attempt.
  *
  * <pre>{@code
  * var runner = new ExperimentRunner(testKit);
@@ -70,6 +86,46 @@ public final class ExperimentRunner {
 
   /** Where {@link Experiment#run} writes the report file unless the experiment names another. */
   public static final Path DEFAULT_REPORT_DIRECTORY = Path.of("target", "eval-reports");
+
+  /**
+   * How long an attempt waits for the ledger to hold its interaction and one evaluation per bound
+   * evaluator, unless the experiment sets another with {@link Experiment#evaluationTimeout}.
+   */
+  public static final Duration DEFAULT_EVALUATION_TIMEOUT = Duration.ofSeconds(10);
+
+  /**
+   * The evaluator name of the failed result the runner reports when the agent call failed. An
+   * enforcing denial that stopped the interaction gives a {@link #GUARDRAIL} result instead. A
+   * fail-closed guardrail that failed to decide gives this result, also when the agent mapped the
+   * failure to a reply in {@code onFailure}.
+   */
+  public static final String TARGET = "target";
+
+  /**
+   * The evaluator name of the result the runner reports for an enforcing denial that stopped the
+   * interaction. It passes in an attack and fails in an evaluation.
+   */
+  public static final String GUARDRAIL = "guardrail";
+
+  /** What the experiment's cases are. */
+  public enum Kind {
+    /**
+     * Cases the agent must answer. An enforcing denial that stopped the interaction gives a failed
+     * {@link #GUARDRAIL} result.
+     */
+    EVALUATION,
+    /**
+     * Cases the agent must resist. An enforcing denial that stopped the interaction gives a passed
+     * {@link #GUARDRAIL} result.
+     */
+    ATTACK
+  }
+
+  /**
+   * The evaluator name of the result the runner reports when the case carries an expected reply:
+   * the comparison of the reply with it, see {@link Experiment#grade}.
+   */
+  public static final String EXPECTED = "expected";
 
   private final TestKit testKit;
 
@@ -87,25 +143,77 @@ public final class ExperimentRunner {
   }
 
   /**
-   * The cases the experiment runs.
+   * Sets the cases the experiment runs, as an evaluation.
    *
+   * @param <C> the command handler parameter type
+   * @param <V> the command handler reply type
    * @param first the first case
-   * @param more further cases, with the same command type
+   * @param more further cases, with the same command type and reply type
+   * @return the experiment builder step for choosing the agent
+   * @throws IllegalArgumentException when {@code first} is null, any element of {@code more} is
+   *     null, two cases have the same id, or some cases have an expected reply and others do not
    */
   @SafeVarargs
-  public final <C> ExperimentCases<C> cases(EvalCase<C> first, EvalCase<C>... more) {
-    var all = new ArrayList<EvalCase<C>>();
-    all.add(first);
-    all.addAll(List.of(more));
-    return cases(all);
+  public final <C, V> ExperimentCases<C, V> cases(
+      EvalCase<C, ? extends V> first, EvalCase<C, ? extends V>... more) {
+    return cases(asList(first, more));
   }
 
   /**
-   * The cases the experiment runs.
+   * Sets the cases the experiment runs, as an evaluation.
    *
+   * @param <C> the command handler parameter type
+   * @param <V> the command handler reply type
    * @param cases at least one case
+   * @return the experiment builder step for choosing the agent
+   * @throws IllegalArgumentException when {@code cases} is null or empty, any case is null, two
+   *     cases have the same id, or some cases have an expected reply and others do not
    */
-  public <C> ExperimentCases<C> cases(List<EvalCase<C>> cases) {
+  public <C, V> ExperimentCases<C, V> cases(List<? extends EvalCase<C, ? extends V>> cases) {
+    return experimentCases(cases, Kind.EVALUATION);
+  }
+
+  /**
+   * Sets the cases the experiment runs, as an attack.
+   *
+   * @param <C> the command handler parameter type
+   * @param <V> the command handler reply type
+   * @param first the first case
+   * @param more further cases, with the same command type and reply type
+   * @return the experiment builder step for choosing the agent
+   * @throws IllegalArgumentException when {@code first} is null, any element of {@code more} is
+   *     null, two cases have the same id, or some cases have an expected reply and others do not
+   */
+  @SafeVarargs
+  public final <C, V> ExperimentCases<C, V> attacks(
+      EvalCase<C, ? extends V> first, EvalCase<C, ? extends V>... more) {
+    return attacks(asList(first, more));
+  }
+
+  /**
+   * Sets the cases the experiment runs, as an attack.
+   *
+   * @param <C> the command handler parameter type
+   * @param <V> the command handler reply type
+   * @param cases at least one case
+   * @return the experiment builder step for choosing the agent
+   * @throws IllegalArgumentException when {@code cases} is null or empty, any case is null, two
+   *     cases have the same id, or some cases have an expected reply and others do not
+   */
+  public <C, V> ExperimentCases<C, V> attacks(List<? extends EvalCase<C, ? extends V>> cases) {
+    return experimentCases(cases, Kind.ATTACK);
+  }
+
+  private static <C, V> List<EvalCase<C, ? extends V>> asList(
+      EvalCase<C, ? extends V> first, EvalCase<C, ? extends V>[] more) {
+    var all = new ArrayList<EvalCase<C, ? extends V>>();
+    all.add(first);
+    all.addAll(List.of(more));
+    return all;
+  }
+
+  private <C, V> ExperimentCases<C, V> experimentCases(
+      List<? extends EvalCase<C, ? extends V>> cases, Kind kind) {
     if (cases == null || cases.isEmpty()) {
       throw new IllegalArgumentException("at least one case required");
     }
@@ -122,158 +230,235 @@ public final class ExperimentRunner {
                 + " one");
       }
     }
-    return new Cases<>(testKit, List.copyOf(cases), List.of(), ToolBindings.none());
+    var withoutExpected =
+        cases.stream().filter(c -> c.expected().isEmpty()).map(EvalCase::id).toList();
+    if (!withoutExpected.isEmpty() && withoutExpected.size() < cases.size()) {
+      throw new IllegalArgumentException(
+          "Cases without an expected reply next to cases with one: "
+              + withoutExpected
+              + ". Give every case an expected reply, or none");
+    }
+    return new Cases<>(testKit, List.copyOf(cases), kind);
   }
 
-  // For the runner's own tests: the cases run against a scripted target instead of an agent, and
-  // write no report file unless the test names a directory.
-  static <C> Experiment against(ExperimentCases<C> cases, EvalTarget<C> target) {
-    return ((Cases<C>) cases).target(target).withoutReportFile();
+  // For the runner's own tests: the cases run against a scripted target instead of an agent, read
+  // an in-memory ledger with the given timeout, and write no report file unless the test names a
+  // directory.
+  static <C, V> Experiment<V> against(
+      ExperimentCases<C, V> cases,
+      EvalTarget<C> target,
+      LedgerClient ledger,
+      EvaluatorBindings bindings,
+      Duration evaluationTimeout) {
+    return ((Cases<C, V>) cases)
+        .target(target, ledger, bindings, evaluationTimeout)
+        .withoutReportFile();
   }
 
-  private record Cases<C>(
-      TestKit testKit, List<EvalCase<C>> cases, List<Evaluator> evaluators, ToolBindings bindings)
-      implements ExperimentCases<C> {
+  private record Cases<C, V>(
+      TestKit testKit, List<? extends EvalCase<C, ? extends V>> cases, Kind kind)
+      implements ExperimentCases<C, V> {
 
+    // The bindings are checked here, before any case runs: a binding to an evaluator id without a
+    // component would leave every attempt waiting for the timeout, and an agent without a binding
+    // would leave every attempt inconclusive without saying why. With an expected reply the
+    // comparison judges the attempt on its own, and the warning still shows a binding to a
+    // misspelled agent id.
     @Override
-    public ExperimentCases<C> evaluator(Evaluator evaluator) {
-      if (evaluator == null) throw new IllegalArgumentException("evaluator required");
-      Evaluators.label(evaluator.getClass());
-
-      var next = new ArrayList<>(evaluators);
-      next.add(evaluator);
-      return new Cases<>(testKit, cases, List.copyOf(next), bindings);
+    public <A extends Agent, R extends V> Experiment<V> agent(
+        Function2<A, C, Agent.Effect<R>> method) {
+      if (method == null) throw new IllegalArgumentException("agent method required");
+      requireExpectedOfReplyType(cases, AgentEvaluatorBindings.replyClass(method));
+      var config = testKit.getApplicationConfig();
+      var bindings = EvaluatorBindings.of(config, method);
+      bindings.requireEvaluatorComponents(
+          AgentEvaluatorBindings.evaluatorComponentIds(
+              Thread.currentThread().getContextClassLoader()));
+      bindings
+          .describeUnbound(AgentEvaluatorBindings.boundAgentComponentIds(config), graded())
+          .ifPresent(log::warn);
+      return target(
+          new AgentTarget<>(testKit.getComponentClient(), method),
+          testKit.getLedgerClient(),
+          bindings,
+          DEFAULT_EVALUATION_TIMEOUT);
     }
 
-    @Override
-    public ExperimentCases<C> bindings(ToolBindings bindings) {
-      if (bindings == null) throw new IllegalArgumentException("bindings required");
-      return new Cases<>(testKit, cases, evaluators, bindings);
+    // Every case has an expected reply, or none has, checked in cases(…).
+    private boolean graded() {
+      return cases.getFirst().expected().isPresent();
     }
 
-    @Override
-    public <A extends Agent, R> Experiment agent(Function2<A, C, Agent.Effect<R>> method) {
-      return agent(method, Interaction::asText);
-    }
-
-    @Override
-    public <A extends Agent, R> Experiment agent(
-        Function2<A, C, Agent.Effect<R>> method, Function<R, String> replyText) {
-      return target(new AgentTarget<>(testKit, method, replyText));
-    }
-
-    private Experiment target(EvalTarget<C> target) {
+    private Experiment<V> target(
+        EvalTarget<C> target,
+        LedgerClient ledger,
+        EvaluatorBindings bindings,
+        Duration evaluationTimeout) {
       if (target == null) throw new IllegalArgumentException("target required");
-      requireDistinctLabels();
-      requireBindingsForRecordedTools();
+      if (ledger == null) throw new IllegalArgumentException("ledger required");
+      if (bindings == null) throw new IllegalArgumentException("bindings required");
+      requirePositive(evaluationTimeout);
+      bindings.requireFullSampling();
+      bindings.requireNoRunnerName();
       return new Ready<>(
           cases,
-          evaluators,
-          bindings,
+          kind,
           target,
+          ledger,
+          bindings,
           Gate.allCasesShouldPass(),
           "",
           Optional.of(DEFAULT_REPORT_DIRECTORY),
-          1);
-    }
-
-    private void requireDistinctLabels() {
-      var classByLabel = new LinkedHashMap<String, Class<? extends Evaluator>>();
-
-      for (var evalCase : cases) {
-        for (var evaluator : evalCase.evaluators()) requireDistinctLabel(classByLabel, evaluator);
-      }
-
-      for (var evaluator : evaluators) requireDistinctLabel(classByLabel, evaluator);
-    }
-
-    private static void requireDistinctLabel(
-        Map<String, Class<? extends Evaluator>> classByLabel, Evaluator evaluator) {
-      var type = evaluator.getClass();
-      var previous = classByLabel.putIfAbsent(Evaluators.label(type), type);
-
-      if (previous != null && previous != type) {
-        throw new IllegalArgumentException(
-            previous.getName()
-                + " and "
-                + type.getName()
-                + " share the same @EvalLabel \""
-                + type.getAnnotation(EvalLabel.class).value()
-                + "\"; the report groups results by label. Give each evaluator a unique label.");
-      }
-    }
-
-    // Before the first agent call, so a new tool in production cannot be replayed by accident
-    // against a stub that does not know it.
-    private void requireBindingsForRecordedTools() {
-      var casesByUnboundTool = new LinkedHashMap<String, List<String>>();
-      for (var evalCase : cases) {
-        for (var call : evalCase.recordedCalls()) {
-          if (!bindings.binds(call.tool())) {
-            casesByUnboundTool
-                .computeIfAbsent(call.tool(), t -> new ArrayList<>())
-                .add(evalCase.id());
-          }
-        }
-      }
-      if (casesByUnboundTool.isEmpty()) return;
-      var missing =
-          casesByUnboundTool.entrySet().stream()
-              .map(
-                  e ->
-                      e.getKey()
-                          + (e.getValue().size() == 1 ? " (case " : " (cases ")
-                          + String.join(", ", e.getValue())
-                          + ")")
-              .collect(Collectors.joining(", "));
-      throw new IllegalArgumentException(
-          "no binding for recorded tool "
-              + missing
-              + "; bound: "
-              + bindings.toolNames()
-              + ". Bind each tool a recording names with bindings(ToolBindings)");
+          1,
+          evaluationTimeout,
+          equality());
     }
   }
 
-  private record Ready<C>(
-      List<EvalCase<C>> cases,
-      List<Evaluator> evaluators,
-      ToolBindings bindings,
+  // The compiler checks the reply type of the handler against the reply type of the cases, and a
+  // list declared for cases without an expected reply has Object as that type, which lets an
+  // expected reply of any type through.
+  static void requireExpectedOfReplyType(
+      List<? extends EvalCase<?, ?>> cases, Class<?> replyClass) {
+    for (var evalCase : cases) {
+      var expected = evalCase.expected();
+      if (expected.isPresent() && !replyClass.isInstance(expected.get())) {
+        throw new IllegalArgumentException(
+            "Case "
+                + evalCase.id()
+                + " expects a reply of type "
+                + expected.get().getClass().getName()
+                + ", but the command handler replies with "
+                + replyClass.getName()
+                + ". Give the case an expected reply of the reply type of the handler");
+      }
+    }
+  }
+
+  /**
+   * The grader that applies without {@link Experiment#grade}: the two replies must be equal. When
+   * the two replies read the same as text but are not equal, the detail names the cause: the
+   * expected reply was read as another type than the handler replies with, or the reply type does
+   * not define {@code equals}.
+   */
+  static <V> Grader<V> equality() {
+    return (expected, reply) -> {
+      if (expected.equals(reply)) return Evaluation.passed("the reply equals the expected reply");
+      var expectedText = EvalCase.asText(expected);
+      var replyText = EvalCase.asText(reply);
+      var detail = "expected " + expectedText + ", the reply is " + replyText;
+      if (expectedText.equals(replyText)) detail += whyNotEqual(expected, reply);
+      return Evaluation.failed(detail);
+    };
+  }
+
+  private static String whyNotEqual(Object expected, Object reply) {
+    var expectedClass = comparedClass(expected);
+    var replyClass = comparedClass(reply);
+    if (expectedClass != replyClass) {
+      return ". The two read the same but are of different types: the expected reply is a "
+          + expectedClass.getName()
+          + " and the reply is a "
+          + replyClass.getName()
+          + ". Read the cases with the reply type of the command handler";
+    }
+    return ". The two read the same but are not equal: the reply type does not define equals, or"
+        + " a component of it does not. Define equals on the reply type, or compare the replies"
+        + " with a Grader";
+  }
+
+  // The class equality turns on: for a collection, the class of its elements.
+  private static Class<?> comparedClass(Object value) {
+    if (value instanceof Collection<?> collection && !collection.isEmpty())
+      return comparedClass(collection.iterator().next());
+    return value.getClass();
+  }
+
+  private static void requirePositive(Duration evaluationTimeout) {
+    if (evaluationTimeout == null || evaluationTimeout.isNegative() || evaluationTimeout.isZero())
+      throw new IllegalArgumentException("evaluation timeout must be positive");
+  }
+
+  private record Ready<C, V>(
+      List<? extends EvalCase<C, ? extends V>> cases,
+      Kind kind,
       EvalTarget<C> target,
+      LedgerClient ledger,
+      EvaluatorBindings bindings,
       Gate gate,
       String name,
       Optional<Path> reportDirectory,
-      int runs)
-      implements Experiment {
+      int runs,
+      Duration evaluationTimeout,
+      Grader<V> grader)
+      implements Experiment<V> {
 
     @Override
-    public Experiment gate(Gate gate) {
+    public Experiment<V> gate(Gate gate) {
       if (gate == null) throw new IllegalArgumentException("gate required");
-      return new Ready<>(cases, evaluators, bindings, target, gate, name, reportDirectory, runs);
+      return with(gate, name, reportDirectory, runs, evaluationTimeout, grader);
     }
 
     @Override
-    public Experiment name(String name) {
+    public Experiment<V> grade(Grader<V> grader) {
+      if (grader == null) throw new IllegalArgumentException("grader required");
+      if (cases.getFirst().expected().isEmpty()) {
+        throw new IllegalArgumentException(
+            "No case has an expected reply, so there is nothing to grade. Give the cases an"
+                + " expected reply, or read the file with the reply type of the agent's command"
+                + " handler");
+      }
+      return with(gate, name, reportDirectory, runs, evaluationTimeout, grader);
+    }
+
+    @Override
+    public Experiment<V> name(String name) {
       requireFileName(name);
-      return new Ready<>(cases, evaluators, bindings, target, gate, name, reportDirectory, runs);
+      return with(gate, name, reportDirectory, runs, evaluationTimeout, grader);
     }
 
     @Override
-    public Experiment reportDirectory(Path directory) {
+    public Experiment<V> reportDirectory(Path directory) {
       if (directory == null) throw new IllegalArgumentException("directory required");
-      return new Ready<>(
-          cases, evaluators, bindings, target, gate, name, Optional.of(directory), runs);
+      return with(gate, name, Optional.of(directory), runs, evaluationTimeout, grader);
     }
 
     @Override
-    public Experiment withoutReportFile() {
-      return new Ready<>(cases, evaluators, bindings, target, gate, name, Optional.empty(), runs);
+    public Experiment<V> withoutReportFile() {
+      return with(gate, name, Optional.empty(), runs, evaluationTimeout, grader);
     }
 
     @Override
-    public Experiment repeat(int times) {
+    public Experiment<V> repeat(int times) {
       if (times < 1) throw new IllegalArgumentException("repeat needs at least 1, was " + times);
-      return new Ready<>(cases, evaluators, bindings, target, gate, name, reportDirectory, times);
+      return with(gate, name, reportDirectory, times, evaluationTimeout, grader);
+    }
+
+    @Override
+    public Experiment<V> evaluationTimeout(Duration timeout) {
+      requirePositive(timeout);
+      return with(gate, name, reportDirectory, runs, timeout, grader);
+    }
+
+    private Ready<C, V> with(
+        Gate gate,
+        String name,
+        Optional<Path> reportDirectory,
+        int runs,
+        Duration timeout,
+        Grader<V> grader) {
+      return new Ready<>(
+          cases,
+          kind,
+          target,
+          ledger,
+          bindings,
+          gate,
+          name,
+          reportDirectory,
+          runs,
+          timeout,
+          grader);
     }
 
     // Run-major, every case once and then every case again, so the attempts of one case are spread
@@ -297,6 +482,7 @@ public final class ExperimentRunner {
       var report =
           new Report(
               reportName,
+              kind,
               startedAt,
               Instant.now(),
               runs,
@@ -356,64 +542,154 @@ public final class ExperimentRunner {
       return false;
     }
 
-    private CaseResult evaluate(EvalCase<C> evalCase, int run) {
-      try {
-        bindings.load(evalCase.recordedCalls());
-      } catch (RuntimeException e) {
-        return new CaseResult(
-            evalCase.id(),
-            run,
-            Interaction.of(evalCase.commandText(), ""),
-            List.of(EvalResult.fail(describe(e)).attributedTo(Evaluators.SETUP)));
-      }
-
+    private CaseResult evaluate(EvalCase<C, ? extends V> evalCase, int run) {
       var turn =
           new EvalTarget.Turn<>(UUID.randomUUID().toString(), evalCase.id(), evalCase.command());
       EvalTarget.Outcome outcome;
       try {
         outcome = target.call(turn);
       } catch (RuntimeException e) {
-        outcome = EvalTarget.Outcome.failed(e, AgentTrace.NONE);
+        outcome = EvalTarget.Outcome.failed(e);
       }
 
-      return switch (outcome) {
-        case EvalTarget.Outcome.Failed failed ->
-            new CaseResult(
-                evalCase.id(),
-                run,
-                new Interaction(evalCase.commandText(), "", failed.trace()),
-                List.of(EvalResult.fail(failed.reason()).attributedTo(Evaluators.TARGET)));
+      var reader = new LedgerReader(ledger, evaluationTimeout);
+      var results = new ArrayList<EvalResult>();
+      Optional<String> returned = Optional.empty();
+      Optional<String> failure = Optional.empty();
+      Optional<InteractionRecord> interaction;
+      switch (outcome) {
+        // A reply without an interaction id, such as one the agent mapped from a failure in
+        // onFailure, is read from the session like a failed call.
         case EvalTarget.Outcome.Answered answered -> {
-          var interaction = answered.interaction();
-          var results = new ArrayList<EvalResult>();
-          for (var evaluator : evalCase.evaluators()) {
-            results.add(evaluate(evaluator, evalCase, interaction));
-          }
-          for (var evaluator : evaluators) {
-            results.add(evaluate(evaluator, evalCase, interaction));
-          }
-          yield new CaseResult(evalCase.id(), run, interaction, List.copyOf(results));
+          returned = answered.returned();
+          interaction =
+              answered
+                  .interactionId()
+                  .map(reader::interaction)
+                  .orElseGet(
+                      () ->
+                          reader.newestInteraction(bindings.agentComponentId(), turn.sessionId()));
         }
+        case EvalTarget.Outcome.Failed failed -> {
+          failure = Optional.of(failed.reason());
+          interaction = reader.newestInteraction(bindings.agentComponentId(), turn.sessionId());
+        }
+      }
+      var called = outcome;
+      evalCase.expected().ifPresent(expected -> results.add(grade(expected, called)));
+      interaction.ifPresent(
+          record -> {
+            var expected = bindings.expectedEvaluators(record.failed());
+            if (!expected.isEmpty()) {
+              var records = reader.awaitEvaluations(record.interactionId(), Set.copyOf(expected));
+              for (var evaluator : expected) results.add(resultOf(evaluator, records));
+            }
+          });
+      // Read last, so a decision the runtime writes after the interaction record is included.
+      var guardrails = interaction.map(reader::guardrails).orElse(List.of());
+      var evidence = new Evidence(evalCase.commandText(), returned, interaction, guardrails);
+      runnerResult(evidence, failure).ifPresent(results::addFirst);
+      return new CaseResult(evalCase.id(), run, evidence, List.copyOf(results));
+    }
+
+    // A guardrail error that stopped the interaction is a target failure, also when the agent
+    // mapped it to a reply. A denial that stopped the interaction takes the place of the target
+    // failure.
+    private Optional<EvalResult> runnerResult(Evidence evidence, Optional<String> failure) {
+      if (evidence.stoppedByGuardrailError())
+        return failure.or(evidence::failure).map(reason -> EvalResult.fail(TARGET, reason));
+
+      var denial = evidence.stoppingDenial();
+      if (denial.isEmpty()) return failure.map(reason -> EvalResult.fail(TARGET, reason));
+
+      var detail =
+          denial.get().explanation().isEmpty()
+              ? denial.get().name() + " denied"
+              : denial.get().name() + " denied: " + denial.get().explanation();
+      return Optional.of(
+          kind == Kind.ATTACK
+              ? EvalResult.pass(GUARDRAIL, detail)
+              : EvalResult.fail(GUARDRAIL, detail));
+    }
+
+    // The reply type of the agent is a subtype of the reply type of the cases, checked by the
+    // compiler at agent(…), so the returned value is a V.
+    @SuppressWarnings("unchecked")
+    private EvalResult grade(V expected, EvalTarget.Outcome outcome) {
+      return switch (outcome) {
+        case EvalTarget.Outcome.Answered answered when answered.value().isPresent() -> {
+          try {
+            var evaluation = grader.grade(expected, (V) answered.value().get());
+            if (evaluation == null) yield EvalResult.fail(EXPECTED, "the grader returned null");
+            yield verdictResult(EXPECTED, evaluation);
+          } catch (RuntimeException | AssertionError e) {
+            yield EvalResult.fail(EXPECTED, "the grader threw " + describe(e));
+          }
+        }
+        case EvalTarget.Outcome.Answered answered ->
+            EvalResult.inconclusive(
+                EXPECTED, "the agent returned no value, so there is no reply to compare");
+        case EvalTarget.Outcome.Failed failed ->
+            EvalResult.inconclusive(
+                EXPECTED, "the agent call failed, so there is no reply to compare");
       };
     }
 
-    // An evaluator that throws or returns nothing fails its own result, the other evaluators
-    // still report.
-    private static EvalResult evaluate(
-        Evaluator evaluator, EvalCase<?> evalCase, Interaction interaction) {
-      var label = Evaluators.label(evaluator.getClass());
-
-      EvalResult result;
-      try {
-        result = evaluator.evaluate(evalCase, interaction);
-      } catch (RuntimeException e) {
-        return EvalResult.fail("the evaluator threw " + describe(e)).attributedTo(label);
-      }
-      if (result == null) {
-        return EvalResult.fail("the evaluator returned no result").attributedTo(label);
-      }
-      return result.attributedTo(label);
+    // The newest record of the evaluator decides. An evaluator without a record within the timeout
+    // is inconclusive, so the attempt cannot pass.
+    private EvalResult resultOf(String evaluator, List<EvaluationRecord> records) {
+      return records.stream()
+          .filter(record -> record.evaluatorComponentId().equals(evaluator))
+          .max(Comparator.comparing(EvaluationRecord::timestamp))
+          .map(ExperimentRunner::resultOf)
+          .orElseGet(
+              () ->
+                  EvalResult.inconclusive(
+                      evaluator,
+                      "no evaluation recorded within "
+                          + evaluationTimeout.toMillis()
+                          + " ms; the evaluator did not run, or did not finish in time"));
     }
+  }
+
+  private static String describe(Throwable e) {
+    return e.getMessage() == null
+        ? e.getClass().getSimpleName()
+        : e.getClass().getSimpleName() + ": " + e.getMessage();
+  }
+
+  /** The result an evaluation record stands for. */
+  static EvalResult resultOf(EvaluationRecord record) {
+    var evaluator = record.evaluatorComponentId();
+    return switch (record.outcome()) {
+      case EvaluationRecord.Outcome.Verdict verdict ->
+          verdictResult(evaluator, verdict.evaluation());
+      case EvaluationRecord.Outcome.Inconclusive inconclusive ->
+          EvalResult.inconclusive(evaluator, inconclusive.reason());
+      case EvaluationRecord.Outcome.NotApplicable notApplicable ->
+          EvalResult.notApplicable(evaluator, notApplicable.reason());
+      case EvaluationRecord.Outcome.Failed failed ->
+          EvalResult.fail(evaluator, "the evaluator failed: " + failed.reason());
+    };
+  }
+
+  /**
+   * The result a verdict stands for: the explanation, with the score, the label and the attributes.
+   */
+  static EvalResult verdictResult(String evaluator, Evaluation evaluation) {
+    var detail = evaluation.explanation();
+    var facts = new ArrayList<String>();
+    evaluation.score().ifPresent(s -> facts.add(String.format(Locale.ROOT, "score %.2f", s)));
+    evaluation.label().ifPresent(label -> facts.add("label " + label));
+    evaluation.attributes().forEach((key, value) -> facts.add(key + "=" + value));
+    var inBrackets = String.join(", ", facts);
+    var text =
+        detail.isEmpty()
+            ? inBrackets
+            : inBrackets.isEmpty() ? detail : detail + " (" + inBrackets + ")";
+    return evaluation.passed()
+        ? EvalResult.pass(evaluator, text)
+        : EvalResult.fail(evaluator, text);
   }
 
   /** The characters no common file system accepts in a file name, and the control characters. */
@@ -451,42 +727,47 @@ public final class ExperimentRunner {
   private static final DateTimeFormatter TIMESTAMP =
       DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss-SSS").withZone(ZoneOffset.UTC);
 
-  private static String describe(RuntimeException e) {
-    return e.getClass().getSimpleName() + (e.getMessage() == null ? "" : ": " + e.getMessage());
-  }
-
   /**
    * One attempt: one case's evidence and results from one run.
    *
    * @param run the run the attempt belongs to, from 1; always 1 without {@link Experiment#repeat}
+   * @param evidence what the attempt left in the ledger
+   * @param evalResults one per expected evaluator, in evaluator order, after the {@link #GUARDRAIL}
+   *     result for an enforcing denial that stopped the interaction, or else after the {@link
+   *     #TARGET} result when the runner reports one, and after the {@link #EXPECTED} result when
+   *     the case carries an expected reply
    */
   public record CaseResult(
-      String caseId, int run, Interaction interaction, List<EvalResult> evalResults) {
+      String caseId, int run, Evidence evidence, List<EvalResult> evalResults) {
 
     public CaseResult {
       if (run < 1) throw new IllegalArgumentException("run must be at least 1, was " + run);
+      evalResults = List.copyOf(evalResults);
     }
 
     /** An attempt of the first run. */
-    public CaseResult(String caseId, Interaction interaction, List<EvalResult> evalResults) {
-      this(caseId, 1, interaction, evalResults);
+    public CaseResult(String caseId, Evidence evidence, List<EvalResult> evalResults) {
+      this(caseId, 1, evidence, evalResults);
     }
 
     /**
-     * PASS when every result passed, FAIL when a result failed, INCONCLUSIVE when no result failed
-     * and a result is inconclusive or there is no result. A failed load of the recorded calls or a
-     * failed agent call is a failed result.
+     * FAIL when a result failed. Otherwise INCONCLUSIVE when a result is inconclusive, or when no
+     * result passed: every result is not applicable, or there is no result. Otherwise PASS: at
+     * least one result passed and the others are not applicable. A failed agent call is a failed
+     * {@link #TARGET} result, unless an enforcing denial stopped the interaction, see {@link
+     * #GUARDRAIL}.
      */
     public EvalResult.Verdict verdict() {
       var verdicts = evalResults.stream().map(EvalResult::verdict).collect(Collectors.toSet());
       if (verdicts.contains(EvalResult.Verdict.FAIL)) return EvalResult.Verdict.FAIL;
-      if (verdicts.contains(EvalResult.Verdict.INCONCLUSIVE) || verdicts.isEmpty()) {
+      if (verdicts.contains(EvalResult.Verdict.INCONCLUSIVE)
+          || !verdicts.contains(EvalResult.Verdict.PASS)) {
         return EvalResult.Verdict.INCONCLUSIVE;
       }
       return EvalResult.Verdict.PASS;
     }
 
-    /** Every result passed. */
+    /** At least one result passed, and no result failed or is inconclusive. */
     public boolean passed() {
       return verdict() == EvalResult.Verdict.PASS;
     }
@@ -496,7 +777,7 @@ public final class ExperimentRunner {
       return verdict() == EvalResult.Verdict.FAIL;
     }
 
-    /** No failed result, and an inconclusive result or no result at all. */
+    /** No failed result, and an inconclusive result or no passed result. */
     public boolean inconclusive() {
       return verdict() == EvalResult.Verdict.INCONCLUSIVE;
     }
@@ -512,23 +793,29 @@ public final class ExperimentRunner {
               switch (verdict()) {
                 case PASS -> " passed";
                 case FAIL -> " FAILED";
-                case INCONCLUSIVE -> " INCONCLUSIVE";
+                case INCONCLUSIVE, NOT_APPLICABLE -> " INCONCLUSIVE";
               })
           .append('\n');
-      text.append("  reply: ").append(oneLine(interaction.reply())).append('\n');
-      if (!interaction.finalModelText().isEmpty()
-          && !interaction.finalModelText().equals(interaction.reply())) {
-        text.append("  model text: ").append(oneLine(interaction.finalModelText())).append('\n');
-      }
-      text.append("  tools: ").append(toolEvidence()).append('\n');
-      if (!interaction.modelCalls().isEmpty()) {
+      if (evidence.interaction().isEmpty()) {
+        text.append("  interaction: none recorded\n");
+      } else {
+        text.append("  reply: ").append(oneLine(evidence.reply())).append('\n');
+        evidence
+            .returned()
+            .filter(returned -> !returned.equals(evidence.reply()))
+            .ifPresent(
+                returned -> text.append("  returned: ").append(oneLine(returned)).append('\n'));
+        evidence
+            .failure()
+            .ifPresent(failure -> text.append("  failure: ").append(oneLine(failure)).append('\n'));
+        text.append("  tools: ").append(toolEvidence()).append('\n');
         text.append("  model: ").append(modelEvidence()).append('\n');
-      }
-      if (!interaction.guardrails().isEmpty()) {
-        text.append("  guardrails: ").append(guardrailEvidence()).append('\n');
+        if (!evidence.guardrails().isEmpty()) {
+          text.append("  guardrails: ").append(guardrailEvidence()).append('\n');
+        }
       }
       if (evalResults.isEmpty()) {
-        text.append("  results: none declared\n");
+        text.append("  results: no evaluator bound\n");
       }
       for (var evalResult : evalResults) {
         text.append("  ")
@@ -542,33 +829,31 @@ public final class ExperimentRunner {
     }
 
     private String toolEvidence() {
-      if (interaction.toolCalls().isEmpty()) return "none called";
-      return interaction.toolCalls().stream()
+      if (evidence.toolCalls().isEmpty()) return "none called";
+      return evidence.toolCalls().stream()
           .map(
               call ->
                   call.name()
-                      + call.arguments()
-                      + call.error().map(e -> " (failed: " + e + ")").orElse(""))
-          .reduce((a, b) -> a + " → " + b)
-          .orElse("");
+                      + oneLine(call.arguments())
+                      + evidence.denialOf(call).map(d -> " denied by " + d.name()).orElse(""))
+          .collect(Collectors.joining(" → "));
     }
 
     private String modelEvidence() {
-      return interaction.modelCalls().size()
-          + " calls, "
-          + interaction.inputTokens()
+      return evidence.modelResponses()
+          + " responses, "
+          + evidence.inputTokens()
           + " tokens in, "
-          + interaction.outputTokens()
+          + evidence.outputTokens()
           + " out, "
-          + interaction.latency().toMillis()
+          + evidence.latency().toMillis()
           + " ms";
     }
 
     private String guardrailEvidence() {
-      return interaction.guardrails().stream()
-          .map(g -> g.name() + (g.passed() ? " passed" : " blocked: " + g.explanation()))
-          .reduce((a, b) -> a + ", " + b)
-          .orElse("");
+      return evidence.guardrails().stream()
+          .map(ExperimentRunner::describe)
+          .collect(Collectors.joining(", "));
     }
 
     private static String oneLine(String text) {
@@ -577,46 +862,61 @@ public final class ExperimentRunner {
     }
   }
 
-  /** The outcome of a case over all its runs, or of a requirement over its conclusive runs. */
+  private static String describe(GuardrailDecisionRecord decision) {
+    var what =
+        switch (decision.decision()) {
+          case ALLOW -> " allowed";
+          case DENY -> " DENIED";
+          case FAIL -> " FAILED";
+          case UNSPECIFIED -> " decided";
+        };
+    var explanation = decision.explanation().isEmpty() ? "" : ": " + decision.explanation();
+    return decision.name() + what + (decision.reportOnly() ? " (report only)" : "") + explanation;
+  }
+
+  /**
+   * The outcome of a case over all its runs, or of an evaluator over the runs where it reached a
+   * verdict.
+   */
   public enum Outcome {
-    /** Every run passed; for a requirement, every conclusive run. */
+    /** Every run passed; for an evaluator, every run where it reached a verdict. */
     PASSED,
-    /** Every run failed; for a requirement, every conclusive run. */
+    /** Every run failed; for an evaluator, every run where it reached a verdict. */
     FAILED,
-    /** The runs did not agree; for a requirement, it passed in some runs and failed in others. */
+    /** The runs did not agree; for an evaluator, it passed in some runs and failed in others. */
     INCONSISTENT,
-    /** Every run was inconclusive; for a requirement, it was conclusive in no run. */
+    /** Every run was inconclusive; for an evaluator, it reached a verdict in no run. */
     INCONCLUSIVE
   }
 
   /**
-   * One requirement of a case over all runs: one evaluator at one position in the results of the
-   * case's attempts. Two requirements of a case may carry the same label, for example two {@link
-   * Evaluators#shouldCallToolWith} expectations. The runner's {@link Evaluators#TARGET} and {@link
-   * Evaluators#SETUP} results are requirements too, with no run passed.
+   * The verdicts of one evaluator over all runs of a case. The runner's {@link #TARGET} and {@link
+   * #GUARDRAIL} and {@link #EXPECTED} results count as evaluators.
    *
    * @param caseId the case
-   * @param index the position of the result in the attempt, from 0
-   * @param evaluator the evaluator label
+   * @param evaluator the evaluator component id, {@link #TARGET}, {@link #GUARDRAIL} or {@link
+   *     #EXPECTED}
    * @param passedIn the runs with the verdict PASS, ascending
    * @param failedIn the runs with the verdict FAIL, ascending
    * @param inconclusiveIn the runs with the verdict INCONCLUSIVE, ascending
+   * @param notApplicableIn the runs with the verdict NOT_APPLICABLE, ascending
    */
-  public record RequirementSummary(
+  public record EvaluatorVerdicts(
       String caseId,
-      int index,
       String evaluator,
       List<Integer> passedIn,
       List<Integer> failedIn,
-      List<Integer> inconclusiveIn) {
+      List<Integer> inconclusiveIn,
+      List<Integer> notApplicableIn) {
 
-    public RequirementSummary {
+    public EvaluatorVerdicts {
       passedIn = List.copyOf(passedIn);
       failedIn = List.copyOf(failedIn);
       inconclusiveIn = List.copyOf(inconclusiveIn);
+      notApplicableIn = List.copyOf(notApplicableIn);
     }
 
-    /** The outcome over the runs where the requirement was conclusive. */
+    /** The outcome over the runs where the evaluator reached a verdict. */
     public Outcome outcome() {
       if (passedIn.isEmpty() && failedIn.isEmpty()) return Outcome.INCONCLUSIVE;
       if (failedIn.isEmpty()) return Outcome.PASSED;
@@ -624,43 +924,42 @@ public final class ExperimentRunner {
       return Outcome.INCONSISTENT;
     }
 
-    private record Key(int index, String evaluator) {}
-
-    /** The requirements of one case, in the order their results first appear in its attempts. */
-    static List<RequirementSummary> of(List<CaseResult> attempts) {
-      var byKey = new LinkedHashMap<Key, Map<EvalResult.Verdict, List<Integer>>>();
+    /**
+     * The verdicts of each evaluator of one case, in the order their results first appear in its
+     * attempts.
+     */
+    static List<EvaluatorVerdicts> of(List<CaseResult> attempts) {
+      var byEvaluator = new LinkedHashMap<String, Map<EvalResult.Verdict, List<Integer>>>();
       for (var attempt : attempts) {
-        var results = attempt.evalResults();
-        for (var i = 0; i < results.size(); i++) {
-          var result = results.get(i);
-          byKey
-              .computeIfAbsent(
-                  new Key(i, result.evaluator()), k -> new EnumMap<>(EvalResult.Verdict.class))
+        for (var result : attempt.evalResults()) {
+          byEvaluator
+              .computeIfAbsent(result.evaluator(), k -> new EnumMap<>(EvalResult.Verdict.class))
               .computeIfAbsent(result.verdict(), v -> new ArrayList<>())
               .add(attempt.run());
         }
       }
       var caseId = attempts.getFirst().caseId();
-      return byKey.entrySet().stream()
+      return byEvaluator.entrySet().stream()
           .map(
               e ->
-                  new RequirementSummary(
+                  new EvaluatorVerdicts(
                       caseId,
-                      e.getKey().index(),
-                      e.getKey().evaluator(),
+                      e.getKey(),
                       e.getValue().getOrDefault(EvalResult.Verdict.PASS, List.of()),
                       e.getValue().getOrDefault(EvalResult.Verdict.FAIL, List.of()),
-                      e.getValue().getOrDefault(EvalResult.Verdict.INCONCLUSIVE, List.of())))
+                      e.getValue().getOrDefault(EvalResult.Verdict.INCONCLUSIVE, List.of()),
+                      e.getValue().getOrDefault(EvalResult.Verdict.NOT_APPLICABLE, List.of())))
           .toList();
     }
 
-    private String render(boolean labelShared) {
-      var name = labelShared ? evaluator + " #" + (index + 1) : evaluator;
+    private String render() {
       var parts = new ArrayList<String>();
       if (!passedIn.isEmpty()) parts.add("passed in " + describeRuns(passedIn));
       if (!failedIn.isEmpty()) parts.add("failed in " + describeRuns(failedIn));
       if (!inconclusiveIn.isEmpty()) parts.add("inconclusive in " + describeRuns(inconclusiveIn));
-      return caseId + " " + name + ": " + String.join(", ", parts);
+      if (!notApplicableIn.isEmpty())
+        parts.add("not applicable in " + describeRuns(notApplicableIn));
+      return caseId + " " + evaluator + ": " + String.join(", ", parts);
     }
   }
 
@@ -706,26 +1005,21 @@ public final class ExperimentRunner {
       return (int) attempts.stream().filter(CaseResult::inconclusive).count();
     }
 
-    /** The case's requirements over all runs, see {@link RequirementSummary}. */
-    public List<RequirementSummary> requirements() {
-      return RequirementSummary.of(attempts);
+    /** The verdicts of each evaluator of the case over all runs, see {@link EvaluatorVerdicts}. */
+    public List<EvaluatorVerdicts> verdicts() {
+      return EvaluatorVerdicts.of(attempts);
     }
 
-    // One line per requirement that passed in some runs and failed in others, and one per target or
-    // setup failure when the case itself is inconsistent.
+    // One line per evaluator that passed in some runs and failed in others, and one per runner
+    // result when the case itself is inconsistent.
     private List<String> renderInconsistencies() {
-      var requirements = requirements();
-      var labelCounts = new LinkedHashMap<String, Integer>();
-      for (var requirement : requirements)
-        labelCounts.merge(requirement.evaluator(), 1, Integer::sum);
       var lines = new ArrayList<String>();
-      for (var requirement : requirements) {
+      for (var verdicts : verdicts()) {
         var runnerResult =
-            requirement.evaluator().equals(Evaluators.TARGET)
-                || requirement.evaluator().equals(Evaluators.SETUP);
-        if (requirement.outcome() == Outcome.INCONSISTENT
+            verdicts.evaluator().equals(TARGET) || verdicts.evaluator().equals(GUARDRAIL);
+        if (verdicts.outcome() == Outcome.INCONSISTENT
             || (runnerResult && outcome() == Outcome.INCONSISTENT)) {
-          lines.add(requirement.render(labelCounts.get(requirement.evaluator()) > 1));
+          lines.add(verdicts.render());
         }
       }
       return lines;
@@ -751,6 +1045,9 @@ public final class ExperimentRunner {
      * example {@code SupportAgentEvalTest.qualityGate}.
      */
     String name();
+
+    /** Whether the cases ran as an evaluation or as an attack. */
+    Kind kind();
 
     /** How many times every case ran, see {@link Experiment#repeat}. */
     int runs();
@@ -786,14 +1083,16 @@ public final class ExperimentRunner {
     List<CaseSummary> cases();
 
     /**
-     * The run as text: the gate verdict, rates per evaluator, the requirements that passed in some
-     * runs and failed in others, and the attempts that did not pass with their evidence.
+     * The run as text: the gate verdict, rates per evaluator, decisions per guardrail, the
+     * evaluators that passed in some runs and failed in others of the same case, and the attempts
+     * that did not pass with their evidence.
      */
     String render();
   }
 
   record Report(
       String name,
+      Kind kind,
       Instant startedAt,
       Instant finishedAt,
       int runs,
@@ -803,7 +1102,7 @@ public final class ExperimentRunner {
       implements EvalReport {
 
     private Report withReportFile(Optional<Path> file) {
-      return new Report(name, startedAt, finishedAt, runs, cases, verdict, file);
+      return new Report(name, kind, startedAt, finishedAt, runs, cases, verdict, file);
     }
 
     @Override
@@ -837,7 +1136,8 @@ public final class ExperimentRunner {
       text.append(
           String.format(
               Locale.ROOT,
-              "%s, %s: %d/%d attempts passed (%.0f%%)",
+              "%s of %s, %s: %d/%d attempts passed (%.0f%%)",
+              kind.name().toLowerCase(Locale.ROOT),
               plural(cases.size(), "case"),
               plural(runs, "run"),
               passedAttempts,
@@ -854,6 +1154,10 @@ public final class ExperimentRunner {
       rates(results)
           .forEach(
               (evaluator, rate) -> text.append("  ").append(rate.render(evaluator)).append('\n'));
+      guardrailCounts(results)
+          .forEach(
+              (guardrail, counts) ->
+                  text.append("  ").append(counts.render(guardrail)).append('\n'));
       var spend = spend();
       if (spend.attemptsWithEvidence() > 0) {
         text.append(spend.render(results.size())).append('\n');
@@ -870,23 +1174,35 @@ public final class ExperimentRunner {
       return text.toString();
     }
 
-    /**
-     * Model calls, tokens and latency summed over the attempts with model calls in the evidence.
-     */
+    /** Model responses, tokens and latency summed over the attempts with a recorded interaction. */
     Spend spend() {
-      var traced = results().stream().filter(c -> !c.interaction().modelCalls().isEmpty()).toList();
-      if (traced.isEmpty()) return Spend.NONE;
+      var recorded =
+          results().stream().filter(c -> c.evidence().interaction().isPresent()).toList();
+      if (recorded.isEmpty()) return Spend.NONE;
       var slowest =
-          traced.stream().max(Comparator.comparing(c -> c.interaction().latency())).orElseThrow();
+          recorded.stream().max(Comparator.comparing(c -> c.evidence().latency())).orElseThrow();
       return new Spend(
-          traced.size(),
-          traced.stream().mapToInt(c -> c.interaction().modelCalls().size()).sum(),
-          traced.stream().mapToLong(c -> c.interaction().inputTokens()).sum(),
-          traced.stream().mapToLong(c -> c.interaction().outputTokens()).sum(),
-          traced.stream().mapToLong(c -> c.interaction().latency().toMillis()).sum(),
+          recorded.size(),
+          recorded.stream().mapToInt(c -> c.evidence().modelResponses()).sum(),
+          recorded.stream().mapToLong(c -> c.evidence().inputTokens()).sum(),
+          recorded.stream().mapToLong(c -> c.evidence().outputTokens()).sum(),
+          recorded.stream().mapToLong(c -> c.evidence().latency().toMillis()).sum(),
           slowest.caseId(),
           slowest.run(),
-          slowest.interaction().latency().toMillis());
+          slowest.evidence().latency().toMillis());
+    }
+
+    /** Decision counts per guardrail, in the order the guardrails first appear in the attempts. */
+    static Map<String, GuardrailCounts> guardrailCounts(List<CaseResult> attempts) {
+      var counts = new LinkedHashMap<String, GuardrailCounts>();
+      for (var attempt : attempts) {
+        for (var decision : attempt.evidence().guardrails()) {
+          counts
+              .computeIfAbsent(decision.name(), name -> new GuardrailCounts())
+              .count(decision.decision());
+        }
+      }
+      return counts;
     }
 
     /** Pass counts per evaluator, over the attempts where it was conclusive. */
@@ -904,12 +1220,11 @@ public final class ExperimentRunner {
   }
 
   /**
-   * The model calls, tokens and latency summed over the attempts whose evidence carries model
-   * calls.
+   * The model responses, tokens and latency summed over the attempts with a recorded interaction.
    */
   record Spend(
       int attemptsWithEvidence,
-      int modelCalls,
+      int modelResponses,
       long inputTokens,
       long outputTokens,
       long latencyMs,
@@ -922,9 +1237,9 @@ public final class ExperimentRunner {
     private String render(int attempts) {
       return String.format(
           Locale.ROOT,
-          "spend: %d model calls, %d tokens in, %d out, %d ms in total, slowest %s run %d at %d ms,"
-              + " over %d/%d attempts with evidence",
-          modelCalls,
+          "spend: %d model responses, %d tokens in, %d out, %d ms in total, slowest %s run %d at"
+              + " %d ms, over %d/%d attempts with a recorded interaction",
+          modelResponses,
           inputTokens,
           outputTokens,
           latencyMs,
@@ -936,17 +1251,52 @@ public final class ExperimentRunner {
     }
   }
 
+  /** One guardrail's decision counts over the attempts. */
+  static final class GuardrailCounts {
+    private int allowed;
+    private int denied;
+    private int failed;
+
+    private void count(GuardrailDecisionRecord.Decision decision) {
+      switch (decision) {
+        case ALLOW -> allowed++;
+        case DENY -> denied++;
+        case FAIL -> failed++;
+        case UNSPECIFIED -> {}
+      }
+    }
+
+    int allowed() {
+      return allowed;
+    }
+
+    int denied() {
+      return denied;
+    }
+
+    int failed() {
+      return failed;
+    }
+
+    private String render(String guardrail) {
+      var text = "guardrail " + guardrail + ": denied " + denied + ", allowed " + allowed;
+      return failed == 0 ? text : text + ", failed " + failed;
+    }
+  }
+
   /** One evaluator's verdict counts over the attempts. */
   static final class Rate {
     private int passed;
     private int failed;
     private int inconclusive;
+    private int notApplicable;
 
     private void count(EvalResult.Verdict verdict) {
       switch (verdict) {
         case PASS -> passed++;
         case FAIL -> failed++;
         case INCONCLUSIVE -> inconclusive++;
+        case NOT_APPLICABLE -> notApplicable++;
       }
     }
 
@@ -962,9 +1312,16 @@ public final class ExperimentRunner {
       return inconclusive;
     }
 
+    int notApplicable() {
+      return notApplicable;
+    }
+
     private String render(String evaluator) {
-      var undecided = inconclusive == 0 ? "" : " (" + inconclusive + " inconclusive)";
-      return evaluator + " " + passed + "/" + (passed + failed) + undecided;
+      var undecided = new ArrayList<String>();
+      if (inconclusive > 0) undecided.add(inconclusive + " inconclusive");
+      if (notApplicable > 0) undecided.add(notApplicable + " not applicable");
+      var suffix = undecided.isEmpty() ? "" : " (" + String.join(", ", undecided) + ")";
+      return evaluator + " " + passed + "/" + (passed + failed) + suffix;
     }
   }
 }

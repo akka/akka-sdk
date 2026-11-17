@@ -13,7 +13,8 @@ Akka's _Project Descriptor_ is a multi-document YAML file that defines the compl
 . xref:#external-secret[external secrets],
 . xref:#secret[secrets],
 . xref:#service-config[service configs],
-. xref:#broker[message broker configuration], and
+. xref:#broker[message broker configuration],
+. xref:#object-storage[object storage],
 . xref:#rolebindings[role bindings].
 
 This allows you to manage multiple resources in a single file and apply them at once with the `akka project apply` command.
@@ -24,7 +25,7 @@ Each document in the project descriptor represents a single resource and follows
 |===
 |Field   |Type                    |Description
 
-|*resource*         |string _required_  |The type of resource: `Project`, `Service`, `Route`, `NetworkPolicy`, `Observability`, `ExternalSecret`, `Secret`, `ServiceConfig`, `Broker`, or `RoleBindings`
+|*resource*         |string _required_  |The type of resource: `Project`, `Service`, `Route`, `NetworkPolicy`, `Observability`, `ExternalSecret`, `Secret`, `ServiceConfig`, `Broker`, `ObjectStorage`, or `RoleBindings`
 |*resourceVersion*  |string _required_  |The version of the resource schema. Currently only `v1` is supported.
 |*metadata*         |<<Metadata>>       |Optional metadata for the resource. Required for `Project`, `Service`, `Route`, `ExternalSecret`, `Secret`, and `ServiceConfig` resources.
 |*spec*             |object _required_  |The specification for the resource. Structure depends on the resource type.
@@ -42,7 +43,7 @@ Each document in the project descriptor represents a single resource and follows
 
 == Resource types
 
-The project descriptor supports the following resource types. A single descriptor can contain multiple `Service`, `Route`, `ExternalSecret`, `Secret`, and `ServiceConfig` documents, each with a unique name. The `Project`, `NetworkPolicy`, `Observability`, `Broker`, and `RoleBindings` resources are project-level singletons—only one of each can exist per project.
+The project descriptor supports the following resource types. A single descriptor can contain multiple `Service`, `Route`, `ExternalSecret`, `Secret`, and `ServiceConfig` documents, each with a unique name. The `Project`, `NetworkPolicy`, `Observability`, `Broker`, `ObjectStorage`, and `RoleBindings` resources are project-level singletons—only one of each can exist per project.
 
 [#project]
 === Project
@@ -378,6 +379,82 @@ spec:
   gcpKey: gcp-service-account
 ----
 
+[#object-storage]
+=== ObjectStorage
+
+Configures the buckets that services can use through the `ObjectStorageProvider` of the SDK. See xref:sdk:integrations/object-storage.adoc[] for how to use object storage from a service. Only one object storage configuration exists per project, and it does not require a `metadata.name`.
+
+[cols="1,1,1"]
+|===
+|Field      |Type                |Description
+
+|*buckets*  |[]<<BucketSpec>> _required_ |List of buckets. At least one is required.
+|===
+
+NOTE: Applying an `ObjectStorage` document replaces the whole list of buckets. Buckets that are not in the document are removed.
+
+[#BucketSpec]
+==== BucketSpec
+
+[cols="1,1,1"]
+|===
+|Field            |Type                        |Description
+
+|*name*           |string _required_           |The logical name that service code passes to `forBucket`. Must be unique within the document, match `[a-z0-9]([-a-z0-9]*[a-z0-9])?` and be at most 42 characters.
+|*provider*       |string _required_           |The storage provider: `s3`, `gcs`, or `azure-blob`.
+|*bucket*         |string _required_           |The name of the bucket (or container) at the provider.
+|*region*         |string                      |The provider region. Required for `s3`.
+|*`endpointUrl`*    |string                      |Overrides the provider endpoint, for example to use an S3-compatible service.
+|*credentials*    |<<BucketCredentialsSpec>>   |How the runtime authenticates to the provider. Optional for `s3` and `gcs`, which then use the provider's default credential chain. Required for `azure-blob`.
+|===
+
+[#BucketCredentialsSpec]
+==== BucketCredentialsSpec
+
+The `type` selects the authentication mode. Only the fields listed for that type are used. Secret references use the format `secret-name/key` and must point to an existing secret.
+
+[cols="1,1,3"]
+|===
+|Type                  |Providers      |Fields
+
+|`native`              |`s3`, `gcs`    |None. Uses the provider's default credential chain.
+|`static`              |`s3`           |`accessKeyIdSecret` and `secretAccessKeySecret` (both required): secret references for the access key ID and the secret access key.
+|`profile`             |`s3`           |`profileName` (required): the AWS profile name.
+|`service-account-key` |`gcs`          |`serviceAccountKeySecret` (required): secret reference for the service account JSON key.
+|`shared-key`          |`azure-blob`   |`accountName` (required): the storage account name. `accountKeySecret` (required): secret reference for the account key.
+|`sas`                 |`azure-blob`   |`accountName` (required): the storage account name. `sasTokenSecret` (required): secret reference for the SAS token.
+|===
+
+Example:
+
+[source,yaml]
+----
+resource: ObjectStorage
+resourceVersion: v1
+spec:
+  buckets:
+    - name: photos
+      provider: s3
+      bucket: acme-photos
+      region: us-east-1
+      credentials:
+        type: static
+        accessKeyIdSecret: aws-creds/access-key-id
+        secretAccessKeySecret: aws-creds/secret-access-key
+    - name: logs
+      provider: gcs
+      bucket: acme-logs
+    - name: archive
+      provider: azure-blob
+      bucket: acme-archive
+      credentials:
+        type: shared-key
+        accountName: acmestorage
+        accountKeySecret: azure-creds/account-key
+----
+
+You can also manage this configuration with `akka projects config set object-storage`. Use the `bucket` subcommand to add or replace a single bucket, or `--from-file` to replace the whole configuration from an `ObjectStorage` document.
+
 [#rolebindings]
 === RoleBindings
 
@@ -429,7 +506,7 @@ To export all resources from an existing project as a descriptor:
 akka project export --project my-project --file my-project.yaml
 ----
 
-This exports the project configuration, services, routes, secrets, service configs, observability configuration, broker settings, and role bindings to a single file. You can also write to standard output:
+This exports the project configuration, services, routes, secrets, service configs, observability configuration, broker settings, object storage configuration, and role bindings to a single file. You can also write to standard output:
 
 [source,bash]
 ----

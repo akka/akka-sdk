@@ -7,6 +7,8 @@ A _Service Descriptor_ in Akka defines the configuration for a service resource.
 
 The Service Descriptor is used by the `akka service apply` command, described in xref:operations:services/deploy-service.adoc#apply[deploying a service with a descriptor].
 
+The descriptor is the complete configuration of the service, and `akka service apply` removes settings that are not in it. See xref:operations:projects/secrets.adoc#deploy-with-descriptor[Deploy with secrets using a service descriptor] for how to keep existing settings when you apply a descriptor.
+
 [cols="1,1,1"]
 |===
 |Field   |Type                              |Description
@@ -73,8 +75,32 @@ A reference to a particular key in a particular secret, used by environment vari
 
 |*name*     |string _required_ |The name of a configured secret
 |*key*      |string _required_ |The name of a key in the specified secret
-|*optional* |boolean           |Whether the secret or its key must exist. If true, the service will fail to deploy if the secret or its key does not exist. If false, the service will be deployed with the environment variable unset if the secret does not or its key does not exist.
+|*optional* |boolean           |Has no effect for environment variables. The secret and its key must exist, otherwise the service container fails to start. For volume mounts, use *optional* on <<SecretVolumeSource>>.
 |===
+
+Example of an environment variable with a fixed value and an environment variable that reads the key `value` from the secret `openai-key`:
+
+[source, command line]
+----
+akka secret create generic openai-key --literal value=sk-abc123...
+----
+
+[source, yaml]
+----
+name: <<service-name>>
+service:
+  image: my-image:latest
+  env:
+  - name: LOG_LEVEL
+    value: INFO
+  - name: OPENAI_API_KEY
+    valueFrom:
+      secretKeyRef:
+        name: openai-key
+        key: value
+----
+
+The same configuration with `akka service deploy` is `--env LOG_LEVEL=INFO --secret-env OPENAI_API_KEY=openai-key/value`. See xref:operations:projects/secrets.adoc[] for creating and managing secrets.
 
 === ServiceJwt
 

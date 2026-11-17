@@ -13,8 +13,8 @@ import akka.javasdk.impl.evaluation.EvaluatorEffectImpl;
  * akka.javasdk.evaluation.evaluators}, keyed by the evaluator's component id. The runtime invokes
  * {@link #evaluate(EvaluationContext)} for each interaction of a bound agent, passing an {@link
  * EvaluationContext} that identifies the interaction to evaluate. The handler returns an {@link
- * Effect} describing the outcome: the recorded evaluation or an inconclusive result. An exception
- * thrown from the handler records a failed evaluation.
+ * Effect} describing the outcome: the recorded evaluation, an inconclusive result or a not
+ * applicable result. An exception thrown from the handler records a failed evaluation.
  *
  * <p>Blocking calls made from {@link #evaluate(EvaluationContext)} run on virtual threads. For an
  * evaluation that runs in several steps and must survive restarts, extend {@link DurableEvaluator}
@@ -45,6 +45,8 @@ public abstract class Evaluator {
    * <ul>
    *   <li>complete with an {@link Evaluation} (the verdict)
    *   <li>report that the evaluation was inconclusive: it ran but reached no verdict
+   *   <li>report that the evaluation was not applicable: the interaction gave it nothing to
+   *       evaluate
    * </ul>
    */
   public interface Effect {
@@ -66,13 +68,24 @@ public abstract class Evaluator {
       /**
        * Report that the evaluation was inconclusive.
        *
-       * <p>Use this when the evaluator ran but could not reach a verdict, for example there was no
-       * transcript or the interaction was not applicable.
+       * <p>Use this when the evaluator ran but could not reach a verdict, for example the
+       * interaction failed and there is no reply to judge, or the judge gave no usable answer.
        *
        * @param reason why the evaluation was inconclusive
        * @return the inconclusive effect
        */
       Effect inconclusive(String reason);
+
+      /**
+       * Report that the evaluation was not applicable.
+       *
+       * <p>Use this when the interaction gave the evaluator nothing to evaluate, for example the
+       * evaluator checks a tool call that the agent did not make.
+       *
+       * @param reason why the evaluation was not applicable
+       * @return the not applicable effect
+       */
+      Effect notApplicable(String reason);
     }
   }
 }

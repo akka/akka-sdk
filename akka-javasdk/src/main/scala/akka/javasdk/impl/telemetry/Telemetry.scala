@@ -10,8 +10,10 @@ import scala.jdk.OptionConverters._
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.runtime.sdk.spi.SpiMetadataEntry
+import io.opentelemetry.context.Scope
 import io.opentelemetry.context.propagation.TextMapGetter
 import io.opentelemetry.context.propagation.TextMapSetter
+import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -21,7 +23,22 @@ import org.slf4j.LoggerFactory
 @InternalApi
 private[akka] object Telemetry {
 
-  val TRACE_ID: String = "trace_id"
+  /**
+   * Make the context current on the calling thread, so that logs and `Span.current()` see its span. Close the returned
+   * scope on the same thread.
+   */
+  def makeCurrent(context: Option[OtelContext]): Scope =
+    context match {
+      case Some(ctx) => ctx.makeCurrent()
+      case None      => Scope.noop()
+    }
+
+  /** Run the block with the context current on the calling thread. */
+  def withCurrentContext[T](context: Option[OtelContext])(block: => T): T = {
+    val scope = makeCurrent(context)
+    try block
+    finally scope.close()
+  }
 
   private val logger: Logger = LoggerFactory.getLogger(getClass)
 

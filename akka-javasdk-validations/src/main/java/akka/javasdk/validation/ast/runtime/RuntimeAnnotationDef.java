@@ -54,6 +54,13 @@ public record RuntimeAnnotationDef(Annotation annotation) implements AnnotationD
   }
 
   @Override
+  public Optional<String> getEnumValue(String attributeName) {
+    return getAttributeValue(attributeName)
+        .filter(v -> v instanceof Enum)
+        .map(v -> ((Enum<?>) v).name());
+  }
+
+  @Override
   public Optional<TypeRefDef> getClassValue(String attributeName) {
     return getAttributeValue(attributeName)
         .filter(v -> v instanceof Class)

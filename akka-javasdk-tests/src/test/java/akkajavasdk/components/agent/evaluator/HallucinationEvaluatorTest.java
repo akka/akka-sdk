@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 @ExtendWith(Junit5LogCapturing.class)
+@SuppressWarnings("removal")
 public class HallucinationEvaluatorTest extends TestKitSupport {
 
   private final TestModelProvider testModelProvider = new TestModelProvider();

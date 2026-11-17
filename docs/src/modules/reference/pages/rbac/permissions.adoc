@@ -1,0 +1,15 @@
+= Permissions
+:page-summary: The permissions that roles can grant, grouped by resource, with the built-in roles that include each one.
+:page-when-to-use: When you look up the permission for an operation, or choose the permissions and resources for a custom role rule.
+:page-related: reference:rbac/roles.adoc, operations:security/custom-roles.adoc, operations:security/index.adoc
+:page-persona: operator-platform
+
+include::ROOT:partial$include.adoc[]
+
+A permission allows one operation on one kind of resource. The name has the form `<type>.<resource>.<operation>`, for example `project.services.get`. Permissions that apply to the organization or project itself have the form `<type>.<operation>`.
+
+The *Granted on* column shows the kind of resource that you bind the permission to. The *Built-in roles* column lists the xref:rbac/roles.adoc[built-in roles] that include the permission.
+
+Use the search box to filter by any part of the permission name. The search ignores case.
+
+include::partial$rbac/permissions-table.adoc[]

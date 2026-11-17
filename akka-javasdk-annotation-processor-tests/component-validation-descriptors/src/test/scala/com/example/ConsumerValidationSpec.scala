@@ -64,6 +64,18 @@ abstract class AbstractConsumerValidationSpec(val validationMode: ValidationMode
     }
 
     // Invalid consumers - basic validations
+    "accept valid Consumer with stream subscription to a platform service" in {
+      assertValid("valid/ValidConsumerWithPlatformServiceStream.java")
+    }
+
+    "reject Consumer with an invalid platform service name" in {
+      assertInvalid("invalid/ConsumerWithInvalidPlatformService.java", "Invalid platform service name [My_Service]")
+    }
+
+    "reject Consumer with a host name together with a platform service" in {
+      assertInvalid("invalid/ConsumerWithHostAndPlatformService.java", "must be a bare service name")
+    }
+
     "reject Consumer without @Consume annotation" in {
       assertInvalid(
         "invalid/ConsumerWithoutConsumeAnnotation.java",
@@ -184,6 +196,60 @@ abstract class AbstractConsumerValidationSpec(val validationMode: ValidationMode
         "invalid/AmbiguousHandlersStreamTypeLevelSubscriptionInConsumer.java",
         "Ambiguous handlers for java.lang.Integer",
         "methods: [methodOne, methodTwo] consume the same type")
+    }
+
+    // Start point validations
+    "accept Consumer starting from latest" in {
+      assertValid("valid/ValidConsumerStartFromLatest.java")
+    }
+
+    "accept Consumer starting from a timestamp" in {
+      assertValid("valid/ValidConsumerStartFromTimestamp.java")
+    }
+
+    "reject Consumer with @Consume.StartFrom setting both latest and timestamp" in {
+      assertInvalid(
+        "invalid/ConsumerStartFromBoth.java",
+        "@Consume.StartFrom must set either latest or timestamp, not both")
+    }
+
+    "reject Consumer with @Consume.StartFrom setting neither latest nor timestamp" in {
+      assertInvalid("invalid/ConsumerStartFromNone.java", "@Consume.StartFrom must set latest or timestamp")
+    }
+
+    "reject Consumer with @Consume.StartFrom with an invalid timestamp" in {
+      assertInvalid(
+        "invalid/ConsumerStartFromInvalidTimestamp.java",
+        "@Consume.StartFrom timestamp [yesterday] is not an ISO-8601 instant")
+    }
+
+    "reject Consumer with @Consume.StartFrom setting both latest and an invalid timestamp" in {
+      assertInvalid(
+        "invalid/ConsumerStartFromBothInvalidTimestamp.java",
+        "@Consume.StartFrom must set either latest or timestamp, not both",
+        "@Consume.StartFrom timestamp [garbage] is not an ISO-8601 instant")
+    }
+
+    "reject Consumer with only @Consume.StartFrom and no source" in {
+      assertInvalid("invalid/ConsumerStartFromOnly.java", "A Consumer must be annotated with `@Consume` annotation")
+    }
+
+    "reject Consumer with topic publishing and @Consume.StartFrom but no source" in {
+      assertInvalid(
+        "invalid/ConsumerStartFromTopicPublishingNoSource.java",
+        "You must select a source for @Produce.ToTopic")
+    }
+
+    "reject Consumer with @Consume.StartFrom on a topic subscription" in {
+      assertInvalid(
+        "invalid/ConsumerStartFromTopic.java",
+        "@Consume.StartFrom is not supported for a Consumer with @Consume.FromTopic")
+    }
+
+    "reject Consumer with @Consume.StartFrom on a service stream producer" in {
+      assertInvalid(
+        "invalid/ConsumerStartFromServiceStreamProducer.java",
+        "@Consume.StartFrom is not supported for a Consumer with @Produce.ServiceStream")
     }
 
     // Publication validations

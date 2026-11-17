@@ -6,7 +6,9 @@ syntax = "proto3";
 
 package akkajavasdk.serialization;
 
+import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
 
 option java_package = "akkajavasdk.protocol";
 option java_outer_classname = "SerializationTestProtos";
@@ -140,6 +142,11 @@ message CustomerState {
     string preferred_email = 10;
     string preferred_phone = 11;
   }
+  google.protobuf.StringValue display_name = 12;
+  google.protobuf.Duration session_length = 13;
+  int64 loyalty_points = 14;
+  uint32 visit_count = 15;
+  uint64 lifetime_spend = 16;
 }
 
 // Nested message in the customer state, used to cover presence of a message field in views
@@ -150,6 +157,13 @@ message ContactInfo {
 // Query parameter message exercising google.protobuf.Timestamp as a view query input
 message CustomersByCreationTimeQuery {
   google.protobuf.Timestamp created_after = 1;
+}
+
+// Query parameters exercising 64-bit and unsigned integer types
+message CustomersByNumbersQuery {
+  int64 loyalty_points = 1;
+  uint32 visit_count = 2;
+  uint64 lifetime_spend = 3;
 }
 
 // List wrapper used as the return type of a view query

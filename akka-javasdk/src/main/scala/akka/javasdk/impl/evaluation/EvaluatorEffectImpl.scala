@@ -19,6 +19,8 @@ private[javasdk] object EvaluatorEffectImpl {
 
   final case class InconclusiveEffect(reason: String) extends PrimaryEffect {}
 
+  final case class NotApplicableEffect(reason: String) extends PrimaryEffect {}
+
   final class Builder extends Evaluator.Effect.Builder {
     override def complete(evaluation: Evaluation): Evaluator.Effect = {
       require(evaluation != null, "Evaluation must not be null")
@@ -26,6 +28,8 @@ private[javasdk] object EvaluatorEffectImpl {
     }
 
     override def inconclusive(reason: String): Evaluator.Effect = InconclusiveEffect(reason)
+
+    override def notApplicable(reason: String): Evaluator.Effect = NotApplicableEffect(reason)
   }
 
   def builder(): Evaluator.Effect.Builder = new Builder()

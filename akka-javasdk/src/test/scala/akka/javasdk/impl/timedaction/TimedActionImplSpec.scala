@@ -4,6 +4,8 @@
 
 package akka.javasdk.impl.timedaction
 
+import java.util.concurrent.atomic.AtomicReference
+
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
@@ -27,6 +29,11 @@ import akka.runtime.sdk.spi.SpiUnhandledException
 import akka.runtime.sdk.spi.TimerClient
 import akka.util.ByteString
 import io.opentelemetry.api.OpenTelemetry
+import io.opentelemetry.api.trace.Span
+import io.opentelemetry.api.trace.SpanContext
+import io.opentelemetry.api.trace.TraceFlags
+import io.opentelemetry.api.trace.TraceState
+import io.opentelemetry.context.Context
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Inside
 import org.scalatest.OptionValues
@@ -43,6 +50,9 @@ class TimedActionImplSpec
     with OptionValues {
 
   private val classicSystem = system.toClassic
+
+  // span id the command handler saw as current span
+  private val currentSpanIdInHandler = new AtomicReference[String]()
 
   private val serializer = new Serializer
   private val timerClient = new TimerClient {
@@ -88,6 +98,11 @@ class TimedActionImplSpec
 
     def myMethodReturningNull(): TimedAction.Effect = null
 
+    def myMethodRecordingSpan(): TimedAction.Effect = {
+      currentSpanIdInHandler.set(Span.current().getSpanContext.getSpanId)
+      effects().done()
+    }
+
   }
 
   "The action service" should {
@@ -100,6 +115,26 @@ class TimedActionImplSpec
           .futureValue
 
       reply shouldBe an[SpiTimedAction.SuccessEffect.type]
+    }
+
+    "run the command handler with the command telemetry context current" in {
+      val service = create(TimedActionDescriptorFactory.buildDescriptorFor(classOf[TestTimedAction], serializer))
+      val spanId = "b7ad6b7169203331"
+      val span = Span.wrap(
+        SpanContext.create("0af7651916cd43dd8448eb211c80319c", spanId, TraceFlags.getSampled, TraceState.getDefault))
+
+      service
+        .handleCommand(
+          new SpiTimedAction.Command(
+            "MyMethodRecordingSpan",
+            Some(BytesPayload.empty),
+            SpiMetadata.empty,
+            Context.root().`with`(span)))
+        .futureValue shouldBe an[SpiTimedAction.SuccessEffect.type]
+
+      currentSpanIdInHandler.get shouldBe spanId
+      // the scope is closed after the handler
+      Span.current().getSpanContext.isValid shouldBe false
     }
 
     "turn thrown command handler exceptions into failure responses" in {

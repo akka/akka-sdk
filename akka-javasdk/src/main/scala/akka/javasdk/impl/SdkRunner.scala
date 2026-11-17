@@ -66,6 +66,7 @@ import akka.javasdk.annotations.http.HttpEndpoint
 import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.consumer.Consumer
+import akka.javasdk.decision.DecisionModelClient
 import akka.javasdk.evaluation.DurableEvaluator
 import akka.javasdk.evaluation.Evaluator
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
@@ -78,6 +79,7 @@ import akka.javasdk.http.HttpClientProvider
 import akka.javasdk.http.RequestContext
 import akka.javasdk.impl.ComponentDescriptorFactory.consumerDestination
 import akka.javasdk.impl.ComponentDescriptorFactory.consumerSource
+import akka.javasdk.impl.ComponentDescriptorFactory.consumerStartFrom
 import akka.javasdk.impl.Sdk.StartupContext
 import akka.javasdk.impl.SdkRunner.extractSpiSettings
 import akka.javasdk.impl.SpiffeContextImpl
@@ -98,9 +100,12 @@ import akka.javasdk.impl.backoffice.BackofficeAccessTokenCache
 import akka.javasdk.impl.client.ComponentClientImpl
 import akka.javasdk.impl.consumer.ConsumerImpl
 import akka.javasdk.impl.consumer.MessageContextImpl
+import akka.javasdk.impl.decision.DecisionModelClientImpl
+import akka.javasdk.impl.decision.OverrideDecisionModelProvider
 import akka.javasdk.impl.evaluation.DurableEvaluatorImpl
 import akka.javasdk.impl.evaluation.EvaluatorImpl
 import akka.javasdk.impl.evaluation.EvaluatorSettings
+import akka.javasdk.impl.evaluation.GuardedEvaluationClient
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityImpl
 import akka.javasdk.impl.grpc.GrpcClientProviderImpl
 import akka.javasdk.impl.http.HttpClientProviderImpl
@@ -113,6 +118,7 @@ import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
 import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
+import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.impl.telemetry.TraceInstrumentation
 import akka.javasdk.impl.timedaction.TimedActionImpl
 import akka.javasdk.impl.timer.TimerSchedulerImpl
@@ -139,6 +145,7 @@ import akka.runtime.sdk.spi.AgentDescriptor
 import akka.runtime.sdk.spi.AutonomousAgentDescriptor
 import akka.runtime.sdk.spi.ComponentClients
 import akka.runtime.sdk.spi.ConsumerDescriptor
+import akka.runtime.sdk.spi.DeploymentInfo
 import akka.runtime.sdk.spi.EvaluatorDescriptor
 import akka.runtime.sdk.spi.EventLogClient
 import akka.runtime.sdk.spi.EventSourcedEntityDescriptor
@@ -167,10 +174,12 @@ import akka.runtime.sdk.spi.SpiDevObjectStorageS3PathAccessStyle
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3ProfileCredentials
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3StaticCredentials
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3VirtualHostAccessStyle
+import akka.runtime.sdk.spi.SpiEvaluationClient
 import akka.runtime.sdk.spi.SpiEvaluator
 import akka.runtime.sdk.spi.SpiEventSourcedEntity
 import akka.runtime.sdk.spi.SpiEventingSupportSettings
 import akka.runtime.sdk.spi.SpiGuardrailSetup
+import akka.runtime.sdk.spi.SpiLedgerSettings
 import akka.runtime.sdk.spi.SpiMockedEventingSettings
 import akka.runtime.sdk.spi.SpiSanitizerClient
 import akka.runtime.sdk.spi.SpiSanitizerEngine
@@ -212,7 +221,28 @@ object SdkRunner {
 
   val FutureDone: Future[Done] = Future.successful(Done)
 
-  @nowarn("msg=deprecated")
+  def logReportedError(err: UserFunctionError): Unit = {
+    val severityString = err.severity match {
+      case Level.ERROR => "Error"
+      case Level.WARN  => "Warning"
+      case Level.INFO  => "Info"
+      case Level.DEBUG => "Debug"
+      case Level.TRACE => "Trace"
+      case other       => other.name()
+    }
+    val message = s"$severityString reported from Akka runtime: ${err.code} ${err.message}"
+    val detail = if (err.detail.isEmpty) Nil else List(err.detail)
+    val seeDocs = DocLinks.forErrorCode(err.code).map(link => s"See documentation: $link").toList
+    val messages = message :: detail ::: seeDocs
+    val logMessage = messages.mkString("\n")
+
+    Telemetry.withCurrentContext(err.telemetryContext) {
+      ErrorHandling.withMdcCorrelationId(err.correlationId) {
+        userServiceLog.atLevel(err.severity).log(logMessage)
+      }
+    }
+  }
+
   def extractSpiSettings(applicationConf: Config): SpiSettings = {
     val eventSourcedEntitySnapshotEvery = applicationConf.getInt("akka.javasdk.event-sourced-entity.snapshot-every")
 
@@ -254,21 +284,30 @@ object SdkRunner {
           ephemeralHttpPort = false)
       }
 
-    val agentInteractionLogEnabled =
+    val ledgerEnabled =
       devModeSettings.isDefined || // always enabled in dev mode
-      applicationConf.getBoolean("akka.javasdk.agent.interaction-log.enabled")
+      applicationConf.getBoolean("akka.javasdk.agent.ledger.enabled")
 
     val spiDeployedEventingSettings = extractDeployedEventingSettings(applicationConf)
+
+    val ledgerSettings = {
+      val records = applicationConf.getConfig("akka.javasdk.agent.ledger.records")
+      new SpiLedgerSettings(
+        enabled = ledgerEnabled,
+        toolCallIntent = records.getBoolean("tool-call-intent"),
+        guardrailAllow = records.getBoolean("guardrail-allow"),
+        sanitizerNoMasking = records.getBoolean("sanitizer-no-masking"))
+    }
 
     new SpiSettings(
       eventSourcedEntitySnapshotEvery,
       cleanupDeletedEntityAfter,
       cleanupInterval,
       maxToolCallSteps,
-      agentInteractionLogEnabled,
       devModeSettings,
       Some(sanitizationSettings),
-      Some(spiDeployedEventingSettings))
+      Some(spiDeployedEventingSettings),
+      ledgerSettings)
   }
 
   private def extractDevObjectStorageBuckets(objectStorageConf: Config): Seq[SpiDevObjectStorageBucketConfig] = {
@@ -450,10 +489,12 @@ class SdkRunner private (
         startContext.componentClients,
         startContext.eventLogClient,
         startContext.ledgerClient,
+        startContext.evaluationClient,
         startContext.remoteIdentification,
         startContext.tracerFactory,
         startContext.sdkMeter,
         startContext.regionInfo,
+        startContext.deploymentInfo,
         dependencyProvider,
         disabledComponents,
         overrideDisabledComponents,
@@ -485,7 +526,7 @@ class SdkRunner private (
  */
 @InternalApi
 private object ComponentType {
-  // Those are also defined in ComponentAnnotationProcessor, and must be the same
+  // Those are also defined in ComponentKinds, and must be the same
 
   val EventSourcedEntity = "event-sourced-entity"
   val KeyValueEntity = "key-value-entity"
@@ -517,11 +558,13 @@ private[javasdk] object Sdk {
       agentRegistry: AgentRegistryImpl,
       agentCapabilityConverter: CapabilityConverter,
       overrideModelProvider: OverrideModelProvider,
+      overrideDecisionModelProvider: OverrideDecisionModelProvider,
       serializer: Serializer,
       sanitizer: Sanitizer,
       classifierClient: ClassifierClient,
       sanitizerClient: SanitizerClient,
       ledgerClient: LedgerClient,
+      evaluationClient: SpiEvaluationClient,
       inMemorySpanExporter: Option[InMemorySpanExporter],
       // Completed by the runtime with the address its HTTP endpoint was bound to, see StartContext. Carried
       // here for the testkit, which awaits it from the thread that started the testkit. Nothing in the SDK
@@ -543,7 +586,8 @@ private[javasdk] object Sdk {
     classOf[AgentContext],
     classOf[AgentRegistry],
     classOf[ObjectStorageProvider],
-    classOf[LedgerClient])
+    classOf[LedgerClient],
+    classOf[DecisionModelClient])
 
   // Run a user-supplied callback, logging any failure on the user component's own logger so it reaches the user.
   // Rethrows by default; pass rethrow = false where a failing callback must not abort the surrounding flow.
@@ -585,10 +629,12 @@ private final class Sdk(
     runtimeComponentClients: ComponentClients,
     eventLogClient: EventLogClient,
     spiLedgerClient: SpiLedgerClient,
+    spiEvaluationClient: SpiEvaluationClient,
     remoteIdentification: Option[RemoteIdentification],
     tracerFactory: String => Tracer,
     sdkMeter: Meter,
     regionInfo: RegionInfo,
+    deploymentInfo: DeploymentInfo,
     dependencyProviderOverride: Option[DependencyProvider],
     disabledComponents: Set[Class[_]],
     overrideDisabledComponents: Boolean,
@@ -613,6 +659,8 @@ private final class Sdk(
   @volatile private var dependencyProviderOpt: Option[DependencyProvider] = dependencyProviderOverride
 
   private val applicationConfig = ApplicationConfig(system).getConfig
+  private val evaluationClient: SpiEvaluationClient =
+    new GuardedEvaluationClient(spiEvaluationClient, applicationConfig)
   private val sdkSettings = Settings(applicationConfig.getConfig("akka.javasdk"), spiSettings)
 
   spiSettings.devMode.foreach { devMode =>
@@ -636,6 +684,7 @@ private final class Sdk(
     None,
     remoteIdentification.map(ri => RawHeader(ri.headerName, ri.headerValue)),
     sdkSettings,
+    deploymentInfo,
     // We know it is a dispatcher/executor
     sdkExecutionContext.asInstanceOf[Executor],
     None,
@@ -654,10 +703,13 @@ private final class Sdk(
     system,
     sdkSettings,
     userServiceConfig,
+    deploymentInfo,
     remoteIdentification.map(ri => GrpcClientProviderImpl.AuthHeaders(ri.headerName, ri.headerValue)),
     grpcMockLookup)
 
   private lazy val overrideModelProvider = new OverrideModelProvider
+
+  private lazy val overrideDecisionModelProvider = new OverrideDecisionModelProvider
 
   // validate service classes before instantiating
   private val validation = componentClasses.foldLeft(Valid.instance().asInstanceOf[Validation]) {
@@ -673,6 +725,8 @@ private final class Sdk(
       invalid.messages.asScala.foreach { msg => logger.error(msg) }
       invalid.throwFailureSummary()
   }
+
+  AclDescriptorFactory.checkParentProjectRules(componentClasses, deploymentInfo).foreach(msg => logger.warn(msg))
 
   // Constructed before the GuardrailProvider, whose guardrails may need to invoke a classifier.
   // Deliberately NOT validated here: validateClassifiers() runs from preStart instead (see below),
@@ -755,7 +809,7 @@ private final class Sdk(
   // rather than repeated at each injection site.
   @nowarn("msg=deprecated")
   private val deprecatedSanitizerClass: Class[_] = classOf[Sanitizer]
-  // Root-context handle for callers with no per-call telemetryContext (StartupContext/testkit);
+  // Handle for callers with no per-call telemetryContext (StartupContext/testkit);
   // components get a per-injection handle via classifierClient(telemetryContext) below.
   lazy private val classifierClient: ClassifierClient = classifierProvider.client
   lazy private val sanitizerClient: SanitizerClient = sanitizerProvider.client
@@ -794,7 +848,6 @@ private final class Sdk(
 
   // we need a method instead of function in order to have type params
   // to late use in Reflect.workflowStateType
-  @nowarn("msg=deprecated")
   private def workflowInstanceFactory[S, W <: Workflow[S]](
       componentId: String,
       factoryContext: SpiWorkflow.FactoryContext,
@@ -811,6 +864,7 @@ private final class Sdk(
       sdkTracerFactory,
       regionInfo,
       runtimeComponentClients,
+      evaluationClient,
       { context =>
         val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
         val workflow = wiredInstance("Workflow", clz) {
@@ -915,6 +969,7 @@ private final class Sdk(
     val scanTimeComponentClient: ComponentClient =
       ComponentClientImpl(
         runtimeComponentClients,
+        evaluationClient,
         serializer,
         agentClassById = Map.empty,
         agentCapabilityConverter = None,
@@ -1107,16 +1162,14 @@ private final class Sdk(
             () => unhandledExceptionReporterFn)
         }
         timedActionDescriptors :+=
-          (new TimedActionDescriptor(
+          new TimedActionDescriptor(
             componentId,
             clz.getName,
             timedActionInstanceFactory,
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
             provided = false,
-            protobufDescriptors =
-              Reflect.protoCommandHandlerInputTimedAction(clz.asInstanceOf[Class[TimedAction]])): @nowarn(
-            "msg=deprecated"))
+            protobufDescriptors = Reflect.protoCommandHandlerInputTimedAction(clz.asInstanceOf[Class[TimedAction]]))
 
       case clz if Reflect.isConsumer(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -1145,7 +1198,7 @@ private final class Sdk(
             () => unhandledExceptionReporterFn)
         }
         consumerDescriptors :+=
-          (new ConsumerDescriptor(
+          new ConsumerDescriptor(
             componentId,
             clz.getName,
             consumerSrc,
@@ -1154,8 +1207,8 @@ private final class Sdk(
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
             provided = false,
-            protobufDescriptors = Reflect.protoCommandHandlerInputOutput(componentDescriptor)): @nowarn(
-            "msg=deprecated"))
+            protobufDescriptors = Reflect.protoCommandHandlerInputOutput(componentDescriptor),
+            startFrom = consumerStartFrom(consumerClass))
 
       case clz if Reflect.isAutonomousAgent(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -1414,6 +1467,7 @@ private final class Sdk(
     case s if s == classOf[Meter]            => sdkMeter
     case o if o == classOf[ObjectStorageProvider] =>
       objectStorageProvider(telemetryContext)
+    case j if j == classOf[DecisionModelClient] => decisionModelClient(telemetryContext)
   }
 
   val spiComponents: SpiComponents = {
@@ -1483,11 +1537,13 @@ private final class Sdk(
               agentRegistry,
               agentCapabilityConverter,
               overrideModelProvider,
+              overrideDecisionModelProvider,
               serializer,
               sanitizer,
               classifierClient,
               sanitizerClient,
               ledgerClient,
+              evaluationClient,
               inMemorySpanExporter,
               httpEndpointBound))
           Future.successful(Done)
@@ -1520,11 +1576,13 @@ private final class Sdk(
               agentRegistry,
               agentCapabilityConverter,
               overrideModelProvider,
+              overrideDecisionModelProvider,
               serializer,
               sanitizer,
               classifierClient,
               sanitizerClient,
               ledgerClient,
+              evaluationClient,
               inMemorySpanExporter,
               httpEndpointBound))
           Future.successful(Done)
@@ -1544,22 +1602,7 @@ private final class Sdk(
     }
 
     val reportError = { err: UserFunctionError =>
-      val severityString = err.severity match {
-        case Level.ERROR => "Error"
-        case Level.WARN  => "Warning"
-        case Level.INFO  => "Info"
-        case Level.DEBUG => "Debug"
-        case Level.TRACE => "Trace"
-        case other       => other.name()
-      }
-      val message = s"$severityString reported from Akka runtime: ${err.code} ${err.message}"
-      val detail = if (err.detail.isEmpty) Nil else List(err.detail)
-      val seeDocs = DocLinks.forErrorCode(err.code).map(link => s"See documentation: $link").toList
-      val messages = message :: detail ::: seeDocs
-      val logMessage = messages.mkString("\n")
-
-      SdkRunner.userServiceLog.atLevel(err.severity).log(logMessage)
-
+      SdkRunner.logReportedError(err)
       SdkRunner.FutureDone
     }
 
@@ -1786,6 +1829,7 @@ private final class Sdk(
   private def componentClient(telemetryContext: Option[OtelContext]): ComponentClient = {
     ComponentClientImpl(
       runtimeComponentClients,
+      evaluationClient,
       serializer,
       agentRegistry.agentClassById,
       Some(agentCapabilityConverter),
@@ -1814,6 +1858,21 @@ private final class Sdk(
     telemetryContext match {
       case None          => objectStorageProvider
       case Some(context) => objectStorageProvider.withTelemetryContext(context)
+    }
+
+  private lazy val decisionModelClient: DecisionModelClientImpl =
+    new DecisionModelClientImpl(
+      runtimeComponentClients.decisionModelClient,
+      serializer.json,
+      applicationConfig,
+      overrideDecisionModelProvider,
+      provider = None,
+      telemetryContext = None)(sdkExecutionContext)
+
+  private def decisionModelClient(telemetryContext: Option[OtelContext]): DecisionModelClient =
+    telemetryContext match {
+      case None          => decisionModelClient
+      case Some(context) => decisionModelClient.withTelemetryContext(context)
     }
 
   private def grpcClientProvider(

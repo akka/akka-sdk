@@ -23,6 +23,7 @@ import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
 import akka.javasdk.eventsourcedentity.ReplicationFilter;
 import akka.javasdk.impl.agent.MemoryHistoryUtils;
+import akka.javasdk.impl.agent.ModelAttributes;
 import com.typesafe.config.Config;
 import java.time.Instant;
 import java.util.*;
@@ -455,7 +456,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                               aiMessage.toolCallRequests(),
                               aiMessage.thinking(),
                               Optional.of(aiMessage.tokenUsage()),
-                              aiMessage.attributes());
+                              ModelAttributes.keepStringValues(aiMessage.attributes()));
 
                       case ToolCallResponse toolCallResponse ->
                           new Event.ToolResponseMessageAdded(
@@ -602,7 +603,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
             Collections.emptyList(),
             cmd.aiMessage.thinking(),
             Optional.of(cmd.aiMessage.tokenUsage()),
-            cmd.aiMessage.attributes()));
+            ModelAttributes.keepStringValues(cmd.aiMessage.attributes())));
 
     if (commandContext().sequenceNumber() > cmd.sequenceNumber
         && !currentState().messages.isEmpty()) {
@@ -645,7 +646,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                               aiMessage.toolCallRequests(),
                               aiMessage.thinking(),
                               Optional.empty(),
-                              aiMessage.attributes()));
+                              ModelAttributes.keepStringValues(aiMessage.attributes())));
 
                   case MultimodalUserMessage multimodalUserMessage ->
                       events.add(

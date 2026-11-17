@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-nexus_dir="${1:?Nexus checkout directory is required}"
-docs_dir="${nexus_dir}/optimize-docs"
+optimize_dir="${1:?Optimize checkout directory is required}"
+docs_dir="${optimize_dir}/optimize-docs"
 
 make -C "${docs_dir}" examples bundles
 

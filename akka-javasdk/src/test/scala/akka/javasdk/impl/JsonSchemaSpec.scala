@@ -8,6 +8,7 @@ import scala.jdk.CollectionConverters._
 
 import akka.javasdk.impl.SomeToolInput.ClassWithRecursiveFields
 import akka.javasdk.impl.SomeToolInput.CommonStdlibTypes
+import akka.javasdk.impl.SomeToolInput.ScalarTypes
 import akka.javasdk.impl.SomeToolInput.SomeEnum
 import akka.javasdk.impl.SomeToolInput.SomeToolInput1
 import akka.javasdk.impl.SomeToolInput.SomeToolInput2
@@ -158,6 +159,27 @@ class JsonSchemaSpec extends AnyWordSpec with Matchers {
       result.required.toSet shouldEqual Set("regular", "recursive", "nested")
     }
 
+    "extract schema with recursive protobuf messages" in {
+      val result = JsonSchema
+        .jsonSchemaFor(classOf[protoconsumer.EventsForConsumer.CircularParent])
+        .asInstanceOf[JsonSchemaObject]
+
+      result.properties.keySet shouldEqual Set("id", "child")
+      val child = result.properties("child").asInstanceOf[JsonSchemaObject]
+      child.properties.keySet shouldEqual Set("name", "parent")
+      child.properties("parent") shouldEqual Schema.jsonObject()
+    }
+
+    "extract schema with indirectly recursive protobuf messages in a repeated field" in {
+      val result = JsonSchema.jsonSchemaFor(classOf[protoconsumer.EventsForConsumer.TreeNode])
+      result shouldBe a[JsonSchemaObject]
+    }
+
+    "extract schema for google.protobuf.Struct" in {
+      val result = JsonSchema.jsonSchemaFor(classOf[com.google.protobuf.Struct])
+      result shouldBe a[JsonSchemaObject]
+    }
+
     "extract schema with common Java stdlib types" in {
       val result = JsonSchema.jsonSchemaFor(classOf[CommonStdlibTypes]).asInstanceOf[JsonSchemaObject]
 
@@ -187,6 +209,42 @@ class JsonSchemaSpec extends AnyWordSpec with Matchers {
         "character",
         "boxedCharacter")
 
+    }
+
+    "extract schema with the JSON type Jackson writes for scalar types" in {
+      val result = JsonSchema.jsonSchemaFor(classOf[ScalarTypes]).asInstanceOf[JsonSchemaObject]
+
+      result.properties shouldEqual Map(
+        "bytes" -> Schema.string(),
+        "chars" -> Schema.string(),
+        "byteBuffer" -> Schema.string(),
+        "uri" -> Schema.string(),
+        "url" -> Schema.string(),
+        "bigInteger" -> Schema.integer(),
+        "date" -> Schema.string(),
+        "zoneId" -> Schema.string(),
+        "locale" -> Schema.string(),
+        "currency" -> Schema.string(),
+        "yearMonth" -> Schema.string(),
+        "atomicBoolean" -> Schema.boolean(),
+        "optionalInt" -> Schema.integer(),
+        "optionalDouble" -> Schema.number())
+      result.required.toSet shouldEqual result.properties.keySet - "optionalInt" - "optionalDouble"
+
+      val mapper = JsonSerializer.internalObjectMapper
+      val json = mapper.readTree(mapper.writeValueAsString(ScalarTypes.example()))
+      result.properties.foreach { case (name, schema) =>
+        val node = json.get(name)
+        withClue(s"$name: $node") {
+          schema match {
+            case _: JsonSchemaString  => node.isTextual shouldBe true
+            case _: JsonSchemaInteger => node.isIntegralNumber shouldBe true
+            case _: JsonSchemaNumber  => node.isNumber shouldBe true
+            case _: JsonSchemaBoolean => node.isBoolean shouldBe true
+            case other                => fail(s"Unexpected schema $other")
+          }
+        }
+      }
     }
 
     "extract schema of primitive type" in {
@@ -262,9 +320,42 @@ class JsonSchemaSpec extends AnyWordSpec with Matchers {
       describedSchema.properties("name") shouldEqual Schema.string(description = "the name")
     }
 
+    "bind type variables of generic types" in {
+      val item = Schema.jsonObject(
+        properties = Map("name" -> Schema.string(), "count" -> Schema.integer()),
+        required = Seq("count", "name"))
+
+      JsonSchema.jsonSchemaFor(classOf[JsonSchemaJacksonModels.BoundSub]) shouldEqual Schema.jsonObject(
+        properties = Map("value" -> Schema.string()),
+        required = Seq("value"))
+
+      val signatures = classOf[JsonSchemaJacksonModels.GenericSignatures]
+      JsonSchema.jsonSchemaFor(signatures.getMethod("base").getGenericReturnType) shouldEqual Schema.jsonObject(
+        properties = Map("value" -> item),
+        required = Seq("value"))
+
+      JsonSchema.jsonSchemaFor(signatures.getMethod("holder").getGenericReturnType) shouldEqual Schema.jsonObject(
+        properties = Map(
+          "items" -> new JsonSchemaArray(item, None),
+          "maybe" -> item,
+          "array" -> new JsonSchemaArray(item, None),
+          "byName" -> Schema.jsonObject()),
+        required = Seq("array", "byName", "items"))
+
+      // a type variable without a binding is an empty object
+      JsonSchema.jsonSchemaFor(classOf[JsonSchemaJacksonModels.GenericBase[_]]) shouldEqual Schema.jsonObject(
+        properties = Map("value" -> Schema.jsonObject()),
+        required = Seq("value"))
+    }
+
+    "use the element type of a collection subclass without type parameters" in {
+      val result = JsonSchema.jsonSchemaFor(classOf[JsonSchemaJacksonModels.ItemList]).asInstanceOf[JsonSchemaArray]
+      result.items.asInstanceOf[JsonSchemaObject].properties.keySet shouldEqual Set("name", "count")
+    }
+
     "use object for types causing exceptions" in {
-      // undefined type parameters in Hashtable#Entry should always make this throw
-      JsonSchema.jsonSchemaFor(classOf[java.util.Hashtable[_, _]]) shouldBe a[JsonSchemaObject]
+      // Jackson rejects two getters for the same property
+      JsonSchema.jsonSchemaFor(classOf[JsonSchemaJacksonModels.ConflictingGetters]) shouldEqual Schema.jsonObject()
     }
 
   }

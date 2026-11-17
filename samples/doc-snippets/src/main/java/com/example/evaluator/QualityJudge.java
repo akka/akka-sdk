@@ -4,6 +4,7 @@ import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.MemoryProvider;
 import akka.javasdk.annotations.Component;
 
+// tag::all[]
 @Component(id = "quality-judge")
 public class QualityJudge extends Agent {
 
@@ -20,3 +21,4 @@ public class QualityJudge extends Agent {
       .thenReply();
   }
 }
+// end::all[]

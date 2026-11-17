@@ -3,6 +3,14 @@
   "sdk": {
     "releases": [
       {
+        "version": "3.7.2",
+        "releasedAt": "2026-11-16T15:13:40Z",
+        "releaseNotesUrl": "https://doc.akka.io/reference/release-notes.html#sdk-3-7-2",
+        "requiredRuntime": "1.7.6",
+        "protocolVersion": "1.1",
+        "notifyAt": "2026-11-26T15:13:40Z"
+      },
+      {
         "version": "3.7.1",
         "releasedAt": "2026-11-02T08:50:40Z",
         "releaseNotesUrl": "https://doc.akka.io/reference/release-notes.html#sdk-3-7-1",
@@ -21,10 +29,25 @@
     ]
   },
   "runtime": {
-    "releases": []
+    "releases": [
+      {
+        "version": "1.7.6",
+        "releasedAt": "2026-11-10T12:00:00Z",
+        "releaseNotesUrl": "https://doc.akka.io/reference/release-notes/runtime/1.7.6.html",
+        "supportedProtocol": {
+          "minimum": "1.0",
+          "maximum": "1.2"
+        }
+      }
+    ]
   },
   "cli": {
     "releases": [
+      {
+        "version": "3.0.82",
+        "releasedAt": "2026-11-12T21:47:37Z",
+        "releaseNotesUrl": "https://doc.akka.io/reference/release-notes.html"
+      },
       {
         "version": "3.0.81",
         "releasedAt": "2026-11-02T17:48:33Z",

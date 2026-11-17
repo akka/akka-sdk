@@ -1,0 +1,14 @@
+= RBAC
+:page-summary: Reference for the permissions and built-in roles that control access to Akka organizations and projects.
+:page-when-to-use: When you look up which permission or built-in role allows an operation, or choose permissions for a custom role.
+:page-related: operations:security/index.adoc, operations:security/custom-roles.adoc, reference:rbac/permissions.adoc, reference:rbac/roles.adoc
+:page-persona: operator-platform
+
+include::ROOT:partial$include.adoc[]
+
+Role-based access control (RBAC) decides which operations a user or other principal can perform on an organization and on the projects in it. A role is a named group of permissions. A role binding grants a role to a principal.
+
+* The xref:rbac/permissions.adoc[Permissions] page lists every permission, the resource it applies to, and the built-in roles that include it.
+* The xref:rbac/roles.adoc[Roles] page lists the built-in roles and the permissions each one grants.
+
+The pages are generated from the permissions and roles of the Akka control plane when the documentation is built.

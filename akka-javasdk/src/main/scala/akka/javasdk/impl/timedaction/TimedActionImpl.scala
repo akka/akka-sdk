@@ -34,12 +34,10 @@ import akka.runtime.sdk.spi.SpiTimedAction
 import akka.runtime.sdk.spi.SpiTimedAction.Command
 import akka.runtime.sdk.spi.SpiTimedAction.Effect
 import akka.runtime.sdk.spi.TimerClient
-import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.slf4j.MDC
 
 object TimedActionImpl {
 
@@ -95,11 +93,7 @@ private[impl] final class TimedActionImpl[TA <: TimedAction](
   override def handleCommand(command: Command): Future[Effect] = {
     val metadata = MetadataImpl.of(command.metadata)
     val telemetryContext = Option(command.telemetryContext)
-    val traceId = telemetryContext.flatMap { context =>
-      Option(Span.fromContextOrNull(context)).map(_.getSpanContext.getTraceId)
-    }
-
-    traceId.foreach(id => MDC.put(Telemetry.TRACE_ID, id))
+    val traceScope = Telemetry.makeCurrent(telemetryContext)
     try {
       val commandContext =
         new CommandContextImpl(regionInfo.selfRegion, metadata, timerClient, telemetryContext, tracerFactory)
@@ -115,7 +109,7 @@ private[impl] final class TimedActionImpl[TA <: TimedAction](
         // command handler threw an "unexpected" error, also covers HandlerNotFoundException
         Future.successful(handleUnexpectedException(command, ex))
     } finally {
-      if (traceId.isDefined) MDC.remove(Telemetry.TRACE_ID)
+      traceScope.close()
     }
   }
 

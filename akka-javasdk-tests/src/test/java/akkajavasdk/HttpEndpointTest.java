@@ -231,6 +231,17 @@ public class HttpEndpointTest extends TestKitSupport {
   }
 
   @Test
+  public void classifierCycleFailsTheCallWithTheChain() {
+    // "cycle-test-ensemble-a" and "cycle-test-ensemble-b" list each other, see test
+    // application.conf
+    assertThatThrownBy(() -> getClassifierClient().classify("cycle-test-ensemble-a", "anything"))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage(
+            "Classifier cycle detected: cycle-test-ensemble-a -> cycle-test-ensemble-b ->"
+                + " cycle-test-ensemble-a");
+  }
+
+  @Test
   public void classifierConstructorCanResolveADependencyProviderSuppliedDependency() {
     // "dependency-provided-test-classifier" (see test application.conf) takes a
     // TestGrpcServiceClient constructor param resolvable only via

@@ -114,6 +114,8 @@ akka.javasdk.agent.classifiers {
 ----
 <1> The ensemble reads its member names from config, so you can change the composition at deployment time without rebuilding.
 
+Member names must not form a cycle. A call that reaches a classifier already on its own call path fails with an `IllegalStateException` that lists the path, for example `Classifier cycle detected: ensemble-a -> ensemble-b -> ensemble-a`. A classifier that calls itself by name fails in the same way.
+
 == Testing
 
 In a test, obtain a `ClassifierClient` from the testkit with `getClassifierClient()` and invoke your configured classifiers directly.

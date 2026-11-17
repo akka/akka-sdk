@@ -6,6 +6,7 @@ import akka.javasdk.client.ComponentClient;
 import akka.javasdk.evaluation.DurableEvaluator;
 import akka.javasdk.evaluation.Evaluation;
 import akka.javasdk.evaluation.EvaluationContext;
+import akka.javasdk.evaluation.Subject;
 import akka.javasdk.ledger.InteractionRecord;
 import akka.javasdk.ledger.LedgerClient;
 import java.time.Duration;
@@ -38,9 +39,8 @@ public class TranscriptJudgeDurableEvaluator extends DurableEvaluator<Void> { //
   }
 
   private Effect judge() { // <4>
-    InteractionRecord interaction = ledger.getInteraction(
-      evaluationContext().subject().interactionId()
-    );
+    var subject = (Subject.Interaction) evaluationContext().subject();
+    InteractionRecord interaction = ledger.getInteraction(subject.interactionId());
     if (interaction.failed()) {
       return effects().inconclusive("interaction failed, nothing to evaluate");
     }

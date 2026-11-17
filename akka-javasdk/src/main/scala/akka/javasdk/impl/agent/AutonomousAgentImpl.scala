@@ -43,6 +43,7 @@ import akka.javasdk.impl.agent.task.BacklogState
 import akka.javasdk.impl.client.EntityClientImpl
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.Serializer
+import akka.javasdk.impl.telemetry.Telemetry
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.EventLogClient
 import akka.runtime.sdk.spi.RegionInfo
@@ -370,14 +371,14 @@ private[impl] final class AutonomousAgentImpl(
             sessionMemoryClient.addInteraction(
               sessionId,
               new UserMessage(now, text, componentId, u.sanitized),
-              toSessionMessages(now, messages.tail, tokenUsage).asJava)
+              toSessionMessages(sessionId, now, messages.tail, tokenUsage).asJava)
 
           case u: SpiAgent.ContextMessage.UserMessage =>
             val contents = u.contents.map(AgentImpl.toSessionMemoryContent)
             sessionMemoryClient.addInteraction(
               sessionId,
               new MultimodalUserMessage(now, contents.asJava, componentId, u.sanitized),
-              toSessionMessages(now, messages.tail, tokenUsage).asJava)
+              toSessionMessages(sessionId, now, messages.tail, tokenUsage).asJava)
 
           case _ =>
             // No user message — partial interaction (e.g. tool call responses
@@ -385,17 +386,21 @@ private[impl] final class AutonomousAgentImpl(
             sessionMemoryClient.addInteraction(
               sessionId,
               null.asInstanceOf[UserMessage],
-              toSessionMessages(now, messages, tokenUsage).asJava)
+              toSessionMessages(sessionId, now, messages, tokenUsage).asJava)
         }
       }
       Done
     }(sdkExecutionContext)
 
   override def callToolFunction(request: SpiAgent.ToolCallCommand): Future[String] =
-    Future(toolExecutor.execute(request))(sdkExecutionContext)
+    Future {
+      Telemetry.withCurrentContext(Option(request.telemetryContext))(toolExecutor.execute(request))
+    }(sdkExecutionContext)
 
   override def multimodalCallToolFunction(request: SpiAgent.ToolCallCommand): Future[Seq[SpiAgent.MessageContent]] =
-    Future(toolExecutor.executeMultimodal(request))(sdkExecutionContext)
+    Future {
+      Telemetry.withCurrentContext(Option(request.telemetryContext))(toolExecutor.executeMultimodal(request))
+    }(sdkExecutionContext)
 
   override val contentLoader: Option[SpiAgent.SpiContentLoader] =
     agentDefinition.contentLoader.map(AgentImpl.toSpiContentLoader(_, sdkExecutionContext))
@@ -500,6 +505,7 @@ private[impl] final class AutonomousAgentImpl(
     TaskAttachment.fromMessageContent(AgentImpl.fromSpiMessageContent(mc))
 
   private def toSessionMessages(
+      sessionId: String,
       now: Instant,
       messages: Seq[SpiAgent.ContextMessage],
       tokenUsage: TokenUsage): Seq[SessionMessage] =
@@ -508,7 +514,12 @@ private[impl] final class AutonomousAgentImpl(
         val toolCallRequests = m.toolRequests.map { req =>
           new ToolCallRequest(req.id, req.name, req.arguments)
         }.asJava
-        new AiMessage(now, m.content, componentId, toolCallRequests, m.thinking.toJava, tokenUsage, m.attributes.asJava)
+
+        val attributes = m.attributes.asJava
+        val keptAttributes = ModelAttributes.keepStringValues(attributes)
+        ModelAttributes.logDroppedAttributes(componentId, sessionId, attributes, keptAttributes)
+
+        new AiMessage(now, m.content, componentId, toolCallRequests, m.thinking.toJava, tokenUsage, keptAttributes)
 
       case m: SpiAgent.ContextMessage.ToolCallResponseMessage =>
         AgentImpl.toSessionToolCallResponse(

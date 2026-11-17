@@ -136,6 +136,8 @@ public @interface Consume {
     /**
      * The deployed name of the service to consume from, can be the deployed name of another service
      * in the same project or a fully qualified public hostname of a service in a different project.
+     * Together with {@link #platformService()}, it is the bare name of a service in that platform
+     * service.
      *
      * <p>Note: The service name is used as unique identifier for tracking progress when consuming
      * it. Changing this name will lead to starting over from the beginning of the event stream.
@@ -144,6 +146,23 @@ public @interface Consume {
      * at deployment.
      */
     String service();
+
+    /**
+     * The platform service the producing service belongs to, when consuming from a service that is
+     * part of a platform service enabled in this project rather than a service in the project
+     * itself. Empty when the producing service is a service in this project.
+     *
+     * <p>When set, {@link #service()} must be a bare service name. Neither value can be a template.
+     *
+     * <p>Note: The platform service is part of the identifier for tracking progress. Setting or
+     * changing it starts over from the beginning of the event stream.
+     *
+     * <p>In dev mode, the producing service is looked up by name only. In the test kit, a mocked
+     * stream is registered by service name and stream id, and also applies to a service with that
+     * name in a platform service. A deployment outside the Akka platform fails at start with this
+     * setting.
+     */
+    String platformService() default "";
 
     /**
      * In case you need to consume the same stream multiple times, each subscription should have a
@@ -165,5 +184,35 @@ public @interface Consume {
      * before this class has a method for them, and never processes those messages.
      */
     boolean ignoreUnknown() default false;
+  }
+
+  /**
+   * Where a {@link akka.javasdk.consumer.Consumer} starts when it is deployed for the first time.
+   *
+   * <p>Without this annotation a new consumer processes the whole history of its source. With
+   * {@code latest} it starts from the time of its first deployment, with {@code timestamp} it
+   * starts from the given point in time. Exactly one of the two must be set. Events and state
+   * changes from before the start point are not consumed.
+   *
+   * <p>Supported for consumers of Event Sourced Entities, Key Value Entities, Workflows and service
+   * to service event streams. Not supported for consumers of message broker topics.
+   *
+   * <p>The start point is recorded on the first deployment and is permanent. The service refuses to
+   * start if it is removed or changed, except that a timestamp can change to {@code latest}. To
+   * start over from a different point, give the consumer a new component id.
+   *
+   * <p>See the "Consuming and producing" page of the Akka SDK documentation for details, including
+   * the behavior in development mode and in tests.
+   */
+  @Target(ElementType.TYPE)
+  @Retention(RetentionPolicy.RUNTIME)
+  @Documented
+  @interface StartFrom {
+
+    /** Start from the time of the first deployment of the consumer. */
+    boolean latest() default false;
+
+    /** Start from a point in time, an ISO-8601 instant such as {@code "2026-10-01T00:00:00Z"}. */
+    String timestamp() default "";
   }
 }

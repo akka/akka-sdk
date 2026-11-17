@@ -9,6 +9,7 @@ import java.net.JarURLConnection
 import java.net.URI
 import java.net.URL
 
+import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 import scala.reflect.ClassTag
 import scala.util.Failure
@@ -72,7 +73,7 @@ private[javasdk] object ComponentLocator {
   // descriptors shipped by SDK modules, always loaded together with the service descriptor
   private val SdkProvidedDescriptorNames = Set("akka-javasdk-components_akka-javasdk-testkit.conf")
 
-  // Component type keys - these must be kept in sync with ComponentAnnotationProcessor.java
+  // Component type keys - these must be kept in sync with ComponentKinds.java
   // in the akka-javasdk-annotation-processor module
   val AgentKey = "agent"
   val AutonomousAgentKey = "autonomous-agent"
@@ -382,6 +383,7 @@ private[javasdk] object ComponentLocator {
     }
   }
 
+  @nowarn("msg=deprecated")
   val agentProvidedComponents: Seq[Class[_]] = Seq(
     classOf[SessionMemoryEntity],
     classOf[PromptTemplate],

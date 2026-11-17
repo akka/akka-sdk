@@ -1,12 +1,12 @@
 = Model commands
 :page-aliases: reference:inference-cli/models.adoc
-:page-summary: The complete command reference for the akka models noun, covering accelerator pools, allocations, models, endpoints, API keys, and the akka optimize models governance record.
+:page-summary: The complete command reference for the akka models noun, covering accelerator pools, allocations, models, endpoints, API keys, and the akka optimize models directory of model versions.
 :page-persona: builder-ai-ml, operator
 :page-banner: inference
 
 include::ROOT:partial$include.adoc[]
 
-The `akka models` commands deploy models in Akka's inference regions and serve them through the gateway. The `akka optimize models` commands record which models an organization sanctions. See xref:inference:index.adoc#serving[Serving models] for the tasks these commands support, and xref:reference:descriptors/model-descriptor.adoc[Model descriptor] for the file they apply.
+The `akka models` commands deploy models in Akka's inference regions and serve them through the gateway. The `akka optimize models` commands read the model versions in the artifact registry, together with their training, serving, routing, and price, and deprecate or retire a version. See xref:inference:index.adoc#serving[Serving models] for the tasks these commands support, and xref:reference:descriptors/model-descriptor.adoc[Model descriptor] for the file they apply.
 
 Every command supports `--help`. Most support `-o json` for output consumed by another program, and `--region` to act on a region other than the project's primary region. The singular alias `model` is accepted.
 
@@ -139,10 +139,17 @@ To rotate a key, add a key under a new client name, move the client to it, and t
 `akka models delete` does not delete the secret an endpoint names. The keys remain valid for any endpoint that names the same secret. Delete the secret with `akka secrets delete` when the keys must be destroyed.
 ====
 
-[#governance]
-== Model governance
+[#directory]
+== Model directory
 
-`akka optimize models` is the organization's model registry. It records which models are sanctioned and the conditions attached to them. The registry is an index, not a store: retiring an entry ends the sanction to use the model and does not delete the weights. The alias `model` is accepted.
+`akka optimize models` is the model directory. A model in the directory is a model version in the artifact registry. The `list` and `get` commands read each version from the registry and add what the trainer, the gateway router, and the portfolio service know about it. The alias `model` is accepted.
+
+A model reference is one string:
+
+* `NS/NAME` or `NS/NAME:latest` names the newest version.
+* `NS/NAME:v2` names a version number.
+* `NS/NAME:serving` names the version that the alias `serving` points at.
+* `NS/NAME@sha256:DIGEST` names a version by its digest.
 
 [cols="2,3", options="header"]
 |===
@@ -150,46 +157,72 @@ To rotate a key, add a key under a new client name, move the client to it, and t
 | Description
 
 | `akka optimize models list`
-| List the models in the registry.
+| List every model version in the registry, one row each, with its hosting (`self-hosted` or the provider), served name, and lifecycle. Then list the served names that no version accounts for.
 
-| `akka optimize models get NAME`
-| Show one registry entry.
+| `akka optimize models list --namespace NS`
+| List the versions of one namespace, archived or not. The command lists no unregistered served names, because they belong to no namespace.
 
-| `akka optimize models apply NAME -f FILE`
-| Register a model or update its metadata.
+| `akka optimize models list --lifecycle LIFECYCLE`
+| Keep the rows in one lifecycle: `active`, `deprecated`, or `retired`.
 
-| `akka optimize models promote NAME`
-| Promote a candidate to active.
+| `akka optimize models list --archived`
+| Also list the versions of archived namespaces.
 
-| `akka optimize models deprecate NAME`
-| Discourage new use of a model.
+| `akka optimize models get NS/NAME[:REF]`
+| Show one version with its training, serving, routing, and price. The command takes every reference form.
 
-| `akka optimize models retire NAME`
-| End the sanction to use a model.
+| `akka optimize models deprecate NS/NAME:vN --reason TEXT`
+| Mark a version for replacement. Routes to the version keep serving.
 
-| `akka optimize models resolve NAME --action ACTION`
-| Resolve a decision on the model that owns it.
+| `akka optimize models retire NS/NAME:vN --reason TEXT`
+| End the use of a version. Retiring a version is final.
+|===
 
-| `akka optimize models signoff NAME --condition C`
-| Record human sign-off closing a risk condition.
+=== Served names without a model version
 
-| `akka optimize models waive NAME --condition C`
-| Record a time-bound waiver on an open condition.
+`akka optimize models list` lists a xref:concepts:models.adoc#_served_names_and_endpoints[served name] as unregistered when no version accounts for it, and either the pricing catalog in force prices it or the portfolio service recorded traffic to it in the last 30 days. A hosted version is a provider's model in the registry. It accounts for the name that the provider serves it under. A trainer endpoint accounts for each name it answers under. To bring an unregistered name into the directory, register a version with `akka optimize registry models register`.
 
-| `akka optimize models strike NAME --condition C`
-| Turn off a condition that does not apply.
+The versions of archived namespaces and the endpoints of archived training projects account for their served names with or without `--archived`.
 
-| `akka optimize models conditions list NAME`
-| Every condition on a model and its state.
+=== Reading one model version
 
-| `akka optimize models attestations list NAME`
-| Every attestation recorded against a model.
+`akka optimize models get` shows the version and one part for each service that owns a fact about it:
 
-| `akka optimize models attestations create NAME -f FILE`
-| Record an externally run evaluation or report.
+* Training, from the trainer: the run that produced the version, its dataset, and the newest score for each dataset and grader.
+* Serving, from the trainer: the endpoints that serve the version, and the name that a request calls it by.
+* Routing, from the gateway router: the destination records that name the version, the rules that send to those destinations, and the manifest in force when a rule sends to one of them.
+* Price, from the portfolio service: the pricing catalog version in force, and its entry for each served name.
 
-| `akka optimize models actions list NAME`
-| What may be decided about this model, and how guarded each choice is.
+=== Reading the directory when a service does not answer
+
+`akka optimize models list` and `get` need the registry. When the registry does not answer, the command fails. When another service does not answer within 10 seconds, or within `--timeout` when you set it, the command shows that part as unavailable and still succeeds.
+
+With `-o json`, the command prints each part as its service answered it. `list` prints `models`, `unregistered`, and `unavailable`. `get` prints `model`, `training`, `serving`, `routing`, and `price`.
+
+=== Deprecating and retiring a model version
+
+`akka optimize models deprecate` and `retire` take a version number only, such as `NS/NAME:v2`, and require `--reason`. The registry records who made the move, when, and the reason.
+
+The command reads the version first. Before it asks anything, it refuses an alias, `latest`, a digest, and a version that the registry does not hold. It then lists each destination record, rule, and manifest that still reaches the version. It prints the list beside the question, or on standard error after the move when it asks no question. When the command cannot read the gateway router, it states that it does not know what still routes to the version, and it makes the move.
+
+`deprecate` marks the version for replacement. Routes to a deprecated version keep serving. The gateway router accepts a routing write that reaches the version, and returns a warning. The command asks a yes or no question that defaults to no. `--force` or `--disable-prompt` skips the question.
+
+Retiring a version is final. You cannot deprecate a retired version or move an alias onto it. The gateway router refuses a routing write that makes the version newly reachable. A route that reaches the version now keeps serving. The command asks you to type the reference again. With `--disable-prompt`, the command refuses instead of asking. Only `--force` skips the question.
+
+=== Registering and choosing a model version
+
+The xref:reference:cli/akka-cli/akka_optimize_registry_models.adoc[`akka optimize registry models`] commands register a version and choose the version to use.
+
+[cols="2,3", options="header"]
+|===
+| Command
+| Description
+
+| `akka optimize registry models register NS/NAME -f FILE`
+| Register a version. A version is active once you register it.
+
+| `akka optimize registry models alias set NS/NAME:ALIAS --version vN`
+| Point an alias, such as `serving`, at the version to use.
 |===
 
 include::inference:partial$aao-inference-notice.adoc[]

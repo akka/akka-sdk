@@ -20,6 +20,7 @@ import akka.javasdk.impl.client.DeferredCallImpl
 import akka.javasdk.impl.client.MethodRefResolver
 import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
+import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.WorkflowStepNotFound
 import akka.javasdk.impl.workflow.WorkflowEffects.DeleteTransition
 import akka.javasdk.impl.workflow.WorkflowEffects.EndTransition
@@ -43,6 +44,7 @@ import akka.javasdk.workflow.WorkflowContext
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.ComponentClients
 import akka.runtime.sdk.spi.SpiEntity
+import akka.runtime.sdk.spi.SpiEvaluationClient
 import akka.runtime.sdk.spi.SpiMetadata
 import akka.runtime.sdk.spi.SpiWorkflow
 
@@ -68,7 +70,8 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
     serializer: Serializer,
     stateClass: Class[S],
     sdkExecutionContext: ExecutionContext,
-    runtimeComponentClients: ComponentClients)(implicit system: ActorSystem[_]) {
+    runtimeComponentClients: ComponentClients,
+    evaluationClient: SpiEvaluationClient)(implicit system: ActorSystem[_]) {
 
   private def decodeUserState(userState: Option[BytesPayload]): Option[S] =
     userState
@@ -121,7 +124,7 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
       }
       val otelContext = context.tracing().asInstanceOf[SpanTracingImpl].context
       val componentClient =
-        ComponentClientImpl(runtimeComponentClients, serializer, Map.empty, None, otelContext)(
+        ComponentClientImpl(runtimeComponentClients, evaluationClient, serializer, Map.empty, None, otelContext)(
           sdkExecutionContext,
           system)
       val workflowClient = componentClient.forWorkflow(workflowContext.workflowId())
@@ -159,20 +162,22 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
     descriptor
       .findStepMethodByName(stepName)
       .map { stepMethod =>
+        val otelContext = commandContext.tracing().asInstanceOf[SpanTracingImpl].context
         val effect =
           if (stepMethod.javaMethod().getParameterCount == 1) {
             Future {
-              val decodedInput = decodeInputForClass(stepMethod.javaMethod().getParameterTypes()(0))
-              stepMethod.invoke(workflow, decodedInput)
+              Telemetry.withCurrentContext(otelContext) {
+                val decodedInput = decodeInputForClass(stepMethod.javaMethod().getParameterTypes()(0))
+                stepMethod.invoke(workflow, decodedInput)
+              }
             }
           } else {
             Future {
-              stepMethod.invoke(workflow)
+              Telemetry.withCurrentContext(otelContext)(stepMethod.invoke(workflow))
             }
           }
-        val otelContext = commandContext.tracing().asInstanceOf[SpanTracingImpl].context
         val componentClient =
-          ComponentClientImpl(runtimeComponentClients, serializer, Map.empty, None, otelContext)(
+          ComponentClientImpl(runtimeComponentClients, evaluationClient, serializer, Map.empty, None, otelContext)(
             sdkExecutionContext,
             system)
         val workflowClient = componentClient.forWorkflow(workflowContext.workflowId())

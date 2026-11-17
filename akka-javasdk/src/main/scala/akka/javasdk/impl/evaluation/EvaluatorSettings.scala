@@ -7,6 +7,7 @@ package akka.javasdk.impl.evaluation
 import scala.jdk.CollectionConverters._
 
 import akka.annotation.InternalApi
+import akka.javasdk.evaluation.Subject
 import akka.javasdk.impl.ControlId
 import akka.runtime.sdk.spi.EvaluatorDescriptor
 import akka.runtime.sdk.spi.SpiEvaluator
@@ -126,6 +127,14 @@ private[impl] object EvaluatorSettings {
     evaluatorEntry(config, evaluatorComponentId)
       .map(entry => BindingsKeys.foldLeft(entry)(_.withoutPath(_)))
       .getOrElse(ConfigFactory.empty())
+
+  /** Whether the given evaluator is enabled: its `enabled` setting, with the evaluator defaults as fallback. */
+  def enabled(config: Config, evaluatorComponentId: String): Boolean = {
+    val evaluatorDefaults = configAt(config, EvaluatorDefaultsPath)
+    evaluatorEntry(config, evaluatorComponentId)
+      .fold(evaluatorDefaults)(_.withFallback(evaluatorDefaults))
+      .getBoolean("enabled")
+  }
 
   private def evaluatorEntry(config: Config, evaluatorComponentId: String): Option[Config] =
     configAt(config, EvaluatorsPath).root().asScala.get(evaluatorComponentId).collect { case entry: ConfigObject =>
@@ -289,8 +298,15 @@ private[impl] final case class ConfiguredEvaluator(
     evaluatorConfig: Config,
     agentConfigs: Map[String, Config]) {
 
-  /** The config for an evaluation of the given agent: that of its binding, or the evaluator config when unbound. */
-  def configFor(agentComponentId: String): Config = agentConfigs.getOrElse(agentComponentId, evaluatorConfig)
+  /**
+   * The config for an evaluation of the given subject: that of the binding of the evaluated agent, or the evaluator
+   * config when the agent is unbound or the subject is not an interaction.
+   */
+  def configFor(subject: Subject): Config =
+    subject match {
+      case interaction: Subject.Interaction => agentConfigs.getOrElse(interaction.agentComponentId(), evaluatorConfig)
+      case _                                => evaluatorConfig
+    }
 
   /** The descriptor to hand to the runtime for an evaluator, with the bindings and the control id of this entry. */
   def evaluatorDescriptor(

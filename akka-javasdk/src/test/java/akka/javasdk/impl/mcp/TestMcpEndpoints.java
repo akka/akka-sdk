@@ -10,6 +10,7 @@ import akka.javasdk.annotations.mcp.McpResource;
 import akka.javasdk.annotations.mcp.McpTool;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.google.protobuf.Timestamp;
+import io.opentelemetry.api.trace.Span;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -80,6 +81,8 @@ public class TestMcpEndpoints {
 
     public record Weather(String city, int tempC) {}
 
+    public record Page<T>(List<T> items, T first) {}
+
     public enum Unit {
       CELSIUS,
       FAHRENHEIT
@@ -98,6 +101,11 @@ public class TestMcpEndpoints {
     @McpTool(name = "null-async", description = "returns null instead of a CompletionStage")
     public CompletionStage<Weather> nullAsync() {
       return null;
+    }
+
+    @McpTool(name = "weather-page", description = "returns a generic record")
+    public Page<Weather> weatherPage() {
+      return new Page<>(List.of(new Weather("Leuven", 20)), new Weather("Leuven", 20));
     }
 
     @McpTool(name = "weather-list", description = "returns a list")
@@ -216,6 +224,14 @@ public class TestMcpEndpoints {
     @McpTool(description = "raw completion stage")
     public CompletionStage rawStage() {
       return CompletableFuture.completedFuture("text");
+    }
+  }
+
+  @McpEndpoint(serverName = "current-span")
+  public static class CurrentSpanMcpEndpoint {
+    @McpTool(description = "current span id")
+    public String currentSpanId() {
+      return Span.current().getSpanContext().getSpanId();
     }
   }
 

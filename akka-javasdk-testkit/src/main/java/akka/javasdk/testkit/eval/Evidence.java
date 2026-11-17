@@ -1,0 +1,172 @@
+/*
+ * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
+ */
+
+package akka.javasdk.testkit.eval;
+
+import akka.javasdk.ledger.Failure;
+import akka.javasdk.ledger.GuardrailDecisionRecord;
+import akka.javasdk.ledger.InteractionRecord;
+import akka.javasdk.ledger.ToolCall;
+import java.time.Duration;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * What one attempt left in the ledger: the interaction the agent recorded and the guardrail
+ * decisions made in it, and the value the agent's command handler returned.
+ *
+ * @param input the command sent to the agent, as text. A String command is used as is, any other
+ *     command is rendered as JSON
+ * @param returned the value the command handler returned, as text: a String as is, any other value
+ *     as JSON. Empty when the agent call failed. It differs from {@link #reply} when the handler
+ *     maps the model text, or maps a failure in {@code onFailure}
+ * @param interaction the recorded interaction; empty when the agent call failed before the runtime
+ *     recorded one
+ * @param guardrails the guardrail decisions made in the interaction, newest first
+ */
+public record Evidence(
+    String input,
+    Optional<String> returned,
+    Optional<InteractionRecord> interaction,
+    List<GuardrailDecisionRecord> guardrails) {
+
+  public Evidence {
+    if (input == null) throw new IllegalArgumentException("input required");
+    if (returned == null) throw new IllegalArgumentException("returned required");
+    if (interaction == null) throw new IllegalArgumentException("interaction required");
+    if (guardrails == null) throw new IllegalArgumentException("guardrails required");
+    guardrails = List.copyOf(guardrails);
+  }
+
+  /** Evidence without a returned value. */
+  public Evidence(
+      String input,
+      Optional<InteractionRecord> interaction,
+      List<GuardrailDecisionRecord> guardrails) {
+    this(input, Optional.empty(), interaction, guardrails);
+  }
+
+  /** An attempt that left nothing in the ledger. */
+  public static Evidence none(String input) {
+    return new Evidence(input, Optional.empty(), Optional.empty(), List.of());
+  }
+
+  /** The agent's reply as recorded; empty when there is no interaction or the agent failed. */
+  public String reply() {
+    return interaction.map(InteractionRecord::finalResponseText).orElse("");
+  }
+
+  /** Why the interaction failed; empty when it did not fail or there is no interaction. */
+  public Optional<String> failure() {
+    return interaction.flatMap(InteractionRecord::failureSummary);
+  }
+
+  /** Whether the interaction failed. False when there is no interaction. */
+  public boolean failed() {
+    return interaction.map(InteractionRecord::failed).orElse(false);
+  }
+
+  /**
+   * The tool calls the model requested, in call order. A call that a guardrail denied is included;
+   * see {@link #denialOf}.
+   */
+  public List<ToolCall> toolCalls() {
+    return interaction.map(InteractionRecord::toolCalls).orElse(List.of());
+  }
+
+  /**
+   * The enforcing denial that stopped the call before the tool ran. Empty when no guardrail denied
+   * the call.
+   */
+  public Optional<GuardrailDecisionRecord> denialOf(ToolCall call) {
+    return guardrails.stream()
+        .filter(
+            g ->
+                g.boundary() == GuardrailDecisionRecord.Boundary.BEFORE_TOOL_CALL
+                    && g.decision() == GuardrailDecisionRecord.Decision.DENY
+                    && !g.reportOnly()
+                    && decidedOn(g, call))
+        .findFirst();
+  }
+
+  private static boolean decidedOn(GuardrailDecisionRecord decision, ToolCall call) {
+    return decision
+        .toolCall()
+        .map(
+            decided ->
+                decided
+                    .toolCallId()
+                    .map(id -> id.equals(call.id()))
+                    .orElse(decided.toolName().equals(call.name())))
+        .orElse(false);
+  }
+
+  /** How many model responses the interaction holds. */
+  public int modelResponses() {
+    return interaction.map(record -> record.modelResponses().size()).orElse(0);
+  }
+
+  /** Input tokens summed over the model calls. */
+  public long inputTokens() {
+    return interaction.map(InteractionRecord::totalInputTokens).orElse(0);
+  }
+
+  /** Output tokens summed over the model calls. */
+  public long outputTokens() {
+    return interaction.map(InteractionRecord::totalOutputTokens).orElse(0);
+  }
+
+  /** From the start of the model call to its end, as recorded. Zero without an interaction. */
+  public Duration latency() {
+    return interaction
+        .map(
+            record ->
+                Duration.between(
+                    record.metadata().callStartedAt(), record.metadata().callFinishedAt()))
+        .orElse(Duration.ZERO);
+  }
+
+  /** Whether a guardrail denied content in the interaction. */
+  public boolean denied() {
+    return guardrails.stream().anyMatch(g -> g.decision() == GuardrailDecisionRecord.Decision.DENY);
+  }
+
+  /**
+   * The enforcing denial that stopped the interaction. Empty when no guardrail stopped it, or when
+   * a guardrail error stopped it.
+   */
+  Optional<GuardrailDecisionRecord> stoppingDenial() {
+    return stoppingDecision().filter(g -> g.decision() == GuardrailDecisionRecord.Decision.DENY);
+  }
+
+  /** Whether a fail-closed guardrail that failed to decide stopped the interaction. */
+  boolean stoppedByGuardrailError() {
+    return stoppingDecision()
+        .filter(g -> g.decision() == GuardrailDecisionRecord.Decision.FAIL)
+        .isPresent();
+  }
+
+  // The oldest enforcing decision, which is the one that stopped the interaction.
+  private Optional<GuardrailDecisionRecord> stoppingDecision() {
+    if (!stoppedByGuardrail()) return Optional.empty();
+    return guardrails.stream()
+        .filter(Evidence::enforcing)
+        .min(Comparator.comparing(GuardrailDecisionRecord::timestamp));
+  }
+
+  private static boolean enforcing(GuardrailDecisionRecord decision) {
+    if (decision.reportOnly()) return false;
+    return decision.decision() == GuardrailDecisionRecord.Decision.DENY
+        || (decision.decision() == GuardrailDecisionRecord.Decision.FAIL
+            && decision.failMode() == GuardrailDecisionRecord.FailMode.FAIL_CLOSED);
+  }
+
+  private boolean stoppedByGuardrail() {
+    return interaction
+        .flatMap(InteractionRecord::failure)
+        .map(failure -> failure.reason() == Failure.FailureReason.GUARDRAIL)
+        .orElse(false);
+  }
+}

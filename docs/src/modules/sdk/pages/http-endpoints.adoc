@@ -362,6 +362,8 @@ Any Akka stream `Source` of elements where the elements can be serialized to JSO
 be turned into an SSE endpoint method. If the stream is idle, a heartbeat is emitted every 5 seconds
 to make sure the response stream is kept alive through proxies and firewalls.
 
+IMPORTANT: In a deployed service, an SSE stream ends after 60 seconds unless its route rule sets `allowStreaming: true`. See xref:operations:services/invoke-service.adoc#streaming[Routing streaming and long-running requests].
+
 ==== Streaming responses requires extra thought
 
 Streaming responses from an HTTP endpoint is tied to the specific instance they were connected to when the request was first made.

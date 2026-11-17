@@ -21,11 +21,16 @@ private[testkit] final class EvaluatorResultImpl(effect: EvaluatorEffectImpl.Pri
 
   override def isInconclusive(): Boolean = effect.isInstanceOf[EvaluatorEffectImpl.InconclusiveEffect]
 
+  override def isNotApplicable(): Boolean = effect.isInstanceOf[EvaluatorEffectImpl.NotApplicableEffect]
+
   override def getEvaluation(): Evaluation =
     getEffectOfType(classOf[EvaluatorEffectImpl.CompleteEffect]).evaluation
 
   override def getInconclusiveReason(): String =
     getEffectOfType(classOf[EvaluatorEffectImpl.InconclusiveEffect]).reason
+
+  override def getNotApplicableReason(): String =
+    getEffectOfType(classOf[EvaluatorEffectImpl.NotApplicableEffect]).reason
 
   private def getEffectOfType[E](expectedClass: Class[E]): E = {
     if (expectedClass.isInstance(effect)) effect.asInstanceOf[E]

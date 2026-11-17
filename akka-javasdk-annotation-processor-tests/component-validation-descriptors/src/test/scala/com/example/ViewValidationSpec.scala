@@ -40,6 +40,10 @@ abstract class AbstractViewValidationSpec(val validationMode: ValidationMode)
       assertValid("valid/ValidViewWithEmptyTableUpdaterWorkflow.java")
     }
 
+    "reject View with an invalid platform service name on a stream subscription" in {
+      assertInvalid("invalid/ViewWithInvalidPlatformService.java", "Invalid platform service name [svc]")
+    }
+
     "reject View that is not public" in {
       assertInvalid(
         "invalid/NotPublicView.java",
@@ -48,6 +52,14 @@ abstract class AbstractViewValidationSpec(val validationMode: ValidationMode)
 
     "reject View with @Table annotation" in {
       assertInvalid("invalid/ViewWithTableAnnotation.java", "A View itself should not be annotated with @Table")
+    }
+
+    "reject View with @Consume.StartFrom on a TableUpdater" in {
+      assertInvalid("invalid/ViewWithStartFrom.java", "@Consume.StartFrom is only supported on a Consumer")
+    }
+
+    "reject View with @Consume.StartFrom on the View class" in {
+      assertInvalid("invalid/ViewClassWithStartFrom.java", "@Consume.StartFrom is only supported on a Consumer")
     }
 
     "reject View with no TableUpdater" in {

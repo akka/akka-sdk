@@ -24,7 +24,6 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.DeclaredType;
 import javax.lang.model.util.ElementFilter;
 import javax.tools.FileObject;
 import javax.tools.StandardLocation;
@@ -56,43 +55,28 @@ public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
   private static final String DESCRIPTOR_COMPONENT_ENTRY_BASE_PATH =
       DESCRIPTOR_ENTRY_BASE_PATH + "components.";
 
-  // Key of each component type under that parent path, containing a string list of concrete
-  // component classes.
-  // These must be kept in sync with ComponentLocator.scala in the akka-javasdk module.
-  private static final String HTTP_ENDPOINT_KEY = "http-endpoint";
-  private static final String GRPC_ENDPOINT_KEY = "grpc-endpoint";
-  private static final String MCP_ENDPOINT_KEY = "mcp-endpoint";
-  private static final String EVENT_SOURCED_ENTITY_KEY = "event-sourced-entity";
-  private static final String VALUE_ENTITY_KEY = "key-value-entity";
-  private static final String TIMED_ACTION_KEY = "timed-action";
-  private static final String CONSUMER_KEY = "consumer";
-  private static final String VIEW_KEY = "view";
-  private static final String WORKFLOW_KEY = "workflow";
-  private static final String AGENT_KEY = "agent";
-  private static final String AUTONOMOUS_AGENT_KEY = "autonomous-agent";
-  private static final String EVALUATOR_KEY = "evaluator";
-  private static final String DURABLE_EVALUATOR_KEY = "durable-evaluator";
-  private static final String SERVICE_SETUP_KEY = "service-setup";
   // Marks the descriptor of the deployable service, must be kept in sync with
   // ComponentLocator.scala
   private static final String SERVICE_MARKER_PATH = DESCRIPTOR_ENTRY_BASE_PATH + "service";
 
+  // Descriptor key of each component type. Each key under the components path holds a string list
+  // of concrete component classes.
   private static final List<String> ALL_COMPONENT_TYPES =
       List.of(
-          HTTP_ENDPOINT_KEY,
-          GRPC_ENDPOINT_KEY,
-          MCP_ENDPOINT_KEY,
-          EVENT_SOURCED_ENTITY_KEY,
-          VALUE_ENTITY_KEY,
-          TIMED_ACTION_KEY,
-          CONSUMER_KEY,
-          VIEW_KEY,
-          WORKFLOW_KEY,
-          AGENT_KEY,
-          AUTONOMOUS_AGENT_KEY,
-          EVALUATOR_KEY,
-          DURABLE_EVALUATOR_KEY,
-          SERVICE_SETUP_KEY);
+          ComponentKinds.HTTP_ENDPOINT,
+          ComponentKinds.GRPC_ENDPOINT,
+          ComponentKinds.MCP_ENDPOINT,
+          ComponentKinds.EVENT_SOURCED_ENTITY,
+          ComponentKinds.KEY_VALUE_ENTITY,
+          ComponentKinds.TIMED_ACTION,
+          ComponentKinds.CONSUMER,
+          ComponentKinds.VIEW,
+          ComponentKinds.WORKFLOW,
+          ComponentKinds.AGENT,
+          ComponentKinds.AUTONOMOUS_AGENT,
+          ComponentKinds.EVALUATOR,
+          ComponentKinds.DURABLE_EVALUATOR,
+          ComponentKinds.SERVICE_SETUP);
 
   private boolean alreadyRan = false;
 
@@ -147,7 +131,8 @@ public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
         Set<? extends Element> annotatedElements = roundEnv.getElementsAnnotatedWith(annotation);
         var elementsPerComponentType =
             ElementFilter.typesIn(annotatedElements).stream()
-                .collect(Collectors.groupingBy(element -> componentTypeFor(element, annotation)));
+                .collect(
+                    Collectors.groupingBy(element -> ComponentKinds.kindFor(element, annotation)));
         elementsPerComponentType.forEach(
             (componentType, elements) -> {
               var classNames =
@@ -178,7 +163,7 @@ public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
             });
       }
 
-      var service = componentTypeToConcreteComponents.get(SERVICE_SETUP_KEY);
+      var service = componentTypeToConcreteComponents.get(ComponentKinds.SERVICE_SETUP);
       if (service != null && service.size() > 1) {
         error(
             "More than one class annotated with @Setup, only one is allowed. Annotated classes: "
@@ -204,93 +189,10 @@ public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
                 + ex.getMessage());
         throw new RuntimeException(ex);
       }
-      return true;
+      return false;
     } else {
       return false;
     }
-  }
-
-  private String componentTypeFor(Element annotatedClass, TypeElement annotation) {
-    return switch (annotation.getQualifiedName().toString()) {
-      case "akka.javasdk.annotations.http.HttpEndpoint" -> HTTP_ENDPOINT_KEY;
-      case "akka.javasdk.annotations.GrpcEndpoint" -> GRPC_ENDPOINT_KEY;
-      case "akka.javasdk.annotations.Setup" -> SERVICE_SETUP_KEY;
-      case "akka.javasdk.annotations.mcp.McpEndpoint" -> MCP_ENDPOINT_KEY;
-      case "akka.javasdk.annotations.Component" -> componentType(annotatedClass);
-      default ->
-          throw new IllegalArgumentException(
-              "Unknown annotation type: " + annotation.getQualifiedName());
-    };
-  }
-
-  /** Entities share the same annotation, so we need to look at class supertypes */
-  private String componentType(Element annotatedClass) {
-    return recurseForComponentType(annotatedClass, annotatedClass);
-  }
-
-  private String recurseForComponentType(Element annotatedClass, Element current) {
-    var superClassTypeMirror = ((TypeElement) current).getSuperclass();
-
-    if (superClassTypeMirror.getKind() == javax.lang.model.type.TypeKind.NONE) {
-      throw new IllegalArgumentException(
-          "Unknown supertype for class ["
-              + annotatedClass
-              + "] annotated with @Component. Reached top of hierarchy without"
-              + " finding a known component supertype.");
-    }
-
-    if (superClassTypeMirror.getKind() == javax.lang.model.type.TypeKind.ERROR) {
-      throw new IllegalArgumentException(
-          "Superclass for class ["
-              + current
-              + "] (processing ["
-              + annotatedClass
-              + "]) could not be resolved. Ensure all dependencies and imports are correct.");
-    }
-
-    if (!(superClassTypeMirror instanceof DeclaredType)) {
-      throw new IllegalArgumentException(
-          "Unknown supertype for class ["
-              + annotatedClass
-              + "] annotated with @Component. Superclass ["
-              + superClassTypeMirror
-              + "] is not a declared type (kind: "
-              + superClassTypeMirror.getKind()
-              + ").");
-    }
-
-    var superClassElement = ((DeclaredType) superClassTypeMirror).asElement();
-
-    var superClassName = superClassTypeMirror.toString();
-
-    // cut out type params if any
-    int typeParams = superClassName.indexOf("<");
-    var classNameWithoutTypeParams =
-        typeParams > 0 ? superClassName.substring(0, typeParams) : superClassName;
-    debug("Determining component type trough supertype: " + classNameWithoutTypeParams);
-
-    return switch (classNameWithoutTypeParams) {
-      case "akka.javasdk.eventsourcedentity.EventSourcedEntity" -> EVENT_SOURCED_ENTITY_KEY;
-      case "akka.javasdk.keyvalueentity.KeyValueEntity" -> VALUE_ENTITY_KEY;
-      case "akka.javasdk.workflow.Workflow" -> WORKFLOW_KEY;
-      case "akka.javasdk.timedaction.TimedAction" -> TIMED_ACTION_KEY;
-      case "akka.javasdk.consumer.Consumer" -> CONSUMER_KEY;
-      case "akka.javasdk.view.View" -> VIEW_KEY;
-      case "akka.javasdk.agent.Agent" -> AGENT_KEY;
-      case "akka.javasdk.agent.autonomous.AutonomousAgent" -> AUTONOMOUS_AGENT_KEY;
-      case "akka.javasdk.evaluation.Evaluator" -> EVALUATOR_KEY;
-      case "akka.javasdk.evaluation.DurableEvaluator" -> DURABLE_EVALUATOR_KEY;
-      case "java.lang.Object" ->
-          throw new IllegalArgumentException(
-              "Unknown supertype for class ["
-                  + annotatedClass
-                  + "] annotated with @Component: ["
-                  + superClassName
-                  + "]");
-      default ->
-          // go through hierarchy
-          recurseForComponentType(annotatedClass, superClassElement);
-    };
   }
 
   private void createComponentServiceDescriptor(
@@ -327,9 +229,9 @@ public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
         componentType -> {
           var foundComponentClasses =
               componentTypeToConcreteComponents.getOrDefault(componentType, List.of());
-          if (componentType.equals(SERVICE_SETUP_KEY)) {
+          if (componentType.equals(ComponentKinds.SERVICE_SETUP)) {
             // only one Akka service annotated class
-            String serviceSetupPath = DESCRIPTOR_ENTRY_BASE_PATH + SERVICE_SETUP_KEY;
+            String serviceSetupPath = DESCRIPTOR_ENTRY_BASE_PATH + ComponentKinds.SERVICE_SETUP;
             if (foundComponentClasses.isEmpty()) {
               if (foundExistingConfig.hasPath(serviceSetupPath)) {
                 // use the old value

@@ -38,10 +38,8 @@ import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiEntity
 import akka.runtime.sdk.spi.SpiEventSourcedEntity
 import akka.runtime.sdk.spi.SpiMetadata
-import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.{ Context => OtelContext }
-import org.slf4j.MDC
 
 /**
  * INTERNAL API
@@ -128,10 +126,6 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
       command: SpiEntity.Command): Future[SpiEventSourcedEntity.Effect] = {
 
     val telemetryContext = Option(command.telemetryContext)
-    val traceId = telemetryContext.flatMap { context =>
-      Option(Span.fromContextOrNull(context)).map(_.getSpanContext.getTraceId)
-    }
-    traceId.foreach(id => MDC.put(Telemetry.TRACE_ID, id))
 
     // smuggling 0 arity method called from component client through here
     val cmdPayload = command.payload.getOrElse(BytesPayload.empty)
@@ -147,6 +141,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
         telemetryContext,
         tracerFactory)
 
+    val traceScope = Telemetry.makeCurrent(telemetryContext)
     try {
       entity._internalSetCommandContext(Optional.of(cmdContext))
       entity._internalSetCurrentState(state, command.isDeleted)
@@ -252,7 +247,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
     } finally {
       entity._internalSetCommandContext(Optional.empty())
       entity._internalClearCurrentState()
-      if (traceId.isDefined) MDC.remove(Telemetry.TRACE_ID)
+      traceScope.close()
     }
 
   }

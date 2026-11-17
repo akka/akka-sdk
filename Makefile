@@ -2,8 +2,8 @@
 SHELL_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 ROOT_DIR := ${SHELL_DIR}
 TARGET_DIR := ${ROOT_DIR}/target/site
-NEXUS_DIR ?= ${ROOT_DIR}/../nexus
-AKKA_CLI_VERSION := 3.0.81
+NEXUS_DIR ?= ${ROOT_DIR}/../akka-optimize
+AKKA_CLI_VERSION := 3.0.82
 
 upstream := akka/akka-sdk
 branch   := docs/current
@@ -36,7 +36,7 @@ define antora_mounts
 endef
 
 .SILENT:
-.PHONY: check-optimize markdown whitepapers whitepapers-ci
+.PHONY: check-optimize rbac markdown whitepapers whitepapers-ci
 
 build: managed local open
 
@@ -53,7 +53,7 @@ prepare:
 	mkdir -p "${java_managed_attachments}"
 	cp akka-javasdk-testkit/src/main/resources/akka/javasdk/testkit/eval/eval-report.example.json "${java_managed_attachments}/"
 
-managed: check-optimize prepare apidocs attributes examples bundles
+managed: check-optimize prepare apidocs attributes examples rbac bundles
 
 attributes: apidocs
 	test -s target/docs-runtime-version.txt
@@ -75,6 +75,11 @@ attributes: apidocs
 	# see https://docs.docker.com/engine/release-notes/27/
 	echo ":minimum_docker_version: 27" \
 		>> "${managed_partials}/attributes.adoc"
+
+# The RBAC reference tables are generated from the documents that the Akka control plane serves.
+# Set RBAC_RESOURCES_URL or RBAC_RESOURCES_DIR to change the source, see docs/bin/generate-rbac-tables.mjs.
+rbac: prepare
+	node docs/bin/generate-rbac-tables.mjs "${src_managed}/modules/reference/partials/rbac"
 
 apidocs: prepare
 	mkdir -p "${java_managed_attachments}"
@@ -137,15 +142,15 @@ done:
 open:
 	open "${TARGET_DIR}/index.html"
 
-local: check-optimize docker-image examples optimize-content antora-local whitepapers done
+local: check-optimize docker-image examples rbac optimize-content antora-local whitepapers done
 
 prod: check-optimize docker-image managed optimize-content antora-prod done
 
 check-optimize:
 	if [ ! -e "${NEXUS_DIR}/.git" ] || [ ! -f "${NEXUS_DIR}/optimize-docs/src/antora.yml" ]; then \
 		echo "Optimize documentation checkout is missing at ${NEXUS_DIR}." >&2; \
-		echo "Clone it beside akka-sdk: git clone git@github.com:akka/nexus.git ../nexus" >&2; \
-		echo "Or set NEXUS_DIR to the absolute path of an existing nexus checkout." >&2; \
+		echo "Clone it beside akka-sdk: git clone git@github.com:akka/akka-optimize.git ../akka-optimize" >&2; \
+		echo "Or set NEXUS_DIR to the absolute path of an existing Optimize checkout." >&2; \
 		exit 1; \
 	fi
 

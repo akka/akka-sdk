@@ -15,6 +15,7 @@ import java.util
 import java.util.Optional
 import java.util.concurrent.ConcurrentHashMap
 
+import scala.annotation.nowarn
 import scala.annotation.tailrec
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.reflect.ClassTag
@@ -184,6 +185,7 @@ private[impl] object Reflect {
   def isStreamingAgent(cls: Class[_]): Boolean =
     isAgent(cls) && cls.getMethods.exists(isCommandHandlerCandidate[Agent.StreamEffect])
 
+  @nowarn("msg=deprecated")
   def isEvaluatorAgent(cls: Class[_]): Boolean = {
     isAgent(cls) && {
       val effectMethod =

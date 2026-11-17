@@ -5,8 +5,10 @@ import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.evaluation.EvaluationContext;
 import akka.javasdk.evaluation.Evaluator;
+import akka.javasdk.evaluation.Subject;
 import akka.javasdk.ledger.InteractionRecord;
 import akka.javasdk.ledger.LedgerClient;
+import akka.javasdk.ledger.ToolCall;
 import java.util.stream.Collectors;
 
 @Component(id = "hallucination-judge-evaluator")
@@ -67,7 +69,8 @@ public class HallucinationJudgeEvaluator extends Evaluator {
 
   @Override
   public Effect evaluate(EvaluationContext context) {
-    InteractionRecord interaction = ledger.getInteraction(context.subject().interactionId());
+    var subject = (Subject.Interaction) context.subject();
+    InteractionRecord interaction = ledger.getInteraction(subject.interactionId());
     String answer = interaction.finalResponseText();
     if (interaction.failed() || answer.isBlank()) {
       return effects().inconclusive("no answer to evaluate");
@@ -77,7 +80,7 @@ public class HallucinationJudgeEvaluator extends Evaluator {
     String referenceText = interaction
       .toolCalls()
       .stream()
-      .filter(call -> !call.response().isBlank()) // <1>
+      .filter(call -> call.status() == ToolCall.Status.COMPLETED) // <1>
       .map(call -> call.name() + ": " + call.response())
       .collect(Collectors.joining("\n")); // <2>
     if (referenceText.isEmpty()) {

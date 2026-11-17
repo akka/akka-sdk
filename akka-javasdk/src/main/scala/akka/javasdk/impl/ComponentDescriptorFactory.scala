@@ -7,6 +7,7 @@ package akka.javasdk.impl
 import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
+import java.time.Instant
 
 import akka.annotation.InternalApi
 import akka.javasdk.agent.Agent
@@ -17,6 +18,7 @@ import akka.javasdk.annotations.Consume.FromKeyValueEntity
 import akka.javasdk.annotations.Consume.FromServiceStream
 import akka.javasdk.annotations.Consume.FromTopic
 import akka.javasdk.annotations.Consume.FromWorkflow
+import akka.javasdk.annotations.Consume.StartFrom
 import akka.javasdk.annotations.DeleteHandler
 import akka.javasdk.annotations.Produce.ServiceStream
 import akka.javasdk.annotations.Produce.ToTopic
@@ -35,6 +37,7 @@ import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
 import akka.runtime.sdk.spi.ConsumerDestination
 import akka.runtime.sdk.spi.ConsumerSource
+import akka.runtime.sdk.spi.ConsumerStartFrom
 
 /**
  * INTERNAL API
@@ -259,10 +262,21 @@ private[impl] object ComponentDescriptorFactory {
       new ConsumerSource.TopicSource(topicName, consumerGroup)
     } else if (hasStreamSubscription(clazz)) {
       val streamAnn = streamSubscription(clazz).get
-      new ConsumerSource.ServiceStreamSource(streamAnn.service(), streamAnn.id(), streamAnn.consumerGroup())
+      new ConsumerSource.ServiceStreamSource(
+        streamAnn.service(),
+        streamAnn.id(),
+        streamAnn.consumerGroup(),
+        ServiceAddress.streamPlatformService(streamAnn.service(), streamAnn.platformService(), clazz))
     } else {
       throw new IllegalArgumentException(s"Component [$clazz] is missing a @Consume annotation")
     }
+  }
+
+  def consumerStartFrom(clazz: Class[_]): Option[ConsumerStartFrom] = {
+    val ann = clazz.getAnnotation(classOf[StartFrom])
+    if (ann eq null) None
+    else if (ann.latest()) Some(ConsumerStartFrom.Latest)
+    else Some(new ConsumerStartFrom.Timestamp(Instant.parse(ann.timestamp())))
   }
 
   def consumerDestination(clazz: Class[Consumer]): Option[ConsumerDestination] = {

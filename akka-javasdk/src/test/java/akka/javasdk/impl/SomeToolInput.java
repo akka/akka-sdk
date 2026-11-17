@@ -63,6 +63,41 @@ interface SomeToolInput {
       char character,
       Character boxedCharacter) {}
 
+  record ScalarTypes(
+      byte[] bytes,
+      char[] chars,
+      java.nio.ByteBuffer byteBuffer,
+      java.net.URI uri,
+      java.net.URL url,
+      java.math.BigInteger bigInteger,
+      java.util.Date date,
+      ZoneId zoneId,
+      java.util.Locale locale,
+      java.util.Currency currency,
+      YearMonth yearMonth,
+      java.util.concurrent.atomic.AtomicBoolean atomicBoolean,
+      java.util.OptionalInt optionalInt,
+      java.util.OptionalDouble optionalDouble) {
+
+    static ScalarTypes example() throws Exception {
+      return new ScalarTypes(
+          new byte[] {1, 2},
+          new char[] {'a', 'b'},
+          java.nio.ByteBuffer.wrap(new byte[] {1}),
+          java.net.URI.create("https://example.com"),
+          java.net.URI.create("https://example.com").toURL(),
+          java.math.BigInteger.TEN,
+          new java.util.Date(0),
+          ZoneId.of("UTC"),
+          java.util.Locale.US,
+          java.util.Currency.getInstance("EUR"),
+          YearMonth.of(2026, 1),
+          new java.util.concurrent.atomic.AtomicBoolean(true),
+          java.util.OptionalInt.of(1),
+          java.util.OptionalDouble.of(1.5));
+    }
+  }
+
   record ClassWithRecursiveFields(
       String regular, ClassWithRecursiveFields recursive, NestedRecursiveClass nested) {}
 

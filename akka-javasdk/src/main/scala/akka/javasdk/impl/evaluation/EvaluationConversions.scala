@@ -24,6 +24,8 @@ private[javasdk] object EvaluationConversions {
     subject match {
       case interaction: SpiEvaluator.Interaction =>
         new Subject.Interaction(interaction.interactionId, interaction.agentComponentId, interaction.flowId.toJava)
+      case workflow: SpiEvaluator.Workflow =>
+        new Subject.Workflow(workflow.workflowId, workflow.workflowComponentId)
     }
 
   def toSpiSubject(subject: Subject): SpiEvaluator.Subject =
@@ -33,6 +35,8 @@ private[javasdk] object EvaluationConversions {
           interaction.interactionId(),
           interaction.agentComponentId(),
           interaction.flowId().toScala)
+      case workflow: Subject.Workflow =>
+        new SpiEvaluator.Workflow(workflow.workflowId(), workflow.workflowComponentId())
     }
 
   def toSpiEvaluation(evaluation: Evaluation): SpiEvaluator.Evaluation =

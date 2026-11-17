@@ -4,8 +4,11 @@
 
 package akka.javasdk.impl
 
+import java.util.Optional
+
 import scala.jdk.CollectionConverters._
 
+import akka.javasdk.evaluation.Subject
 import akka.javasdk.impl.evaluation.EvaluatorSettings
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.Serializer
@@ -50,6 +53,31 @@ class EvaluatorDescriptorFactorySpec extends AnyWordSpec with Matchers {
     "produce an empty component descriptor (single abstract handler, no command routing)" in {
       val desc = ComponentDescriptor.descriptorFor(classOf[SomeEvaluator], new Serializer)
       desc.methodInvokers shouldBe empty
+    }
+  }
+
+  "Evaluator enabled setting" should {
+
+    "default to enabled, also for an evaluator without an entry" in {
+      val config = load("""akka.javasdk.evaluation.evaluators.judge { threshold = 0.7 }""")
+      EvaluatorSettings.enabled(config, "judge") shouldBe true
+      EvaluatorSettings.enabled(config, "unconfigured") shouldBe true
+    }
+
+    "read enabled = false from the entry of the evaluator" in {
+      val config = load("""akka.javasdk.evaluation.evaluators.judge { enabled = false }""")
+      EvaluatorSettings.enabled(config, "judge") shouldBe false
+    }
+
+    "take the evaluator defaults when the entry does not set it" in {
+      val config = load("""
+        akka.javasdk.evaluation.defaults.evaluator.enabled = false
+        akka.javasdk.evaluation.evaluators.judge { enabled = true }
+        akka.javasdk.evaluation.evaluators.other { threshold = 0.7 }
+      """)
+      EvaluatorSettings.enabled(config, "judge") shouldBe true
+      EvaluatorSettings.enabled(config, "other") shouldBe false
+      EvaluatorSettings.enabled(config, "unconfigured") shouldBe false
     }
   }
 
@@ -530,7 +558,9 @@ class EvaluatorDescriptorFactorySpec extends AnyWordSpec with Matchers {
   "Evaluator config" should {
 
     def configFor(config: Config, agentComponentId: String): Config =
-      EvaluatorSettings.configuredEvaluator(config, "conversation-quality", agentRoles).configFor(agentComponentId)
+      EvaluatorSettings
+        .configuredEvaluator(config, "conversation-quality", agentRoles)
+        .configFor(new Subject.Interaction("interaction-1", agentComponentId, Optional.empty()))
 
     "be the keys of the evaluator entry when the binding sets none" in {
       val config = load("""
@@ -635,7 +665,11 @@ class EvaluatorDescriptorFactorySpec extends AnyWordSpec with Matchers {
         """)
       val configured = EvaluatorSettings.configuredEvaluator(config, "conversation-quality", agentRoles)
       configured.bindings.map(_.asInstanceOf[SpiEvaluator.AgentBinding].agentComponentId) shouldBe Seq("support-agent")
-      configured.configFor("support-agent").root().keySet().asScala shouldBe Set("threshold")
+      configured
+        .configFor(new Subject.Interaction("interaction-1", "support-agent", Optional.empty()))
+        .root()
+        .keySet()
+        .asScala shouldBe Set("threshold")
     }
 
     "reject a key of the evaluator implementation in akka.javasdk.evaluation.defaults.evaluator" in {

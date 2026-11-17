@@ -10,7 +10,9 @@ Secret references use the "secret-name/key" format and must point at existing se
 
 Supported providers and credential types:
 
-s3          native, static, profile   gcs         native, service-account-key   azure-blob  shared-key, sas
+s3          native, static, profile   gcs         native, service-account-key   azure-blob  shared-key, sas, native
+
+On azure-blob, native uses the service's Azure workload identity and needs --account-name.
 
 [source,shell]
 ----
@@ -38,6 +40,11 @@ akka projects config set object-storage bucket archive \
   --provider azure-blob --bucket acme-archive \
   --credentials-type shared-key --account-name acmestorage \
   --account-key-secret azure-creds/account-key
+
+# azure-blob using the service's Azure workload identity
+akka projects config set object-storage bucket reports \
+  --provider azure-blob --bucket acme-reports \
+  --credentials-type native --account-name acmestorage
 ----
 
 == Options
@@ -46,7 +53,7 @@ akka projects config set object-storage bucket archive \
 ----
       --access-key-id-secret string         'secret-name/key' reference for S3 access key ID (for --credentials-type static)
       --account-key-secret string           'secret-name/key' reference for an Azure account key (for --credentials-type shared-key)
-      --account-name string                 Azure storage account name (for --credentials-type shared-key or sas)
+      --account-name string                 Azure storage account name (for --credentials-type shared-key, sas, or native on azure-blob)
       --bucket string                       physical bucket name at the provider (required)
       --bucket-region string                provider region for the bucket (required for s3; distinct from the platform --region flag)
       --credentials-type string             authentication mode: native, static, profile, service-account-key, shared-key, or sas

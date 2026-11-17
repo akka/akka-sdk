@@ -433,7 +433,7 @@ public abstract class Agent implements AgentDelegationWorker {
        *   <li>{@link RateLimitException} - API rate limiting exceeded
        *   <li>{@link ModelTimeoutException} - Model request timeout
        *   <li>{@link UnsupportedFeatureException} - Unsupported model features
-       *   <li>{@link InternalServerException} - Internal service errors
+       *   <li>{@link InternalServerException} - Server errors of the model API
        *   <li>{@link JsonParsingException} - Response parsing failures
        *   <li>{@link ToolCallLimitReachedException} - Tool call limit exceeded
        *   <li>{@link ToolCallExecutionException} - Function tool execution errors
@@ -474,7 +474,7 @@ public abstract class Agent implements AgentDelegationWorker {
        *   <li>{@link RateLimitException} - API rate limiting exceeded
        *   <li>{@link ModelTimeoutException} - Model request timeout
        *   <li>{@link UnsupportedFeatureException} - Unsupported model features
-       *   <li>{@link InternalServerException} - Internal service errors
+       *   <li>{@link InternalServerException} - Server errors of the model API
        *   <li>{@link JsonParsingException} - Response parsing failures
        *   <li>{@link ToolCallLimitReachedException} - Tool call limit exceeded
        *   <li>{@link ToolCallExecutionException} - Function tool execution errors
@@ -512,7 +512,7 @@ public abstract class Agent implements AgentDelegationWorker {
        *   <li>{@link RateLimitException} - API rate limiting exceeded
        *   <li>{@link ModelTimeoutException} - Model request timeout
        *   <li>{@link UnsupportedFeatureException} - Unsupported model features
-       *   <li>{@link InternalServerException} - Internal service errors
+       *   <li>{@link InternalServerException} - Server errors of the model API
        *   <li>{@link JsonParsingException} - Response parsing failures
        *   <li>{@link ToolCallLimitReachedException} - Tool call limit exceeded
        *   <li>{@link ToolCallExecutionException} - Function tool execution errors

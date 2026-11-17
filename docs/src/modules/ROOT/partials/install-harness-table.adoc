@@ -39,10 +39,10 @@ Codex CLI::
 --
 [source]
 ----
-codex plugin marketplace add akka/ai-marketplace
-codex plugin add akka@akka
+codex plugin marketplace add akka/ai-marketplace@stable
+codex plugin add akka@akka-ai-marketplace
 ----
-Codex exposes the commands as skills. Where this documentation shows `/akka:specify`, use the `akka-specify` skill (`@akka-specify`, or ask Codex to run it).
+Codex exposes the commands as skills. Where this documentation shows `/akka:specify`, enter `$akka:specify` in Codex. Use the same prefix for other commands, such as `$akka:setup` and `$akka:plan`.
 --
 
 Cursor, VS Code + Copilot::

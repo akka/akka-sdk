@@ -23,11 +23,15 @@ public interface ClassifierClient {
    * result.
    *
    * @throws IllegalArgumentException if no classifier is configured with that name
+   * @throws IllegalStateException if the call reaches a classifier that is already on the path of
+   *     nested classifier calls that leads to it
    */
   Classification classify(String name, String input);
 
   /**
-   * Async variant of {@link #classify}.
+   * Async variant of {@link #classify}. The returned stage fails with {@code IllegalStateException}
+   * if the call reaches a classifier that is already on the path of nested classifier calls that
+   * leads to it.
    *
    * @throws IllegalArgumentException if no classifier is configured with that name
    */

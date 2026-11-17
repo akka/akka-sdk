@@ -2,16 +2,16 @@ name: Checkout Optimize documentation
 description: Check out the Optimize revision used by the SDK documentation build.
 inputs:
   token:
-    description: Token with read access to akka/nexus.
+    description: Token with read access to akka/akka-optimize.
     required: true
 runs:
   using: composite
   steps:
     - uses: actions/checkout@v6
       with:
-        repository: akka/nexus
+        repository: akka/akka-optimize
         ref: v0.10.1
-        path: nexus
+        path: akka-optimize
         fetch-depth: 0
         sparse-checkout: |
           optimize-docs

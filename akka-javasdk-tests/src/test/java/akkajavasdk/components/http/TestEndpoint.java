@@ -94,8 +94,7 @@ public class TestEndpoint extends AbstractHttpEndpoint {
   @Get("/sanitize-failure/{name}/{text}")
   public String sanitizeFailure(String name, String text) {
     try {
-      sanitizerClient.sanitize(name, text);
-      return "masked";
+      return sanitizerClient.sanitize(name, text);
     } catch (SanitizerException e) {
       return e.getSanitizerName() + ": " + e.getMessage();
     }

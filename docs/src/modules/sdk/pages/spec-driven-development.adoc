@@ -9,6 +9,8 @@ include::ROOT:partial$include.adoc[]
 
 This page walks through spec-driven development with the Akka Specify Plugin: specify, clarify, plan, tasks, implement, build, inspect and deploy, backed by a constitution of project rules. For how the process works and why, see xref:concepts:spec-driven-development.adoc[].
 
+In Codex, invoke plugin skills with `$akka:specify`. Where this documentation uses a Claude Code command such as `/akka:setup` or `/akka:plan`, use `$akka:setup` or `$akka:plan` in Codex.
+
 image::sdd-workflow.png[Spec-driven development workflow: specify, clarify, plan, tasks, implement, build, inspect, deploy — with an iteration loop that refines the spec and regenerates.]
 
 [#choosing-your-mode]

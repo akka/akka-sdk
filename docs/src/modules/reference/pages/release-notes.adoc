@@ -12,6 +12,30 @@ Current versions
 
 == November 2026
 
+* [[sdk-3-7-2]]https://github.com/akka/akka-sdk/releases/tag/v3.7.2[Akka SDK 3.7.2,window="new"]
+- Runtime 1.7.6
+- **Breaking change**: The evaluation runner of the TestKit uses evaluator components instead of its own evaluators, see xref:reference:migration-guide.adoc#migrating-from-the-evalkit-evaluators[Migrating from the EvalKit evaluators]
+- An eval case can carry an expected reply, see xref:testing:evaluation/getting-started.adoc#expected-reply[Cases with an expected reply]
+- A workflow can start an evaluation of its run, see xref:sdk:evaluators.adoc#workflow-run[Evaluating a workflow run]
+- The ledger client reads the records of a flow, and a ledger record has the status of each tool call, see xref:sdk:evaluators.adoc#_the_ledger_client[The ledger client]
+- `DecisionModelClient` for decision models, see xref:sdk:decision-models.adoc[Decision models]
+- OpenAI Responses API and reasoning effort for the OpenAI model provider, see xref:sdk:model-provider-details.adoc#_openai[OpenAI]
+- `@Consume.StartFrom` starts a consumer from the latest events or a timestamp, see xref:sdk:consuming-producing.adoc#_starting_from_the_latest_events_or_a_timestamp[Starting from the latest events or a timestamp]
+- Trace context fields in the logs of user code, see xref:operations:observability-and-monitoring/view-logs.adoc#_correlating_logs[Correlating logs with traces]
+- The warning for a consumer failure has the correlation id and the trace context.
+- `TestModelProvider` can reply with thinking and attributes.
+- The standalone base image is Eclipse Temurin 25 JRE.
+
+* xref:release-notes/runtime/1.7.6.adoc[Akka Runtime 1.7.6]
+- Startup check for the eventing start timestamp of a service.
+- Log of requests that JWT validation rejects.
+- Fixes for eventing from a timestamp, HTTP/2 connections, views, and autonomous agents.
+
+* xref:release-notes/runtime/1.7.5.adoc[Akka Runtime 1.7.5]
+- Trace context in logs.
+- Logs and a duration metric for evaluations.
+- Fixes for a failed runtime start, idle autonomous agents, workflow replicas, and views.
+
 * [[cli-3-0-81]]Akka CLI 3.0.81
 - **Breaking change**: Organization membership is now controlled by `akka organization role-bindings` (it used to be `akka organization users`).
 - Management of custom roles

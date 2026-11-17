@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentHashMap
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.FutureConverters._
+import scala.util.Failure
 import scala.util.control.NonFatal
 
 import akka.actor.typed.ActorSystem
@@ -65,8 +66,10 @@ import org.slf4j.LoggerFactory
         case Some(_) =>
           runtimeSanitizerClient
             .sanitize(name, text)
-            .recoverWith { case exc: SpiSanitizerException =>
-              Future.failed(new SanitizerException(exc.getMessage, exc.sanitizerName, exc.getCause))
+            .transform {
+              case Failure(exc: SpiSanitizerException) =>
+                Failure(new SanitizerException(exc.getMessage, exc.sanitizerName, exc.getCause))
+              case other => other
             }(ExecutionContext.parasitic)
             .asJava
         case None => CompletableFuture.failedFuture(notConfigured(name))

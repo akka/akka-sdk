@@ -469,6 +469,45 @@ jobs:
           # must also compile without the profile!
           mvn test-compile --no-transfer-progress
 
+      - name: ${{ matrix.sample }} inventory
+        env:
+          DIR: ${{ matrix.sample }}
+        run: |-
+          cd samples/${DIR}
+          if ! ls target/classes/META-INF/akka-javasdk-inventory_*.json; then
+            echo "${DIR} wrote no service inventory"
+            exit 1
+          fi
+
+      - name: ${{ matrix.sample }} regenerate after another tool
+        if: matrix.sample == 'helloworld-agent'
+        env:
+          DIR: ${{ matrix.sample }}
+        run: |-
+          cd samples/${DIR}
+          inventory=$(ls target/classes/META-INF/akka-javasdk-inventory_*.json)
+          sleep 2
+          echo '{}' > "${inventory}"
+          mvn compile --no-transfer-progress
+          if ! grep -q '"components"' "${inventory}"; then
+            echo "mvn compile kept an inventory that another tool wrote"
+            exit 1
+          fi
+
+      - name: ${{ matrix.sample }} regenerate a missing inventory
+        if: matrix.sample == 'helloworld-agent'
+        env:
+          DIR: ${{ matrix.sample }}
+        run: |-
+          cd samples/${DIR}
+          inventory=$(ls target/classes/META-INF/akka-javasdk-inventory_*.json)
+          rm "${inventory}"
+          mvn compile --no-transfer-progress
+          if ! test -f "${inventory}"; then
+            echo "mvn compile did not write the missing inventory"
+            exit 1
+          fi
+
       - name: ${{ matrix.sample }} verify
         if: matrix.verify || matrix.it
         env:

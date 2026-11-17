@@ -1,0 +1,24 @@
+= Akka Runtime 1.7.6
+:page-summary: Runtime 1.7.6 records the eventing start timestamp of a service at startup and logs requests that JWT validation rejects. It also fixes HTTP/2 connections that stop accepting requests, views, and autonomous agents.
+
+include::ROOT:partial$include.adoc[]
+
+Released 2026-11-10.
+
+== Changes
+
+* Eventing: the runtime records the `akka.javasdk.eventing.start-from-timestamp` setting at startup. Startup fails if a later deployment changes or removes the setting. To change or remove it, set `akka.runtime.start-eventing-from-check = overwrite` for a single deployment.
+* Eventing: consumers and views that start from `akka.javasdk.eventing.start-from-timestamp` no longer receive the full event history of an entity that was active shortly before the timestamp.
+* Eventing: after you clear the offsets of a consumer or view, the consumer or view starts from `akka.javasdk.eventing.start-from-timestamp`, not from the first event.
+* HTTP and gRPC endpoints: a connection no longer stops accepting requests with a body after many rejected requests. This affected requests that an ACL or JWT validation rejects, requests to an unknown path, and calls to an unknown gRPC method. For gRPC calls with an unsupported content type or encoding, the fix requires an SDK version later than 3.7.1.
+* HTTP and gRPC endpoints: the runtime logs a request that `@JWT` validation rejects at `INFO` level. The log line has the reason, the `iss`, `azp`, and `sub` claims, the path, and the endpoint class. The runtime logs at most one line per minute for the same reason, client, and endpoint.
+* Views: a view that is incompatible with the deployed view no longer stops the service from starting. The view fails its requests, and the runtime reports the incompatibility.
+* Views: creating a view table no longer fails with `duplicate column name` when a nested protobuf field, such as `customer.address`, and an optional message field, such as `customer_address`, map to the same column name.
+* Autonomous agents: an agent instance that runs several tasks in a row gives the model the instructions of each task, not only the instructions of the first task.
+* Agents: the `Model call failed` warning names the model provider.
+* Azure OpenAI: the runtime logs the Azure SDK error `No content to map due to end-of-input` as a warning. A custom model provider that streams with the Azure OpenAI client can cause this error.
+* Ledger: each tool call in an interaction record has a status: completed, failed, not run, pending, or no result. The backoffice ledger listing shows the status.
+
+== Noteworthy dependency updates
+
+* Google GenAI 1.80.0

@@ -142,7 +142,7 @@ include::example$shopping-cart-quickstart/src/main/java/shoppingcart/application
 
 Use `ReadOnlyEffect` for handlers that only read state or return a reply. The return type prevents you from returning a state-changing effect at compile time, including when your service runs in a single region.
 Use `Effect` for handlers that persist events or delete the entity.
-In multiple regions, the return type also determines request routing: `ReadOnlyEffect` permits local reads from replicated state, while `Effect` routes to the primary region, including for reads that require the latest state. See xref:event-sourced-entities.adoc#_replication[Multi-region replication] for the consistency trade-offs.
+In multiple regions, the return type also determines request routing: `ReadOnlyEffect` permits local reads from replicated state, while `Effect` is handled in the primary region, including for reads that require the latest state. In request-region mode, an `Effect` received in another region moves the primary to that region. See xref:event-sourced-entities.adoc#_replication[Multi-region replication] for the consistency trade-offs.
 
 IMPORTANT: We are returning the internal state directly back to the requester. In the endpoint, it is usually best to convert this internal domain model into a public model so the internal representation is free to evolve without breaking clients code.
 

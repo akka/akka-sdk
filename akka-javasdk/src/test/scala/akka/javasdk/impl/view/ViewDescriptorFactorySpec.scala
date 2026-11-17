@@ -297,10 +297,22 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
           case stream: ConsumerSource.ServiceStreamSource =>
             stream.service shouldBe "employee_service"
             stream.streamId shouldBe "employee_events"
+            stream.platformService shouldBe None
           case _ => fail()
         }
 
         table.updateHandler shouldBe defined
+      }
+    }
+
+    "create a descriptor for a subscription to a service in a platform service" in {
+      assertDescriptor[PlatformServiceStreamSubscriptionView] { desc =>
+        desc.tables.head.consumerSource match {
+          case stream: ConsumerSource.ServiceStreamSource =>
+            stream.service shouldBe "platform-api"
+            stream.platformService shouldBe Some("my-platform-service")
+          case _ => fail()
+        }
       }
     }
   }

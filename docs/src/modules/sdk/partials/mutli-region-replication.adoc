@@ -4,7 +4,10 @@ include::ROOT:partial$include.adoc[]
 
 Stateful components like Event Sourced Entities, Key Value Entities or Workflows can be replicated to other regions, for resilience across locations and clouds, for serving requests close to the user, and for spreading load. Each instance has a primary region that handles all its write requests, and read requests can be served from any region. Replication is asynchronous. See xref:concepts:multi-region.adoc[] for primary selection modes and replication guarantees.
 
-Handlers declared with `ReadOnlyEffect` can serve reads from the local region's replicated state. Handlers declared with `Effect` are routed to the primary region, even if the original call with the component client was made from another region and the handler does not change state.
+Handlers declared with `ReadOnlyEffect` can serve reads from the local region's replicated state. Handlers declared with `Effect` are handled in the primary region, even if the original call with the component client was made from another region and the handler does not change state. How a request reaches the primary depends on the primary selection mode:
+
+* In pinned-region mode, a request received in another region is forwarded to the project's primary region.
+* In request-region mode, a request to an Event Sourced Entity or Key Value Entity received in another region moves the entity's primary to that region. A Workflow keeps its primary in the region where it was created, and requests received in other regions are forwarded there.
 
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[ShoppingCartEntity.java]
@@ -14,6 +17,8 @@ include::example$shopping-cart-quickstart/src/main/java/shoppingcart/application
 
 State changes (Workflow, Key Value Entity) or events (Event Sourced Entity) persisted by the instance in the primary region are replicated to the other regions and processed by the corresponding instance there.
 
-Because replication is asynchronous, a read served by a non-primary region might not include a write you just made in the primary region. If a read must see the latest writes, declare its command handler with `Effect`, even though it does not persist anything. The request is then routed to the primary and uses the latest fully consistent state.
+Because replication is asynchronous, a read served by a non-primary region might not include a write you just made in the primary region. If a read must see the latest writes, declare its command handler with `Effect`, even though it does not persist anything. The request is then handled in the primary and uses the latest fully consistent state. In request-region mode, such a read received in another region moves the entity's primary there, and the next write in the previous primary region moves it back.
+
+In request-region mode, the first write to a new entity and every move of an entity's primary need a response from every other region. If a region does not respond in time, for example during a deployment, a restart, or a regional outage, the call fails with an `Unexpected error`. Callers must retry these requests. In pinned-region mode, writes in the project's primary region do not depend on other regions.
 
 The operational aspects are described in xref:operations:regions/index.adoc[].

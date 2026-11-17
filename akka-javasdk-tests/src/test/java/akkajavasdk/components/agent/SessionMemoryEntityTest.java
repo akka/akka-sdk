@@ -143,7 +143,8 @@ public class SessionMemoryEntityTest {
             Collections.emptyList(),
             Optional.of("Thoughts about how I am"),
             TokenUsage.EMPTY,
-            Map.of("some-attribute", "some-value"));
+            Map.of(
+                "some-attribute", "some-value", "redacted_thinking", List.of("r1"), "count", 42));
 
     // when
     EventSourcedResult<Done> result =
@@ -155,7 +156,10 @@ public class SessionMemoryEntityTest {
 
     // then
     var resultAiMessage = ((AiMessage) historyResult.getReply().messages().getLast());
-    assertThat(resultAiMessage.attributes()).containsEntry("some-attribute", "some-value");
+    assertThat(resultAiMessage.attributes())
+        .containsOnlyKeys("some-attribute", "redacted_thinking")
+        .containsEntry("some-attribute", "some-value")
+        .containsEntry("redacted_thinking", List.of("r1"));
     assertThat(resultAiMessage.thinking()).contains("Thoughts about how I am");
   }
 
@@ -543,6 +547,54 @@ public class SessionMemoryEntityTest {
     assertThat(((UserMessage) messages.get(0)).sanitized()).isFalse();
     assertThat(((UserMessage) messages.get(2)).text()).isEqualTo("I'm Alice");
     assertThat(((UserMessage) messages.get(2)).sanitized()).isTrue();
+  }
+
+  @Test
+  public void shouldStoreOnlyTheStringAttributesOfTheCompactionSummary() {
+    // given
+    var testKit =
+        EventSourcedTestKit.of(
+            (context) -> new SessionMemoryEntity(config, context, agentRegistryEmpty));
+    var timestamp = Instant.now();
+
+    testKit
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(
+            new AddInteractionCmd(
+                new UserMessage(timestamp, "Hello", COMPONENT_ID),
+                new AiMessage(timestamp, "Hi there!", COMPONENT_ID)));
+    var sequenceNumber =
+        testKit
+            .method(SessionMemoryEntity::getHistory)
+            .invoke(emptyGetHistory)
+            .getReply()
+            .sequenceNumber();
+
+    // when the summary carries a non-string attribute
+    var summaryAi =
+        new AiMessage(
+            timestamp,
+            "Summary reply",
+            COMPONENT_ID,
+            Collections.emptyList(),
+            Optional.empty(),
+            TokenUsage.EMPTY,
+            Map.of("some-attribute", "some-value", "count", 42));
+    var cmd =
+        new SessionMemoryEntity.CompactionCmd(
+            new UserMessage(timestamp, "Summary", COMPONENT_ID), summaryAi, sequenceNumber);
+    testKit.method(SessionMemoryEntity::compactHistory).invoke(cmd);
+
+    // then
+    var messages =
+        testKit
+            .method(SessionMemoryEntity::getHistory)
+            .invoke(emptyGetHistory)
+            .getReply()
+            .messages();
+    assertThat(messages).hasSize(2);
+    assertThat(((AiMessage) messages.get(1)).attributes())
+        .isEqualTo(Map.of("some-attribute", "some-value"));
   }
 
   @Test

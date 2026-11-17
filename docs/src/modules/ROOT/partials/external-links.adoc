@@ -134,6 +134,10 @@
 :url-ext-affinity-propagation-exemplars: https://scikit-learn.org/stable/modules/clustering.html#affinity-propagation
 :url-ext-hugging-face-tokens: https://huggingface.co/settings/tokens
 
+// -- typesafe jev decision models --
+:url-typesafe-jev: https://docs.typesafe.ai/introduction
+:url-typesafe-jev-api: https://docs.typesafe.ai
+
 // -- external / model providers --
 :url-ext-anthropic-pricing: https://platform.claude.com/docs/en/about-claude/pricing
 :url-ext-openai-pricing: https://developers.openai.com/api/docs/pricing

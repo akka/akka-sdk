@@ -30,6 +30,8 @@ For more control over multiple tasks, pipelines, or long-lived agents, create ta
 include::example$autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[tag=create-task]
 ----
 
+Creating a task with an id that already exists succeeds and returns that id, without an error. Akka discards the new definition, and the existing task keeps its name, description, instructions and result type. A caller that declares a different result type therefore gets the id of a task with the original result type. This makes it safe to repeat `create` with an id that you stored before the call, for example after a crash, but it also means that each id must belong to one task definition only.
+
 *Assign tasks to an agent:*
 
 [source,java,indent=0]
