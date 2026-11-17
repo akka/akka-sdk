@@ -676,7 +676,6 @@ Note the following:
 * The setting applies to one exporter. Other exporters in the same project still get cumulative metrics.
 * A delta exporter gets the metrics in the xref:reference:telemetry/metrics.adoc[metrics reference], converted to delta. It does not get the xref:reference:telemetry/deprecated-metrics.adoc[deprecated metrics].
 * Dynatrace does not keep the buckets of exponential histograms. It keeps the count, sum, minimum and maximum, so percentiles are not available there.
-* Delta temporality is not yet available in every region. Where it is not available, the observability configuration is rejected.
 
 == Exporting heap dumps
 
