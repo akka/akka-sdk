@@ -7,6 +7,7 @@ package com.example.inventory
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.nio.file.StandardCopyOption
 import javax.tools.Diagnostic
 import javax.tools.DiagnosticCollector
 import javax.tools.JavaFileObject
@@ -38,12 +39,16 @@ object InventoryCompiler {
 
   val DefaultOptions: Seq[String] = Seq("-Aakka.javasdk.groupId=com.example", "-Aakka.javasdk.artifactId=shop")
 
-  /** Compiles every Java file under `src/test/resources/test-sources/<sourceDir>`. */
+  /**
+   * Compiles every Java file under `src/test/resources/test-sources/<sourceDir>`. When `applicationConf` is set, copies
+   * `src/test/resources/test-config/<applicationConf>` into the output folder as `application.conf` first.
+   */
   def compile(
       sourceDir: String,
       options: Seq[String] = DefaultOptions,
       processors: String = AllProcessors,
-      outputDir: Option[Path] = None): InventoryCompileResult = {
+      outputDir: Option[Path] = None,
+      applicationConf: Option[String] = None): InventoryCompileResult = {
     val compiler = ToolProvider.getSystemJavaCompiler
     require(compiler != null, "Java compiler not available. Run the tests on a JDK.")
 
@@ -55,6 +60,12 @@ object InventoryCompiler {
     }
 
     val output = outputDir.getOrElse(Files.createTempDirectory("inventory-test"))
+
+    applicationConf.foreach { name =>
+      val configFile = Paths.get("src/test/resources/test-config").resolve(name)
+      require(Files.isRegularFile(configFile), s"Test config not found: ${configFile.toAbsolutePath}")
+      Files.copy(configFile, output.resolve("application.conf"), StandardCopyOption.REPLACE_EXISTING)
+    }
 
     val compilerOptions =
       Seq(

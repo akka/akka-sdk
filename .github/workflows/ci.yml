@@ -479,6 +479,34 @@ jobs:
             exit 1
           fi
 
+      - name: ${{ matrix.sample }} inventory guardrails
+        if: matrix.sample == 'doc-snippets'
+        env:
+          DIR: ${{ matrix.sample }}
+        run: |-
+          cd samples/${DIR}
+          inventory=$(ls target/classes/META-INF/akka-javasdk-inventory_*.json)
+          if ! grep -qF '"name": "refund-limit"' "${inventory}" || ! grep -qF '"tools": ["issueRefund"]' "${inventory}"; then
+            echo "the service inventory does not list the refund-limit guardrail"
+            exit 1
+          fi
+
+      - name: ${{ matrix.sample }} inventory after a config edit
+        if: matrix.sample == 'doc-snippets'
+        env:
+          DIR: ${{ matrix.sample }}
+        run: |-
+          cd samples/${DIR}
+          inventory=$(ls target/classes/META-INF/akka-javasdk-inventory_*.json)
+          sleep 2
+          echo 'akka.javasdk.agent.guardrails."default model-call jailbreak".agents = ["*"]' >> src/main/resources/application.conf
+          mvn compile --no-transfer-progress
+          if ! grep -qF '"name": "default model-call jailbreak"' "${inventory}"; then
+            echo "mvn compile kept an inventory without the application.conf edit"
+            exit 1
+          fi
+          git checkout -- src/main/resources/application.conf
+
       - name: ${{ matrix.sample }} regenerate after another tool
         if: matrix.sample == 'helloworld-agent'
         env:

@@ -51,6 +51,9 @@ final class InventoryJson {
     json.append(",\n");
 
     renderArray(json, "routes", routes, InventoryJson::renderRoute);
+    json.append(",\n");
+
+    renderArray(json, "guardrails", inventory.guardrails(), InventoryJson::renderGuardrail);
     json.append("\n");
 
     json.append("}\n");
@@ -97,6 +100,23 @@ final class InventoryJson {
     }
     fields.add(jsonField("acl", acl(route.acl())));
     route.jwt().ifPresent(jwt -> fields.add(jsonField("jwt", jwt(jwt))));
+
+    renderEntry(json, fields);
+  }
+
+  private static void renderGuardrail(StringBuilder json, InventoryGuardrail guardrail) {
+    List<String> fields = new ArrayList<>();
+    fields.add(field("name", guardrail.name()));
+    fields.add(field("class", guardrail.className()));
+    fields.add(field("category", guardrail.category()));
+    fields.add(field("reportOnly", guardrail.reportOnly()));
+    fields.add(field("failMode", guardrail.failMode()));
+    fields.add(field("agents", guardrail.agents()));
+    fields.add(field("agentRoles", guardrail.agentRoles()));
+    if (!guardrail.tools().isEmpty()) {
+      fields.add(field("tools", guardrail.tools()));
+    }
+    guardrail.controlId().ifPresent(controlId -> fields.add(field("controlId", controlId)));
 
     renderEntry(json, fields);
   }
@@ -158,6 +178,14 @@ final class InventoryJson {
 
   private static String field(String key, String value) {
     return jsonField(key, quote(value));
+  }
+
+  private static String field(String key, boolean value) {
+    return jsonField(key, String.valueOf(value));
+  }
+
+  private static String field(String key, List<String> values) {
+    return jsonField(key, strings(values));
   }
 
   private static String jsonField(String key, String json) {

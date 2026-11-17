@@ -2007,7 +2007,7 @@ class GuardrailProviderSpec
       intercept[IllegalArgumentException] {
         provider.validate()
       }.getMessage should include(
-        "The use-for of [default jailbreak] comes from reference.conf. To use " +
+        "The use-for of [default jailbreak] comes from the SDK defaults in akka/javasdk/governance.conf. To use " +
         "akka.javasdk.agent.ModelCallSimilarityGuard, enable \"default model-call jailbreak\" instead.")
     }
 

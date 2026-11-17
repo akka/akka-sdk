@@ -4,8 +4,11 @@
 
 package akka.javasdk.tooling.processor;
 
+import com.typesafe.config.Config;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -18,9 +21,9 @@ import javax.tools.StandardLocation;
 
 /**
  * Writes {@code META-INF/akka-javasdk-inventory_<groupId>_<artifactId>.json}, listing the
- * components, endpoints and endpoint routes in the sources of the compile. Writes nothing when the
- * compile has no component or endpoint, or when an annotation processor reports an error in the
- * same compile.
+ * components, endpoints and endpoint routes in the sources of the compile and the guardrails that
+ * {@code application.conf} enables. Writes nothing when the compile has no component or endpoint,
+ * or when an annotation processor reports an error in the same compile.
  */
 @SupportedAnnotationTypes({
   "akka.javasdk.annotations.Component",
@@ -37,6 +40,12 @@ public class InventoryProcessor extends BaseAkkaProcessor {
 
   private static final String INVENTORY_FILE_PREFIX = "META-INF/akka-javasdk-inventory_";
   private static final String INVENTORY_FILE_SUFFIX = ".json";
+
+  private static final String SDK_DEFAULTS_PACKAGE = "akka.javasdk";
+  private static final String SDK_DEFAULTS_FILE = "governance.conf";
+  private static final String SDK_DEFAULTS_PATH =
+      SDK_DEFAULTS_PACKAGE.replace('.', '/') + "/" + SDK_DEFAULTS_FILE;
+  private static final String APPLICATION_CONF = "application.conf";
 
   private static final String COMPONENT_ANNOTATION = "akka.javasdk.annotations.Component";
   private static final String AGENT_ROLE_ANNOTATION = "akka.javasdk.annotations.AgentRole";
@@ -120,7 +129,18 @@ public class InventoryProcessor extends BaseAkkaProcessor {
     var path = INVENTORY_FILE_PREFIX + groupId + "_" + artifactId + INVENTORY_FILE_SUFFIX;
     var componentLibrary =
         Boolean.parseBoolean(processingEnv.getOptions().get(OPTION_COMPONENT_LIBRARY));
-    var inventory = new Inventory(groupId, artifactId, componentLibrary, components, routes);
+
+    List<InventoryGuardrail> guardrails;
+    try {
+      var config = InventoryConfig.merge(readApplicationConf(), readSdkDefaults());
+      guardrails = GuardrailReader.read(config);
+    } catch (InventoryException ex) {
+      error(ex.getMessage());
+      return;
+    }
+
+    var inventory =
+        new Inventory(groupId, artifactId, componentLibrary, components, routes, guardrails);
 
     try {
       var resource =
@@ -135,6 +155,41 @@ public class InventoryProcessor extends BaseAkkaProcessor {
               + path
               + ": "
               + ex.getMessage());
+    }
+  }
+
+  private Config readSdkDefaults() throws InventoryException {
+    try {
+      var resource =
+          processingEnv
+              .getFiler()
+              .getResource(StandardLocation.CLASS_PATH, SDK_DEFAULTS_PACKAGE, SDK_DEFAULTS_FILE);
+      return InventoryConfig.parse(resource.toUri().toURL());
+    } catch (NoSuchFileException | FileNotFoundException ex) {
+      throw new InventoryException(
+          "Akka SDK annotation processor cannot find "
+              + SDK_DEFAULTS_PATH
+              + " on the compile classpath",
+          ex);
+    } catch (IOException ex) {
+      throw new InventoryException(
+          "Akka SDK annotation processor cannot read " + SDK_DEFAULTS_PATH + ": " + ex.getMessage(),
+          ex);
+    }
+  }
+
+  private Optional<Config> readApplicationConf() throws InventoryException {
+    try {
+      var resource = existingOutputResource(APPLICATION_CONF);
+      if (resource.isEmpty()) {
+        debug("No application.conf found for the inventory");
+        return Optional.empty();
+      }
+      return Optional.of(InventoryConfig.parse(resource.get().toUri().toURL()));
+    } catch (IOException ex) {
+      throw new InventoryException(
+          "Akka SDK annotation processor cannot read " + APPLICATION_CONF + ": " + ex.getMessage(),
+          ex);
     }
   }
 }

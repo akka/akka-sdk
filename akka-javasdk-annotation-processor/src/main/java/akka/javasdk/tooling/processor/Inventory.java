@@ -12,4 +12,5 @@ record Inventory(
     String artifactId,
     boolean componentLibrary,
     List<InventoryComponent> components,
-    List<InventoryRoute> routes) {}
+    List<InventoryRoute> routes,
+    List<InventoryGuardrail> guardrails) {}

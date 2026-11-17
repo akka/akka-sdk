@@ -552,6 +552,7 @@
              descriptor or inventory that another tool wrote after the last Maven compile, or a descriptor
              with components but no inventory, as build output from an earlier SDK has. This happens with
              build output from an earlier SDK version, after a change of non-akka-service, or after an IDE build.
+             Also clean target/classes when src/main/resources/application.conf changed after the last Maven compile.
              Maven profile file-based activation does not support wildcards or ${project.*}
              properties, so we use antrun instead. The profile only
              activates when target/classes already exists (previous build output present). -->
@@ -588,21 +589,27 @@
                                             <attribute name="dir"/>
                                             <attribute name="status-file"/>
                                             <attribute name="clean-when-missing"/>
+                                            <attribute name="config-file" default=""/>
                                             <sequential>
                                                 <local name="descriptor.present"/>
                                                 <local name="descriptor.marked"/>
                                                 <local name="status.present"/>
                                                 <local name="status.uptodate"/>
+                                                <local name="config.present"/>
+                                                <local name="config.uptodate"/>
                                                 <local name="descriptor.components"/>
                                                 <local name="inventory.present"/>
                                                 <local name="descriptor.stale"/>
                                                 <available property="descriptor.present" file="@{dir}/${descriptor.file}"/>
                                                 <available property="status.present" file="@{status-file}"/>
                                                 <available property="inventory.present" file="@{dir}/${inventory.file}"/>
+                                                <available property="config.present" file="@{config-file}" type="file"/>
                                                 <uptodate property="status.uptodate" targetfile="@{status-file}">
                                                     <srcfiles dir="@{dir}" includes="${descriptor.file},${inventory.file}"
                                                               erroronmissingdir="false"/>
                                                 </uptodate>
+                                                <uptodate property="config.uptodate" srcfile="@{config-file}"
+                                                          targetfile="@{status-file}" if:set="config.present"/>
                                                 <condition property="descriptor.marked" value="true" else="false">
                                                     <resourcecount when="greater" count="0">
                                                         <fileset dir="@{dir}" includes="${descriptor.file}" erroronmissingdir="false">
@@ -632,6 +639,11 @@
                                                             <not><isset property="status.uptodate"/></not>
                                                         </and>
                                                         <and>
+                                                            <isset property="config.present"/>
+                                                            <isset property="status.present"/>
+                                                            <not><isset property="config.uptodate"/></not>
+                                                        </and>
+                                                        <and>
                                                             <isset property="descriptor.components"/>
                                                             <not><isset property="inventory.present"/></not>
                                                         </and>
@@ -642,7 +654,8 @@
                                         </macrodef>
                                         <clean-on-stale-descriptor dir="target/classes"
                                                                    status-file="target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst"
-                                                                   clean-when-missing="${descriptor.marker.expected}"/>
+                                                                   clean-when-missing="${descriptor.marker.expected}"
+                                                                   config-file="src/main/resources/application.conf"/>
                                         <clean-on-stale-descriptor dir="target/test-classes"
                                                                    status-file="target/maven-status/maven-compiler-plugin/testCompile/default-testCompile/createdFiles.lst"
                                                                    clean-when-missing="false"/>

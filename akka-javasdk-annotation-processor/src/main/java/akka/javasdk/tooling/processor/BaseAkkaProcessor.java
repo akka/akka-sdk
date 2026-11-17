@@ -4,9 +4,15 @@
 
 package akka.javasdk.tooling.processor;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.NoSuchFileException;
+import java.util.Optional;
 import javax.annotation.processing.AbstractProcessor;
 import javax.lang.model.SourceVersion;
 import javax.tools.Diagnostic;
+import javax.tools.FileObject;
+import javax.tools.StandardLocation;
 
 public abstract class BaseAkkaProcessor extends AbstractProcessor {
 
@@ -37,5 +43,16 @@ public abstract class BaseAkkaProcessor extends AbstractProcessor {
 
   protected void error(Object msg) {
     processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, msg.toString());
+  }
+
+  /** Returns the class output file at {@code path}, or empty when the file does not exist. */
+  protected Optional<FileObject> existingOutputResource(String path) throws IOException {
+    var resource = processingEnv.getFiler().getResource(StandardLocation.CLASS_OUTPUT, "", path);
+    try (var in = resource.openInputStream()) {
+      return Optional.of(resource);
+    } catch (NoSuchFileException | FileNotFoundException ex) {
+      // javac throws NoSuchFileException. IntelliJ's JPS throws FileNotFoundException.
+      return Optional.empty();
+    }
   }
 }

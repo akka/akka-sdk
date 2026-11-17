@@ -57,6 +57,62 @@ class InventoryProcessorSpec extends AnyWordSpec with Matchers {
       result.inventory("com.example", "shop") shouldBe None
     }
 
+    "write an empty guardrails list without application.conf" in {
+      val result = InventoryCompiler.compile("basic")
+      withClue(result.diagnostics) { result.success shouldBe true }
+      val json = new String(result.inventory("com.example", "shop").get, UTF_8)
+      json shouldBe expected("basic.json")
+      json should endWith("  ],\n  \"guardrails\": []\n}\n")
+    }
+
+    "list a guardrail from application.conf" in {
+      val result = InventoryCompiler.compile("basic", applicationConf = Some("refund-limit.conf"))
+      withClue(result.diagnostics) { result.success shouldBe true }
+      new String(result.inventory("com.example", "shop").get, UTF_8) should endWith("""|  ],
+           |  "guardrails": [
+           |    {
+           |      "name": "refund-limit",
+           |      "class": "com.example.eval.RefundLimitGuard",
+           |      "category": "POLICY",
+           |      "reportOnly": false,
+           |      "failMode": "fail-closed",
+           |      "agents": ["order-agent"],
+           |      "agentRoles": [],
+           |      "tools": ["issueRefund"],
+           |      "controlId": "CTRL-7"
+           |    }
+           |  ]
+           |}
+           |""".stripMargin)
+    }
+
+    "list an SDK default enabled from application.conf" in {
+      val result = InventoryCompiler.compile("basic", applicationConf = Some("default-jailbreak.conf"))
+      withClue(result.diagnostics) { result.success shouldBe true }
+      new String(result.inventory("com.example", "shop").get, UTF_8) should endWith("""|  "guardrails": [
+           |    {
+           |      "name": "default model-call jailbreak",
+           |      "class": "akka.javasdk.agent.ModelCallSimilarityGuard",
+           |      "category": "JAILBREAK",
+           |      "reportOnly": false,
+           |      "failMode": "fail-closed",
+           |      "agents": ["*"],
+           |      "agentRoles": []
+           |    }
+           |  ]
+           |}
+           |""".stripMargin)
+    }
+
+    "write no inventory when a guardrail is invalid" in {
+      val result = InventoryCompiler.compile("basic", applicationConf = Some("broken-guardrail.conf"))
+      result.success shouldBe false
+      val messages = result.diagnostics.map(_.getMessage(null)).mkString
+      messages should include("broken")
+      messages should include("class")
+      result.inventory("com.example", "shop") shouldBe None
+    }
+
     "report an error when the artifact id is missing" in {
       val result = InventoryCompiler.compile(
         "basic",
