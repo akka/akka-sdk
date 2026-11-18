@@ -74,6 +74,9 @@
         <skip.deploy>true</skip.deploy>
         <non-akka-service>false</non-akka-service>
 
+        <!-- Set to true to write the service inventory on compilation. -->
+        <akka.javasdk.inventory>false</akka.javasdk.inventory>
+
         <!-- plugin versions -->
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <protobuf-maven-plugin.version>0.6.1</protobuf-maven-plugin.version>
@@ -112,6 +115,7 @@
                             <arg>-Aakka.javasdk.groupId=${project.groupId}</arg>
                             <arg>-Aakka.javasdk.artifactId=${project.artifactId}</arg>
                             <arg>-Aakka.javasdk.componentLibrary=${non-akka-service}</arg>
+                            <arg>-Aakka.javasdk.inventory=${akka.javasdk.inventory}</arg>
                         </compilerArgs>
                         <annotationProcessors>
                             <annotationProcessor>
@@ -549,10 +553,11 @@
         </profile>
         <!-- Clean build output with a stale component descriptor or inventory: a service without a
              descriptor, a descriptor with a service marker that does not match non-akka-service, a
-             descriptor or inventory that another tool wrote after the last Maven compile, or a descriptor
-             with components but no inventory, as build output from an earlier SDK has. This happens with
+             descriptor or inventory that another tool wrote after the last Maven compile. This happens with
              build output from an earlier SDK version, after a change of non-akka-service, or after an IDE build.
-             Also clean target/classes when src/main/resources/application.conf changed after the last Maven compile.
+             When akka.javasdk.inventory is true, also clean a descriptor with components but no inventory, and
+             clean target/classes when src/main/resources/application.conf changed after the last Maven compile.
+             When akka.javasdk.inventory is false, also clean build output that holds an inventory.
              Maven profile file-based activation does not support wildcards or ${project.*}
              properties, so we use antrun instead. The profile only
              activates when target/classes already exists (previous build output present). -->
@@ -584,6 +589,9 @@
                                                   value="META-INF/akka-javasdk-inventory_${project.groupId}_${project.artifactId}.json"/>
                                         <condition property="descriptor.marker.expected" value="false" else="true">
                                             <istrue value="${non-akka-service}"/>
+                                        </condition>
+                                        <condition property="inventory.enabled">
+                                            <istrue value="${akka.javasdk.inventory}"/>
                                         </condition>
                                         <macrodef name="clean-on-stale-descriptor">
                                             <attribute name="dir"/>
@@ -639,13 +647,19 @@
                                                             <not><isset property="status.uptodate"/></not>
                                                         </and>
                                                         <and>
+                                                            <isset property="inventory.enabled"/>
                                                             <isset property="config.present"/>
                                                             <isset property="status.present"/>
                                                             <not><isset property="config.uptodate"/></not>
                                                         </and>
                                                         <and>
+                                                            <isset property="inventory.enabled"/>
                                                             <isset property="descriptor.components"/>
                                                             <not><isset property="inventory.present"/></not>
+                                                        </and>
+                                                        <and>
+                                                            <not><isset property="inventory.enabled"/></not>
+                                                            <isset property="inventory.present"/>
                                                         </and>
                                                     </or>
                                                 </condition>

@@ -155,6 +155,7 @@ lazy val annotationProcessorTestProject: CompositeProject =
           "-processor",
           "akka.javasdk.tooling.processor.ComponentAnnotationProcessor," +
           "akka.javasdk.tooling.processor.InventoryProcessor",
+          "-Aakka.javasdk.inventory=true",
           "-Aakka.javasdk.groupId=com.example",
           "-Aakka.javasdk.artifactId=test"),
         Compile / javacOptions ++= {

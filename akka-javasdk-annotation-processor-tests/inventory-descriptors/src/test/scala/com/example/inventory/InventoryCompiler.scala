@@ -37,7 +37,9 @@ object InventoryCompiler {
     "akka.javasdk.tooling.processor.ComponentAnnotationProcessor," +
     "akka.javasdk.tooling.processor.InventoryProcessor"
 
-  val DefaultOptions: Seq[String] = Seq("-Aakka.javasdk.groupId=com.example", "-Aakka.javasdk.artifactId=shop")
+  val CoordinateOptions: Seq[String] = Seq("-Aakka.javasdk.groupId=com.example", "-Aakka.javasdk.artifactId=shop")
+
+  val DefaultOptions: Seq[String] = CoordinateOptions :+ "-Aakka.javasdk.inventory=true"
 
   /**
    * Compiles every Java file under `src/test/resources/test-sources/<sourceDir>`. When `applicationConf` is set, copies

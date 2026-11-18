@@ -22,8 +22,9 @@ import javax.tools.StandardLocation;
 /**
  * Writes {@code META-INF/akka-javasdk-inventory_<groupId>_<artifactId>.json}, listing the
  * components, endpoints and endpoint routes in the sources of the compile and the guardrails that
- * {@code application.conf} enables. Writes nothing when the compile has no component or endpoint,
- * or when an annotation processor reports an error in the same compile.
+ * {@code application.conf} enables. Writes nothing unless the compiler option {@code
+ * akka.javasdk.inventory} is {@code true}, when the compile has no component or endpoint, or when
+ * an annotation processor reports an error in the same compile.
  */
 @SupportedAnnotationTypes({
   "akka.javasdk.annotations.Component",
@@ -34,6 +35,7 @@ import javax.tools.StandardLocation;
 })
 public class InventoryProcessor extends BaseAkkaProcessor {
 
+  private static final String OPTION_INVENTORY = "akka.javasdk.inventory";
   private static final String OPTION_GROUP_ID = "akka.javasdk.groupId";
   private static final String OPTION_ARTIFACT_ID = "akka.javasdk.artifactId";
   private static final String OPTION_COMPONENT_LIBRARY = "akka.javasdk.componentLibrary";
@@ -59,11 +61,15 @@ public class InventoryProcessor extends BaseAkkaProcessor {
 
   @Override
   public Set<String> getSupportedOptions() {
-    return Set.of(OPTION_GROUP_ID, OPTION_ARTIFACT_ID, OPTION_COMPONENT_LIBRARY);
+    return Set.of(OPTION_INVENTORY, OPTION_GROUP_ID, OPTION_ARTIFACT_ID, OPTION_COMPONENT_LIBRARY);
   }
 
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+    if (!Boolean.parseBoolean(processingEnv.getOptions().get(OPTION_INVENTORY))) {
+      return true;
+    }
+
     if (!alreadyRan) {
       alreadyRan = true;
       groupId = requiredOption(OPTION_GROUP_ID);

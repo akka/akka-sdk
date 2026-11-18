@@ -9,6 +9,7 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import javax.tools.Diagnostic
 
+import com.example.inventory.InventoryCompiler.CoordinateOptions
 import com.example.inventory.InventoryCompiler.DefaultOptions
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -19,6 +20,42 @@ class InventoryProcessorSpec extends AnyWordSpec with Matchers {
     new String(Files.readAllBytes(Paths.get("src/test/resources/expected").resolve(name)), UTF_8)
 
   "InventoryProcessor" should {
+
+    "write no inventory without the inventory option" in {
+      val result = InventoryCompiler.compile("basic", CoordinateOptions)
+      withClue(result.diagnostics) { result.success shouldBe true }
+      result.inventory("com.example", "shop") shouldBe None
+    }
+
+    "write no inventory when the inventory option is false" in {
+      val result = InventoryCompiler.compile("basic", CoordinateOptions :+ "-Aakka.javasdk.inventory=false")
+      withClue(result.diagnostics) { result.success shouldBe true }
+      result.inventory("com.example", "shop") shouldBe None
+    }
+
+    "ignore a broken guardrail without the inventory option" in {
+      val result =
+        InventoryCompiler.compile("basic", CoordinateOptions, applicationConf = Some("broken-guardrail.conf"))
+      withClue(result.diagnostics) { result.success shouldBe true }
+      result.inventory("com.example", "shop") shouldBe None
+    }
+
+    "emit no warning with -Werror when the inventory option is false" in {
+      val result = InventoryCompiler.compile(
+        "supported-annotations-only",
+        CoordinateOptions ++ Seq("-Aakka.javasdk.inventory=false", "-Xlint:processing", "-Werror"),
+        applicationConf = Some("include-guardrails.conf"))
+      withClue(result.diagnostics) { result.success shouldBe true }
+    }
+
+    "require no coordinates without the inventory option" in {
+      val result =
+        InventoryCompiler.compile(
+          "basic",
+          options = Seq.empty,
+          processors = "akka.javasdk.tooling.processor.InventoryProcessor")
+      withClue(result.diagnostics) { result.success shouldBe true }
+    }
 
     "write the inventory of a service" in {
       val result = InventoryCompiler.compile("basic")
@@ -163,7 +200,7 @@ class InventoryProcessorSpec extends AnyWordSpec with Matchers {
     "report an error when the artifact id is missing" in {
       val result = InventoryCompiler.compile(
         "basic",
-        options = Seq("-Aakka.javasdk.groupId=com.example"),
+        options = Seq("-Aakka.javasdk.inventory=true", "-Aakka.javasdk.groupId=com.example"),
         processors = "akka.javasdk.tooling.processor.InventoryProcessor")
       result.success shouldBe false
       result.diagnostics.map(_.getMessage(null)).mkString should include("akka.javasdk.artifactId")

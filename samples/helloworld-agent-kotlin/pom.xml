@@ -125,6 +125,7 @@
                 </annotationProcessor>
               </annotationProcessors>
               <annotationProcessorArgs>
+                <arg>akka.javasdk.inventory=${akka.javasdk.inventory}</arg>
                 <arg>akka.javasdk.groupId=${project.groupId}</arg>
                 <arg>akka.javasdk.artifactId=${project.artifactId}</arg>
                 <arg>akka.javasdk.componentLibrary=${non-akka-service}</arg>
