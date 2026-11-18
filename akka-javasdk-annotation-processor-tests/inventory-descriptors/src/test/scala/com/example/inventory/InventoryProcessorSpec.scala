@@ -192,7 +192,7 @@ class InventoryProcessorSpec extends AnyWordSpec with Matchers {
     "write an empty routes array when the compile has no endpoint" in {
       val result = InventoryCompiler.compile("no-endpoint")
       withClue(result.diagnostics) { result.success shouldBe true }
-      new String(result.inventory("com.example", "shop").get, UTF_8) should include("  \"routes\": []\n}")
+      new String(result.inventory("com.example", "shop").get, UTF_8) should include("  \"routes\": [],\n")
     }
 
     "deny every caller of a gRPC route without @Acl with PERMISSION_DENIED" in {
