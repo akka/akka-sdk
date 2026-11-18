@@ -11,13 +11,17 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * A record of a flow, as {@link LedgerClient#getFlowRecords(String)} returns it. A later SDK
- * version can add kinds of records.
+ * A record of the ledger, as a flow read or a ledger consumer delivers it. A later SDK version can
+ * add kinds of records.
  *
  * <p>Not for user extension.
  */
 public sealed interface FlowRecord
-    permits InteractionRecord, ActivityRecord, GuardrailDecisionRecord, EvaluationRecord {
+    permits InteractionRecord,
+        ActivityRecord,
+        GuardrailDecisionRecord,
+        EvaluationRecord,
+        ClassificationRecord {
 
   /** The id of the record in the ledger. */
   String recordId();
@@ -51,6 +55,8 @@ public sealed interface FlowRecord
    *       report, the line gives the fail mode.
    *   <li>An {@link EvaluationRecord} is left out, so a judge does not read the verdicts of other
    *       evaluators.
+   *   <li>A {@link ClassificationRecord} is left out, so a judge does not read the results of other
+   *       classifiers.
    * </ul>
    *
    * <p>An empty list gives an empty string.
@@ -79,6 +85,7 @@ public sealed interface FlowRecord
             case ActivityRecord activity -> activityBlock(activity);
             case GuardrailDecisionRecord decision -> guardrailDecisionLine(decision, instanceIds);
             case EvaluationRecord ignored -> "";
+            case ClassificationRecord ignored -> "";
           };
       if (!block.isEmpty()) {
         blocks.add(block);

@@ -128,6 +128,20 @@ public class TestLedgerClientTest {
         timestamp);
   }
 
+  private static ClassificationRecord classification(
+      String id, Optional<String> flowId, Instant timestamp) {
+    return new ClassificationRecord(
+        id,
+        "sentiment-classifier",
+        Optional.of(0.9),
+        Optional.of("positive"),
+        Optional.of(0.8),
+        Map.of(),
+        flowId,
+        Optional.empty(),
+        timestamp);
+  }
+
   @Test
   public void listsTheInteractionsOfAnAgentInASessionNewestFirst() {
     var first = interaction("i1", "support-agent", "session-1", Instant.ofEpochSecond(1));
@@ -232,6 +246,20 @@ public class TestLedgerClientTest {
             .seed(evaluation);
 
     assertEquals(List.of(interaction, evaluation), ledger.getFlowRecords("flow-1").records());
+  }
+
+  @Test
+  public void flowRecordsIncludeSeededClassifications() {
+    var flow = Optional.of("flow-1");
+    var classification = classification("c1", flow, Instant.ofEpochSecond(1));
+    var interaction = interaction("i1", "coordinator-agent", "s1", flow, Instant.ofEpochSecond(2));
+    var ledger =
+        TestLedgerClient.create()
+            .seed(classification)
+            .seed(interaction)
+            .seed(classification("c2", Optional.empty(), Instant.ofEpochSecond(3)));
+
+    assertEquals(List.of(classification, interaction), ledger.getFlowRecords("flow-1").records());
   }
 
   @Test

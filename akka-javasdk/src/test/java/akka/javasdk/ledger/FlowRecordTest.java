@@ -193,6 +193,25 @@ public class FlowRecordTest {
   }
 
   @Test
+  public void transcriptLeavesClassificationsOut() {
+    var interaction = interaction("agent-a", "S1", "first");
+    var classification =
+        new ClassificationRecord(
+            "classification-1",
+            "sentiment-classifier",
+            Optional.of(0.9),
+            Optional.of("positive"),
+            Optional.of(0.8),
+            Map.of(),
+            Optional.of("flow-1"),
+            Optional.empty(),
+            Instant.EPOCH);
+
+    assertThat(FlowRecord.transcript(List.of(interaction, classification)))
+        .isEqualTo(FlowRecord.transcript(List.of(interaction)));
+  }
+
+  @Test
   public void writesTheSystemMessageOfAnAgentOnlyWhenItChanges() {
     var transcript =
         FlowRecord.transcript(

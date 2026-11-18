@@ -467,6 +467,30 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
       page.hasMore() shouldBe true
     }
 
+    "map a classification in a flow page" in {
+      val classification = new SpiLedger.ClassificationRecord(
+        classificationId = "classification-1",
+        classifierComponentId = "sentiment-classifier",
+        label = Some("positive"),
+        score = Some(0.9),
+        confidence = Some(0.8),
+        attributes = Map.empty,
+        flowId = Some("flow-1"),
+        evaluationId = None,
+        timestamp = Instant.EPOCH)
+      val spiClient = new FlowReadingSpiLedgerClient(
+        Future.successful(new SpiLedger.FlowPage(Seq(classification), 1L, hasMore = false)))
+
+      val page = new LedgerClientImpl(spiClient, ExecutionContext.parasitic).getFlowRecords("flow-1")
+
+      val records = page.records().asScala.toSeq
+      records should have size 1
+      val record = records.head.asInstanceOf[ClassificationRecord]
+      record.classificationId() shouldEqual "classification-1"
+      record.classifierName() shouldEqual "sentiment-classifier"
+      record.flowId() shouldEqual Optional.of("flow-1")
+    }
+
     "map an empty last page" in {
       val spiClient =
         new FlowReadingSpiLedgerClient(Future.successful(new SpiLedger.FlowPage(Seq.empty, 5L, hasMore = false)))

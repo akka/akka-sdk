@@ -221,6 +221,7 @@ private[ledger] object LedgerClientImpl {
             case _: SpiLedger.InteractionSubject => Some(() => toEvaluationRecord(evaluation))
             case _: SpiLedger.WorkflowSubject    => None
           }
+        case classification: SpiLedger.ClassificationRecord => Some(() => toClassificationRecord(classification))
       }
     }.map(_.apply())
 
