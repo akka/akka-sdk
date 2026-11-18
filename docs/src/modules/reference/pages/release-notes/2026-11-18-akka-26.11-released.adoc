@@ -35,8 +35,6 @@ Akka core 2.11.0 removes all APIs that Akka 2.10.0 or earlier deprecated. The mo
 
 The https://doc.akka.io/libraries/akka-core/current/project/migration-guide-2.10.x-2.11.x.html[migration guide] lists every removed API and its replacement.
 
-The other modules no longer use the removed APIs.
-
 == Jackson 2.21
 
 The Akka libraries now depend on the Jackson 2.21 long-term-support line. Jackson 2.18, which Akka 25.10 used, gets no further updates after January 2027.
@@ -63,42 +61,27 @@ Akka HTTP also has several fixes that harden HTTP/2 and request parsing.
 == Bug fixes
 
 * Memory leak of completed stages and connections in the stream interpreter
-* Cluster Sharding fixes for remember entities and shard hand-off
-* Artery fixes for transport shutdown and acknowledgements from previous incarnations of a node
 * HTTP/2 connection unusable after a bad request response in Akka HTTP
 * Akka gRPC clients abandon connections stuck in connecting, after a new `connecting-timeout`
-* Stopping a projection no longer waits for a pending restart backoff
 * Atomic writes of several events in Akka Persistence DynamoDB could lose events after a timed out transaction
-* Race at shard end in the Alpakka KCL source for Amazon Kinesis
 
 == Other improvements
 
-* Split Brain Resolver downs all nodes when an indirectly connected decision would down at least half of the members, configured with `down-all-when-indirectly-connected`
-* Opt-in detection of stale regions in the shard coordinator
-* Journals can order write replies in several groups, to reduce head-of-line blocking
-* Optional write timeout in the persistence plugin proxy
+* Split Brain Resolver downs all nodes when at least half of the members are indirectly connected
 * Server interceptor API in Akka gRPC
-* Code generation for selected gRPC clients and services only
-* Gradle 9 support in the Akka gRPC Gradle plugin
-* Configurable HTTP/2 header block limits and more robust persistent HTTP/2 connections in Akka HTTP
-* WebSocket close codes and reasons from application code in Akka HTTP
+* Configurable HTTP/2 header block limits in Akka HTTP
 * Optional end-to-end keep alive for gRPC event streams and replication in Akka Projections
 * Custom journal table and extra journal columns in Akka Persistence R2DBC
-* Instrumentation SPI and conditional event writes in Akka Persistence DynamoDB
-* Shard statistics endpoint in Akka Management
-* Couchbase collections, Azure Storage blob listing, streaming uploads and Azure Identity authentication in Alpakka
-* Federated workload identity for the Google connectors in Alpakka
+* Instrumentation SPI in Akka Persistence DynamoDB
+* Couchbase collections in Alpakka
 * Artifact BOMs for all modules
 
 == Dependency updates
 
 * Jackson 2.21.8
-* Scala 2.13.18
 * Netty 4.2
 * Kafka Clients 4.4.0
 * grpc-java 1.85.0
-* Slick 3.6.1
-* OpenTelemetry 1.64.0 in Akka Insights
 
 == Compatibility
 

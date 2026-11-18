@@ -257,7 +257,6 @@ Keycloak
 keyId
 keysets?
 Kilo
-Kinesis
 Kiro
 Kolesnikov
 kubectl
