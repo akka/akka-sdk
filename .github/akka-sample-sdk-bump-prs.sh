@@ -48,17 +48,28 @@ fi
 # Temporary file to store results
 TEMP_FILE="found_links.tmp"
 touch $TEMP_FILE
+LOG_FILE="job_log.tmp"
+
+# The logs contain colour codes. Newer gh versions refuse to print them without
+# --allow-escape-sequences, older gh versions do not know the flag.
+LOG_FLAGS=()
+if gh api --help | grep -q -- "--allow-escape-sequences"; then
+    LOG_FLAGS=(--allow-escape-sequences)
+fi
 
 # 2. Loop through each job to pull raw logs
 for JOB_ID in $JOB_IDS; do
     JOB_NAME=$(gh api repos/$REPO/actions/jobs/$JOB_ID --jq '.name')
     echo "Checking Job: $JOB_NAME..."
 
-    # 3. Stream raw logs and grep for the PR link pattern
-    # The logs contain colour codes, gh refuses to print them without --allow-escape-sequences
-    gh api --allow-escape-sequences repos/$REPO/actions/jobs/$JOB_ID/logs 2>/dev/null | \
-    grep -oE "https://github.com/.*/pull/[0-9]+" >> $TEMP_FILE
+    # 3. Fetch raw logs and grep for the PR link pattern
+    if ! gh api "${LOG_FLAGS[@]}" repos/$REPO/actions/jobs/$JOB_ID/logs > "$LOG_FILE"; then
+        echo "   ⚠️  could not fetch the logs of this job"
+        continue
+    fi
+    grep -oE "https://github.com/.*/pull/[0-9]+" "$LOG_FILE" >> $TEMP_FILE
 done
+rm -f "$LOG_FILE"
 
 # Prints "<state> <review decision> <checks>" for a PR, where checks is PASS, FAIL, PENDING or NONE
 pr_status() {
