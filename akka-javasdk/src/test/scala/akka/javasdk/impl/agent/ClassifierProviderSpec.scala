@@ -11,6 +11,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
+import scala.annotation.nowarn
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -96,14 +97,14 @@ object ClassifierProviderSpec {
   // a reference to the classifier itself.
   class EnsembleClassifier(client: ClassifierClient) extends Classifier {
     override def classify(input: String): Classification =
-      client.classify("toxicity", input)
+      client.classifyWithResult("toxicity", input).classification()
   }
 
   // Composes the classifiers named in its `members` config, like the documented ensemble.
   class MembersEnsembleClassifier(context: ClassifierContext, client: ClassifierClient) extends Classifier {
     private val members = context.config().getStringList("members").asScala.toList
     override def classify(input: String): Classification = {
-      members.foreach(name => client.classify(name, input))
+      members.foreach(name => client.classifyWithResult(name, input))
       Classification.label(s"${context.name()}:$input")
     }
   }
@@ -144,8 +145,9 @@ object ClassifierProviderSpec {
     override def classify(input: String): Classification = Classification.label("unused")
     override def classifyAsync(input: String): CompletionStage[Classification] =
       client
-        .classifyAsync("delayed", input)
-        .thenCompose[Classification](_ => client.classifyAsync(next, input))
+        .classifyWithResultAsync("delayed", input)
+        .thenCompose[Classification](_ =>
+          client.classifyWithResultAsync(next, input).thenApply[Classification](_.classification()))
   }
 
   class DelayedClassifier extends Classifier {
@@ -254,6 +256,8 @@ object ClassifierProviderSpec {
   // Test-only stand-in for the runtime's classifier dispatch: looks a registered classifier up by
   // name and invokes it, wrapping the call in Future(...).flatten so a synchronous throw becomes a
   // failed Future, as the runtime does.
+  val ClassificationId = "classification-1"
+
   final class LoopbackSpiClassifierClient extends SpiClassifierClient {
     @volatile private var byName: Map[String, SpiConfiguredClassifier] = Map.empty
 
@@ -265,7 +269,7 @@ object ClassifierProviderSpec {
       byName.get(name) match {
         case Some(c) =>
           Future(c.instance.classify(content))(ExecutionContext.parasitic).flatten
-            .map(new SpiClassifier.ClassificationResult(None, _))(ExecutionContext.parasitic)
+            .map(new SpiClassifier.ClassificationResult(Some(ClassificationId), _))(ExecutionContext.parasitic)
         case None => Future.failed(new IllegalArgumentException(s"No classifier registered with name [$name]"))
       }
   }
@@ -356,18 +360,48 @@ class ClassifierProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecL
     "construct with and without a ClassifierContext constructor" in {
       val provider = newProvider(system, config)
 
-      val result = provider.client.classifyAsync("toxicity", "some text").toCompletableFuture.get(3, TimeUnit.SECONDS)
+      val result = provider.client
+        .classifyWithResultAsync("toxicity", "some text")
+        .toCompletableFuture
+        .get(3, TimeUnit.SECONDS)
+        .classification()
       result.score() shouldBe java.util.Optional.of(0.8)
       result.label() shouldBe java.util.Optional.of("classified:some text")
 
-      val result2 = provider.client.classifyAsync("no-context", "anything").toCompletableFuture.get(3, TimeUnit.SECONDS)
+      val result2 = provider.client
+        .classifyWithResultAsync("no-context", "anything")
+        .toCompletableFuture
+        .get(3, TimeUnit.SECONDS)
+        .classification()
       result2.label() shouldBe java.util.Optional.of("ok")
     }
 
-    "support the blocking classify(...) alongside classifyAsync(...)" in {
+    "return the classification from the deprecated classify(...) and classifyAsync(...)" in {
       val provider = newProvider(system, config)
-      val result = provider.client.classify("toxicity", "some text")
+      @nowarn("cat=deprecation")
+      val blocking = provider.client.classify("toxicity", "some text")
+      @nowarn("cat=deprecation")
+      val async = provider.client.classifyAsync("toxicity", "some text").toCompletableFuture.get(3, TimeUnit.SECONDS)
+
+      blocking.label() shouldBe java.util.Optional.of("classified:some text")
+      async.label() shouldBe java.util.Optional.of("classified:some text")
+    }
+
+    "support the blocking classifyWithResult(...) alongside classifyWithResultAsync(...)" in {
+      val provider = newProvider(system, config)
+      val result = provider.client.classifyWithResult("toxicity", "some text").classification()
       result.label() shouldBe java.util.Optional.of("classified:some text")
+    }
+
+    "carry the classification id that the runtime reports" in {
+      val provider = newProvider(system, config)
+      val result = provider.client.classifyWithResult("toxicity", "some text")
+      result.classificationId() shouldBe java.util.Optional.of(ClassificationId)
+      result.classification().label() shouldBe java.util.Optional.of("classified:some text")
+
+      val asyncResult =
+        provider.client.classifyWithResultAsync("toxicity", "some text").toCompletableFuture.get(3, TimeUnit.SECONDS)
+      asyncResult.classificationId() shouldBe java.util.Optional.of(ClassificationId)
     }
 
     "return a failed Future from the runtime entry rather than throw" in {
@@ -390,7 +424,7 @@ class ClassifierProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecL
     "throw a descriptive IllegalArgumentException for an unknown classifier name" in {
       val provider = newProvider(system, config)
       val ex = intercept[IllegalArgumentException] {
-        provider.client.classifyAsync("does-not-exist", "x")
+        provider.client.classifyWithResultAsync("does-not-exist", "x")
       }
       ex.getMessage should include("No classifier configured with name [does-not-exist]")
       ex.getMessage should include("toxicity")
@@ -408,7 +442,7 @@ class ClassifierProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecL
       val provider = newProvider(system, cfg)
 
       // must not throw synchronously
-      val stage = provider.client.classifyAsync("throwing", "anything")
+      val stage = provider.client.classifyWithResultAsync("throwing", "anything")
       val failure = intercept[java.util.concurrent.ExecutionException] {
         stage.toCompletableFuture.get(3, TimeUnit.SECONDS)
       }
@@ -427,18 +461,22 @@ class ClassifierProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecL
           """)
         .withFallback(config)
       val provider = newProvider(system, cfg)
-      val result = provider.client.classifyAsync("ensemble", "hi").toCompletableFuture.get(3, TimeUnit.SECONDS)
+      val result = provider.client
+        .classifyWithResultAsync("ensemble", "hi")
+        .toCompletableFuture
+        .get(3, TimeUnit.SECONDS)
+        .classification()
       result.label() shouldBe java.util.Optional.of("classified:hi")
     }
 
     "fail a call that cycles through two classifiers with the chain in the message" in {
       val provider = newProvider(system, cycleConfig)
       intercept[IllegalStateException] {
-        provider.client.classify("ensemble-a", "x")
+        provider.client.classifyWithResult("ensemble-a", "x")
       }.getMessage shouldBe "Classifier cycle detected: ensemble-a -> ensemble-b -> ensemble-a"
 
       val failure = intercept[java.util.concurrent.ExecutionException] {
-        provider.client.classifyAsync("ensemble-b", "x").toCompletableFuture.get(3, TimeUnit.SECONDS)
+        provider.client.classifyWithResultAsync("ensemble-b", "x").toCompletableFuture.get(3, TimeUnit.SECONDS)
       }
       failure.getCause shouldBe an[IllegalStateException]
       failure.getCause.getMessage shouldBe "Classifier cycle detected: ensemble-b -> ensemble-a -> ensemble-b"
@@ -447,13 +485,14 @@ class ClassifierProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecL
     "fail a classifier that lists itself as a member" in {
       val provider = newProvider(system, cycleConfig)
       intercept[IllegalStateException] {
-        provider.client.classify("self", "x")
+        provider.client.classifyWithResult("self", "x")
       }.getMessage shouldBe "Classifier cycle detected: self -> self"
     }
 
     "not report a cycle for a classifier reached twice on separate paths" in {
       val provider = newProvider(system, cycleConfig)
-      provider.client.classify("diamond-top", "x").label() shouldBe java.util.Optional.of("diamond-top:x")
+      provider.client.classifyWithResult("diamond-top", "x").classification().label() shouldBe java.util.Optional.of(
+        "diamond-top:x")
       // the chain is not left behind on the calling thread
       TelemetryContext.current() shouldBe TelemetryContext.root()
     }
@@ -461,7 +500,7 @@ class ClassifierProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecL
     "fail a cycle through a continuation of a member call" in {
       val provider = newProvider(system, continuationCycleConfig)
       val failure = intercept[java.util.concurrent.ExecutionException] {
-        provider.client.classifyAsync("chained-a", "x").toCompletableFuture.get(3, TimeUnit.SECONDS)
+        provider.client.classifyWithResultAsync("chained-a", "x").toCompletableFuture.get(3, TimeUnit.SECONDS)
       }
       failure.getCause shouldBe an[IllegalStateException]
       failure.getCause.getMessage shouldBe "Classifier cycle detected: chained-a -> chained-b -> chained-a"
@@ -477,9 +516,11 @@ class ClassifierProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecL
 
     "restore the context of the calling thread when a classifier leaves its own context current" in {
       val provider = newProvider(system, contextConfig)
-      provider.client.classify("leaky-ensemble", "x").label() shouldBe java.util.Optional.of("leaky-ensemble:x")
+      provider.client.classifyWithResult("leaky-ensemble", "x").classification().label() shouldBe java.util.Optional.of(
+        "leaky-ensemble:x")
       TelemetryContext.current() shouldBe TelemetryContext.root()
-      provider.client.classify("leaky-ensemble", "x").label() shouldBe java.util.Optional.of("leaky-ensemble:x")
+      provider.client.classifyWithResult("leaky-ensemble", "x").classification().label() shouldBe java.util.Optional.of(
+        "leaky-ensemble:x")
     }
 
     "invoke the overridden classifyAsync(...) and never the sync classify(...)" in {
@@ -494,23 +535,31 @@ class ClassifierProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecL
       val provider = newProvider(system, cfg)
 
       // the async override is used, both through the async and the blocking client method
-      val result = provider.client.classifyAsync("async-only", "x").toCompletableFuture.get(3, TimeUnit.SECONDS)
+      val result = provider.client
+        .classifyWithResultAsync("async-only", "x")
+        .toCompletableFuture
+        .get(3, TimeUnit.SECONDS)
+        .classification()
       result.label() shouldBe java.util.Optional.of("async:x")
-      provider.client.classify("async-only", "y").label() shouldBe java.util.Optional.of("async:y")
+      provider.client.classifyWithResult("async-only", "y").classification().label() shouldBe java.util.Optional.of(
+        "async:y")
     }
 
     "classify with a constructed classifier while another one is being constructed" in {
       GatedConstructionStarted = new CountDownLatch(1)
       GatedConstructionRelease = new CountDownLatch(1)
       val provider = newProvider(system, constructionConfig)
-      provider.client.classify("no-context", "x").label().get() shouldEqual "ok"
+      provider.client.classifyWithResult("no-context", "x").classification().label().get() shouldEqual "ok"
 
-      val constructing = Future(provider.client.classify("gated", "x"))(ExecutionContext.global)
+      val constructing =
+        Future(provider.client.classifyWithResult("gated", "x").classification())(ExecutionContext.global)
       try {
         GatedConstructionStarted.await(3, TimeUnit.SECONDS) shouldBe true
         // Runs on its own thread, because a call that waits for the construction above does not return.
         Await
-          .result(Future(provider.client.classify("no-context", "x"))(ExecutionContext.global), 3.seconds)
+          .result(
+            Future(provider.client.classifyWithResult("no-context", "x").classification())(ExecutionContext.global),
+            3.seconds)
           .label()
           .get() shouldEqual "ok"
       } finally GatedConstructionRelease.countDown()
@@ -533,7 +582,11 @@ class ClassifierProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecL
         val results = (1 to 50).map { _ =>
           val f =
             pool.submit(() =>
-              provider.client.classifyAsync("concurrent", "x").toCompletableFuture.get(3, TimeUnit.SECONDS))
+              provider.client
+                .classifyWithResultAsync("concurrent", "x")
+                .toCompletableFuture
+                .get(3, TimeUnit.SECONDS)
+                .classification())
           latch.countDown()
           f
         }
@@ -554,7 +607,11 @@ class ClassifierProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecL
       val classifierProvider = newProvider(system, classifierCfg)
       classifierProvider.validate()
       val result =
-        classifierProvider.client.classifyAsync("dual", "x").toCompletableFuture.get(3, TimeUnit.SECONDS)
+        classifierProvider.client
+          .classifyWithResultAsync("dual", "x")
+          .toCompletableFuture
+          .get(3, TimeUnit.SECONDS)
+          .classification()
       result.label() shouldBe java.util.Optional.of("dual:x")
 
       val guardrailCfg = ConfigFactory.parseString(s"""
