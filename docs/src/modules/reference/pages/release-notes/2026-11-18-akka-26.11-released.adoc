@@ -12,7 +12,7 @@ Akka 26.11 consists of the following module versions:
 * Akka Projections 1.7.0
 * Akka gRPC 2.6.0
 * Akka Persistence Cassandra 1.4.1
-* Akka Persistence DynamoDB 2.1.0
+* Akka Persistence DynamoDB 2.1.1
 * Akka Persistence JDBC 5.6.0
 * Akka Persistence R2DBC 1.4.0
 * Alpakka 11.0.1
