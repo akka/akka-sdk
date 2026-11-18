@@ -23,7 +23,7 @@ import java.util.function.Consumer;
 /** Reads the enabled guardrails from the service config. */
 final class GuardrailReader {
 
-  private static final String GUARDRAILS_PATH = "akka.javasdk.agent.guardrails";
+  static final String GUARDRAILS_PATH = "akka.javasdk.agent.guardrails";
 
   private static final String DEFAULT_FAIL_MODE = "fail-closed";
 
@@ -31,7 +31,7 @@ final class GuardrailReader {
 
   private static final int MAX_CONTROL_ID_LENGTH = 256;
 
-  private static final List<String> KEYS =
+  static final List<String> KEYS =
       List.of(
           "agent-roles",
           "agents",

@@ -72,6 +72,104 @@ class InventoryConfigSpec extends AnyWordSpec with Matchers {
       read(application).head.unknownKeys() shouldBe java.util.List.of("category")
     }
 
+    "record required keys from an optional substitution as unknown" in {
+      val application = applicationConf("""
+        |akka.javasdk.agent.guardrails.refund-limit {
+        |  class = ${?GUARD_CLASS}
+        |  category = ${?GUARD_CATEGORY}
+        |  agents = ["support"]
+        |}
+        |""".stripMargin)
+
+      read(application).head.unknownKeys() shouldBe java.util.List.of("category", "class")
+    }
+
+    "list a guardrail with agents from an optional substitution as unknown" in {
+      val application = applicationConf("""
+        |akka.javasdk.agent.guardrails.refund-limit {
+        |  class = "com.example.RefundLimitGuard"
+        |  category = POLICY
+        |  agents = ${?GUARD_AGENTS}
+        |}
+        |""".stripMargin)
+
+      read(application).head.unknownKeys() shouldBe java.util.List.of("agents")
+    }
+
+    "record a default with an optional override as unknown" in {
+      val application = applicationConf("""
+        |akka.javasdk.agent.guardrails.refund-limit {
+        |  class = "com.example.RefundLimitGuard"
+        |  category = POLICY
+        |  category = ${?GUARD_CATEGORY}
+        |  report-only = false
+        |  report-only = ${?GUARD_REPORT_ONLY}
+        |  agents = ["support"]
+        |}
+        |""".stripMargin)
+
+      read(application).head.unknownKeys() shouldBe java.util.List.of("category", "report-only")
+    }
+
+    "record an SDK default with an optional override as unknown" in {
+      val application = applicationConf("""
+        |akka.javasdk.agent.guardrails."default model-call jailbreak".agents = ${?GUARD_AGENTS}
+        |""".stripMargin)
+
+      val guardrail = read(application).head
+
+      guardrail.name() shouldBe "default model-call jailbreak"
+      guardrail.className() shouldBe "akka.javasdk.agent.ModelCallSimilarityGuard"
+      guardrail.unknownKeys() shouldBe java.util.List.of("agents")
+    }
+
+    "record a reference to a key with an optional override as unknown" in {
+      val application = applicationConf("""
+        |guard-category = POLICY
+        |guard-category = ${?GUARD_CATEGORY}
+        |akka.javasdk.agent.guardrails.refund-limit {
+        |  class = "com.example.RefundLimitGuard"
+        |  category = ${guard-category}
+        |  agents = ["support"]
+        |}
+        |""".stripMargin)
+
+      read(application).head.unknownKeys() shouldBe java.util.List.of("category")
+    }
+
+    "list a guardrail based on one with an optional override as unknown" in {
+      val application = applicationConf("""
+        |akka.javasdk.agent.guardrails.base {
+        |  class = ${?GUARD_CLASS}
+        |  category = POLICY
+        |  agents = ["support"]
+        |}
+        |akka.javasdk.agent.guardrails.derived = ${akka.javasdk.agent.guardrails.base} { agents = ["sales"] }
+        |""".stripMargin)
+
+      val derived = read(application).find(_.name() == "derived").get
+
+      (derived.unknownKeys() should contain).allOf("agents", "category", "class")
+    }
+
+    "keep values that do not depend on an optional substitution without a value" in {
+      val application = applicationConf("""
+        |shared-agents = ["support"]
+        |akka.javasdk.agent.guardrails.refund-limit {
+        |  class = "com.example.RefundLimitGuard"
+        |  category = POLICY
+        |  agents = ${?shared-agents}
+        |  tools += "issueRefund"
+        |}
+        |""".stripMargin)
+
+      val guardrail = read(application).head
+
+      guardrail.agents() shouldBe java.util.List.of("support")
+      guardrail.tools() shouldBe java.util.List.of("issueRefund")
+      guardrail.unknownKeys() shouldBe empty
+    }
+
     "skip and report each include" in {
       val folder = Files.createTempDirectory("inventory-config")
       write(

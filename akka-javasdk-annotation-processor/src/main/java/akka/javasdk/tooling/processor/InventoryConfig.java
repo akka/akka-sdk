@@ -24,6 +24,9 @@ import java.util.function.Consumer;
 /** Parses and merges the config files that the service inventory reads. */
 final class InventoryConfig {
 
+  private static final ConfigResolveOptions RESOLVE_OPTIONS =
+      ConfigResolveOptions.noSystem().setAllowUnresolved(true);
+
   private InventoryConfig() {}
 
   /**
@@ -61,14 +64,20 @@ final class InventoryConfig {
 
   /**
    * Returns {@code application} over {@code sdkDefaults}. The result ignores system properties and
-   * env vars and can hold unresolved values.
+   * env vars and can hold unresolved values. A guardrail value that depends on an optional
+   * substitution without a value stays unresolved.
    */
   static Config merge(Optional<Config> application, Config sdkDefaults) throws InventoryException {
+    Config merged = application.orElseGet(ConfigFactory::empty).withFallback(sdkDefaults);
+
     try {
-      return application
-          .orElseGet(ConfigFactory::empty)
-          .withFallback(sdkDefaults)
-          .resolve(ConfigResolveOptions.noSystem().setAllowUnresolved(true));
+      Config resolved = merged.resolve(RESOLVE_OPTIONS);
+      if (application.isEmpty()) {
+        return resolved;
+      }
+
+      return OptionalSubstitutions.markUnresolved(application.get(), merged, resolved)
+          .resolve(RESOLVE_OPTIONS);
     } catch (ConfigException e) {
       throw new InventoryException("Cannot resolve the config: " + e.getMessage(), e);
     }
