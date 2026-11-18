@@ -19,6 +19,9 @@ import java.util.Map;
 public sealed interface FlowRecord
     permits InteractionRecord, ActivityRecord, GuardrailDecisionRecord, EvaluationRecord {
 
+  /** The id of the record in the ledger. */
+  String recordId();
+
   /** When the record was recorded. */
   Instant timestamp();
 

@@ -11,7 +11,8 @@ import java.util.Optional;
 /**
  * The record of one classification, as fetched from the ledger.
  *
- * @param classificationId the globally unique id of the classification
+ * @param classificationId the globally unique id of the classification, and the id of the record in
+ *     the ledger
  * @param classifierName the name that the service configures for the classifier that produced the
  *     classification
  * @param score the score the classifier gave, or empty when it gave none
@@ -40,5 +41,10 @@ public record ClassificationRecord(
 
   public ClassificationRecord {
     attributes = Map.copyOf(attributes);
+  }
+
+  /** The id of the record in the ledger. */
+  public String recordId() {
+    return classificationId;
   }
 }

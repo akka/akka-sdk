@@ -16,7 +16,8 @@ import java.util.Optional;
  * <p>An evaluation is recorded when it terminates, so a fetched record always carries a terminal
  * {@link Outcome}: the verdict it reached, or why it did not reach one.
  *
- * @param evaluationId the globally unique id of the evaluation
+ * @param evaluationId the globally unique id of the evaluation, and the id of the record in the
+ *     ledger
  * @param evaluatorComponentId the component id of the evaluator that ran the evaluation
  * @param controlId the control id that the evaluator declares, or empty when it declares none
  * @param trigger what caused the evaluation to run
@@ -119,6 +120,12 @@ public record EvaluationRecord(
 
     /** The evaluation failed, as opposed to reporting an inconclusive outcome. */
     record Failed(String reason) implements Outcome {}
+  }
+
+  /** The id of the record in the ledger. */
+  @Override
+  public String recordId() {
+    return evaluationId;
   }
 
   /**
