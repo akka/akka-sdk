@@ -4,6 +4,7 @@
 
 package com.example.inventory
 
+import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -39,18 +40,26 @@ object InventoryCompiler {
 
   val CoordinateOptions: Seq[String] = Seq("-Aakka.javasdk.groupId=com.example", "-Aakka.javasdk.artifactId=shop")
 
-  val DefaultOptions: Seq[String] = CoordinateOptions :+ "-Aakka.javasdk.inventory=true"
+  val ClasspathOption: String =
+    System
+      .getProperty("java.class.path")
+      .split(File.pathSeparator)
+      .mkString("-Aakka.javasdk.inventory.classpath=[", ", ", "]")
+
+  val DefaultOptions: Seq[String] = CoordinateOptions ++ Seq("-Aakka.javasdk.inventory=true", ClasspathOption)
 
   /**
    * Compiles every Java file under `src/test/resources/test-sources/<sourceDir>`. When `applicationConf` is set, copies
-   * `src/test/resources/test-config/<applicationConf>` into the output folder as `application.conf` first.
+   * `src/test/resources/test-config/<applicationConf>` into the output folder as `application.conf` first. Copies each
+   * file in `includedConfigs` from the same folder into the output folder under its own name.
    */
   def compile(
       sourceDir: String,
       options: Seq[String] = DefaultOptions,
       processors: String = AllProcessors,
       outputDir: Option[Path] = None,
-      applicationConf: Option[String] = None): InventoryCompileResult = {
+      applicationConf: Option[String] = None,
+      includedConfigs: Seq[String] = Seq.empty): InventoryCompileResult = {
     val compiler = ToolProvider.getSystemJavaCompiler
     require(compiler != null, "Java compiler not available. Run the tests on a JDK.")
 
@@ -67,6 +76,11 @@ object InventoryCompiler {
       val configFile = Paths.get("src/test/resources/test-config").resolve(name)
       require(Files.isRegularFile(configFile), s"Test config not found: ${configFile.toAbsolutePath}")
       Files.copy(configFile, output.resolve("application.conf"), StandardCopyOption.REPLACE_EXISTING)
+    }
+
+    includedConfigs.foreach { name =>
+      val configFile = Paths.get("src/test/resources/test-config").resolve(name)
+      Files.copy(configFile, output.resolve(name), StandardCopyOption.REPLACE_EXISTING)
     }
 
     val compilerOptions =

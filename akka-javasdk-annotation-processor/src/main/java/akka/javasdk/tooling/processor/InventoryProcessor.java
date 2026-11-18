@@ -5,10 +5,9 @@
 package akka.javasdk.tooling.processor;
 
 import com.typesafe.config.Config;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -17,12 +16,13 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.ElementFilter;
+import javax.tools.FileObject;
 import javax.tools.StandardLocation;
 
 /**
  * Writes {@code META-INF/akka-javasdk-inventory_<groupId>_<artifactId>.json}, listing the
  * components, endpoints and endpoint routes in the sources of the compile and the guardrails that
- * {@code application.conf} enables. Writes nothing unless the compiler option {@code
+ * the config on the compile classpath enables. Writes nothing unless the compiler option {@code
  * akka.javasdk.inventory} is {@code true}, when the compile has no component or endpoint, or when
  * an annotation processor reports an error in the same compile.
  */
@@ -36,18 +36,13 @@ import javax.tools.StandardLocation;
 public class InventoryProcessor extends BaseAkkaProcessor {
 
   private static final String OPTION_INVENTORY = "akka.javasdk.inventory";
+  private static final String OPTION_CLASSPATH = "akka.javasdk.inventory.classpath";
   private static final String OPTION_GROUP_ID = "akka.javasdk.groupId";
   private static final String OPTION_ARTIFACT_ID = "akka.javasdk.artifactId";
   private static final String OPTION_COMPONENT_LIBRARY = "akka.javasdk.componentLibrary";
 
   private static final String INVENTORY_FILE_PREFIX = "META-INF/akka-javasdk-inventory_";
   private static final String INVENTORY_FILE_SUFFIX = ".json";
-
-  private static final String SDK_DEFAULTS_PACKAGE = "akka.javasdk";
-  private static final String SDK_DEFAULTS_FILE = "governance.conf";
-  private static final String SDK_DEFAULTS_PATH =
-      SDK_DEFAULTS_PACKAGE.replace('.', '/') + "/" + SDK_DEFAULTS_FILE;
-  private static final String APPLICATION_CONF = "application.conf";
 
   private static final String COMPONENT_ANNOTATION = "akka.javasdk.annotations.Component";
   private static final String AGENT_ROLE_ANNOTATION = "akka.javasdk.annotations.AgentRole";
@@ -58,10 +53,16 @@ public class InventoryProcessor extends BaseAkkaProcessor {
   private boolean alreadyRan = false;
   private String groupId;
   private String artifactId;
+  private String classpathOption;
 
   @Override
   public Set<String> getSupportedOptions() {
-    return Set.of(OPTION_INVENTORY, OPTION_GROUP_ID, OPTION_ARTIFACT_ID, OPTION_COMPONENT_LIBRARY);
+    return Set.of(
+        OPTION_INVENTORY,
+        OPTION_CLASSPATH,
+        OPTION_GROUP_ID,
+        OPTION_ARTIFACT_ID,
+        OPTION_COMPONENT_LIBRARY);
   }
 
   @Override
@@ -74,7 +75,8 @@ public class InventoryProcessor extends BaseAkkaProcessor {
       alreadyRan = true;
       groupId = requiredOption(OPTION_GROUP_ID);
       artifactId = requiredOption(OPTION_ARTIFACT_ID);
-      if (groupId != null && artifactId != null) {
+      classpathOption = requiredOption(OPTION_CLASSPATH);
+      if (groupId != null && artifactId != null && classpathOption != null) {
         collectComponents(annotations, roundEnv);
       }
     }
@@ -138,8 +140,8 @@ public class InventoryProcessor extends BaseAkkaProcessor {
 
     List<InventoryGuardrail> guardrails;
     try {
-      var config = InventoryConfig.merge(readApplicationConf(), readSdkDefaults());
-      guardrails = GuardrailReader.read(config, this::warning);
+      var classpath = InventoryClasspath.parse(OPTION_CLASSPATH, classpathOption);
+      guardrails = GuardrailReader.read(readConfig(classpath), this::warning);
     } catch (InventoryException ex) {
       error(ex.getMessage());
       return;
@@ -164,55 +166,19 @@ public class InventoryProcessor extends BaseAkkaProcessor {
     }
   }
 
-  private Config readSdkDefaults() throws InventoryException {
-    try {
-      var resource =
-          processingEnv
-              .getFiler()
-              .getResource(StandardLocation.CLASS_PATH, SDK_DEFAULTS_PACKAGE, SDK_DEFAULTS_FILE);
-      try (var reader = resource.openReader(true)) {
-        return InventoryConfig.parse(
-            reader, SDK_DEFAULTS_PATH, include -> warnSkippedInclude(SDK_DEFAULTS_PATH, include));
-      }
-    } catch (NoSuchFileException | FileNotFoundException ex) {
-      throw new InventoryException(
-          "Akka SDK annotation processor cannot find "
-              + SDK_DEFAULTS_PATH
-              + " on the compile classpath",
-          ex);
+  private Config readConfig(List<Path> classpath) throws InventoryException {
+    try (var loader = InventoryClasspath.classLoader(outputDirectory(), classpath)) {
+      return InventoryConfig.load(loader);
     } catch (IOException ex) {
       throw new InventoryException(
-          "Akka SDK annotation processor cannot read " + SDK_DEFAULTS_PATH + ": " + ex.getMessage(),
-          ex);
+          "Akka SDK annotation processor cannot read the config: " + ex.getMessage(), ex);
     }
   }
 
-  private Optional<Config> readApplicationConf() throws InventoryException {
-    try {
-      var resource = existingOutputResource(APPLICATION_CONF);
-      if (resource.isEmpty()) {
-        debug("No application.conf found for the inventory");
-        return Optional.empty();
-      }
-      return Optional.of(
-          InventoryConfig.parse(
-              resource.get().toUri().toURL(),
-              include -> warnSkippedInclude(APPLICATION_CONF, include)));
-    } catch (IOException ex) {
-      throw new InventoryException(
-          "Akka SDK annotation processor cannot read " + APPLICATION_CONF + ": " + ex.getMessage(),
-          ex);
-    }
-  }
-
-  private void warnSkippedInclude(String file, String include) {
-    warning(
-        "The service inventory does not evaluate include "
-            + include
-            + " in "
-            + file
-            + ". Define the guardrails in "
-            + APPLICATION_CONF
-            + ".");
+  private Optional<Path> outputDirectory() throws IOException {
+    return existingOutputResource(InventoryConfig.APPLICATION_CONF)
+        .map(FileObject::toUri)
+        .filter(uri -> "file".equals(uri.getScheme()))
+        .map(uri -> Path.of(uri).getParent());
   }
 }

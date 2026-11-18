@@ -9,17 +9,15 @@ import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigIncludeContext;
 import com.typesafe.config.ConfigIncluder;
-import com.typesafe.config.ConfigIncluderClasspath;
 import com.typesafe.config.ConfigIncluderFile;
 import com.typesafe.config.ConfigIncluderURL;
 import com.typesafe.config.ConfigObject;
 import com.typesafe.config.ConfigParseOptions;
 import com.typesafe.config.ConfigResolveOptions;
 import java.io.File;
-import java.io.Reader;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.Optional;
-import java.util.function.Consumer;
 
 /** Parses and merges the config files that the service inventory reads. */
 final class InventoryConfig {
@@ -27,94 +25,88 @@ final class InventoryConfig {
   private static final ConfigResolveOptions RESOLVE_OPTIONS =
       ConfigResolveOptions.noSystem().setAllowUnresolved(true);
 
+  static final String APPLICATION_CONF = "application.conf";
+  private static final String REFERENCE_CONF = "reference.conf";
+
   private InventoryConfig() {}
 
   /**
-   * Parses the config file at {@code url} without its includes. Passes each include to {@code
-   * onInclude}, as written in the file.
+   * Returns every {@code application.conf} in {@code loader} over every {@code reference.conf} in
+   * {@code loader}. See {@link #merge} for how the result treats unresolved values.
    */
-  static Config parse(URL url, Consumer<String> onInclude) throws InventoryException {
+  static Config load(ClassLoader loader) throws InventoryException {
+    return merge(parseResource(loader, APPLICATION_CONF), parseResource(loader, REFERENCE_CONF));
+  }
+
+  /**
+   * Parses every resource named {@code resource} in {@code loader}, with its includes. This method
+   * rejects file and URL includes.
+   */
+  static Config parseResource(ClassLoader loader, String resource) throws InventoryException {
     try {
-      return ConfigFactory.parseURL(url, parseOptions(onInclude));
+      return ConfigFactory.parseResources(
+          loader, resource, ConfigParseOptions.defaults().setIncluder(new ClasspathIncluder(null)));
     } catch (ConfigException e) {
       throw new InventoryException("Cannot parse the config: " + e.getMessage(), e);
     }
   }
 
   /**
-   * Parses the config text from {@code reader} without its includes. Uses {@code description} to
-   * name the config text in errors. Passes each include to {@code onInclude}, as written in the
-   * text.
+   * Returns {@code application} over {@code reference}, after it resolves {@code reference} on its
+   * own. The result ignores system properties and env vars and can hold unresolved values. A
+   * guardrail value that depends on an optional substitution without a value stays unresolved.
    */
-  static Config parse(Reader reader, String description, Consumer<String> onInclude)
-      throws InventoryException {
+  private static Config merge(Config application, Config reference) throws InventoryException {
     try {
-      return ConfigFactory.parseReader(
-          reader, parseOptions(onInclude).setOriginDescription(description));
-    } catch (ConfigException e) {
-      throw new InventoryException("Cannot parse the config: " + e.getMessage(), e);
-    }
-  }
-
-  private static ConfigParseOptions parseOptions(Consumer<String> onInclude) {
-    return ConfigParseOptions.defaults()
-        .setAllowMissing(false)
-        .setIncluder(new SkippingIncluder(onInclude));
-  }
-
-  /**
-   * Returns {@code application} over {@code sdkDefaults}. The result ignores system properties and
-   * env vars and can hold unresolved values. A guardrail value that depends on an optional
-   * substitution without a value stays unresolved.
-   */
-  static Config merge(Optional<Config> application, Config sdkDefaults) throws InventoryException {
-    Config merged = application.orElseGet(ConfigFactory::empty).withFallback(sdkDefaults);
-
-    try {
+      Config merged = application.withFallback(reference.resolve(RESOLVE_OPTIONS));
       Config resolved = merged.resolve(RESOLVE_OPTIONS);
-      if (application.isEmpty()) {
-        return resolved;
-      }
-
-      return OptionalSubstitutions.markUnresolved(application.get(), merged, resolved)
+      return OptionalSubstitutions.markUnresolved(application, merged, resolved)
           .resolve(RESOLVE_OPTIONS);
     } catch (ConfigException e) {
       throw new InventoryException("Cannot resolve the config: " + e.getMessage(), e);
     }
   }
 
-  /** Replaces each include with an empty object and reports it. */
-  private record SkippingIncluder(Consumer<String> onInclude)
-      implements ConfigIncluder, ConfigIncluderClasspath, ConfigIncluderFile, ConfigIncluderURL {
+  /** Rejects file and URL includes. Passes every other include to {@code fallback}. */
+  private record ClasspathIncluder(ConfigIncluder fallback)
+      implements ConfigIncluder, ConfigIncluderFile, ConfigIncluderURL {
 
     @Override
     public ConfigIncluder withFallback(ConfigIncluder fallback) {
-      return this;
+      return new ClasspathIncluder(fallback);
     }
 
     @Override
     public ConfigObject include(ConfigIncludeContext context, String what) {
-      return skip("\"" + what + "\"");
-    }
-
-    @Override
-    public ConfigObject includeResources(ConfigIncludeContext context, String what) {
-      return skip("classpath(\"" + what + "\")");
+      if (hasScheme(what)) {
+        throw rejected("\"" + what + "\"");
+      }
+      return fallback.include(context, what);
     }
 
     @Override
     public ConfigObject includeFile(ConfigIncludeContext context, File what) {
-      return skip("file(\"" + what + "\")");
+      throw rejected("file(\"" + what + "\")");
     }
 
     @Override
     public ConfigObject includeURL(ConfigIncludeContext context, URL what) {
-      return skip("url(\"" + what + "\")");
+      throw rejected("url(\"" + what + "\")");
     }
 
-    private ConfigObject skip(String include) {
-      onInclude.accept(include);
-      return ConfigFactory.empty().root();
+    private static boolean hasScheme(String what) {
+      try {
+        return new URI(what).getScheme() != null;
+      } catch (URISyntaxException e) {
+        return false;
+      }
+    }
+
+    private static ConfigException rejected(String include) {
+      return new ConfigException.Generic(
+          "The service inventory does not support include "
+              + include
+              + ". Include a file from the classpath.");
     }
   }
 }

@@ -494,7 +494,7 @@ import org.slf4j.LoggerFactory
     if (c.config.hasPath("use-for")) {
       val defaultJailbreakHint =
         if (c.name == DefaultJailbreak)
-          s" The use-for of [$DefaultJailbreak] comes from the SDK defaults in akka/javasdk/governance.conf. To use " +
+          s" The use-for of [$DefaultJailbreak] comes from reference.conf. To use " +
           s"akka.javasdk.agent.ModelCallSimilarityGuard, enable \"$DefaultModelCallJailbreak\" instead."
         else ""
 

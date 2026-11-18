@@ -14,15 +14,6 @@ For configuration of AI model providers, please refer to xref:sdk:model-provider
 include::sdk:example$akka-javasdk/src/main/resources/reference.conf[tag=reference]
 ----
 
-== Akka SDK governance defaults
-
-The `reference.conf` file includes these default entries from `akka/javasdk/governance.conf`.
-
-[source,hocon,indent=0]
-----
-include::sdk:example$akka-javasdk/src/main/resources/akka/javasdk/governance.conf[]
-----
-
 == References
 - xref:sdk:setup-and-dependency-injection.adoc[]
 - xref:sdk:model-provider-details.adoc[]

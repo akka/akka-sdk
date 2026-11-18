@@ -179,13 +179,34 @@ class InventoryProcessorSpec extends AnyWordSpec with Matchers {
       warnings.mkString should include("application.conf")
     }
 
-    "warn about an include in application.conf" in {
-      val result = InventoryCompiler.compile("basic", applicationConf = Some("include-guardrails.conf"))
+    "list a guardrail from an included file" in {
+      val result = InventoryCompiler.compile(
+        "basic",
+        applicationConf = Some("include-guardrails.conf"),
+        includedConfigs = Seq("refund-limit.conf"))
       withClue(result.diagnostics) { result.success shouldBe true }
-      val warnings = result.diagnostics.filter(_.getKind == Diagnostic.Kind.WARNING).map(_.getMessage(null))
-      warnings.mkString should include(
-        "The service inventory does not evaluate include \"refund-limit.conf\" in application.conf")
-      new String(result.inventory("com.example", "shop").get, UTF_8) should endWith("  \"guardrails\": []\n}\n")
+      result.diagnostics.filter(_.getKind == Diagnostic.Kind.WARNING) shouldBe empty
+      new String(result.inventory("com.example", "shop").get, UTF_8) should include("\"name\": \"refund-limit\"")
+    }
+
+    "report an error for a file include" in {
+      val result = InventoryCompiler.compile("basic", applicationConf = Some("include-file.conf"))
+      result.success shouldBe false
+      result.diagnostics.map(_.getMessage(null)).mkString should include(
+        "The service inventory does not support include file(")
+      result.inventory("com.example", "shop") shouldBe None
+    }
+
+    "ignore a file include without the inventory option" in {
+      val result = InventoryCompiler.compile("basic", CoordinateOptions, applicationConf = Some("include-file.conf"))
+      withClue(result.diagnostics) { result.success shouldBe true }
+    }
+
+    "report an error when a required include is missing" in {
+      val result = InventoryCompiler.compile("basic", applicationConf = Some("include-required-missing.conf"))
+      result.success shouldBe false
+      result.diagnostics.map(_.getMessage(null)).mkString should include("missing-guardrails")
+      result.inventory("com.example", "shop") shouldBe None
     }
 
     "write no inventory when a guardrail is invalid" in {
@@ -204,6 +225,24 @@ class InventoryProcessorSpec extends AnyWordSpec with Matchers {
         processors = "akka.javasdk.tooling.processor.InventoryProcessor")
       result.success shouldBe false
       result.diagnostics.map(_.getMessage(null)).mkString should include("akka.javasdk.artifactId")
+    }
+
+    "report an error when the classpath option is missing" in {
+      val result = InventoryCompiler.compile("basic", CoordinateOptions :+ "-Aakka.javasdk.inventory=true")
+      result.success shouldBe false
+      result.diagnostics.map(_.getMessage(null)).mkString should include("akka.javasdk.inventory.classpath")
+      result.inventory("com.example", "shop") shouldBe None
+    }
+
+    "report an error when the build does not expand the classpath option" in {
+      val result = InventoryCompiler.compile(
+        "basic",
+        CoordinateOptions ++ Seq(
+          "-Aakka.javasdk.inventory=true",
+          "-Aakka.javasdk.inventory.classpath=${project.compileClasspathElements}"))
+      result.success shouldBe false
+      result.diagnostics.map(_.getMessage(null)).mkString should include("must be a list of paths")
+      result.inventory("com.example", "shop") shouldBe None
     }
 
     "claim the annotations" in {

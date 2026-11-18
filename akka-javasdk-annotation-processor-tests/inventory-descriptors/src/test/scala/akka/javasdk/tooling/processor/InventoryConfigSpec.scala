@@ -4,13 +4,16 @@
 
 package akka.javasdk.tooling.processor
 
-import java.net.URL
+import java.io.File
 import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Optional
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 import scala.jdk.CollectionConverters._
+import scala.util.Using
 
 import com.typesafe.config.Config
 import org.scalatest.matchers.should.Matchers
@@ -18,22 +21,49 @@ import org.scalatest.wordspec.AnyWordSpec
 
 class InventoryConfigSpec extends AnyWordSpec with Matchers {
 
-  private def sdkDefaults: Config = {
-    val resource = getClass.getClassLoader.getResource("akka/javasdk/governance.conf")
-    require(resource != null, "Resource not found: akka/javasdk/governance.conf")
-    InventoryConfig.parse(resource, _ => ())
+  private val RefundLimit =
+    """
+      |akka.javasdk.agent.guardrails.refund-limit {
+      |  class = "com.example.RefundLimitGuard"
+      |  category = POLICY
+      |  agents = ["*"]
+      |  report-only = false
+      |}
+      |""".stripMargin
+
+  private val ReportOnly = "akka.javasdk.agent.guardrails.refund-limit.report-only = true\n"
+
+  private val TestClasspath: Seq[Path] =
+    System.getProperty("java.class.path").split(File.pathSeparator).toSeq.map(Path.of(_))
+
+  private def write(folder: Path, name: String, content: String): Path =
+    Files.writeString(folder.resolve(name), content, UTF_8)
+
+  private def applicationConf(content: String): Path = {
+    val folder = Files.createTempDirectory("inventory-config")
+    write(folder, "application.conf", content)
+    folder
   }
 
-  private def write(folder: Path, name: String, content: String): URL =
-    Files.writeString(folder.resolve(name), content, UTF_8).toUri.toURL
-
-  private def applicationConf(content: String): URL =
-    write(Files.createTempDirectory("inventory-config"), "application.conf", content)
-
-  private def read(application: URL): List[InventoryGuardrail] = {
-    val config = InventoryConfig.merge(Optional.of(InventoryConfig.parse(application, _ => ())), sdkDefaults)
-    GuardrailReader.read(config, _ => ()).asScala.toList
+  private def jar(entries: (String, String)*): Path = {
+    val file = Files.createTempFile("inventory-config", ".jar")
+    Using.resource(new ZipOutputStream(Files.newOutputStream(file))) { zip =>
+      entries.foreach { case (name, content) =>
+        zip.putNextEntry(new ZipEntry(name))
+        zip.write(content.getBytes(UTF_8))
+        zip.closeEntry()
+      }
+    }
+    file
   }
+
+  private def load(application: Path, classpath: Path*): Config =
+    Using.resource(InventoryClasspath.classLoader(Optional.of(application), (classpath ++ TestClasspath).asJava)) {
+      loader => InventoryConfig.load(loader)
+    }
+
+  private def read(application: Path, classpath: Path*): List[InventoryGuardrail] =
+    GuardrailReader.read(load(application, classpath: _*), _ => ()).asScala.toList
 
   "InventoryConfig" should {
 
@@ -170,50 +200,139 @@ class InventoryConfigSpec extends AnyWordSpec with Matchers {
       guardrail.unknownKeys() shouldBe empty
     }
 
-    "skip and report each include" in {
-      val folder = Files.createTempDirectory("inventory-config")
-      write(
-        folder,
-        "guardrails.conf",
-        """
-          |akka.javasdk.agent.guardrails.refund-limit {
-          |  class = "com.example.RefundLimitGuard"
-          |  category = POLICY
-          |  agents = ["*"]
-          |}
-          |""".stripMargin)
-      val application = write(
-        folder,
-        "application.conf",
-        """
-          |include "guardrails.conf"
-          |include classpath("shared.conf")
-          |include required(file("local.conf"))
-          |include url("http://example.com/remote.conf")
-          |""".stripMargin)
-      val includes = List.newBuilder[String]
+    "apply an include after a literal over the literal" in {
+      val application = applicationConf(RefundLimit + "include \"override\"\n")
+      write(application, "override.conf", ReportOnly)
 
-      val config = InventoryConfig.parse(application, include => includes += include)
-
-      config.isEmpty shouldBe true
-      includes.result() shouldBe List(
-        "\"guardrails.conf\"",
-        "classpath(\"shared.conf\")",
-        "file(\"local.conf\")",
-        "url(\"http://example.com/remote.conf\")")
+      read(application).head.reportOnly() shouldBe true
     }
 
-    "report a syntax error with the reader description" in {
-      val exception = intercept[InventoryException](
-        InventoryConfig.parse(new java.io.StringReader("akka { "), "akka/javasdk/governance.conf", _ => ()))
+    "apply a literal after an include over the include" in {
+      val application = applicationConf("include \"override\"\n" + RefundLimit)
+      write(application, "override.conf", ReportOnly)
 
-      exception.getMessage should include("akka/javasdk/governance.conf")
+      read(application).head.reportOnly() shouldBe false
+    }
+
+    "apply a later include over an earlier include" in {
+      val application = applicationConf(RefundLimit + "include \"first\"\ninclude \"second\"\n")
+      write(application, "first.conf", ReportOnly)
+      write(application, "second.conf", "akka.javasdk.agent.guardrails.refund-limit.report-only = false\n")
+
+      read(application).head.reportOnly() shouldBe false
+    }
+
+    "read an include inside a block under the path of the block" in {
+      val application =
+        applicationConf(RefundLimit + "akka.javasdk.agent.guardrails.refund-limit { include \"nested\" }\n")
+      write(application, "nested.conf", "report-only = true\n")
+
+      read(application).head.reportOnly() shouldBe true
+    }
+
+    "read an include relative to the file that holds it" in {
+      val application = applicationConf(RefundLimit + "include \"shared/first\"\n")
+      Files.createDirectory(application.resolve("shared"))
+      write(application, "shared/first.conf", "include \"second\"\n")
+      write(application, "shared/second.conf", ReportOnly)
+
+      read(application).head.reportOnly() shouldBe true
+    }
+
+    "record an optional substitution in an included file as unknown" in {
+      val application = applicationConf(RefundLimit + "include \"override\"\n")
+      write(application, "override.conf", "akka.javasdk.agent.guardrails.refund-limit.report-only = ${?REPORT_ONLY}\n")
+
+      read(application).head.unknownKeys() shouldBe java.util.List.of("report-only")
+    }
+
+    "read an include from a dependency jar" in {
+      val application = applicationConf(RefundLimit + "include classpath(\"library.conf\")\n")
+
+      read(application, jar("library.conf" -> ReportOnly)).head.reportOnly() shouldBe true
+    }
+
+    "merge an include with the same name from every dependency jar" in {
+      val application = applicationConf(RefundLimit + "include \"library\"\n")
+      val first = jar("library.conf" -> ReportOnly)
+      val second = jar("library.conf" -> "akka.javasdk.agent.guardrails.refund-limit.control-id = CTRL-7\n")
+
+      val guardrail = read(application, first, second).head
+
+      guardrail.reportOnly() shouldBe true
+      guardrail.controlId() shouldBe java.util.Optional.of("CTRL-7")
+    }
+
+    "read the output folder once when the classpath lists it" in {
+      val application =
+        applicationConf(RefundLimit + "akka.javasdk.agent.guardrails.refund-limit.tools += \"refund\"\n")
+
+      read(application, application).head.tools() shouldBe java.util.List.of("refund")
+    }
+
+    "ignore a missing optional include" in {
+      val application = applicationConf(RefundLimit + "include \"missing\"\n")
+
+      read(application) should have size 1
+    }
+
+    "report a missing required include" in {
+      val application = applicationConf(RefundLimit + "include required(\"missing\")\n")
+
+      val exception = intercept[InventoryException](load(application))
+
+      exception.getMessage should include("missing")
+    }
+
+    "reject file and URL includes" in {
+      val statements = List(
+        "include file(\"/etc/guardrails.conf\")",
+        "include required(file(\"/etc/guardrails.conf\"))",
+        "include url(\"http://localhost:1/guardrails.conf\")",
+        "include required(url(\"http://localhost:1/guardrails.conf\"))",
+        "include \"http://localhost:1/guardrails.conf\"",
+        "include \"file:/etc/guardrails.conf\"")
+
+      statements.foreach { statement =>
+        val exception = intercept[InventoryException](load(applicationConf(RefundLimit + statement + "\n")))
+
+        withClue(statement) {
+          exception.getMessage should include("The service inventory does not support include")
+        }
+      }
+    }
+
+    "reject a file include inside an included file" in {
+      val application = applicationConf(RefundLimit + "include \"shared\"\n")
+      write(application, "shared.conf", "include file(\"/etc/guardrails.conf\")\n")
+
+      val exception = intercept[InventoryException](load(application))
+
+      exception.getMessage should include("/etc/guardrails.conf")
+    }
+
+    "read a guardrail from a reference.conf in a dependency jar" in {
+      val application = applicationConf("")
+
+      val guardrails = read(application, jar("reference.conf" -> RefundLimit))
+
+      guardrails.map(_.name()) shouldBe List("refund-limit")
+    }
+
+    "resolve reference.conf on its own before it applies application.conf" in {
+      val application = applicationConf("library.guard-class = \"com.example.FromApplication\"\n")
+      val reference = jar("reference.conf" -> (RefundLimit + """
+          |library.guard-class = "com.example.FromReference"
+          |akka.javasdk.agent.guardrails.refund-limit.class = ${library.guard-class}
+          |""".stripMargin))
+
+      read(application, reference).head.className() shouldBe "com.example.FromReference"
     }
 
     "report a syntax error with the file" in {
       val application = applicationConf("akka { ")
 
-      val exception = intercept[InventoryException](InventoryConfig.parse(application, _ => ()))
+      val exception = intercept[InventoryException](load(application))
 
       exception.getMessage should include("application.conf")
     }
