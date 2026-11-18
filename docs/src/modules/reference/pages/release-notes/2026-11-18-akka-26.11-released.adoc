@@ -1,0 +1,134 @@
+= Akka 26.11 Released
+
+Dear hakkers,
+
+We are excited to announce the availability of the Akka libraries 26.11 release, setting a new baseline of Akka library versions that go together.
+
+Akka 26.11 consists of the following module versions:
+
+* Akka core 2.11.0
+* Akka HTTP 10.8.0
+* Akka Management 1.7.0
+* Akka Projections 1.7.0
+* Akka gRPC 2.6.0
+* Akka Persistence Cassandra 1.4.1
+* Akka Persistence DynamoDB 2.1.0
+* Akka Persistence JDBC 5.6.0
+* Akka Persistence R2DBC 1.4.0
+* Alpakka 11.0.1
+* Alpakka Kafka 9.0.0
+* Akka Diagnostics 2.3.0
+* Akka Insights 2.23.0
+
+These versions also consistently upgrade to *Jackson 2.21.8*, of the Jackson 2.21 long-term-support line.
+
+As reference of versions that go together for Akka 26.11, please see https://doc.akka.io/libraries/akka-dependencies/26.11/[Akka library versions 26.11].
+
+== Removal of deprecated APIs
+
+Akka core 2.11.0 removes all APIs that Akka 2.10.0 or earlier deprecated. The most notable removals are:
+
+* The LevelDB journal, the shared LevelDB journal and the LevelDB read journal. Use another journal, such as Akka Persistence R2DBC. For tests, use the in-memory journal, together with the journal proxy when several actor systems share one journal.
+* `ActorMaterializer` and `ActorMaterializerSettings`. Use `Materializer`, and configure streams with the `akka.stream.materializer` config or with attributes.
+* Stream operators such as `Source.fromFuture`, `Source.lazily`, `Flow.lazyInit`, `Source.setup` and `FileIO.fromFile`.
+* The `java.util.logging` integration in `akka.event.jul`. Use SLF4J.
+
+The https://doc.akka.io/libraries/akka-core/current/project/migration-guide-2.10.x-2.11.x.html[migration guide] lists every removed API and its replacement.
+
+The other modules no longer use the removed APIs.
+
+== Jackson 2.21
+
+The Akka libraries now depend on the Jackson 2.21 long-term-support line. Jackson 2.18, which Akka 25.10 used, gets no further updates after January 2027.
+
+== License key
+
+Akka requires a license key for use in production.
+
+Read about the motivation in the blog post https://akka.io/blog/akka-license-keys-and-no-spam-promise[Akka License Keys && a No SPAM Promise].
+
+Obtain a free key at https://akka.io/key.
+
+== Security Updates
+
+We run automated security vulnerability and license policy scanning of dependencies. Several dependencies have been updated to fix security vulnerabilities and keep up with latest improvements.
+
+The following CVE’s are addressed in this build.
+
+* https://nvd.nist.gov/vuln/detail/CVE-2025-66566[CVE-2025-66566] (lz4-java)
+* https://nvd.nist.gov/vuln/detail/CVE-2026-45292[CVE-2026-45292] (OpenTelemetry, in Akka Insights)
+
+Akka HTTP also has several fixes that harden HTTP/2 and request parsing.
+
+== Bug fixes
+
+* Memory leak of completed stages and connections in the stream interpreter
+* Cluster Sharding fixes for remember entities and shard hand-off
+* Artery fixes for transport shutdown and acknowledgements from previous incarnations of a node
+* HTTP/2 connection unusable after a bad request response in Akka HTTP
+* Akka gRPC clients abandon connections stuck in connecting, after a new `connecting-timeout`
+* Stopping a projection no longer waits for a pending restart backoff
+* Atomic writes of several events in Akka Persistence DynamoDB could lose events after a timed out transaction
+* Race at shard end in the Alpakka KCL source for Amazon Kinesis
+
+== Other improvements
+
+* Split Brain Resolver downs all nodes when an indirectly connected decision would down at least half of the members, configured with `down-all-when-indirectly-connected`
+* Opt-in detection of stale regions in the shard coordinator
+* Journals can order write replies in several groups, to reduce head-of-line blocking
+* Optional write timeout in the persistence plugin proxy
+* Server interceptor API in Akka gRPC
+* Code generation for selected gRPC clients and services only
+* Gradle 9 support in the Akka gRPC Gradle plugin
+* Configurable HTTP/2 header block limits and more robust persistent HTTP/2 connections in Akka HTTP
+* WebSocket close codes and reasons from application code in Akka HTTP
+* Optional end-to-end keep alive for gRPC event streams and replication in Akka Projections
+* Custom journal table and extra journal columns in Akka Persistence R2DBC
+* Instrumentation SPI and conditional event writes in Akka Persistence DynamoDB
+* Shard statistics endpoint in Akka Management
+* Couchbase collections, Azure Storage blob listing, streaming uploads and Azure Identity authentication in Alpakka
+* Federated workload identity for the Google connectors in Alpakka
+* Artifact BOMs for all modules
+
+== Dependency updates
+
+* Jackson 2.21.8
+* Scala 2.13.18
+* Netty 4.2
+* Kafka Clients 4.4.0
+* grpc-java 1.85.0
+* Slick 3.6.1
+* OpenTelemetry 1.64.0 in Akka Insights
+
+== Compatibility
+
+* Akka Persistence R2DBC 1.4.0 no longer supports SQL Server. Users of SQL Server must stay on Akka Persistence R2DBC 1.3.x.
+* Akka Persistence R2DBC 1.4.0 uses Netty 4.2, which changes the default buffer allocator. To keep the old allocator, start the JVM with `-Dio.netty.allocator.type=pooled`.
+* Alpakka 11.0.0 removes the Pravega, IronMQ, Spring Web and Huawei Push Kit connectors.
+* Akka Insights 2.23.0 only supports Akka 26.11. Stay on Akka Insights 2.22.x with Akka 25.10.
+* Apart from the removed APIs and connectors, the modules of Akka 26.11 are backwards compatible with Akka 25.10.
+* Rolling update of Akka Cluster is fully supported.
+
+Akka libraries now depend on Scala 2.13.18. Because of this, Scala sbt projects on Scala 2.13 will need to bump their Scala version to 2.13.18 to avoid errors from sbt.
+
+== Detailed release notes:
+
+* https://github.com/akka/akka-core/releases[Akka core 2.11.x]
+* https://github.com/akka/akka-http/releases[Akka HTTP 10.8.x]
+* https://github.com/akka/akka-grpc/releases[Akka gRPC 2.6.x]
+* https://github.com/akka/akka-management/releases[Akka Management 1.7.x]
+* https://github.com/akka/alpakka-kafka/releases[Alpakka Kafka 9.0.x]
+* https://github.com/akka/alpakka/releases[Alpakka 11.0.x]
+* https://github.com/akka/akka-persistence-r2dbc/releases[Akka Persistence R2DBC 1.4.x]
+* https://github.com/akka/akka-persistence-dynamodb/releases[Akka Persistence DynamoDB 2.1.x]
+* https://github.com/akka/akka-persistence-jdbc/releases[Akka Persistence JDBC 5.6.x]
+* https://github.com/akka/akka-persistence-cassandra/releases[Akka Persistence Cassandra 1.4.x]
+* https://github.com/akka/akka-projection/releases[Akka Projections 1.7.x]
+* https://github.com/akka/akka-diagnostics/releases[Akka Diagnostics 2.3.x]
+* https://doc.akka.io/libraries/akka-insights/current/project/release-notes.html[Akka Insights 2.23.x]
+
+Licensing and support options are available from https://akka.io/[Akka].
+
+Happy hakking!
+
+-- The Akka Team

@@ -55,6 +55,7 @@ Bastian
 bcrypt
 benchmarked
 biopharma
+BOMs
 bookmarkable
 [Bb]ooleans?
 brokerless
@@ -218,6 +219,7 @@ Hotari
 hoverable
 httpBasic
 https
+Huawei
 huggingFaceTokenSecret
 [Hh]ypercare
 hyperscaler
@@ -255,6 +257,7 @@ Keycloak
 keyId
 keysets?
 Kilo
+Kinesis
 Kiro
 Kolesnikov
 kubectl
@@ -357,6 +360,7 @@ plist
 Podman
 Postgres
 PostgreSQL
+Pravega
 precalculated
 [Pp]recompiled?
 preconfigured
