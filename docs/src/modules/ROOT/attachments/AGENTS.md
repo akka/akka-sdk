@@ -196,13 +196,16 @@ Boundary rules:
   - `componentClient.forTask(taskId).create(task)` — pre-create tasks
   - `componentClient.forAutonomousAgent(AgentClass.class, instanceId).assignTasks(taskIds...)` — assign multiple
   - `componentClient.forTask(taskId).get(taskDef)` — query typed result via `TaskSnapshot<R>`
+  - `componentClient.forTask(taskId).cancel(reason)` — cancel a task that has not started (`PENDING` or `ASSIGNED`)
+  - `componentClient.forTask(taskId).delete()` — delete a task that has ended; afterwards the task reads as not found (`TaskException.NotFound`)
+  - `task.expireAfter(Duration)` — delete the task this long after it ends; `akka.javasdk.agent.task.expire-after` sets the default for tasks without one, including tasks that agents create (`off` by default)
 - Instance ID typically `UUID.randomUUID().toString()` for one-off work
 - Stateless design (no mutable state in agent class) — tasks carry state
 - `@FunctionTool` methods can also be defined directly on the agent class
 - Components (Entities, Views, Workflows) can be used as tools by passing their `Class`
 - Task dependencies: `task.dependsOn(otherTaskId)` — agent respects ordering
 - `runSingleTask` is normal usage of Autonomous Agent: one task per instance is fine.
-- `runSingleTask` is non-blocking: it returns the task id immediately. The task itself is the durable record of status and typed result, queryable any time via `componentClient.forTask(taskId).get(taskDef)`. No wrapping Workflow is needed for durability or to await completion.
+- `runSingleTask` is non-blocking: it returns the task id immediately. The task itself is the durable record of status and typed result, queryable via `componentClient.forTask(taskId).get(taskDef)` until it is deleted or expires. No wrapping Workflow is needed for durability or to await completion.
 
 **Choosing between Agent and Autonomous Agent**
 - See `akka-context/sdk/autonomous-agents.html.md` ("When to use an Autonomous Agent") for the decision rubric.
