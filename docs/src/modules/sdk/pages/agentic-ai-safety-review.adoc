@@ -1,0 +1,84 @@
+= Agentic AI safety review
+:page-summary: Review agent inputs, tool actions, generated responses, data handling, tests, and runtime evidence in an Akka application.
+:page-when-to-use: When building or reviewing an application that uses agents or other LLM-backed features
+:page-related: sdk:agents/guardrails.adoc, sdk:sanitization.adoc, sdk:evaluators.adoc, sdk:agents/testing.adoc, concepts:governance-and-the-runtime.adoc
+:page-persona: builder-developer, builder-ai-ml, operator-platform
+
+include::ROOT:partial$include.adoc[]
+
+Use this checklist to review how an application uses Akka agent safety features and what evidence supports the review. Start with the requirements for the application and identify the agents, tools, data, and user actions in scope. This page describes implementation considerations. It does not classify a system under a regulation or determine whether the application meets a requirement.
+
+Akka provides runtime guardrails, sanitizers, and evaluators for different points in an agent interaction. Review each feature's scope and failure behavior in xref:sdk:agents/guardrails.adoc[], xref:sdk:sanitization.adoc[], and xref:sdk:evaluators.adoc[].
+
+== Inventory agents, tools, and data paths
+
+For each agent or agent role, record:
+
+* The task (with its system and user message), model provider, and users or services that can invoke it.
+* The function tools and MCP tools it can call, including tools that change state or cause external effects.
+* Whether it returns a streamed response.
+* The sensitive data it can receive, store in session memory, pass to a tool, send to a model, or write to logs.
+* The requirements that apply to its inputs, actions, responses, and data handling.
+
+Include agents that other agents call and agents that act as evaluators. Check the deployed configuration as well as the source code. A guardrail or sanitizer that is not enabled for an agent does not protect that agent.
+
+== Screen model inputs and tool results
+
+Use a `ModelCallGuardrail` when a requirement calls for checking user input or tool results before they reach a model. It runs before each model call, including later calls that contain tool results. A guardrail returns `Decision.Allow`, `Decision.Deny`, or `Decision.Fail`. `Decision.Fail` means the evaluation itself failed and reached no verdict. The built-in `ModelCallSimilarityGuard` can compare messages with configured examples; use a policy-specific guardrail or classifier when the requirement needs different checks.
+
+Configure the guardrail for every in-scope agent or role. Set `report-only = false` when a denial must stop the interaction. Review `fail-mode` as well. The default is `fail-closed`, which aborts the interaction on `Decision.Fail`. `fail-open` lets the interaction continue. `fail-mode` applies only when `report-only` is false. A guardrail that does not complete has no timeout, so define and test how your implementation handles slow or unavailable dependencies.
+
+Test representative allowed and denied user inputs and tool results. Also test guardrail evaluation failures and confirm that the deployed configuration applies to all agents in scope.
+
+== Constrain tool calls and high-impact actions
+
+Use a `ToolCallGuardrail` to inspect and deny a function or MCP tool call before the runtime invokes it. Review the tool name, arguments, and origin, and configure the guardrail for all relevant agents and tools.
+
+Enforce user or service authorization, business limits, and input validation inside the tool or the service operation as well. Do not rely on the model or a guardrail as the only authorization check. A guardrail can deny a tool call, but it does not implement human approval. Add an application workflow or another explicit approval step when a requirement calls for approval before a high-impact action.
+
+Test permitted and denied calls, including calls with malformed or out-of-policy arguments. Verify that denied calls do not cause the protected operation and that retries or duplicate calls do not exceed the authorized effect.
+
+== Check agent responses before returning them
+
+Use an `AgentResponseGuardrail` when a requirement calls for checking the agent's final response before returning it. Configure the guardrail to enforce the required policy and test both accepted and denied responses.
+
+An `AgentResponseGuardrail` cannot block a reply that a `StreamEffect` already delivered, because the caller receives the streamed reply before the runtime evaluates the guardrail. The service fails to start when a streaming agent has an enforcing `AgentResponseGuardrail` entry, that is, one without `report-only = true`. If a requirement calls for blocking a response before the user receives it, return `Agent.Effect` from the command handler instead of `StreamEffect`. A separate `report-only = true` entry only observes the streamed reply. See the note in xref:sdk:agents/guardrails.adoc#_kinds_of_guardrail[Kinds of guardrail] and xref:sdk:agents/streaming.adoc[].
+
+== Limit sensitive data sent to models, tools, and logs
+
+Akka does not enable sanitization by default. Configure named sanitizers for the required agents and application points: `model-call`, `tool-result`, and `logs`. Use a predefined sanitizer for supported data types, or implement a `TextSanitizer` or `LogSanitizer` for organization-specific patterns. Use `SanitizerClient` when application code must sanitize text before another handoff, such as storing it or sending it to an external service.
+
+Test each configured sanitizer with representative sensitive and non-sensitive values. Verify the selected application points and agents. Do not assume a sanitizer masks data outside its configured points or that the predefined groups cover every confidential data type. The runtime stores user messages and tool results masked in session memory. It stores the model output, the AI message, as the model produced it. Changing a sanitizer does not rewrite previously stored messages. See xref:sdk:sanitization.adoc#_masked_text_in_session_memory[Masked text in session memory].
+
+Set `control-id` on guardrail and sanitizer configuration when you use Akka control IDs to link runtime controls to organizational requirements. See xref:concepts:governance-and-the-runtime.adoc#control-ids[Control IDs].
+
+== Evaluate agent behavior without treating evaluation as prevention
+
+Use an `Evaluator` to assess completed interactions and record verdicts in the ledger, metrics, and traces. Evaluators run after the interaction in the background. Their verdict cannot change the response or action that already occurred. Use them for monitoring and detection, not as a substitute for an enforcing guardrail or authorization check.
+
+Use deterministic tests with `TestModelProvider` for known model responses and tool calls. Run evaluation cases against representative examples before release. Confirm that each evaluator binding names the intended agents and review their sampling and enablement settings. Evaluations belong to the evaluations feature set. Confirm that your project has access before you make them a required part of the design.
+
+== Collect source and ledger evidence
+
+Collect source evidence for the exact source revision and build under review:
+
+* Agent and tool definitions, including the available tools and their authorization checks.
+* Guardrail and sanitizer implementations and the configuration that binds them to agents, roles, and tools.
+* Tests for allowed and denied behavior, sanitizer coverage, and relevant failure paths.
+* Evaluator definitions, bindings, and evaluation cases when you use evaluations.
+
+Collect runtime evidence from the ledger for the deployed service and relevant interactions. The ledger records guardrail denials and failures, evaluations, and interaction records. The ledger records allowed guardrail decisions only when `guardrail-allow` is on. It records a sanitizer that masked nothing only when `sanitizer-no-masking` is on. See xref:sdk:evaluators.adoc#_optional_ledger_records[Optional ledger records]. Each runtime node also records the controls it runs and which optional record types it does not write.
+
+For production environments the Ledger must be enabled as part of *Akka Verify* -- contact our support to get access.
+Ledger records can contain model input text, responses, and tool arguments. Apply access and retention rules to this data, and enable only the records needed for the review.
+
+Bind each evidence item to the service, source revision, build, and relevant runtime configuration. Source code and configuration show what you intended to run. Ledger records show what the runtime recorded for specific interactions. Neither alone shows that the application meets an organizational requirement.
+
+== See also
+
+* xref:sdk:agents/guardrails.adoc[Guardrails]
+* xref:sdk:sanitization.adoc[Data sanitization]
+* xref:sdk:evaluators.adoc[Evaluators and the ledger]
+* xref:sdk:agents/testing.adoc[Testing agents]
+* xref:sdk:agents/streaming.adoc[Streaming responses]
+* xref:sdk:access-control.adoc[Access Control Lists]
