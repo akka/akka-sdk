@@ -5,6 +5,7 @@
 package akka.javasdk.agent.task;
 
 import akka.javasdk.annotations.TypeName;
+import java.time.Duration;
 import java.util.List;
 
 /**
@@ -13,7 +14,12 @@ import java.util.List;
  */
 public sealed interface TaskEvent {
 
-  /** The task was created and is {@code PENDING}. */
+  /**
+   * The task was created and is {@code PENDING}.
+   *
+   * @param expireAfter how long after the task ends it is deleted, or {@code null} to keep it until
+   *     it is deleted
+   */
   @TypeName("akka-task-created")
   record TaskCreated(
       String taskId,
@@ -23,8 +29,35 @@ public sealed interface TaskEvent {
       String resultTypeName,
       List<String> dependencyTaskIds,
       List<TaskAttachment> attachments,
-      List<String> ruleClassNames)
-      implements TaskEvent {}
+      List<String> ruleClassNames,
+      Duration expireAfter)
+      implements TaskEvent {
+
+    /**
+     * @deprecated Use the constructor with {@code expireAfter}.
+     */
+    @Deprecated(since = "3.7.2", forRemoval = true)
+    public TaskCreated(
+        String taskId,
+        String name,
+        String description,
+        String instructions,
+        String resultTypeName,
+        List<String> dependencyTaskIds,
+        List<TaskAttachment> attachments,
+        List<String> ruleClassNames) {
+      this(
+          taskId,
+          name,
+          description,
+          instructions,
+          resultTypeName,
+          dependencyTaskIds,
+          attachments,
+          ruleClassNames,
+          null);
+    }
+  }
 
   /** The task was assigned to an owner. */
   @TypeName("akka-task-assigned")
@@ -59,7 +92,7 @@ public sealed interface TaskEvent {
   /**
    * The task was deleted. The entity stores this event when the task is deleted with {@link
    * akka.javasdk.client.TaskClient#delete}. The runtime removes the stored events of the task after
-   * {@code akka.javasdk.entity.cleanup-deleted-after}.
+   * {@code akka.javasdk.entity.cleanup-deleted-after}. A task that expires stores no such event.
    */
   @TypeName("akka-task-deleted")
   record TaskDeleted(String taskId, String name) implements TaskEvent {}

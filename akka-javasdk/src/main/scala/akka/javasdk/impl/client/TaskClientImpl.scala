@@ -12,6 +12,7 @@ import scala.concurrent.Future
 import scala.concurrent.Promise
 import scala.jdk.CollectionConverters._
 import scala.jdk.FutureConverters._
+import scala.jdk.OptionConverters._
 
 import akka.Done
 import akka.NotUsed
@@ -49,7 +50,8 @@ private[javasdk] final class TaskClientImpl(
     runtimeComponentClients: RuntimeComponentClients,
     serializer: Serializer,
     callMetadata: Option[Metadata],
-    materializer: Materializer)(implicit ec: ExecutionContext)
+    materializer: Materializer,
+    defaultExpireAfter: Option[java.time.Duration])(implicit ec: ExecutionContext)
     extends TaskClient {
 
   private val log = LoggerFactory.getLogger(classOf[TaskClientImpl])
@@ -68,6 +70,7 @@ private[javasdk] final class TaskClientImpl(
       task.resultType().getName)
     val attachments = task.attachments().asScala.map(TaskAttachment.fromMessageContent(_)).asJava
     val ruleClassNames = task.ruleClasses().asScala.map(_.getName).asJava
+    val expireAfter = task.expireAfter().toScala.orElse(defaultExpireAfter)
     val createRequest = new TaskEntity.CreateRequest(
       task.name(),
       task.description(),
@@ -75,7 +78,8 @@ private[javasdk] final class TaskClientImpl(
       task.resultType().getName,
       task.dependencyTaskIds(),
       attachments,
-      ruleClassNames)
+      ruleClassNames,
+      expireAfter.orNull)
     val createPayload = serializer.toBytes(createRequest)
     log.debug("createTask: sending Create to entity [{}], payload contentType=[{}]", taskId, createPayload.contentType)
     runtimeComponentClients.eventSourcedEntityClient

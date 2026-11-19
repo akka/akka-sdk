@@ -6,6 +6,7 @@ package akka.javasdk.impl.client
 
 import java.util.Optional
 
+import scala.annotation.nowarn
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -89,6 +90,8 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
     .name("String task")
     .description("A string task")
 
+  // The constructor without expireAfter is deprecated, and stays covered here.
+  @nowarn("cat=deprecation")
   private def taskState(
       status: TaskStatus,
       result: String = null,
@@ -174,8 +177,16 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
       override def decisionModelClient: SpiDecisionModelClient = null
     }
 
-  private def createClient(entityClient: EntityClient): TaskClientImpl =
-    new TaskClientImpl("test-task", mockComponentClients(entityClient), serializer, None, materializer)
+  private def createClient(
+      entityClient: EntityClient,
+      defaultExpireAfter: Option[java.time.Duration] = None): TaskClientImpl =
+    new TaskClientImpl(
+      "test-task",
+      mockComponentClients(entityClient),
+      serializer,
+      None,
+      materializer,
+      defaultExpireAfter)
 
   private def resultFuture(client: TaskClientImpl): Future[TestResult] =
     client.resultAsync(TEST_TASK).asScala
@@ -212,6 +223,21 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
       request.name() shouldBe "Test task"
       request.description() shouldBe "A test task"
       request.instructions() shouldBe "do something"
+    }
+
+    "send the expiry of the task, else the default, else none" in {
+      def sentExpireAfter(task: Task[TestResult], defaultExpireAfter: Option[java.time.Duration]) = {
+        val mock = mockEntityClient(taskState(TaskStatus.PENDING))
+        createClient(mock, defaultExpireAfter).createAsync(task).asScala.futureValue
+        mock.commands.find(_.methodName == "Create").get.payloadAs[TaskEntity.CreateRequest].expireAfter()
+      }
+      val tenMinutes = java.time.Duration.ofMinutes(10)
+      val oneHour = java.time.Duration.ofHours(1)
+
+      sentExpireAfter(TEST_TASK.expireAfter(tenMinutes), Some(oneHour)) shouldBe tenMinutes
+      sentExpireAfter(TEST_TASK.expireAfter(tenMinutes), None) shouldBe tenMinutes
+      sentExpireAfter(TEST_TASK, Some(oneHour)) shouldBe oneHour
+      sentExpireAfter(TEST_TASK, None) shouldBe null
     }
   }
 
