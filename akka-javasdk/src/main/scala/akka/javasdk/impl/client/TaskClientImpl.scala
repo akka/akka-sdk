@@ -240,6 +240,16 @@ private[javasdk] final class TaskClientImpl(
     sendCommand("Fail", serializer.toBytes(reason))
   }
 
+  override def cancelAsync(reason: String): CompletionStage[Done] = {
+    log.debug("cancelTask: id=[{}] reason=[{}]", taskId, reason)
+    sendCommand("Cancel", serializer.toBytes(reason))
+  }
+
+  override def deleteAsync(): CompletionStage[Done] = {
+    log.debug("deleteTask: id=[{}]", taskId)
+    sendCommand("Delete", BytesPayload.empty)
+  }
+
   override def notificationStream(): Source[TaskNotification, NotUsed] = {
     log.debug("notificationStream: id=[{}]", taskId)
     val req = new EntityRequest(TaskEntityComponentId, taskId, "", BytesPayload.empty, spiMetadata)
