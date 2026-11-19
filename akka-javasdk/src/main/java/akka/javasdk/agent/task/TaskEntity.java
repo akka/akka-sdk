@@ -11,6 +11,7 @@ import akka.javasdk.NotificationPublisher;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
+import akka.javasdk.impl.agent.task.TaskNotFoundCommandException;
 import java.util.List;
 import java.util.Optional;
 
@@ -61,7 +62,8 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
 
   /** Create the task. Fails if a task with this ID already exists. */
   public Effect<Done> create(CreateRequest request) {
-    if (!currentState().taskId().isEmpty()) {
+    // A persist on a deleted entity fails, so the id of a deleted task is not free.
+    if (isDeleted() || !currentState().taskId().isEmpty()) {
       return effects().error("Task already exists");
     }
     var deps =
@@ -84,8 +86,8 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
 
   /** Assign the task to an owner. Only valid when {@code PENDING} and not already assigned. */
   public Effect<Done> assign(String assignee) {
-    if (currentState().taskId().isEmpty()) {
-      return effects().error("Task does not exist");
+    if (!exists()) {
+      return notFound();
     }
     if (currentState().status() != TaskStatus.PENDING) {
       return effects().error("Task can only be assigned when PENDING");
@@ -100,8 +102,8 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
 
   /** Mark the task as in progress. Only valid when {@code ASSIGNED}. */
   public Effect<Done> start() {
-    if (currentState().taskId().isEmpty()) {
-      return effects().error("Task does not exist");
+    if (!exists()) {
+      return notFound();
     }
     if (currentState().status() != TaskStatus.ASSIGNED) {
       return effects().error("Task can only be started when ASSIGNED");
@@ -116,6 +118,9 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
    * Idempotent once the task is in any terminal state.
    */
   public Effect<Done> complete(String result) {
+    if (!exists()) {
+      return notFound();
+    }
     if (isTerminal()) {
       return effects().reply(done()); // idempotent for any terminal state
     }
@@ -141,8 +146,8 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
    * correct and resubmit.
    */
   public Effect<Done> rejectResult(TaskEntity.RejectResultRequest request) {
-    if (currentState().taskId().isEmpty()) {
-      return effects().error("Task does not exist");
+    if (!exists()) {
+      return notFound();
     }
     if (currentState().status() != TaskStatus.ASSIGNED
         && currentState().status() != TaskStatus.IN_PROGRESS
@@ -168,6 +173,9 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
    * terminal state.
    */
   public Effect<Done> fail(String reason) {
+    if (!exists()) {
+      return notFound();
+    }
     if (isTerminal()) {
       return effects().reply(done()); // idempotent for any terminal state
     }
@@ -193,6 +201,9 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
    * state.
    */
   public Effect<Done> cancel(String reason) {
+    if (!exists()) {
+      return notFound();
+    }
     if (isTerminal()) {
       return effects().reply(done()); // idempotent for any terminal state
     }
@@ -212,8 +223,8 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
 
   /** Reassign the task to a new owner. Only valid when {@code IN_PROGRESS}. */
   public Effect<Done> reassign(ReassignRequest request) {
-    if (currentState().taskId().isEmpty()) {
-      return effects().error("Task does not exist");
+    if (!exists()) {
+      return notFound();
     }
     if (currentState().status() != TaskStatus.IN_PROGRESS) {
       return effects().error("Task can only be reassigned when IN_PROGRESS");
@@ -223,6 +234,14 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
             new TaskEvent.TaskReassigned(
                 taskId, currentState().name(), request.newAssignee(), request.context()))
         .thenReply(__ -> done());
+  }
+
+  private boolean exists() {
+    return !isDeleted() && !currentState().taskId().isEmpty();
+  }
+
+  private <T> ReadOnlyEffect<T> notFound() {
+    return effects().error(new TaskNotFoundCommandException());
   }
 
   private boolean isTerminal() {
@@ -238,8 +257,8 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
 
   /** The task's current state. Fails if the task does not exist. */
   public ReadOnlyEffect<TaskState> getState() {
-    if (currentState().taskId().isEmpty()) {
-      return effects().error("Task does not exist");
+    if (!exists()) {
+      return notFound();
     }
     return effects().reply(currentState());
   }

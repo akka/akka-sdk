@@ -387,4 +387,67 @@ public class TaskEntityTest {
 
     assertThat(publishedNotifications).isEmpty();
   }
+
+  // --- a task that does not exist ---
+
+  private void assertNotFound(EventSourcedResult<?> result) {
+    assertThat(result.isError()).isTrue();
+    assertThat(result.getError()).isEqualTo("Task does not exist");
+    assertThat(result.didPersistEvents()).isFalse();
+  }
+
+  @Test
+  public void cancelOfTaskThatDoesNotExistStoresNothing() {
+    var testKit = createTestKit();
+    assertNotFound(testKit.method(TaskEntity::cancel).invoke("no longer needed"));
+    assertThat(publishedNotifications).isEmpty();
+  }
+
+  @Test
+  public void completeOfTaskThatDoesNotExistStoresNothing() {
+    var testKit = createTestKit();
+    assertNotFound(testKit.method(TaskEntity::complete).invoke("{\"summary\":\"done\"}"));
+  }
+
+  @Test
+  public void failOfTaskThatDoesNotExistStoresNothing() {
+    var testKit = createTestKit();
+    assertNotFound(testKit.method(TaskEntity::fail).invoke("giving up"));
+  }
+
+  @Test
+  public void assignOfTaskThatDoesNotExistStoresNothing() {
+    var testKit = createTestKit();
+    assertNotFound(testKit.method(TaskEntity::assign).invoke("agent-1"));
+  }
+
+  @Test
+  public void startOfTaskThatDoesNotExistStoresNothing() {
+    var testKit = createTestKit();
+    assertNotFound(testKit.method(TaskEntity::start).invoke());
+  }
+
+  @Test
+  public void rejectResultOfTaskThatDoesNotExistStoresNothing() {
+    var testKit = createTestKit();
+    assertNotFound(
+        testKit
+            .method(TaskEntity::rejectResult)
+            .invoke(new TaskEntity.RejectResultRequest("com.example.MyRule", "bad result")));
+  }
+
+  @Test
+  public void reassignOfTaskThatDoesNotExistStoresNothing() {
+    var testKit = createTestKit();
+    assertNotFound(
+        testKit
+            .method(TaskEntity::reassign)
+            .invoke(new TaskEntity.ReassignRequest("agent-2", "handover")));
+  }
+
+  @Test
+  public void getStateOfTaskThatDoesNotExistStoresNothing() {
+    var testKit = createTestKit();
+    assertNotFound(testKit.method(TaskEntity::getState).invoke());
+  }
 }
