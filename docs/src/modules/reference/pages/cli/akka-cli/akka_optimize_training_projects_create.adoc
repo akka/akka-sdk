@@ -33,7 +33,7 @@ akka optimize training projects create NAME [flags]
 [source,text]
 ----
       --dataset string               Evaluation dataset, by registry reference
-      --grader string                Grader specification: json-label-match, model:NS/NAME[:VERSION], or http:URL
+      --grader string                Grader specification: json-label-match, model:NS/NAME[:VERSION], http:URL, or bundle:REFERENCE#MODULE[:FUNCTION]
       --grader-instructions string   Instructions a model: grader is asked under, in place of the ones it would otherwise get
   -h, --help                         help for create
 ----

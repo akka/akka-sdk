@@ -20,9 +20,15 @@ To drive the model from an application or a test script, use "endpoints proxy", 
 If the endpoint serves one model, that model is used.
 If it serves several, choose one with --model.
 The value may be the displayed model name (including a shortened adapter) or the model's registry reference, NS/NAME:vN, as "endpoints get" shows it.
+--model also takes the endpoint's base model repository, as "endpoints get" shows it on the Base model line, where only adapters are attached.
+The base model answers with no adapter and no instructions, so the same input can be compared with and without an adapter.
 
---tools offers the model the tools in a file, an OpenAI "tools" array.
-An endpoint returns tool calls only for a model whose architecture has a tool-call parser, which "endpoints info" shows, and refuses a request with tools otherwise.
+Use --tools to offer tools to the model.
+The file must contain an OpenAI "tools" array.
+An endpoint returns tool calls only for a model whose architecture has a tool-call parser, as "endpoints info" shows.
+It refuses a request with tools otherwise.
+Optimize also refuses tool requests for models recorded as having chat templates that omit tools.
+The error explains why, even when a tool-call parser is listed for the architecture.
 
 The answer is printed as it is produced.
 Reasoning the endpoint returns apart from the answer is printed to standard error, and each tool call the model asks for is printed after the answer.
@@ -60,7 +66,7 @@ akka optimize training endpoints send ENDPOINT --input TEXT [flags]
       --input string          Text to send to the model
       --instructions string   Instructions to send in place of the ones the model was trained with
       --max-tokens int        Maximum tokens in the answer; zero leaves it to the deployment
-      --model string          Model to use by name or registry reference when the endpoint serves several
+      --model string          Model to use by name or registry reference when the endpoint serves several, or the endpoint's base model repository
       --temperature float     Sampling temperature; unset leaves it to the deployment
       --tools string          File holding an OpenAI "tools" array to offer the model
 ----

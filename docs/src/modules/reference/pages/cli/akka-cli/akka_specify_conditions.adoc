@@ -4,8 +4,8 @@
 
 == Synopsis
 
-[Incubating] A tool such as /akka:port derives exit conditions from a system it studied and writes them into the project.
-They are kept apart from the ones a person wrote, so that graduating them at the end of a port cannot reach a condition somebody authored by hand.
+[Incubating] A tool such as /akka:discover derives exit conditions from a system it studied and writes them into the project.
+They are kept apart from the ones a person wrote, so that graduating them at the end of a modernization cannot reach a condition somebody authored by hand.
 
 == Options
 

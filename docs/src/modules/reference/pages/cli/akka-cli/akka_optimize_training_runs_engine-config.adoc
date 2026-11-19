@@ -10,6 +10,8 @@ The job writes this once, before the first step.
 "requested" is what it built from the run's settings.
 "resolved" is the engine's whole configuration with its own defaults filled in, and the adapter as it was attached to the model.
 The table lists each requested setting, and marks one the engine resolved to a different value.
+The allocator row shows the caching allocator setting at training process startup, under each variable name that holds a value, joined where both do.
+It shows a dash if neither holds a value.
 The JSON output carries both parts in full.
 Not found where the job has not written it yet.
 

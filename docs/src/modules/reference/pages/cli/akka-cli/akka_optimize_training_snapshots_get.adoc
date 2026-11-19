@@ -9,6 +9,14 @@ Display one snapshot, by full ID or by an unambiguous prefix.
 The report covers where the snapshot came from, which artifact kinds it holds and how large each one is, the manifest digest identifying each kind's bytes, the engine that wrote them, and the model shape they were written for.
 A branch is checked against those values, so this is what a refused branch is read against.
 
+Files reports how many files each kind holds.
+The JSON output lists them with their sizes under "files".
+"replicated" is true where a kind holds rank 0's model and optimizer files for every rank rather than a file per rank.
+Use "training snapshots download" to read one of the files.
+
+Swept reports each artifact kind the catalog's retention deleted, and when.
+The JSON output lists them under "removed".
+
 [source,shell]
 ----
 akka optimize training snapshots get SNAPSHOT [flags]
@@ -24,6 +32,10 @@ akka optimize training snapshots get SNAPSHOT [flags]
   # Extract the weights manifest digest using jq
   akka optimize training snapshots get 3f2a9c71bd04 \
     --jq '.artifacts[] | select(.kind=="weights") | .manifestDigest'
+
+  # List the files of its full training state using jq
+  akka optimize training snapshots get 3f2a9c71bd04 \
+    --jq '.artifacts[] | select(.kind=="trainingState") | .files[].path'
 ----
 
 == Options

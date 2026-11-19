@@ -20,6 +20,23 @@ GPU MEMORY PER GPU is the memory of each GPU.
 HOST MEMORY PER NODE is the memory of the node that holds those GPUs.
 Host memory stays a hard limit.
 
+"Completed on this deployment" lists what has run over the model on this deployment, at any revision.
+It shows one run for each method, precision, engine, device profile, and training and rollout device count that completed.
+That run is the one at the longest sequence length.
+TRAINING PEAK is the most device memory the training pass held.
+HOST MEMORY is the busiest node's peak.
+TOKENS/S PER DEVICE is the tokens the run's steps processed over the device time they took.
+The table is taken from the 500 newest completed runs over the model.
+
+"Ran out of memory" lists the 20 newest runs that ran out of memory, and which memory.
+A dash is a figure the run did not measure.
+These runs never refuse or admit a run.
+Read one with "training runs get".
+
+With -o wide, both tables add each run's REVISION.
+The completed table adds DEVICE PEAK, the most memory any device had in use.
+HOST MEMORY adds what the run could have added on that node.
+
 [source,shell]
 ----
 akka optimize training base-models get BASE_MODEL [flags]

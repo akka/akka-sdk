@@ -1,10 +1,11 @@
 = akka optimize training datasets
 
-Measure a registered dataset under a base model before training on it
+Measure a registered dataset under a base model, and read its rows
 
 == Synopsis
 
 Measure a registered dataset under a base model's tokenizer and chat template, without a GPU, to choose maxSeqLength, the loss policy and the GPU count before a run claims any GPU.
+Index a dataset's rows, then page through them and search them, with the text a prepared row trains on marked.
 
 Register, list and read datasets with "registry datasets".
 
@@ -41,7 +42,11 @@ Register, list and read datasets with "registry datasets".
 == SEE ALSO
 
 * link:akka_optimize_training.html[akka optimize training]	 - Base models, training projects, runs, snapshots, comparisons, pipelines, evaluations, distillations, endpoints and their data
+* link:akka_optimize_training_datasets_analyses.html[akka optimize training datasets analyses]	 - List a dataset version's analyses, newest first, without starting one
 * link:akka_optimize_training_datasets_analyze.html[akka optimize training datasets analyze]	 - Measure a dataset's token lengths under a base model, and estimate a run over it
+* link:akka_optimize_training_datasets_index.html[akka optimize training datasets index]	 - Index a dataset version's rows, so that they can be read and searched
+* link:akka_optimize_training_datasets_indexes.html[akka optimize training datasets indexes]	 - List rows indexes, newest first
+* link:akka_optimize_training_datasets_rows.html[akka optimize training datasets rows]	 - Page through a dataset's rows, and search them
 
 [discrete]
 

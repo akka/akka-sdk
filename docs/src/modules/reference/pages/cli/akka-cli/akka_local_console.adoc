@@ -20,6 +20,7 @@ akka local console [flags]
       --force-asset-check        This forces a check for a new version of the local console assets.
   -h, --help                     help for console
   -p, --port uint16              The port on which the local console will run. (default 9889)
+      --trace-storage-mb uint    Disk space for the traces that local services send to the console, in megabytes. The oldest traces are removed beyond it. (default 256)
 ----
 
 == Options inherited from parent commands

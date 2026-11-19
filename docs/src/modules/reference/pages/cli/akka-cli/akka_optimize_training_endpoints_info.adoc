@@ -14,7 +14,10 @@ More can attach, and one is loaded when a request first names it.
 The deployment sets each of these, and "training endpoints create" takes none of them.
 The JSON output also lists the rank limits the serving engine accepts, which an operator chooses the deployment's limit from.
 
-On the vLLM engine, each architecture of a selected base model is listed with what an endpoint returns for a model of it beside its text: tool calls, where the architecture has a tool-call parser, and reasoning apart from the answer, where it has a reasoning parser.
+For the vLLM engine, the output lists tool-call and reasoning parsers for each architecture of a selected base model.
+These parsers return tool calls and reasoning separately from the answer text.
+Where an architecture has no tool-call parser, an endpoint refuses a request that offers tools.
+A row for each selected base model that Optimize refuses tool requests for names its repository and the reason, even when its architecture has a tool-call parser.
 
 An endpoint serves a base model and adapters over it.
 A model registered as whole weights is not served.
