@@ -198,6 +198,7 @@ import akka.runtime.sdk.spi.UserFunctionError
 import akka.runtime.sdk.spi.ViewDescriptor
 import akka.runtime.sdk.spi.WorkflowDescriptor
 import akka.runtime.sdk.spi.WorkflowEvaluatorDescriptor
+import akka.runtime.sdk.spi.WorkflowType
 import akka.runtime.sdk.spi.tracing.InMemorySpanExporter
 import akka.runtime.sdk.spi.{ LedgerClient => SpiLedgerClient }
 import akka.stream.Materializer
@@ -1139,7 +1140,10 @@ private final class Sdk(
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
             provided = false,
-            protobufDescriptors = protobufDescriptors.toVector)
+            protobufDescriptors = protobufDescriptors.toVector,
+            componentType = WorkflowType,
+            // FIXME: pass the workflow step names
+            stepNames = Nil)
 
       case clz if Reflect.isTimedAction(clz) =>
         val componentId = Reflect.readComponentId(clz)
