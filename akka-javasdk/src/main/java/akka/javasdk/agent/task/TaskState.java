@@ -32,7 +32,7 @@ public record TaskState(
     Optional<Duration> expireAfter) {
 
   public TaskState {
-    // null when the stored state or the reply has no expireAfter property
+    // A Java caller can pass null. Jackson already reads a missing property as Optional.empty().
     if (expireAfter == null) {
       expireAfter = Optional.empty();
     }
