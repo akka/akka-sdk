@@ -59,6 +59,8 @@ A criterion that has no exact answer, such as whether a reply is helpful, needs 
 
 The link:{attachmentsdir}/api/akka/javasdk/evaluation/Subject.html[`Subject`] in the link:{attachmentsdir}/api/akka/javasdk/evaluation/EvaluationContext.html[`EvaluationContext`] is a sealed interface with two implementations. `Subject.Interaction` carries `agentComponentId()`, useful when one evaluator is bound to several agents, and `flowId()` when the agent ran inside an autonomous-agent flow. `Subject.Workflow` names a <<workflow-run,workflow run>>. An evaluator that handles both kinds switches over the subject.
 
+An evaluator can start custom spans with `tracing()` of the `EvaluationContext`, in the same way as the command context of a workflow or an entity, see link:{attachmentsdir}/api/akka/javasdk/Tracing.html[`Tracing`]. Logs written by an evaluator include the trace fields, see xref:operations:observability-and-monitoring/view-logs.adoc#_correlating_logs[Correlating logs with traces].
+
 === Recording the verdict
 
 The link:{attachmentsdir}/api/akka/javasdk/evaluation/Evaluation.html[`Evaluation`] captures whether the interaction passed, an explanation, and optional quantitative (`score`) and categorical (`label`) results, plus arbitrary `attributes`.

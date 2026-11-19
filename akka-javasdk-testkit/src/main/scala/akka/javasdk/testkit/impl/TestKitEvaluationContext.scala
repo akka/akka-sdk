@@ -7,6 +7,7 @@ package akka.javasdk.testkit.impl
 import java.util
 
 import akka.annotation.InternalApi
+import akka.javasdk.Tracing
 import akka.javasdk.evaluation.EvaluationContext
 import akka.javasdk.evaluation.Subject
 import com.typesafe.config.Config
@@ -33,4 +34,6 @@ private[testkit] final class TestKitEvaluationContext(
   override def attributes(): util.Map[String, String] = unmodifiableAttributes
 
   override def config(): Config = evaluationConfig
+
+  override def tracing(): Tracing = TestKitTracing
 }
