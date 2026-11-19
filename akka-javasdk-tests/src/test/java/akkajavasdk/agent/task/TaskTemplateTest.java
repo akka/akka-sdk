@@ -9,6 +9,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import akka.javasdk.agent.task.TaskTemplate;
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
@@ -121,5 +122,13 @@ public class TaskTemplateTest {
         .isInstanceOf(IllegalArgumentException.class);
     assertThatThrownBy(() -> template.expireAfter(Duration.ofSeconds(-1)))
         .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  public void shouldRejectExpiryThatEndsAfterTheYear9999() {
+    var template = TaskTemplate.define("task");
+    assertThatThrownBy(() -> template.expireAfter(ChronoUnit.FOREVER.getDuration()))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("before the year 10000");
   }
 }

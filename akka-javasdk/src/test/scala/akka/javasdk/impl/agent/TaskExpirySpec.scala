@@ -5,6 +5,7 @@
 package akka.javasdk.impl.agent
 
 import java.time.Duration
+import java.time.temporal.ChronoUnit
 import java.util.Optional
 
 import akka.javasdk.agent.task.TaskAttachment
@@ -54,6 +55,22 @@ class TaskExpirySpec extends AnyWordSpec with Matchers {
         ex.getMessage should include("akka.javasdk.agent.task.expire-after")
         ex.getMessage should include(s"[$value]")
       }
+    }
+  }
+
+  "TaskExpiry.isValid" should {
+
+    "accept a positive duration that ends before the year 10000" in {
+      TaskExpiry.isValid(Duration.ofSeconds(1)) shouldBe true
+      TaskExpiry.isValid(Duration.ofDays(365L * 1000)) shouldBe true
+    }
+
+    "reject null, zero, a negative duration and one that ends after the year 9999" in {
+      TaskExpiry.isValid(null) shouldBe false
+      TaskExpiry.isValid(Duration.ZERO) shouldBe false
+      TaskExpiry.isValid(Duration.ofSeconds(-1)) shouldBe false
+      TaskExpiry.isValid(Duration.ofDays(Int.MaxValue)) shouldBe false
+      TaskExpiry.isValid(ChronoUnit.FOREVER.getDuration) shouldBe false
     }
   }
 

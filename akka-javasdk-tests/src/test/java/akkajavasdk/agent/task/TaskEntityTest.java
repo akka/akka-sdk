@@ -17,6 +17,7 @@ import akka.javasdk.agent.task.TaskStatus;
 import akka.javasdk.testkit.EventSourcedResult;
 import akka.javasdk.testkit.EventSourcedTestKit;
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import org.junit.jupiter.api.Test;
@@ -678,5 +679,17 @@ public class TaskEntityTest {
       assertThat(result.isError()).as(expireAfter.toString()).isTrue();
       assertThat(result.didPersistEvents()).isFalse();
     }
+  }
+
+  @Test
+  public void createRejectsDurationThatEndsAfterTheYear9999() {
+    var testKit = createTestKit();
+    EventSourcedResult<Done> result =
+        testKit
+            .method(TaskEntity::create)
+            .invoke(createRequest("research", ChronoUnit.FOREVER.getDuration()));
+    assertThat(result.isError()).isTrue();
+    assertThat(result.getError()).contains("before the year 10000");
+    assertThat(result.didPersistEvents()).isFalse();
   }
 }

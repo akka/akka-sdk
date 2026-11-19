@@ -5,6 +5,7 @@
 package akka.javasdk.agent.task;
 
 import akka.javasdk.agent.MessageContent;
+import akka.javasdk.impl.agent.TaskExpiry;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -216,7 +217,8 @@ public final class Task<R> implements TaskDefinition<R> {
    * akka.javasdk.agent.task.expire-after} instead.
    *
    * @param expireAfter a positive duration
-   * @throws IllegalArgumentException if {@code expireAfter} is null, zero or negative
+   * @throws IllegalArgumentException if {@code expireAfter} is null, zero or negative, or so long
+   *     that the task would be deleted after the year 9999
    */
   public Task<R> expireAfter(Duration expireAfter) {
     return new Task<>(
@@ -227,13 +229,12 @@ public final class Task<R> implements TaskDefinition<R> {
         this.attachments,
         this.dependencyTaskIds,
         this.ruleClasses,
-        requirePositive(expireAfter));
+        requireValid(expireAfter));
   }
 
-  static Duration requirePositive(Duration expireAfter) {
-    if (expireAfter == null || expireAfter.isZero() || expireAfter.isNegative()) {
-      throw new IllegalArgumentException(
-          "expireAfter must be a positive duration, was [" + expireAfter + "]");
+  static Duration requireValid(Duration expireAfter) {
+    if (!TaskExpiry.isValid(expireAfter)) {
+      throw new IllegalArgumentException(TaskExpiry.invalidMessage(expireAfter));
     }
     return expireAfter;
   }

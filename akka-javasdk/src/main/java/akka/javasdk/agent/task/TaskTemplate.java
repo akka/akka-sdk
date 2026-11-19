@@ -160,7 +160,8 @@ public final class TaskTemplate<R> implements TaskDefinition<R> {
    * akka.javasdk.agent.task.expire-after} instead.
    *
    * @param expireAfter a positive duration
-   * @throws IllegalArgumentException if {@code expireAfter} is null, zero or negative
+   * @throws IllegalArgumentException if {@code expireAfter} is null, zero or negative, or so long
+   *     that a task would be deleted after the year 9999
    */
   public TaskTemplate<R> expireAfter(Duration expireAfter) {
     return new TaskTemplate<>(
@@ -169,7 +170,7 @@ public final class TaskTemplate<R> implements TaskDefinition<R> {
         this.resultType,
         this.instructionTemplate,
         this.ruleClasses,
-        Task.requirePositive(expireAfter));
+        Task.requireValid(expireAfter));
   }
 
   /**
