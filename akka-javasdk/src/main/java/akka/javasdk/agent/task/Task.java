@@ -5,8 +5,10 @@
 package akka.javasdk.agent.task;
 
 import akka.javasdk.agent.MessageContent;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * A typed task definition — describes a kind of work and the expected result type.
@@ -30,6 +32,7 @@ public final class Task<R> implements TaskDefinition<R> {
   private final List<MessageContent> attachments;
   private final List<String> dependencyTaskIds;
   private final List<Class<? extends TaskRule<R>>> ruleClasses;
+  private final Duration expireAfter;
 
   Task(
       String name,
@@ -38,7 +41,8 @@ public final class Task<R> implements TaskDefinition<R> {
       String instructions,
       List<MessageContent> attachments,
       List<String> dependencyTaskIds,
-      List<Class<? extends TaskRule<R>>> ruleClasses) {
+      List<Class<? extends TaskRule<R>>> ruleClasses,
+      Duration expireAfter) {
     this.name = name;
     this.description = description;
     this.resultType = resultType;
@@ -46,6 +50,7 @@ public final class Task<R> implements TaskDefinition<R> {
     this.attachments = attachments;
     this.dependencyTaskIds = dependencyTaskIds;
     this.ruleClasses = ruleClasses;
+    this.expireAfter = expireAfter;
   }
 
   /**
@@ -55,7 +60,7 @@ public final class Task<R> implements TaskDefinition<R> {
    * @param name a stable identifier for this task type
    */
   public static Task<String> name(String name) {
-    return new Task<>(name, "", String.class, "", List.of(), List.of(), List.of());
+    return new Task<>(name, "", String.class, "", List.of(), List.of(), List.of(), null);
   }
 
   @Override
@@ -77,7 +82,8 @@ public final class Task<R> implements TaskDefinition<R> {
         this.instructions,
         this.attachments,
         this.dependencyTaskIds,
-        this.ruleClasses);
+        this.ruleClasses,
+        this.expireAfter);
   }
 
   @Override
@@ -102,7 +108,8 @@ public final class Task<R> implements TaskDefinition<R> {
         instructions,
         this.attachments,
         this.dependencyTaskIds,
-        this.ruleClasses);
+        this.ruleClasses,
+        this.expireAfter);
   }
 
   /** Content attached to this task (images, PDFs), or an empty list. */
@@ -123,7 +130,8 @@ public final class Task<R> implements TaskDefinition<R> {
         this.instructions,
         List.copyOf(updated),
         this.dependencyTaskIds,
-        this.ruleClasses);
+        this.ruleClasses,
+        this.expireAfter);
   }
 
   /**
@@ -139,7 +147,8 @@ public final class Task<R> implements TaskDefinition<R> {
         this.instructions,
         this.attachments,
         this.dependencyTaskIds,
-        List.of());
+        List.of(),
+        this.expireAfter);
   }
 
   /** Task IDs that must complete before this task can start, or an empty list. */
@@ -161,7 +170,8 @@ public final class Task<R> implements TaskDefinition<R> {
         this.instructions,
         this.attachments,
         List.copyOf(updated),
-        this.ruleClasses);
+        this.ruleClasses,
+        this.expireAfter);
   }
 
   /** Rule classes that validate the result before accepting completion, or an empty list. */
@@ -186,6 +196,45 @@ public final class Task<R> implements TaskDefinition<R> {
         this.instructions,
         this.attachments,
         this.dependencyTaskIds,
-        List.copyOf(updated));
+        List.copyOf(updated),
+        this.expireAfter);
+  }
+
+  /** How long after the task ends it is deleted, or empty if not set. */
+  public Optional<Duration> expireAfter() {
+    return Optional.ofNullable(expireAfter);
+  }
+
+  /**
+   * Return a new task that is deleted this long after it completes, fails or is cancelled. A task
+   * that has not ended does not expire.
+   *
+   * <p>The expiry applies to a task that the application creates from this definition with {@link
+   * akka.javasdk.client.TaskClient#create} or {@link
+   * akka.javasdk.client.AutonomousAgentClient#runSingleTask}. A task that an agent creates when it
+   * delegates or adds a task to a backlog gets the default of {@code
+   * akka.javasdk.agent.task.expire-after} instead.
+   *
+   * @param expireAfter a positive duration
+   * @throws IllegalArgumentException if {@code expireAfter} is null, zero or negative
+   */
+  public Task<R> expireAfter(Duration expireAfter) {
+    return new Task<>(
+        this.name,
+        this.description,
+        this.resultType,
+        this.instructions,
+        this.attachments,
+        this.dependencyTaskIds,
+        this.ruleClasses,
+        requirePositive(expireAfter));
+  }
+
+  static Duration requirePositive(Duration expireAfter) {
+    if (expireAfter == null || expireAfter.isZero() || expireAfter.isNegative()) {
+      throw new IllegalArgumentException(
+          "expireAfter must be a positive duration, was [" + expireAfter + "]");
+    }
+    return expireAfter;
   }
 }

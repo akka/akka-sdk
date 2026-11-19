@@ -4,9 +4,11 @@
 
 package akka.javasdk.agent.task;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 /**
@@ -32,18 +34,21 @@ public final class TaskTemplate<R> implements TaskDefinition<R> {
   private final Class<R> resultType;
   private final String instructionTemplate;
   private final List<Class<? extends TaskRule<R>>> ruleClasses;
+  private final Duration expireAfter;
 
   TaskTemplate(
       String name,
       String description,
       Class<R> resultType,
       String instructionTemplate,
-      List<Class<? extends TaskRule<R>>> ruleClasses) {
+      List<Class<? extends TaskRule<R>>> ruleClasses,
+      Duration expireAfter) {
     this.name = name;
     this.description = description;
     this.resultType = resultType;
     this.instructionTemplate = instructionTemplate;
     this.ruleClasses = ruleClasses;
+    this.expireAfter = expireAfter;
   }
 
   /**
@@ -54,7 +59,7 @@ public final class TaskTemplate<R> implements TaskDefinition<R> {
    * @param name a stable identifier for this task type
    */
   public static TaskTemplate<String> define(String name) {
-    return new TaskTemplate<>(name, "", String.class, "", List.of());
+    return new TaskTemplate<>(name, "", String.class, "", List.of(), null);
   }
 
   @Override
@@ -70,7 +75,12 @@ public final class TaskTemplate<R> implements TaskDefinition<R> {
   /** Set the description of this task — what kind of work it represents. */
   public TaskTemplate<R> description(String description) {
     return new TaskTemplate<>(
-        this.name, description, this.resultType, this.instructionTemplate, this.ruleClasses);
+        this.name,
+        description,
+        this.resultType,
+        this.instructionTemplate,
+        this.ruleClasses,
+        this.expireAfter);
   }
 
   @Override
@@ -85,13 +95,13 @@ public final class TaskTemplate<R> implements TaskDefinition<R> {
    */
   public <S> TaskTemplate<S> resultConformsTo(Class<S> type) {
     return new TaskTemplate<>(
-        this.name, this.description, type, this.instructionTemplate, List.of());
+        this.name, this.description, type, this.instructionTemplate, List.of(), this.expireAfter);
   }
 
   /** Set the instruction template with {@code {paramName}} placeholders. */
   public TaskTemplate<R> instructionTemplate(String template) {
     return new TaskTemplate<>(
-        this.name, this.description, this.resultType, template, this.ruleClasses);
+        this.name, this.description, this.resultType, template, this.ruleClasses, this.expireAfter);
   }
 
   /** The instruction template string with {@code {paramName}} placeholders. */
@@ -129,7 +139,37 @@ public final class TaskTemplate<R> implements TaskDefinition<R> {
         this.description,
         this.resultType,
         this.instructionTemplate,
-        List.copyOf(updated));
+        List.copyOf(updated),
+        this.expireAfter);
+  }
+
+  /** How long after a task of this template ends it is deleted, or empty if not set. */
+  public Optional<Duration> expireAfter() {
+    return Optional.ofNullable(expireAfter);
+  }
+
+  /**
+   * Return a new task template whose tasks are deleted this long after they complete, fail or are
+   * cancelled. A task that has not ended does not expire. The expiry carries through to any {@link
+   * Task} produced by {@link #params} or {@link #instructions}.
+   *
+   * <p>The expiry applies to a task that the application creates from this template with {@link
+   * akka.javasdk.client.TaskClient#create} or {@link
+   * akka.javasdk.client.AutonomousAgentClient#runSingleTask}. A task that an agent creates when it
+   * delegates or adds a task to a backlog gets the default of {@code
+   * akka.javasdk.agent.task.expire-after} instead.
+   *
+   * @param expireAfter a positive duration
+   * @throws IllegalArgumentException if {@code expireAfter} is null, zero or negative
+   */
+  public TaskTemplate<R> expireAfter(Duration expireAfter) {
+    return new TaskTemplate<>(
+        this.name,
+        this.description,
+        this.resultType,
+        this.instructionTemplate,
+        this.ruleClasses,
+        Task.requirePositive(expireAfter));
   }
 
   /**
@@ -150,12 +190,20 @@ public final class TaskTemplate<R> implements TaskDefinition<R> {
       }
       resolved = resolved.replace("{" + paramName + "}", value);
     }
-    return new Task<>(name, description, resultType, resolved, List.of(), List.of(), ruleClasses);
+    return new Task<>(
+        name, description, resultType, resolved, List.of(), List.of(), ruleClasses, expireAfter);
   }
 
   /** Override the template with free-form instructions, returning a submittable {@link Task}. */
   public Task<R> instructions(String instructions) {
     return new Task<>(
-        name, description, resultType, instructions, List.of(), List.of(), ruleClasses);
+        name,
+        description,
+        resultType,
+        instructions,
+        List.of(),
+        List.of(),
+        ruleClasses,
+        expireAfter);
   }
 }

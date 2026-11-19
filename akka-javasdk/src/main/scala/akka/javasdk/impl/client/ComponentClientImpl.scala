@@ -23,7 +23,9 @@ import akka.javasdk.client.ViewClient
 import akka.javasdk.client.WorkflowClient
 import akka.javasdk.evaluation.DurableEvaluator
 import akka.javasdk.evaluation.Evaluator
+import akka.javasdk.impl.ApplicationConfig
 import akka.javasdk.impl.MetadataImpl
+import akka.javasdk.impl.agent.TaskExpiry
 import akka.javasdk.impl.agent.autonomous.CapabilityConverter
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.Serializer
@@ -100,7 +102,13 @@ private[javasdk] final case class ComponentClientImpl(
   override def forTask(taskId: String): TaskClient =
     if (taskId eq null) throw new NullPointerException("Task ID is null")
     else
-      new TaskClientImpl(taskId, runtimeComponentClients, serializer, callMetadata, Materializer.matFromSystem(system))
+      new TaskClientImpl(
+        taskId,
+        runtimeComponentClients,
+        serializer,
+        callMetadata,
+        Materializer.matFromSystem(system),
+        TaskExpiry.defaultExpireAfter(ApplicationConfig(system).getConfig))
 
   override def forEvaluator(evaluatorClass: Class[_]): EvaluatorClient = {
     if (evaluatorClass eq null) throw new NullPointerException("Evaluator class is null")

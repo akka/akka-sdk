@@ -16,6 +16,7 @@ import akka.javasdk.agent.task.TaskState;
 import akka.javasdk.agent.task.TaskStatus;
 import akka.javasdk.testkit.EventSourcedResult;
 import akka.javasdk.testkit.EventSourcedTestKit;
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import org.junit.jupiter.api.Test;
@@ -567,5 +568,115 @@ public class TaskEntityTest {
     assertThat(create.didPersistEvents()).isFalse();
 
     assertThat(publishedNotifications).isEmpty();
+  }
+
+  // --- expiry ---
+
+  private static final Duration ONE_HOUR = Duration.ofHours(1);
+
+  private TaskEntity.CreateRequest createRequest(String name, Duration expireAfter) {
+    return new TaskEntity.CreateRequest(
+        name,
+        "description",
+        "instructions",
+        "String",
+        List.of(),
+        List.of(),
+        List.of(),
+        expireAfter);
+  }
+
+  private EventSourcedTestKit<TaskState, TaskEvent, TaskEntity> assignedTaskWithExpiry(
+      Duration expireAfter) {
+    var testKit = createTestKit();
+    testKit.method(TaskEntity::create).invoke(createRequest("research", expireAfter));
+    testKit.method(TaskEntity::assign).invoke("agent-1");
+    return testKit;
+  }
+
+  private void assertPersistedWithoutExpiry(EventSourcedResult<?> result) {
+    assertThat(result.didPersistEvents()).isTrue();
+    assertThat(result.getExpireAfter()).isEmpty();
+  }
+
+  @Test
+  public void taskExpiresAfterItCompletes() {
+    var testKit = assignedTaskWithExpiry(ONE_HOUR);
+    EventSourcedResult<Done> result =
+        testKit.method(TaskEntity::complete).invoke("{\"summary\":\"done\"}");
+    result.getNextEventOfType(TaskEvent.TaskCompleted.class);
+    assertThat(result.getExpireAfter()).contains(ONE_HOUR);
+  }
+
+  @Test
+  public void taskExpiresAfterItFails() {
+    var testKit = assignedTaskWithExpiry(ONE_HOUR);
+    EventSourcedResult<Done> result = testKit.method(TaskEntity::fail).invoke("giving up");
+    result.getNextEventOfType(TaskEvent.TaskFailed.class);
+    assertThat(result.getExpireAfter()).contains(ONE_HOUR);
+  }
+
+  @Test
+  public void taskExpiresAfterItIsCancelled() {
+    var testKit = assignedTaskWithExpiry(ONE_HOUR);
+    EventSourcedResult<Done> result = testKit.method(TaskEntity::cancel).invoke("no longer needed");
+    result.getNextEventOfType(TaskEvent.TaskCancelled.class);
+    assertThat(result.getExpireAfter()).contains(ONE_HOUR);
+  }
+
+  @Test
+  public void noExpiryBeforeTaskEnds() {
+    var testKit = createTestKit();
+
+    EventSourcedResult<Done> create =
+        testKit.method(TaskEntity::create).invoke(createRequest("research", ONE_HOUR));
+    assertThat(create.getNextEventOfType(TaskEvent.TaskCreated.class).expireAfter())
+        .isEqualTo(ONE_HOUR);
+    assertThat(testKit.getState().expireAfter()).contains(ONE_HOUR);
+    assertPersistedWithoutExpiry(create);
+
+    assertPersistedWithoutExpiry(testKit.method(TaskEntity::assign).invoke("agent-1"));
+    assertPersistedWithoutExpiry(testKit.method(TaskEntity::start).invoke());
+    assertPersistedWithoutExpiry(
+        testKit
+            .method(TaskEntity::reassign)
+            .invoke(new TaskEntity.ReassignRequest("agent-2", "handover")));
+    assertPersistedWithoutExpiry(
+        testKit
+            .method(TaskEntity::rejectResult)
+            .invoke(new TaskEntity.RejectResultRequest("com.example.MyRule", "bad result")));
+  }
+
+  @Test
+  public void taskWithoutExpiryDoesNotExpire() {
+    assertPersistedWithoutExpiry(
+        assignedTaskWithExpiry(null).method(TaskEntity::complete).invoke("{\"summary\":\"done\"}"));
+    assertPersistedWithoutExpiry(
+        assignedTaskWithExpiry(null).method(TaskEntity::fail).invoke("giving up"));
+    assertPersistedWithoutExpiry(
+        assignedTaskWithExpiry(null).method(TaskEntity::cancel).invoke("no longer needed"));
+  }
+
+  @Test
+  public void idempotentEndPersistsNothing() {
+    var testKit = assignedTaskWithExpiry(ONE_HOUR);
+    testKit.method(TaskEntity::complete).invoke("{\"summary\":\"done\"}");
+
+    EventSourcedResult<Done> again =
+        testKit.method(TaskEntity::complete).invoke("{\"other\":\"result\"}");
+    assertThat(again.getReply()).isEqualTo(done());
+    assertThat(again.didPersistEvents()).isFalse();
+    assertThat(again.getExpireAfter()).isEmpty();
+  }
+
+  @Test
+  public void createRejectsDurationThatIsNotPositive() {
+    for (var expireAfter : List.of(Duration.ZERO, Duration.ofSeconds(-1))) {
+      var testKit = createTestKit();
+      EventSourcedResult<Done> result =
+          testKit.method(TaskEntity::create).invoke(createRequest("research", expireAfter));
+      assertThat(result.isError()).as(expireAfter.toString()).isTrue();
+      assertThat(result.didPersistEvents()).isFalse();
+    }
   }
 }

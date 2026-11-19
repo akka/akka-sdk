@@ -188,7 +188,8 @@ private[impl] final class AutonomousAgentImpl(
         request.resultTypeName.orNull,
         request.dependencyTaskIds.asJava,
         attachments,
-        request.ruleClassNames.asJava)
+        request.ruleClassNames.asJava,
+        TaskExpiry.defaultExpireAfter(config).orNull)
       taskEntityClient(taskId)
         .methodRefOneArg[TaskEntity.CreateRequest, Done](taskCreateMethod)
         .withMetadata(MetadataImpl.of(context))
