@@ -17,6 +17,9 @@ Use full training state to resume a run or start a branch where the backend supp
 SIZE is what the snapshot holds in the bucket: the artifacts ARTIFACTS lists, summed.
 It falls when the catalog begins deleting one of them.
 
+SWEPT names each artifact kind the catalog's retention deleted from a snapshot, and how long ago.
+A snapshot whose kinds were all deleted stays listed, with the status Deleted.
+
 EPOCH shows which epoch a save ended, for a run that saves at the end of each epoch.
 Each of those saves is registered as a version of the run's model, except the save at the run's last update.
 That save is marked "run's model".

@@ -19,9 +19,9 @@ A path specifies the same field that a hand-written --overrides document specifi
 Two axes cannot specify the same field, and neither may specify a field nested inside the other.
 Every child run inherits the parent run's training project, base model, devices, and grader, and is labelled with the values its point sets.
 
---restore is auto unless it names a mode.
-Each point resolves its restore mode on its own, so one sweep can restore the training state for some points and the weights for others: a point that changes only the learning rate keeps the optimizer, and a point that changes anything else starts a fresh one.
-The listing shows each point's restore mode, and -o json gives each point's reason.
+Each point is a fresh run from the snapshot's weights, as "training runs branch" submits one.
+--epochs and --max-steps set every point's length, and a grid may vary the length fields instead.
+With --continue --steps N, each point continues the snapshot's training state for N more updates, as "training runs continue" submits one, so the grid may vary only the learning rate and hyperparams.training.validationFrequencySteps.
 
 Every point is validated against the service before any of them is submitted, so a grid the service would refuse costs nothing.
 Use --dry-run to stop at that stage and report what each point resolved to.
@@ -41,7 +41,7 @@ A dry run reports its token for that reason.
 
 [source,shell]
 ----
-akka optimize training runs sweep PARENT --snapshot SNAPSHOT --steps N --grid GRID [flags]
+akka optimize training runs sweep PARENT --snapshot SNAPSHOT --grid GRID [--epochs N] [--max-steps M] [flags]
 ----
 
 == Examples
@@ -50,20 +50,24 @@ akka optimize training runs sweep PARENT --snapshot SNAPSHOT --steps N --grid GR
 ----
   # Preview the fan without submitting it
   akka optimize training runs sweep 7d496e82c3a15f04 \
-    --snapshot 3f2a9c71bd04 --steps 200 --grid learning-rates.yaml --dry-run
+    --snapshot 3f2a9c71bd04 --epochs 2 --grid learning-rates.yaml --dry-run
 
   # Submit the fan
   akka optimize training runs sweep 7d496e82c3a15f04 \
-    --snapshot 3f2a9c71bd04 --steps 200 --grid learning-rates.yaml
+    --snapshot 3f2a9c71bd04 --epochs 2 --grid learning-rates.yaml
+
+  # Continue the training state at each learning rate instead
+  akka optimize training runs sweep 7d496e82c3a15f04 \
+    --snapshot 3f2a9c71bd04 --continue --steps 200 --grid learning-rates.yaml
 
   # Submit it, wait for every child run, and score the source against the fan
   akka optimize training runs sweep 7d496e82c3a15f04 \
-    --snapshot 3f2a9c71bd04 --steps 200 --grid learning-rates.yaml \
+    --snapshot 3f2a9c71bd04 --epochs 2 --grid learning-rates.yaml \
     --compare --dataset support-triage/eval --grader json-label-match
 
   # List the child runs the sweep started using jq
   akka optimize training runs sweep 7d496e82c3a15f04 \
-    --snapshot 3f2a9c71bd04 --steps 200 --grid learning-rates.yaml \
+    --snapshot 3f2a9c71bd04 --epochs 2 --grid learning-rates.yaml \
     --force --jq '.points[].childRunId'
 ----
 
@@ -72,16 +76,18 @@ akka optimize training runs sweep PARENT --snapshot SNAPSHOT --steps N --grid GR
 [source,text]
 ----
       --compare                     Wait for every child run, then score the source snapshot against the fan
+      --continue                    Continue the snapshot's training state for each point rather than train a fresh run
       --dataset string              Evaluation dataset, by registry reference; requires --compare
       --description string          Description applied to every child run
       --dry-run                     Resolve every point without submitting any of them
-      --grader string               Grader specification: json-label-match, model:NS/NAME[:VERSION], or http:URL; requires --compare
+      --epochs int                  Passes over the dataset each fresh child run trains
+      --grader string               Grader specification: json-label-match, model:NS/NAME[:VERSION], http:URL, or bundle:REFERENCE#MODULE[:FUNCTION]; requires --compare
   -g, --grid string                 Path to the parameter grid document, or '-' to read standard input
   -h, --help                        help for sweep
       --max-completion-tokens int   Maximum completion tokens per sample; zero leaves completions uncapped
-      --restore string              Snapshot artifact to restore: auto, weights or trainingState (default "auto")
+      --max-steps int               Step count that replaces the epochs under TRL and verl SFT, and caps them under verl
       --snapshot string             Prefix or complete ID of the source snapshot shared by every child run
-      --steps int                   Number of additional optimizer updates allowed for each child run
+      --steps int                   Additional optimizer updates each child run trains; requires --continue
       --submission-id string        Submission token to reuse after an uncertain response
 ----
 

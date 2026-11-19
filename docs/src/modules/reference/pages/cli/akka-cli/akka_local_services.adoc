@@ -37,6 +37,8 @@ The `akka local services` commands are used for development purposes to interact
 * link:akka_local_services_connectivity.html[akka local services connectivity]	 - Summarize all services connectivity and status.
 * link:akka_local_services_ledger.html[akka local services ledger]	 - Inspect the ledger of a service.
 * link:akka_local_services_list.html[akka local services list]	 - List all services.
+* link:akka_local_services_run.html[akka local services run]	 - Compile a service and run it under the running local runtime.
+* link:akka_local_services_stop.html[akka local services stop]	 - Stop one service that 'akka local services run' started.
 * link:akka_local_services_views.html[akka local services views]	 - Manage views.
 
 [discrete]

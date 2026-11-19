@@ -4,8 +4,12 @@ List model evaluations
 
 == Synopsis
 
-List evaluations and their scores, optionally filtered by training project, model or phase.
+List evaluations and their scores, optionally filtered by training project, model, dataset or phase.
 The filters combine, so a training project and a phase together list that training project's unfinished evaluations.
+
+--phase active lists the evaluations that have not finished.
+--phase open is another word for it.
+--dataset takes NS/NAME, which matches every version of the dataset, or NS/NAME:vN.
 
 --project takes a name or an id, which is what scored against a training project's quota.
 It is the same flag "evaluations start" takes.
@@ -31,8 +35,11 @@ akka optimize training evaluations list [flags]
   # List what a training project has scored
   akka optimize training evaluations list --project support-triage
 
-  # List active and incomplete evaluations
-  akka optimize training evaluations list --phase open
+  # List the evaluations that have not finished
+  akka optimize training evaluations list --phase active
+
+  # List the evaluations on any version of one dataset
+  akka optimize training evaluations list --dataset triage/eval
 
   # Filter low-scoring evaluations using jq
   akka optimize training evaluations list \
@@ -44,9 +51,10 @@ akka optimize training evaluations list [flags]
 [source,text]
 ----
       --archived         Include the evaluations of archived training projects
+      --dataset string   Filter evaluations by dataset, as NS/NAME for every version or NS/NAME:vN
   -h, --help             help for list
       --model string     Filter evaluations by model, as a registry reference NS/NAME[:VERSION]. With --project, NAME[:VERSION] names a model in that project's namespace
-      --phase string     Filter by phase. Pass 'open' to list unfinished entries
+      --phase string     Filter by phase. Pass 'active' to list unfinished entries; 'open' is another word for it
       --project string   Filter evaluations by the training project they scored against, by name or ID
 ----
 

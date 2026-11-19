@@ -6,6 +6,12 @@ One named model, or one of its versions
 
 Read a named model for its versions newest first and its aliases, or address a version to read that version's descriptor, artifact record and lineage.
 
+For a version registered from a training run's snapshot, Snapshot names that snapshot with its run step, its engine step and its epoch, as the trainer recorded them, and says when retention swept it.
+The version keeps its own copy of the weights, so a swept snapshot does not affect it.
+The version a run finishes with records no source snapshot;
+"training runs get" names the save it is.
+-o json is the registry's record alone.
+
 The registry records no scores.
 A model's score comes from an evaluation, kept by the service that ran it.
 

@@ -1,0 +1,85 @@
+= akka optimize training runs engine-runtime
+
+Display your training run's engine runtime decisions
+
+== Synopsis
+
+Display your training run's engine runtime decisions for its latest attempt.
+
+The job writes the record as an attempt's training job starts, and updates it as each part becomes available.
+Until then, the record is the previous attempt's.
+"rolloutEngine" reports your reinforcement run's rollout engine settings, with one entry for each replica and data parallel rank, identified by "replica" and "dataParallelRank".
+Each entry reports the context length, attention backends, KV cache, memory share, eager mode and multimodal encoder profiling.
+"trainer" reports the values the trainer derives during setup.
+Under it, "changedBySetup" holds each setting the setup changes, with its before and after values.
+"model" reports the loaded model's parameter counts by dtype, its trainable parameter count, and the modules the adapter wraps.
+
+"memory" is each training process's device memory at each moment the run reaches.
+The moments occur in this order: "afterOffload", "afterLoad", "afterFirstRollout", and "afterFirstStep".
+"afterOffload" is when the model's weights first move to host memory, which a run reaches only with parameter offload on.
+"afterLoad" is when the model is built.
+With parameter offload on, the weights move to host memory during model construction, before the "afterLoad" reading.
+"afterFirstRollout" is a reinforcement run's alone.
+"afterFirstStep" is when the first update completes every mini-batch.
+A section the engine does not reach is left out.
+"earlierAttempts" keeps the records of the last few earlier attempts.
+The table shows the memory of each earlier attempt.
+
+The JSON keys are sorted, so you can compare two runs line by line.
+The command reports not found until the first attempt's training job starts.
+
+[source,shell]
+----
+akka optimize training runs engine-runtime RUN [flags]
+----
+
+== Examples
+
+[source,shell]
+----
+  # Display your run's engine runtime decisions
+  akka optimize training runs engine-runtime 7d496e82c3a15f04
+
+  # Read each rollout engine replica's context length
+  akka optimize training runs engine-runtime 7d496e82c3a15f04 --jq '.rolloutEngine[].maxModelLen'
+
+  # Save the whole record to compare with another run
+  akka optimize training runs engine-runtime 7d496e82c3a15f04 -o json > run-a.json
+----
+
+== Options
+
+[source,text]
+----
+  -h, --help   help for engine-runtime
+----
+
+== Options inherited from parent commands
+
+[source,text]
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color or a redrawn progress line, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --timeout duration     client command timeout (default 10s)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then a local dev-mode service, then http://localhost:9001)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize_training_runs.html[akka optimize training runs]	 - Manage training runs, snapshots and child runs
+
+[discrete]
+

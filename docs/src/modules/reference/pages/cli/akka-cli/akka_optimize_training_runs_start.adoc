@@ -27,6 +27,15 @@ The service derives the run id from the submission id, and each start without on
 
 --show-resolved, with --dry-run, prints the config and execution a submission of this plan would train under, every default filled in.
 
+With -o json, a dry run the service answers with an error writes {"dryRun": true, "error": {"status": N, "message": "..."}}, the HTTP status and the service's message, and exits non-zero.
+A refused plan is answered 400.
+A dry run that got no answer writes nothing.
+
+Use --pause-at-step N to set a step to pause at when you start your run.
+Use "training runs pause --at-step" to set one while your run is running.
+You can also set "pauseAtStep" in the plan.
+--wait ends when your run pauses at the step.
+
 [source,shell]
 ----
 akka optimize training runs start -f PLAN [flags]
@@ -48,6 +57,9 @@ akka optimize training runs start -f PLAN [flags]
   # Start a run and wait for completion
   akka optimize training runs start -f plan.json --wait --exit-status
 
+  # Start a run that saves and pauses at the end of step 200
+  akka optimize training runs start -f plan.json --pause-at-step 200
+
   # Submit a plan from standard input
   cat plan.json | akka optimize training runs start -f -
 ----
@@ -56,12 +68,13 @@ akka optimize training runs start -f PLAN [flags]
 
 [source,text]
 ----
-      --dry-run         Validate the plan against the service without starting anything
-      --exit-status     Exit with a non-zero status if execution fails or is cancelled. Requires --wait
-  -f, --file string     Path to the plan file. Use '-' to read from standard input
-  -h, --help            help for start
-      --show-resolved   With --dry-run, also display the config and execution the plan resolves to
-      --wait            Wait for execution to finish
+      --dry-run             Validate the plan against the service without starting anything
+      --exit-status         Exit with a non-zero status if execution fails or is cancelled. Requires --wait
+  -f, --file string         Path to the plan file. Use '-' to read from standard input
+  -h, --help                help for start
+      --pause-at-step int   Save at the end of this step and pause the run there
+      --show-resolved       With --dry-run, also display the config and execution the plan resolves to
+      --wait                Wait for execution to finish
 ----
 
 == Options inherited from parent commands

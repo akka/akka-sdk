@@ -26,6 +26,9 @@ akka optimize spend series --from INSTANT --to INSTANT --granularity hour|day [f
       --from string          start of the period, an ISO-8601 instant in UTC, inclusive
       --granularity string   divide the period into hour or day buckets, in UTC
   -h, --help                 help for series
+      --outcomes -o json     state how many exchanges of each group a gateway policy refused and how many failed,
+                             after the exchanges they are part of. Nothing is asked of the service for this:
+                             every answer already states them, and -o json has them whether this is given or not
       --system string        read only the spend of this system id, the one a request named in x-akka-system-id
       --to string            end of the period, an ISO-8601 instant in UTC, exclusive
 ----

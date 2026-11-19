@@ -6,15 +6,19 @@ Display details for a training run
 
 Display a training run: its state, what it produced, and what it cost.
 
-"State" says where the run is: its phase, how far it has got, the step it last saved and why it failed.
-"Results" is the model it registered, its losses and its start checks.
+"State" says where the run is: its phase, how far it has got, the step it last saved and why it failed, and what its job's cleanup left.
+"Results" is the model it registered, the versions registered from its snapshots, its losses and its start checks.
 "Cost" is its device time, its duration and the memory its devices held.
+Under "Preparing", you see how long each stage of a second or more takes until your current attempt's training loop starts.
 
 --settings, or -o wide, adds the settings the run was started with: its configuration, hyperparameters, engine settings, runtime and run settings.
 -o json is the whole run.
 
 A supervised run on more than one device checks its own numerics before its first update.
 "Start checks" says whether they passed, and --checks shows each check: what it measured, its bound, and the engine setting that sets the bound.
+
+--phases lists each phase the run entered, in order, with how long it took.
+Where the run has more than one attempt, the first phase of each attempt names it.
 
 To monitor status changes in real time, use "training runs wait".
 
@@ -33,6 +37,9 @@ akka optimize training runs get RUN [flags]
   # Show each start check against its bound
   akka optimize training runs get 7d496e82c3a15f04 --checks
 
+  # List each phase the run entered, in order
+  akka optimize training runs get 7d496e82c3a15f04 --phases
+
   # Show the settings the run was started with
   akka optimize training runs get 7d496e82c3a15f04 --settings
 
@@ -46,6 +53,7 @@ akka optimize training runs get RUN [flags]
 ----
       --checks     Show each start check: its verdict, each value against its bound, and the setting behind it
   -h, --help       help for get
+      --phases     List each phase the run entered, in order, with how long it took and its attempt
       --settings   Show the settings the run was started with, as -o wide does
 ----
 

@@ -23,8 +23,8 @@ A run commits snapshots as it trains.
   # Submit a plan and wait for the run to finish
   akka optimize training runs start -f plan.json --wait
 
-  # List active and incomplete runs
-  akka optimize training runs list --phase open
+  # List the runs that have not finished
+  akka optimize training runs list --phase active
 
   # Follow an existing run and exit with a non-zero status if it fails
   akka optimize training runs wait 7d496e82c3a15f04 --exit-status
@@ -71,11 +71,13 @@ A run commits snapshots as it trains.
 * link:akka_optimize_training.html[akka optimize training]	 - Base models, training projects, runs, snapshots, comparisons, pipelines, evaluations, distillations, endpoints and their data
 * link:akka_optimize_training_runs_ancestry.html[akka optimize training runs ancestry]	 - Display the ancestor chain leading to a run
 * link:akka_optimize_training_runs_annotate.html[akka optimize training runs annotate]	 - Update annotations and configuration name for a training run
-* link:akka_optimize_training_runs_branch.html[akka optimize training runs branch]	 - Submit a child run from a source snapshot
+* link:akka_optimize_training_runs_branch.html[akka optimize training runs branch]	 - Train a fresh child run from a snapshot's weights
 * link:akka_optimize_training_runs_branches.html[akka optimize training runs branches]	 - List child runs created from a parent run
 * link:akka_optimize_training_runs_cancel.html[akka optimize training runs cancel]	 - Cancel an active training run
 * link:akka_optimize_training_runs_compare.html[akka optimize training runs compare]	 - Compare a supervised run's training loss with a baseline, step by step
+* link:akka_optimize_training_runs_continue.html[akka optimize training runs continue]	 - Continue a run's training state from a snapshot as a child run
 * link:akka_optimize_training_runs_engine-config.html[akka optimize training runs engine-config]	 - Display the configuration a training run's engine was given
+* link:akka_optimize_training_runs_engine-runtime.html[akka optimize training runs engine-runtime]	 - Display your training run's engine runtime decisions
 * link:akka_optimize_training_runs_get.html[akka optimize training runs get]	 - Display details for a training run
 * link:akka_optimize_training_runs_grafana.html[akka optimize training runs grafana]	 - Print a run's Grafana dashboard URL
 * link:akka_optimize_training_runs_hparams.html[akka optimize training runs hparams]	 - Display the hyperparameters a training run recorded

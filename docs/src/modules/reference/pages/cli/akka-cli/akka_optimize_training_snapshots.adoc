@@ -64,6 +64,7 @@ Snapshots are listed per run with "training runs snapshots".
 
 * link:akka_optimize_training.html[akka optimize training]	 - Base models, training projects, runs, snapshots, comparisons, pipelines, evaluations, distillations, endpoints and their data
 * link:akka_optimize_training_snapshots_candidate.html[akka optimize training snapshots candidate]	 - Show candidate registration for a snapshot
+* link:akka_optimize_training_snapshots_download.html[akka optimize training snapshots download]	 - Write one file of a snapshot to a file or standard output
 * link:akka_optimize_training_snapshots_get.html[akka optimize training snapshots get]	 - Show one committed snapshot
 * link:akka_optimize_training_snapshots_pin.html[akka optimize training snapshots pin]	 - Retain a snapshot against the catalog's retention limits
 * link:akka_optimize_training_snapshots_register.html[akka optimize training snapshots register]	 - Register snapshot weights as a candidate model
