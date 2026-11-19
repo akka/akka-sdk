@@ -163,6 +163,8 @@ Only a task that has ended can be deleted. Deleting a task that does not exist, 
 
 After a delete or an expiry, the task reads as a task that does not exist: `get`, `result`, `assign`, `complete`, `fail` and `cancel` fail with `TaskException.NotFound`. A consumer of task events gets a `TaskEvent.TaskDeleted` event for a delete and no event for an expiry. Akka removes the stored data of the task after `akka.javasdk.entity.cleanup-deleted-after`, 7 days by default. That setting applies to all entities, see xref:sdk:event-sourced-entities.adoc#_deleting_an_entity[Deleting an entity].
 
+A delete or an expiry removes only the task. An agent that worked on the task keeps its instructions and its result in the session memory of the agent, whose session id is the instance id of the agent. A coordinator that delegated the task keeps the result in its own session memory. Delete a session memory with the `delete` command of `SessionMemoryEntity`, see xref:sdk:agents/memory.adoc#_accessing_session_memory[Accessing session memory]. Interactions that the xref:sdk:evaluators.adoc#_the_ledger_client[ledger] recorded keep that content too.
+
 Cancel or fail a task that the application gives up on, with `cancel(...)` or `fail(...)`, so that the task ends and its expiry applies.
 
 == Task dependencies
