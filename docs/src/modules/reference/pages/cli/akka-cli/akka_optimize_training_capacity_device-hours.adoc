@@ -1,0 +1,79 @@
+= akka optimize training capacity device-hours
+
+Report the device-hours claims held in a period
+
+== Synopsis
+
+Report the device-hours that GPU claims held between two instants, one row per pool or per endpoint.
+
+A claim counts its devices from when the scheduler granted them until it released them, and a claim still held counts until now.
+Every time is one the scheduler recorded, so a figure does not change with how often it is read.
+
+KEY is the pool's key, or with --by endpoint the endpoint's id.
+POOL is, for an endpoint, the pool its devices were counted in last.
+DEVICE HOURS is devices multiplied by the hours they were held in the period.
+HELD says whether the pool or the endpoint holds devices now.
+
+--from and --to are ISO-8601 instants, such as 2026-10-01T00:00:00Z.
+--to defaults to now and --from to a day before --to.
+They are at most 366 days apart.
+--by is pool, the default, which counts every claim, or endpoint, which counts the claims of endpoints alone.
+
+[source,shell]
+----
+akka optimize training capacity device-hours [flags]
+----
+
+== Examples
+
+[source,shell]
+----
+  # The last day, by pool
+  akka optimize training capacity device-hours
+
+  # One month, by endpoint
+  akka optimize training capacity device-hours --from 2026-10-01T00:00:00Z --to 2026-11-01T00:00:00Z --by endpoint
+
+  # The endpoints holding devices now
+  akka optimize training capacity device-hours --by endpoint --jq '.rows[] | select(.held) | .key'
+----
+
+== Options
+
+[source,text]
+----
+      --by string     Count by pool or by endpoint (default pool)
+      --from string   Count from this ISO-8601 instant (default a day before --to)
+  -h, --help          help for device-hours
+      --to string     Count until this ISO-8601 instant (default now)
+----
+
+== Options inherited from parent commands
+
+[source,text]
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color or a redrawn progress line, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --timeout duration     client command timeout (default 10s)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then a local dev-mode service, then http://localhost:9001)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize_training_capacity.html[akka optimize training capacity]	 - Report what holds the GPU pools
+
+[discrete]
+

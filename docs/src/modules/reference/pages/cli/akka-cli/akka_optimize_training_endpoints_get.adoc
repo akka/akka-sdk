@@ -8,6 +8,12 @@ Display one endpoint, by its ID or an unambiguous prefix of it.
 
 Every model listed is answerable at the one endpoint, and the name beside each is what a request asks for.
 
+An endpoint stops after the idle timeout with no requests.
+You can see when in "Stops".
+The unfinished runs listed in "Held by" prevent an idle stop: the run that holds the endpoint as its judge, and each run whose "endpoint" reward term names its address and a model it serves.
+These runs call the address directly.
+Their calls do not count as requests for the idle timeout.
+
 [source,shell]
 ----
 akka optimize training endpoints get ENDPOINT [flags]

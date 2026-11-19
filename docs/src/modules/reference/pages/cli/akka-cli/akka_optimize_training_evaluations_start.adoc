@@ -49,7 +49,7 @@ akka optimize training evaluations start --model MODEL --dataset NS/NAME [flags]
 ----
       --dataset string               Evaluation dataset, as NS/NAME, NS/NAME:vN or NS/NAME:ALIAS
       --exit-status                  Exit with a non-zero status if execution fails or is cancelled. Requires --wait
-      --grader string                Grader specification: json-label-match, model:NS/NAME[:VERSION], or http:URL
+      --grader string                Grader specification: json-label-match, model:NS/NAME[:VERSION], http:URL, or bundle:REFERENCE#MODULE[:FUNCTION]
       --grader-instructions string   Instructions a model: grader is asked under, in place of the ones it would otherwise get
   -h, --help                         help for start
       --model string                 Model to evaluate, as a registry reference NS/NAME[:VERSION]. With --project, NAME[:VERSION] names a model in that project's namespace

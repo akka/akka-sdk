@@ -1,49 +1,45 @@
 = akka optimize training runs branch
 
-Submit a child run from a source snapshot
+Train a fresh child run from a snapshot's weights
 
 == Synopsis
 
-Submit a child run from a committed source snapshot of PARENT.
+Train a fresh child run from the weights of a committed snapshot of PARENT.
 
 The parent run is unchanged.
-The child run has its own ID, metrics, cost, models and saved state.
+The child loads the adapter weights and starts a fresh optimizer, schedule, RNG, data position and engine step.
 Children created from the same source snapshot are independent.
+To continue the parent's training state instead, use "training runs continue".
 
 --snapshot selects the source snapshot.
-Use "training runs snapshots" to find one, then pass its ID or an unambiguous prefix.
+Without it, the command takes PARENT's newest committed snapshot that holds its weights.
+Use "training runs snapshots" to list them.
 
---steps sets the child run's budget of additional optimizer updates.
-The child stops at this budget, so an override document cannot set epochs or maxSteps.
+--epochs and --max-steps set the child's length as a run plan's epochs and maxSteps do, and the job counts the steps: maxSteps replaces the epochs under TRL and verl SFT, and caps them under verl reinforcement learning.
+A reinforcement child that should train N steps under verl states enough --epochs for N, such as --epochs N --max-steps N.
+The flags write hyperparams.training, or rlHyperparams for a grpo or gspo child.
+A child that states one of the two takes the other at the plan default.
+A child that states neither inherits both from its parent.
 
---restore selects the snapshot artifact and state policy:
+A data, loss or engineSettings group in --overrides replaces the parent's group whole, so data: {} leaves the child no validation dataset.
+execution changes the parent's execution field by field, such as gpus.
+Set model.attentionImplementation to sdpa to train without the parent's flex attention.
 
- auto           restore the training state where the snapshot holds it and the branch changes
-                nothing a trainingState branch cannot carry, and the weights otherwise. The
-                result names the mode chosen and why. This is the default.
- weights        load adapter weights; reset the optimizer, schedule, RNG, data position and
-                engine step.
- trainingState  restore adapter weights, optimizer, RNG, data position and engine step; replace
-                the saved schedule with one spanning the child budget at the child learning rate.
+A reinforcement child with a positive klBeta measures the penalty against a frozen copy of the adapter it inherited.
+The deployment can do this only on one GPU, and only where its catalog admits it there.
+Otherwise, Optimize refuses the branch and says to set klBeta to 0.
+
+To train a dpo child from a supervised run, set method to dpo and dataset to a preference dataset in --overrides.
+The child measures its rewards against the adapter it inherited and trains on one GPU.
+It trains at the dpo default learning rate unless --overrides sets one.
+Unless --overrides states them, it does not inherit the parent's data or loss policy, memory settings, engine settings or flex attention.
+It never inherits the parent's weight precision.
 
 The child run inherits the parent run's training project, base model, devices and grader.
 --overrides loads a configuration-change document.
 Omitted fields are inherited.
 Undeclared fields are rejected.
-
-With --restore trainingState, only the learning rate may appear in --overrides.
-The service rejects every other field, even when its value equals the parent's.
-This mode requires the same method and a snapshot that holds its training state.
-For reinforcement learning with a positive klBeta, it is unavailable when the producer started from inherited adapter weights.
-
-A reinforcement child restored from weights with a positive klBeta measures the penalty against a frozen copy of the adapter it inherited.
-The deployment can do this only on one GPU, and only where its catalog admits it there.
-Otherwise, Optimize refuses the branch and says to set klBeta to 0.
-
-To train a dpo child from a supervised run, restore from weights and set method to dpo and dataset to a preference dataset in --overrides.
-The child measures its rewards against the adapter it inherited and trains on one GPU.
-It trains at the dpo default learning rate unless --overrides sets one.
-It does not inherit the parent's data or loss policy, memory settings, engine settings, weight precision or flex attention.
+The child trains the adapter it inherits, so the document cannot change lora.rank or lora.targetModules.
 
 --dry-run asks the service to validate and resolve the request without creating a submission, retaining the source snapshot or claiming a device.
 The preview does not reserve the source.
@@ -54,30 +50,33 @@ Source retention and child-run creation happen during preparation.
 
 The command generates a token for each invocation.
 Running the command again generates another one, which the service treats as a second run.
-Passing --submission-id with the token from an earlier attempt reaches whatever that attempt created, instead of starting a second run.
+Passing --submission-id with the token from an earlier attempt, and the same flags, reaches whatever that attempt created, instead of starting a second run.
 It is for retrying an attempt whose outcome was never seen.
+Without --snapshot, a retry reads the snapshot the earlier attempt wrote back from the service and sends it again, so it need not repeat --snapshot.
+Against a trainer that sends no snapshotReference, a retry of an attempt that named --snapshot repeats it as it was written.
+A retry under a token the service has no submission for is a first attempt.
 "training runs branches PARENT --submission TOKEN" reads that attempt's state back instead, and is the cheaper check.
 
 [source,shell]
 ----
-akka optimize training runs branch PARENT --snapshot SNAPSHOT --steps N [flags]
+akka optimize training runs branch PARENT [--snapshot SNAPSHOT] [--epochs N] [--max-steps M] [flags]
 ----
 
 == Examples
 
 [source,shell]
 ----
-  # Preview a branch without submitting it
+  # Preview a branch for two epochs at a lower learning rate
   akka optimize training runs branch 7d496e82c3a15f04 \
-    --snapshot 3f2a9c71bd04 --steps 200 --overrides lower-lr.json --dry-run
+    --epochs 2 --overrides lower-lr.json --dry-run
 
-  # Submit it and follow the run it starts
+  # Submit it from a named snapshot and follow the run it starts
   akka optimize training runs branch 7d496e82c3a15f04 \
-    --snapshot 3f2a9c71bd04 --steps 200 --overrides lower-lr.json --wait
+    --snapshot 3f2a9c71bd04 --epochs 2 --overrides lower-lr.json --wait
 
   # Extract the new run's ID using jq
   akka optimize training runs branch 7d496e82c3a15f04 \
-    --snapshot 3f2a9c71bd04 --steps 200 --force --jq .childRunId
+    --snapshot 3f2a9c71bd04 --max-steps 500 --force --jq .childRunId
 ----
 
 == Options
@@ -87,12 +86,12 @@ akka optimize training runs branch PARENT --snapshot SNAPSHOT --steps N [flags]
       --config-name string     Label for the child configuration in the training project score table
       --description string     Description for the child run
       --dry-run                Preview the resolved child run without submitting it
+      --epochs int             Passes over the dataset the child run trains
       --exit-status            Exit non-zero if preparation or the child run fails; requires --wait
   -h, --help                   help for branch
+      --max-steps int          Step count that replaces the epochs under TRL and verl SFT, and caps them under verl
   -f, --overrides string       Override document path, or '-' for standard input
-      --restore string         Snapshot artifact to restore: auto, weights or trainingState (default "auto")
-      --snapshot string        Source snapshot ID or unambiguous prefix
-      --steps int              Additional optimizer updates allowed for the child run
+      --snapshot string        Source snapshot ID or unambiguous prefix; the newest that holds what the command restores by default
       --submission-id string   Submission token to reuse after an uncertain response
       --wait                   Wait for preparation and child-run completion
 ----

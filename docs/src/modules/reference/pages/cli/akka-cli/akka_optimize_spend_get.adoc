@@ -11,17 +11,20 @@ akka optimize spend get --from INSTANT --to INSTANT [flags]
 
 [source,text]
 ----
-      --by string         divide the answer: none, or a comma-separated list of model, useCase, system, route
-                          and tag:KEY, where KEY is the name of one of your tagging rulesets
-      --classes -o json   state what each token class contributed to the period total, under it. The five
-                          partition the total, so they add up to it, and a class nobody reported carries the
-                          same mark the total does. Nothing is asked of the service for this: every answer
-                          already states the five, and -o json has them whether this is given or not
-      --from string       start of the period, an ISO-8601 instant in UTC, inclusive
-  -h, --help              help for get
-      --system string     read only the spend of this system id, the one a request named in x-akka-system-id.
-                          Completed work is counted for every system id together, so it is not stated
-      --to string         end of the period, an ISO-8601 instant in UTC, exclusive
+      --by string          divide the answer: none, or a comma-separated list of model, useCase, system, route
+                           and tag:KEY, where KEY is the name of one of your tagging rulesets
+      --classes -o json    state what each token class contributed to the period total, under it. The five
+                           partition the total, so they add up to it, and a class nobody reported carries the
+                           same mark the total does. Nothing is asked of the service for this: every answer
+                           already states the five, and -o json has them whether this is given or not
+      --from string        start of the period, an ISO-8601 instant in UTC, inclusive
+  -h, --help               help for get
+      --outcomes -o json   state how many exchanges of each group a gateway policy refused and how many failed,
+                           after the exchanges they are part of. Nothing is asked of the service for this:
+                           every answer already states them, and -o json has them whether this is given or not
+      --system string      read only the spend of this system id, the one a request named in x-akka-system-id.
+                           Completed work is counted for every system id together, so it is not stated
+      --to string          end of the period, an ISO-8601 instant in UTC, exclusive
 ----
 
 == Options inherited from parent commands

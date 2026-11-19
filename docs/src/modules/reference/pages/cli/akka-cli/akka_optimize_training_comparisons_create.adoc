@@ -47,7 +47,7 @@ akka optimize training comparisons create --source SNAPSHOT --branch RUN --datas
       --branch strings               Prefix or complete ID of a branch run whose registered model will be evaluated; repeat for multiple runs
       --candidate strings            Registry reference of a candidate model to evaluate, NS/NAME[:VERSION]; repeat for multiple models
       --dataset string               Evaluation dataset, by registry reference
-      --grader string                Grader specification: json-label-match, model:NS/NAME[:VERSION], or http:URL
+      --grader string                Grader specification: json-label-match, model:NS/NAME[:VERSION], http:URL, or bundle:REFERENCE#MODULE[:FUNCTION]
       --grader-instructions string   Instructions a model: grader is asked under, in place of the ones it would otherwise get
   -h, --help                         help for create
       --max-completion-tokens int    Maximum completion tokens per sample; zero leaves completions uncapped

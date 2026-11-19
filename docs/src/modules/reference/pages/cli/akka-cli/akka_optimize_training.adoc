@@ -61,7 +61,7 @@ A session is a raw conversation corpus, and a curation judges one into a trainin
 * link:akka_optimize_training_capacity.html[akka optimize training capacity]	 - Report what holds the GPU pools
 * link:akka_optimize_training_comparisons.html[akka optimize training comparisons]	 - Compare a source snapshot with selected branch models
 * link:akka_optimize_training_curations.html[akka optimize training curations]	 - Judge raw sessions into a training dataset
-* link:akka_optimize_training_datasets.html[akka optimize training datasets]	 - Measure a registered dataset under a base model before training on it
+* link:akka_optimize_training_datasets.html[akka optimize training datasets]	 - Measure a registered dataset under a base model, and read its rows
 * link:akka_optimize_training_distillations.html[akka optimize training distillations]	 - Manage distillations
 * link:akka_optimize_training_endpoints.html[akka optimize training endpoints]	 - Serve a base model or a candidate to try it by hand
 * link:akka_optimize_training_evaluations.html[akka optimize training evaluations]	 - Manage model evaluations

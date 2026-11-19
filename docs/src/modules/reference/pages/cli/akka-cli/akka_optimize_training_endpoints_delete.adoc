@@ -6,6 +6,11 @@ Take an endpoint down and release its devices
 
 Take the whole endpoint down, by its ID or an unambiguous prefix of it.
 
+The endpoint stops answering at once.
+Its devices are released once the cluster confirms it is down, which can take tens of seconds, and "capacity" lists its claim until then.
+--wait waits until the devices are released, so work started next can use them.
+--timeout bounds that wait, and the endpoint is down whether or not the release was seen.
+
 Refused while it serves more than one model, because the others may be somebody else's and deleting the endpoint would stop them.
 Use "detach" to remove one of several;
 the endpoint goes down with the last of them.
@@ -13,6 +18,9 @@ the endpoint goes down with the last of them.
 Refused as well while a run is calling its judge here, naming that run.
 The endpoint is given back when that run finishes.
 "endpoints get" says which run holds one.
+
+Ctrl-C stops watching.
+The endpoint is down either way, and its devices are released without the wait.
 
 [source,shell]
 ----
@@ -25,13 +33,18 @@ akka optimize training endpoints delete ENDPOINT [flags]
 ----
   # Take an endpoint down
   akka optimize training endpoints delete 970076e8
+
+  # Take it down and return once its devices are released
+  akka optimize training endpoints delete 970076e8 --wait
 ----
 
 == Options
 
 [source,text]
 ----
-  -h, --help   help for delete
+  -h, --help               help for delete
+      --timeout duration   Maximum time to wait for the release; zero waits without a deadline; requires --wait (default 5m0s)
+      --wait               Wait until the endpoint's devices are released
 ----
 
 == Options inherited from parent commands
@@ -51,7 +64,6 @@ akka optimize training endpoints delete ENDPOINT [flags]
       --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
   -q, --quiet                set quiet output (helpful when used as part of a script)
       --region string        Region to use if the project has more than one region
-      --timeout duration     client command timeout (default 10s)
       --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then a local dev-mode service, then http://localhost:9001)
       --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
       --verbose              set verbose output

@@ -32,6 +32,9 @@ they load what they need and release it.
 
   # Stop answering for one model
   akka optimize training endpoints detach 970076e8 triage/candidate:v3
+
+  # Refuse requests for one model while it stays attached
+  akka optimize training endpoints disable 970076e8 triage/candidate:v3
 ----
 
 == Options
@@ -70,6 +73,8 @@ they load what they need and release it.
 * link:akka_optimize_training_endpoints_create.html[akka optimize training endpoints create]	 - Make a model answerable at an endpoint
 * link:akka_optimize_training_endpoints_delete.html[akka optimize training endpoints delete]	 - Take an endpoint down and release its devices
 * link:akka_optimize_training_endpoints_detach.html[akka optimize training endpoints detach]	 - Stop serving one model at an endpoint
+* link:akka_optimize_training_endpoints_disable.html[akka optimize training endpoints disable]	 - Refuse requests for one model while it stays attached
+* link:akka_optimize_training_endpoints_enable.html[akka optimize training endpoints enable]	 - Answer requests for a disabled model again
 * link:akka_optimize_training_endpoints_get.html[akka optimize training endpoints get]	 - Display an endpoint and the models it serves
 * link:akka_optimize_training_endpoints_info.html[akka optimize training endpoints info]	 - Show what an endpoint here can serve
 * link:akka_optimize_training_endpoints_list.html[akka optimize training endpoints list]	 - List endpoints

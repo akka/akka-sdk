@@ -9,7 +9,7 @@ With no org policy and no project override, the effective mode is a-la-carte -- 
 An org policy may set a different default and lock it;
 when the mode is locked, only the org-allowed mode(s) may be set, so a locked enforced mode cannot be dropped to à-la-carte to bypass the ship gate.
 
-In a-la-carte mode the exit-condition set is dormant until asked for: only the Akka-intrinsic baseline resolves, and no auditors are created.
+In a-la-carte mode the exit-condition set is dormant until asked for: only the Akka-intrinsic baseline resolves, plus the discovery gates in a project with a discovery/ folder, and no auditors are created.
 Use --exit-conditions=honor to start checking conditions (still advisory), or --exit-conditions=ignore to set them aside.
 Switching a project that already has conditions and auditors to a-la-carte requires one of the two, so the choice is never made silently.
 

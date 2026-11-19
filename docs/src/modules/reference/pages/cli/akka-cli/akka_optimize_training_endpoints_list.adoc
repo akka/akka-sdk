@@ -10,6 +10,11 @@ MODELS is how many models one endpoint serves.
 An endpoint that is AWAITING_CAPACITY is queued behind other work for its devices.
 Use --project to list the endpoints one training project brought up, named by its name or ID.
 
+--phase active lists the endpoints that have not failed or been taken down.
+--phase open is another word for it.
+--base-model takes the repository an endpoint loads, and --model takes a model it serves, as NS/NAME, which matches every version of the model, or NS/NAME:vN.
+The filters combine.
+
 A row of an archived training project is left out unless --archived is given or --project names that project.
 Such a row is marked "(archived)".
 
@@ -25,6 +30,12 @@ akka optimize training endpoints list [flags]
   # List endpoints
   akka optimize training endpoints list
 
+  # List the endpoints that have not failed or been taken down
+  akka optimize training endpoints list --phase active
+
+  # List the endpoints serving any version of one model
+  akka optimize training endpoints list --model triage/qwen3-0.6b
+
   # Name the ones answering
   akka optimize training endpoints list --jq '.endpoints[] | select(.phase=="READY") | .endpointId'
 ----
@@ -33,9 +44,12 @@ akka optimize training endpoints list [flags]
 
 [source,text]
 ----
-      --archived         Include the endpoints of archived training projects
-  -h, --help             help for list
-      --project string   List only the endpoints this training project brought up, by name or ID
+      --archived            Include the endpoints of archived training projects
+      --base-model string   List only the endpoints that load this base model, by repository
+  -h, --help                help for list
+      --model string        List only the endpoints serving this model, as NS/NAME for every version or NS/NAME:vN
+      --phase string        Filter by phase. Pass 'active' to list unfinished entries; 'open' is another word for it
+      --project string      List only the endpoints this training project brought up, by name or ID
 ----
 
 == Options inherited from parent commands

@@ -1,0 +1,121 @@
+= akka optimize training datasets rows
+
+Page through a dataset's rows, and search them
+
+== Synopsis
+
+Print a page of a dataset version's rows: chat examples with their messages, tool calls and tool results, preference pairs with the prompt and both answers, and prepared token rows as text, with the text a run trains on between [[ and ]].
+
+DATASET is a registry reference that names its namespace, such as triage/train or triage/train:v3.
+A reference with no version reads the latest version.
+
+Each row states its position in the version, counted from 0.
+Under a row that occurs more than once in the version, the header says how often and names the positions.
+A prepared row states its token count and how many tokens it trains.
+A chat example or a pair states its token count under --model once a dataset analysis under that base model is done, as "training datasets analyze" starts one.
+
+The rows are read from an index of the version, which "training datasets index" builds.
+A version with no index prints that command and exits with a non-zero status.
+An index that is still being built prints where it stands and the command that waits for it.
+
+--offset is the position the page starts at, and --limit how many rows it holds.
+The service defaults to 25 rows and allows at most 100.
+The command prints the --offset of the next page.
+
+--search finds the rows that hold its words one after another within one message, in any case, across the whole version.
+A word is a run of letters, numbers and underscores.
+A read examines at most 1,000 rows, so a search whose words are common can print fewer rows than --limit, with the --offset to go on from.
+--trained-only prints only the text a prepared row trains on, each part after the last 400 characters of the text before it, and with --search matches within one trained part.
+--repeated lists only the rows that occur more than once.
+
+--tool-calls lists only the rows that carry tool calls, --images only those that carry images, and --text-only only those that carry neither.
+A preference pair is filtered by its prompt.
+--tool-calls and --images together list the rows that carry both, and --text-only takes neither of them.
+These filters read chat examples and pairs, from an index in the current format, and keep the count of matching rows exact.
+An index built by an earlier version of Optimize is refused with the command that indexes the rows again.
+
+A text longer than 16,384 characters is printed as its start and its end, with the number of characters left out between them.
+--position prints one row in full instead, each text as the index stored it: whole up to 1,048,576 characters.
+
+-o json prints the page as Optimize sends it.
+
+[source,shell]
+----
+akka optimize training datasets rows DATASET [--offset N] [--limit N] [--search TEXT] [--trained-only] [--repeated] [--tool-calls] [--images] [--text-only] [flags]
+----
+
+== Examples
+
+[source,shell]
+----
+  # Read the first rows of a dataset
+  akka optimize training datasets rows triage/train
+
+  # Read the next page
+  akka optimize training datasets rows triage/train --offset 25
+
+  # Find the rows that mention an invoice total
+  akka optimize training datasets rows triage/train --search "invoice total"
+
+  # Read the trained text of prepared token rows
+  akka optimize training datasets rows gemma/train:v1 --trained-only
+
+  # List the rows that occur more than once
+  akka optimize training datasets rows triage/train --repeated
+
+  # List the rows that call a tool
+  akka optimize training datasets rows triage/train --tool-calls
+
+  # Read one row in full
+  akka optimize training datasets rows gemma/train:v1 --position 12 --trained-only
+
+  # Read each row's token length under a base model
+  akka optimize training datasets rows triage/train --model Qwen/Qwen3-0.6B
+----
+
+== Options
+
+[source,text]
+----
+  -h, --help            help for rows
+      --images          Only the rows that carry images, of a pair's prompt
+      --limit int       How many rows the page holds. The service defaults to 25 and allows at most 100
+      --model string    The base model a chat example's or a pair's token length is read under, by repository
+      --offset int      The position the page starts at
+      --position int    Print the row at this position in full, as the index stored it, rather than a page
+      --repeated        Only the rows that occur more than once in the version
+      --search string   Only the rows that hold these words, one after another, in any case
+      --text-only       Only the rows that carry neither tool calls nor images, of a pair's prompt
+      --tool-calls      Only the rows that carry tool calls, of a pair's prompt
+      --trained-only    Print only the text a prepared row trains on
+----
+
+== Options inherited from parent commands
+
+[source,text]
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color or a redrawn progress line, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --timeout duration     client command timeout (default 10s)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then a local dev-mode service, then http://localhost:9001)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize_training_datasets.html[akka optimize training datasets]	 - Measure a registered dataset under a base model, and read its rows
+
+[discrete]
+
