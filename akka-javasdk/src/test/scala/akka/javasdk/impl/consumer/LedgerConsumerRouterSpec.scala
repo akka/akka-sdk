@@ -38,6 +38,7 @@ import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiConsumer
 import akka.runtime.sdk.spi.SpiLedger
 import akka.runtime.sdk.spi.SpiMetadata
+import akka.runtime.sdk.spi.SpiMetadataEntry
 import akka.runtime.sdk.spi.TimerClient
 import akka.util.ByteString
 import io.opentelemetry.api.OpenTelemetry
@@ -155,7 +156,12 @@ class LedgerConsumerRouterSpec extends ScalaTestWithActorTestKit with LogCapturi
   private def messageContext = new MessageContextImpl(MetadataImpl.Empty, timerClient, null, None, "", Optional.empty())
 
   private def ledgerMessage(record: SpiLedger.FlowRecord): SpiConsumer.Message =
-    new SpiConsumer.Message(None, None, SpiMetadata.empty, OtelContext.root(), Some(record))
+    new SpiConsumer.Message(
+      None,
+      None,
+      new SpiMetadata(Seq(new SpiMetadataEntry("ce-subject", "writer-1"))),
+      OtelContext.root(),
+      Some(record))
 
   private def consumerImpl[C <: Consumer](consumerClass: Class[C], consumer: C): ConsumerImpl[C] = {
     val serializer = new Serializer

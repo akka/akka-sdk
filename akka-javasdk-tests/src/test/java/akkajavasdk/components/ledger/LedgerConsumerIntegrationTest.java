@@ -34,7 +34,7 @@ public class LedgerConsumerIntegrationTest extends TestKitSupport {
   }
 
   @Test
-  public void deliversTheSelectedKindsOnly() {
+  public void deliversAClassificationRecordWithItsRecordId() {
     var workflowId = UUID.randomUUID().toString();
     var run = new Subject.Workflow(workflowId, "evaluated-workflow");
 

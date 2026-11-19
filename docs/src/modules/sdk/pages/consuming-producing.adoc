@@ -132,7 +132,7 @@ The ledger consumer has these delivery guarantees:
 * In a multi-region service, the consumer in every region receives the records of every region. `messageContext().originRegion()` returns the region that wrote the record.
 * A new consumer receives every record that the ledger still holds. The consumer never receives a record that retention dropped.
 * A handler that you add later receives only the records after the current offset of the consumer. The consumer does not receive the earlier records of that kind.
-* The runtime records and delivers an allow decision only when you enable the `guardrail-allow` records. See xref:sdk:evaluators.adoc#_optional_ledger_records[Optional ledger records].
+* The consumer receives allow decisions of guardrails by default. Set `guardrail-allow` to `false` to stop the runtime from recording and delivering them. See xref:sdk:evaluators.adoc#_optional_ledger_records[Optional ledger records].
 
 `@Consume.StartFrom` also works on a new ledger consumer. It sets a later start point. See xref:consuming-producing.adoc#_starting_from_the_latest_events_or_a_timestamp[Starting from the latest events or a timestamp].
 

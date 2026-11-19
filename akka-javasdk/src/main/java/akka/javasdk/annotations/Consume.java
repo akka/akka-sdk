@@ -209,7 +209,8 @@ public @interface Consume {
    *       later start. Records dropped by retention never arrive.
    *   <li>A handler added later receives only the records after the current offset. The consumer
    *       does not receive the earlier records of its kind.
-   *   <li>The runtime records and delivers an allow decision only when allow records are enabled.
+   *   <li>The consumer receives allow decisions of guardrails, unless the service turns off allow
+   *       records.
    * </ul>
    */
   @Target(ElementType.TYPE)
