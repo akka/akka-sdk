@@ -55,4 +55,12 @@ public sealed interface TaskEvent {
   @TypeName("akka-task-reassigned")
   record TaskReassigned(String taskId, String name, String newAssignee, String context)
       implements TaskEvent {}
+
+  /**
+   * The task was deleted. The entity stores this event when the task is deleted with {@link
+   * akka.javasdk.client.TaskClient#delete}. The runtime removes the stored events of the task after
+   * {@code akka.javasdk.entity.cleanup-deleted-after}.
+   */
+  @TypeName("akka-task-deleted")
+  record TaskDeleted(String taskId, String name) implements TaskEvent {}
 }

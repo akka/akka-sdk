@@ -450,4 +450,122 @@ public class TaskEntityTest {
     var testKit = createTestKit();
     assertNotFound(testKit.method(TaskEntity::getState).invoke());
   }
+
+  // --- delete ---
+
+  /** A fresh test kit with a task in the given status. */
+  private EventSourcedTestKit<TaskState, TaskEvent, TaskEntity> testKitWithTaskIn(
+      TaskStatus status) {
+    var testKit = createTestKit();
+    testKit.method(TaskEntity::create).invoke(createRequest("research"));
+    switch (status) {
+      case PENDING -> {}
+      case ASSIGNED -> testKit.method(TaskEntity::assign).invoke("agent-1");
+      case IN_PROGRESS -> {
+        testKit.method(TaskEntity::assign).invoke("agent-1");
+        testKit.method(TaskEntity::start).invoke();
+      }
+      case RESULT_REJECTED -> {
+        testKit.method(TaskEntity::assign).invoke("agent-1");
+        testKit.method(TaskEntity::start).invoke();
+        testKit
+            .method(TaskEntity::rejectResult)
+            .invoke(new TaskEntity.RejectResultRequest("com.example.MyRule", "bad result"));
+      }
+      case COMPLETED -> {
+        testKit.method(TaskEntity::assign).invoke("agent-1");
+        testKit.method(TaskEntity::complete).invoke("{\"summary\":\"done\"}");
+      }
+      case FAILED -> {
+        testKit.method(TaskEntity::assign).invoke("agent-1");
+        testKit.method(TaskEntity::fail).invoke("giving up");
+      }
+      case CANCELLED -> testKit.method(TaskEntity::cancel).invoke("no longer needed");
+    }
+    assertThat(testKit.getState().status()).isEqualTo(status);
+    return testKit;
+  }
+
+  @Test
+  public void deleteTaskThatEnded() {
+    for (var status : List.of(TaskStatus.COMPLETED, TaskStatus.FAILED, TaskStatus.CANCELLED)) {
+      var testKit = testKitWithTaskIn(status);
+
+      EventSourcedResult<Done> result = testKit.method(TaskEntity::delete).invoke();
+
+      assertThat(result.getReply()).as(status.name()).isEqualTo(done());
+      var deleted = result.getNextEventOfType(TaskEvent.TaskDeleted.class);
+      assertThat(deleted.taskId()).isEqualTo(testKit.getState().taskId());
+      assertThat(deleted.name()).isEqualTo("research");
+      assertThat(testKit.isDeleted()).as(status.name()).isTrue();
+    }
+  }
+
+  @Test
+  public void deleteOfTaskThatHasNotEndedFails() {
+    for (var status :
+        List.of(
+            TaskStatus.PENDING,
+            TaskStatus.ASSIGNED,
+            TaskStatus.IN_PROGRESS,
+            TaskStatus.RESULT_REJECTED)) {
+      var testKit = testKitWithTaskIn(status);
+      var stateBefore = testKit.getState();
+
+      EventSourcedResult<Done> result = testKit.method(TaskEntity::delete).invoke();
+
+      assertThat(result.isError()).as(status.name()).isTrue();
+      assertThat(result.getError())
+          .isEqualTo("Task can only be deleted when COMPLETED, FAILED or CANCELLED");
+      assertThat(result.didPersistEvents()).isFalse();
+      assertThat(testKit.getState()).isEqualTo(stateBefore);
+      assertThat(testKit.isDeleted()).isFalse();
+    }
+  }
+
+  @Test
+  public void deleteAgainOrOfTaskThatDoesNotExistStoresNothing() {
+    var testKit = testKitWithTaskIn(TaskStatus.COMPLETED);
+    testKit.method(TaskEntity::delete).invoke();
+
+    EventSourcedResult<Done> again = testKit.method(TaskEntity::delete).invoke();
+    assertThat(again.getReply()).isEqualTo(done());
+    assertThat(again.didPersistEvents()).isFalse();
+
+    var neverCreated = createTestKit();
+    EventSourcedResult<Done> result = neverCreated.method(TaskEntity::delete).invoke();
+    assertThat(result.getReply()).isEqualTo(done());
+    assertThat(result.didPersistEvents()).isFalse();
+    assertThat(neverCreated.isDeleted()).isFalse();
+  }
+
+  @Test
+  public void deletedTaskIsNotFound() {
+    var testKit = testKitWithTaskIn(TaskStatus.COMPLETED);
+    testKit.method(TaskEntity::delete).invoke();
+    publishedNotifications.clear();
+
+    assertNotFound(testKit.method(TaskEntity::getState).invoke());
+    assertNotFound(testKit.method(TaskEntity::assign).invoke("agent-2"));
+    assertNotFound(testKit.method(TaskEntity::start).invoke());
+    assertNotFound(testKit.method(TaskEntity::complete).invoke("{\"summary\":\"again\"}"));
+    assertNotFound(
+        testKit
+            .method(TaskEntity::rejectResult)
+            .invoke(new TaskEntity.RejectResultRequest("com.example.MyRule", "bad result")));
+    assertNotFound(testKit.method(TaskEntity::fail).invoke("giving up"));
+    assertNotFound(testKit.method(TaskEntity::cancel).invoke("no longer needed"));
+    assertNotFound(
+        testKit
+            .method(TaskEntity::reassign)
+            .invoke(new TaskEntity.ReassignRequest("agent-2", "handover")));
+
+    EventSourcedResult<Done> create =
+        testKit.method(TaskEntity::create).invoke(createRequest("research"));
+    assertThat(create.isError()).isTrue();
+    assertThat(create.getError()).isEqualTo("Task already exists");
+    assertThat(create.didPersistEvents()).isFalse();
+
+    assertThat(publishedNotifications).isEmpty();
+  }
 }

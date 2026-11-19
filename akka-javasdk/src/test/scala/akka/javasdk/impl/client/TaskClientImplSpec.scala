@@ -269,6 +269,31 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
     }
   }
 
+  "TaskClientImpl cancelAsync" should {
+
+    "send Cancel command with reason" in {
+      val mock = mockEntityClient(taskState(TaskStatus.PENDING))
+      val client = createClient(mock)
+
+      client.cancelAsync("no longer needed").asScala.futureValue
+
+      val cancelCmd = mock.commands.find(_.methodName == "Cancel").get
+      cancelCmd.payloadAs[String] shouldBe "no longer needed"
+    }
+  }
+
+  "TaskClientImpl deleteAsync" should {
+
+    "send Delete command" in {
+      val mock = mockEntityClient(taskState(TaskStatus.COMPLETED))
+      val client = createClient(mock)
+
+      client.deleteAsync().asScala.futureValue
+
+      mock.commands.map(_.methodName) shouldBe Seq("Delete")
+    }
+  }
+
   "TaskClientImpl getAsync" should {
 
     "return task snapshot with typed result" in {

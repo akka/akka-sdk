@@ -25,6 +25,8 @@ import java.util.Optional;
  *
  * <p>Command validity is governed by the task's {@link TaskStatus}: for example a task can only be
  * assigned when {@code PENDING}, and completion is idempotent once the task is in a terminal state.
+ * After {@link #delete}, every command except {@code create} and {@code delete} fails as for a task
+ * that does not exist.
  */
 @Component(id = "akka-task")
 public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
@@ -60,7 +62,10 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
     return TaskState.empty();
   }
 
-  /** Create the task. Fails if a task with this ID already exists. */
+  /**
+   * Create the task. Fails if a task with this ID already exists, or was deleted and the runtime
+   * has not yet removed its data.
+   */
   public Effect<Done> create(CreateRequest request) {
     // A persist on a deleted entity fails, so the id of a deleted task is not free.
     if (isDeleted() || !currentState().taskId().isEmpty()) {
@@ -236,6 +241,25 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
         .thenReply(__ -> done());
   }
 
+  /**
+   * Delete the task. Only valid when the task has ended: {@code COMPLETED}, {@code FAILED} or
+   * {@code CANCELLED}. Succeeds without change when the task does not exist or was deleted.
+   */
+  public Effect<Done> delete() {
+    // An id that never existed and the id of a deleted task whose data the runtime has removed look
+    // the same, so a repeated delete succeeds.
+    if (!exists()) {
+      return effects().reply(done());
+    }
+    if (!isTerminal()) {
+      return effects().error("Task can only be deleted when COMPLETED, FAILED or CANCELLED");
+    }
+    return effects()
+        .persist(new TaskEvent.TaskDeleted(taskId, currentState().name()))
+        .deleteEntity()
+        .thenReply(__ -> done());
+  }
+
   private boolean exists() {
     return !isDeleted() && !currentState().taskId().isEmpty();
   }
@@ -289,6 +313,7 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
       case TaskEvent.TaskCancelled e -> currentState().withCancellation(e.reason());
       case TaskEvent.TaskReassigned e ->
           currentState().withReassignment(e.newAssignee(), e.context());
+      case TaskEvent.TaskDeleted e -> currentState();
     };
   }
 }
