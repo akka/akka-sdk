@@ -292,14 +292,8 @@ private[impl] final class AutonomousAgentImpl(
       }
     }
 
-    // The entity call can fail with the error reply itself, or with it wrapped in a CompletionException.
     private def notFoundAsSpi[T](taskId: String)(call: => Future[T]): Future[T] =
-      call.recoverWith {
-        case _: TaskNotFoundCommandException =>
-          Future.failed(new SpiTask.TaskNotFoundException(taskId))
-        case e: CompletionException if e.getCause.isInstanceOf[TaskNotFoundCommandException] =>
-          Future.failed(new SpiTask.TaskNotFoundException(taskId))
-      }(sdkExecutionContext)
+      AutonomousAgentImpl.notFoundAsSpi(taskId)(call)(sdkExecutionContext)
 
     override val taskEntityType: String = Reflect.readComponentId(classOf[TaskEntity])
 
@@ -558,4 +552,24 @@ private[impl] final class AutonomousAgentImpl(
           isError = m.isError)
     }
 
+}
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] object AutonomousAgentImpl {
+
+  /**
+   * Fails with the SPI not found exception when the entity call fails with the not found reply of the task entity.
+   */
+  def notFoundAsSpi[T](taskId: String)(call: => Future[T])(implicit ec: ExecutionContext): Future[T] =
+    // A call through the component client fails with the error reply wrapped in a CompletionException.
+    // The bare error reply is mapped too.
+    call.recoverWith {
+      case _: TaskNotFoundCommandException =>
+        Future.failed(new SpiTask.TaskNotFoundException(taskId))
+      case e: CompletionException if e.getCause.isInstanceOf[TaskNotFoundCommandException] =>
+        Future.failed(new SpiTask.TaskNotFoundException(taskId))
+    }
 }
