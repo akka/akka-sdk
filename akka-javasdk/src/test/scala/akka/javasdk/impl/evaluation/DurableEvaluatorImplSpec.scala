@@ -10,9 +10,11 @@ import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
+import scala.jdk.OptionConverters._
 
 import akka.Done
 import akka.javasdk.evaluation.ConfiguredDurableEvaluator
+import akka.javasdk.evaluation.SpanRecordingDurableEvaluator
 import akka.javasdk.evaluation.Subject
 import akka.javasdk.evaluation.TranscriptQualityEvaluator
 import akka.javasdk.impl.evaluation.DurableEvaluatorImpl.RecordStepName
@@ -29,6 +31,12 @@ import akka.runtime.sdk.spi.SpiMetadata
 import akka.runtime.sdk.spi.SpiWorkflow
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
+import io.opentelemetry.api.OpenTelemetry
+import io.opentelemetry.api.trace.Span
+import io.opentelemetry.api.trace.SpanContext
+import io.opentelemetry.api.trace.TraceFlags
+import io.opentelemetry.api.trace.TraceState
+import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.ContextKey
 import io.opentelemetry.context.{ Context => OtelContext }
 import org.scalatest.OptionValues
@@ -66,7 +74,29 @@ class DurableEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionValu
       recorder,
       serializer,
       ExecutionContext.global,
-      _ => ConfigFactory.empty())
+      _ => ConfigFactory.empty(),
+      tracerFactory)
+
+  private val tracerFactory: () => Tracer = () => OpenTelemetry.noop().getTracer("test")
+
+  private def newSpanRecordingImpl() =
+    new DurableEvaluatorImpl[SpanRecordingDurableEvaluator.State, SpanRecordingDurableEvaluator](
+      evaluationId,
+      classOf[SpanRecordingDurableEvaluator],
+      classOf[SpanRecordingDurableEvaluator.State],
+      _ => new SpanRecordingDurableEvaluator,
+      new RecorderProbe,
+      serializer,
+      ExecutionContext.global,
+      _ => ConfigFactory.empty(),
+      tracerFactory)
+
+  private def contextWithSpan(spanId: String): OtelContext =
+    OtelContext
+      .root()
+      .`with`(
+        Span.wrap(
+          SpanContext.create("0af7651916cd43dd8448eb211c80319c", spanId, TraceFlags.getSampled, TraceState.getDefault)))
 
   private def newConfiguredImpl(configFor: Subject => Config) =
     new DurableEvaluatorImpl[ConfiguredDurableEvaluator.State, ConfiguredDurableEvaluator](
@@ -77,7 +107,8 @@ class DurableEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionValu
       new RecorderProbe,
       serializer,
       ExecutionContext.global,
-      configFor)
+      configFor,
+      tracerFactory)
 
   private def trigger(interactionId: String = "interaction-1") =
     new SpiEvaluator.Trigger(
@@ -139,6 +170,30 @@ class DurableEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionValu
       await(impl.invokeStep(Some(persistedState), stepCommand("fetchTranscript", telemetryContext = telemetryContext)))
 
       stepContexts.flatten.map(_.get(key)) should contain("evaluation-1")
+    }
+
+    "make the span of the start and of a step current and the parent span of the tracing" in {
+      val impl = newSpanRecordingImpl()
+      val startContext = contextWithSpan("b7ad6b7169203331")
+      val stepContext = contextWithSpan("00f067aa0ba902b7")
+
+      val started = await(impl.handleEvaluationStart(None, trigger(), startContext))
+      val persistedState = started
+        .asInstanceOf[SpiWorkflow.CommandTransitionalEffect]
+        .persistence
+        .asInstanceOf[SpiWorkflow.UpdateState]
+        .newState
+      await(impl.invokeStep(Some(persistedState), stepCommand("recordStep", telemetryContext = stepContext)))
+
+      val startSpan = Span.fromContext(startContext).getSpanContext
+      val atStart = SpanRecordingDurableEvaluator.recorded(s"start:$evaluationId")
+      atStart.current() shouldBe startSpan
+      atStart.tracingParent().toScala shouldBe Some(startSpan)
+
+      val stepSpan = Span.fromContext(stepContext).getSpanContext
+      val inStep = SpanRecordingDurableEvaluator.recorded(s"step:$evaluationId")
+      inStep.current() shouldBe stepSpan
+      inStep.tracingParent().toScala shouldBe Some(stepSpan)
     }
 
     "pass the config for the evaluated agent on the context at the start and in a step" in {
@@ -281,7 +336,9 @@ class DurableEvaluatorImplSpec extends AnyWordSpec with Matchers with OptionValu
         evaluationId,
         new Subject.Workflow("workflow-1", "order-workflow"),
         attributes,
-        ConfigFactory.empty())
+        ConfigFactory.empty(),
+        None,
+        tracerFactory)
 
       context.attributes() shouldBe util.Map.of("interactionIds", "i1,i2")
       an[UnsupportedOperationException] should be thrownBy context.attributes().put("x", "y")

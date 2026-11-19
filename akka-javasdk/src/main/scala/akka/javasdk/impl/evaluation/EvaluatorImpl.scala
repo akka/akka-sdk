@@ -11,14 +11,18 @@ import scala.jdk.CollectionConverters._
 import scala.util.control.NonFatal
 
 import akka.annotation.InternalApi
+import akka.javasdk.Tracing
 import akka.javasdk.evaluation.EvaluationContext
 import akka.javasdk.evaluation.Evaluator
 import akka.javasdk.evaluation.Subject
 import akka.javasdk.impl.evaluation.EvaluatorEffectImpl.CompleteEffect
 import akka.javasdk.impl.evaluation.EvaluatorEffectImpl.InconclusiveEffect
 import akka.javasdk.impl.evaluation.EvaluatorEffectImpl.NotApplicableEffect
+import akka.javasdk.impl.telemetry.SpanTracingImpl
+import akka.javasdk.impl.telemetry.Telemetry
 import akka.runtime.sdk.spi.SpiEvaluator
 import com.typesafe.config.Config
+import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -38,7 +42,8 @@ private[impl] object EvaluatorImpl {
   final class EvaluationContextImpl(
       spiContext: SpiEvaluator.EvaluationContext,
       evaluationSubject: Subject,
-      evaluationConfig: Config)
+      evaluationConfig: Config,
+      tracerFactory: () => Tracer)
       extends EvaluationContext {
 
     override def subject(): Subject = evaluationSubject
@@ -48,6 +53,7 @@ private[impl] object EvaluatorImpl {
     override def attributes(): util.Map[String, String] = spiContext.attributes.asJava
 
     override def config(): Config = evaluationConfig
+    override def tracing(): Tracing = new SpanTracingImpl(Option(spiContext.telemetryContext), tracerFactory)
   }
 
 }
@@ -62,17 +68,20 @@ private[impl] object EvaluatorImpl {
 private[impl] final class EvaluatorImpl[E <: Evaluator](
     factory: Option[OtelContext] => E,
     evaluatorClass: Class[E],
-    configFor: Subject => Config)
+    configFor: Subject => Config,
+    tracerFactory: () => Tracer)
     extends SpiEvaluator {
   import EvaluatorImpl._
 
   private val log: Logger = LoggerFactory.getLogger(evaluatorClass)
 
   override def evaluate(spiContext: SpiEvaluator.EvaluationContext): Future[SpiEvaluator.Effect] = {
+    val telemetryContext = Option(spiContext.telemetryContext)
+    val traceScope = Telemetry.makeCurrent(telemetryContext)
     try {
       val subject = EvaluationConversions.toSdkSubject(spiContext.subject)
-      val context = new EvaluationContextImpl(spiContext, subject, configFor(subject))
-      val evaluator = factory(Option(spiContext.telemetryContext))
+      val context = new EvaluationContextImpl(spiContext, subject, configFor(subject), tracerFactory)
+      val evaluator = factory(telemetryContext)
       val effect = evaluator.evaluate(context)
       toSpiEffect(effect)
     } catch {
@@ -81,6 +90,8 @@ private[impl] final class EvaluatorImpl[E <: Evaluator](
       case NonFatal(ex) =>
         log.error(s"Failure during evaluation in Evaluator component [${evaluatorClass.getSimpleName}].", ex)
         Future.failed(ex)
+    } finally {
+      traceScope.close()
     }
   }
 

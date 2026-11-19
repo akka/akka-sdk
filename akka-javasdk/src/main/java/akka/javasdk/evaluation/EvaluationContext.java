@@ -4,6 +4,7 @@
 
 package akka.javasdk.evaluation;
 
+import akka.javasdk.Tracing;
 import com.typesafe.config.Config;
 import java.util.Map;
 
@@ -54,4 +55,7 @@ public interface EvaluationContext {
    * @return the configuration of the binding with the evaluator entry as fallback
    */
   Config config();
+
+  /** Access to tracing for custom app specific tracing. */
+  Tracing tracing();
 }
