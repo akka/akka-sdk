@@ -44,6 +44,11 @@
   "cli": {
     "releases": [
       {
+        "version": "3.0.83",
+        "releasedAt": "2026-11-19T16:32:17Z",
+        "releaseNotesUrl": "https://doc.akka.io/reference/release-notes.html"
+      },
+      {
         "version": "3.0.82",
         "releasedAt": "2026-11-12T21:47:37Z",
         "releaseNotesUrl": "https://doc.akka.io/reference/release-notes.html"
