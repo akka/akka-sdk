@@ -200,6 +200,23 @@ class InventoryConfigSpec extends AnyWordSpec with Matchers {
       guardrail.unknownKeys() shouldBe empty
     }
 
+    "read substitution text inside a quoted string as a literal" in {
+      val application = applicationConf("""
+        |akka.javasdk.agent.guardrails.refund-limit {
+        |  class = "com.example.RefundLimitGuard"
+        |  category = "price ${?NOT_A_SUB}"
+        |  control-id = "price ${..}"
+        |  agents = ["support"]
+        |}
+        |""".stripMargin)
+
+      val guardrail = read(application).head
+
+      guardrail.category() shouldBe "price ${?NOT_A_SUB}"
+      guardrail.controlId() shouldBe java.util.Optional.of("price ${..}")
+      guardrail.unknownKeys() shouldBe empty
+    }
+
     "apply an include after a literal over the literal" in {
       val application = applicationConf(RefundLimit + "include \"override\"\n")
       write(application, "override.conf", ReportOnly)
@@ -319,14 +336,49 @@ class InventoryConfigSpec extends AnyWordSpec with Matchers {
       guardrails.map(_.name()) shouldBe List("refund-limit")
     }
 
-    "resolve reference.conf on its own before it applies application.conf" in {
+    "record an optional substitution in a dependency reference.conf as unknown" in {
+      val application = applicationConf("")
+      val reference = jar("reference.conf" -> (RefundLimit + """
+          |akka.javasdk.agent.guardrails.refund-limit.report-only = ${?GUARD_REPORT_ONLY}
+          |""".stripMargin))
+
+      read(application, reference).head.unknownKeys() shouldBe java.util.List.of("report-only")
+    }
+
+    "keep a value from application.conf over an optional substitution in reference.conf" in {
+      val application = applicationConf(ReportOnly)
+      val reference = jar("reference.conf" -> (RefundLimit + """
+          |akka.javasdk.agent.guardrails.refund-limit.report-only = ${?GUARD_REPORT_ONLY}
+          |""".stripMargin))
+
+      val guardrail = read(application, reference).head
+
+      guardrail.reportOnly() shouldBe true
+      guardrail.unknownKeys() shouldBe empty
+    }
+
+    "resolve a reference.conf substitution against application.conf" in {
       val application = applicationConf("library.guard-class = \"com.example.FromApplication\"\n")
       val reference = jar("reference.conf" -> (RefundLimit + """
           |library.guard-class = "com.example.FromReference"
           |akka.javasdk.agent.guardrails.refund-limit.class = ${library.guard-class}
           |""".stripMargin))
 
-      read(application, reference).head.className() shouldBe "com.example.FromReference"
+      read(application, reference).head.className() shouldBe "com.example.FromApplication"
+    }
+
+    "list a reference.conf guardrail that application.conf enables through a substitution" in {
+      val application = applicationConf("library.guard-agents = [\"*\"]\n")
+      val reference = jar("reference.conf" -> """
+          |library.guard-agents = []
+          |akka.javasdk.agent.guardrails.library-guard {
+          |  class = "com.example.LibraryGuard"
+          |  category = POLICY
+          |  agents = ${library.guard-agents}
+          |}
+          |""".stripMargin)
+
+      read(application, reference).map(_.name()) shouldBe List("library-guard")
     }
 
     "report a syntax error with the file" in {

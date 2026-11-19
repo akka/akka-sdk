@@ -52,16 +52,14 @@ final class InventoryConfig {
   }
 
   /**
-   * Returns {@code application} over {@code reference}, after it resolves {@code reference} on its
-   * own. The result ignores system properties and env vars and can hold unresolved values. A
-   * guardrail value that depends on an optional substitution without a value stays unresolved.
+   * Merges {@code application} over {@code reference} and resolves both together. The result
+   * ignores system properties and env vars and can hold unresolved values.
    */
   private static Config merge(Config application, Config reference) throws InventoryException {
     try {
-      Config merged = application.withFallback(reference.resolve(RESOLVE_OPTIONS));
-      Config resolved = merged.resolve(RESOLVE_OPTIONS);
-      return OptionalSubstitutions.markUnresolved(application, merged, resolved)
-          .resolve(RESOLVE_OPTIONS);
+      Config parsed = application.withFallback(reference);
+      Config resolved = parsed.resolve(RESOLVE_OPTIONS);
+      return OptionalSubstitutions.markUnresolved(parsed, resolved).resolve(RESOLVE_OPTIONS);
     } catch (ConfigException e) {
       throw new InventoryException("Cannot resolve the config: " + e.getMessage(), e);
     }

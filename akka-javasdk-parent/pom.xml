@@ -557,7 +557,7 @@
              descriptor or inventory that another tool wrote after the last Maven compile. This happens with
              build output from an earlier SDK version, after a change of non-akka-service, or after an IDE build.
              When akka.javasdk.inventory is true, also clean a descriptor with components but no inventory.
-             Also clean target/classes when a config file in src/main/resources changed after the last Maven compile.
+             When akka.javasdk.inventory is true, also clean target/classes when a config file in src/main/resources changed since the last Maven compile.
              When akka.javasdk.inventory is false, also clean build output that holds an inventory.
              Maven profile file-based activation does not support wildcards or ${project.*}
              properties, so we use antrun instead. The profile only

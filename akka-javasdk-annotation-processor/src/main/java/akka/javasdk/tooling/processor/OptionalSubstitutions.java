@@ -19,8 +19,8 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * Finds the guardrail values in {@code application.conf} that depend on an optional substitution
- * without a value.
+ * Finds the guardrail values in the application config over the reference config, before
+ * resolution, that depend on an optional substitution without a value.
  */
 final class OptionalSubstitutions {
 
@@ -29,20 +29,20 @@ final class OptionalSubstitutions {
   private static final ConfigValue UNRESOLVED =
       ConfigFactory.parseString("value = ${akka.javasdk.inventory.unresolved}").root().get("value");
 
-  private final Config application;
+  private final Config parsed;
   private final Config resolved;
 
-  private OptionalSubstitutions(Config application, Config resolved) {
-    this.application = application;
+  private OptionalSubstitutions(Config parsed, Config resolved) {
+    this.parsed = parsed;
     this.resolved = resolved;
   }
 
   /**
-   * Returns {@code merged} with an unresolved value in place of each guardrail value in {@code
-   * application} that depends on an optional substitution without a value in {@code resolved}.
+   * Replaces each guardrail value in {@code parsed} that depends on an optional substitution with
+   * no value in {@code resolved}.
    */
-  static Config markUnresolved(Config application, Config merged, Config resolved) {
-    return new OptionalSubstitutions(application, resolved).mark(merged);
+  static Config markUnresolved(Config parsed, Config resolved) {
+    return new OptionalSubstitutions(parsed, resolved).mark(parsed);
   }
 
   private Config mark(Config merged) {
@@ -86,6 +86,10 @@ final class OptionalSubstitutions {
 
   private boolean dependsOnUnsetOptional(
       ConfigValue value, List<String> path, Set<List<String>> visited) {
+    if (isResolved(value)) {
+      return false;
+    }
+
     var substitutions = SUBSTITUTION.matcher(value.render(ConfigRenderOptions.concise()));
     while (substitutions.find()) {
       boolean optional = !substitutions.group(1).isEmpty();
@@ -108,6 +112,15 @@ final class OptionalSubstitutions {
     return false;
   }
 
+  private static boolean isResolved(ConfigValue value) {
+    try {
+      value.unwrapped();
+      return true;
+    } catch (ConfigException.NotResolved e) {
+      return false;
+    }
+  }
+
   private boolean hasValue(String path) {
     try {
       return resolved.hasPath(path);
@@ -117,7 +130,7 @@ final class OptionalSubstitutions {
   }
 
   private Optional<ConfigValue> rawValue(List<String> path) {
-    ConfigValue value = application.root();
+    ConfigValue value = parsed.root();
     for (String key : path) {
       var object = plainObject(value);
       if (object.isEmpty()) {
