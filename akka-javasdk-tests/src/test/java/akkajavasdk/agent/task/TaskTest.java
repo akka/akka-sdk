@@ -11,6 +11,7 @@ import akka.javasdk.agent.MessageContent;
 import akka.javasdk.agent.task.Task;
 import akka.javasdk.agent.task.TaskRule;
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -85,5 +86,18 @@ public class TaskTest {
         .isInstanceOf(IllegalArgumentException.class);
     assertThatThrownBy(() -> task.expireAfter(Duration.ofSeconds(-1)))
         .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  public void shouldRejectExpiryThatEndsAfterTheYear9999() {
+    var task = Task.name("task");
+    assertThatThrownBy(() -> task.expireAfter(ChronoUnit.FOREVER.getDuration()))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("before the year 10000");
+    assertThatThrownBy(() -> task.expireAfter(Duration.ofDays(Integer.MAX_VALUE)))
+        .isInstanceOf(IllegalArgumentException.class);
+
+    var thousandYears = Duration.ofDays(365L * 1000);
+    assertThat(task.expireAfter(thousandYears).expireAfter()).contains(thousandYears);
   }
 }

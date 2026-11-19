@@ -11,6 +11,7 @@ import akka.javasdk.NotificationPublisher;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
+import akka.javasdk.impl.agent.TaskExpiry;
 import akka.javasdk.impl.agent.task.TaskNotFoundCommandException;
 import java.time.Duration;
 import java.util.List;
@@ -103,8 +104,8 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
       return effects().error("Task already exists");
     }
     var expireAfter = request.expireAfter();
-    if (expireAfter != null && (expireAfter.isZero() || expireAfter.isNegative())) {
-      return effects().error("expireAfter must be a positive duration, was [" + expireAfter + "]");
+    if (expireAfter != null && !TaskExpiry.isValid(expireAfter)) {
+      return effects().error(TaskExpiry.invalidMessage(expireAfter));
     }
     var deps =
         request.dependencyTaskIds() != null ? request.dependencyTaskIds() : List.<String>of();
