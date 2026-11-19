@@ -209,7 +209,6 @@ public @interface Consume {
    *       later start. Records dropped by retention never arrive.
    *   <li>A handler added later receives only the records after the current offset. The consumer
    *       does not receive the earlier records of its kind.
-   *   <li>The ledger recording mode sets the content of a record.
    *   <li>The runtime records and delivers an allow decision only when allow records are enabled.
    * </ul>
    */
@@ -226,8 +225,8 @@ public @interface Consume {
    * starts from the given point in time. Exactly one of the two must be set. Events and state
    * changes from before the start point are not consumed.
    *
-   * <p>Supported for consumers of Event Sourced Entities, Key Value Entities, Workflows and service
-   * to service event streams. Not supported for consumers of message broker topics.
+   * <p>Supported for consumers of Event Sourced Entities, Key Value Entities, Workflows, service to
+   * service event streams and the ledger. Not supported for consumers of message broker topics.
    *
    * <p>The start point is recorded on the first deployment and is permanent. The service refuses to
    * start if it is removed or changed, except that a timestamp can change to {@code latest}. To
