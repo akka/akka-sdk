@@ -29,6 +29,7 @@ import akka.javasdk.agent.task.TaskStatus
 import akka.javasdk.client.TaskClient
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.agent.TaskRuleRunner
+import akka.javasdk.impl.agent.task.TaskNotFoundCommandException
 import akka.javasdk.impl.serialization.Serializer
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.EntityRequest
@@ -93,7 +94,7 @@ private[javasdk] final class TaskClientImpl(
       .map { reply =>
         reply.exceptionPayload match {
           case Some(exBytes) =>
-            throw serializer.json.exceptionFromBytes(exBytes)
+            throw errorReply(exBytes)
           case None =>
             val taskState = serializer.fromBytes[TaskState](classOf[TaskState], reply.payload)
             log.debug("getTask: id=[{}] status=[{}]", taskId, taskState.status())
@@ -213,7 +214,7 @@ private[javasdk] final class TaskClientImpl(
       .flatMap { reply =>
         reply.exceptionPayload match {
           case Some(exBytes) =>
-            throw serializer.json.exceptionFromBytes(exBytes)
+            throw errorReply(exBytes)
           case None =>
             val taskState = serializer.fromBytes[TaskState](classOf[TaskState], reply.payload)
             taskRuleRunner.evaluate(taskState, resultJson) match {
@@ -254,12 +255,18 @@ private[javasdk] final class TaskClientImpl(
       .send(new EntityRequest(TaskEntityComponentId, taskId, methodName, payload, spiMetadata))
       .map { reply =>
         reply.exceptionPayload.foreach { exBytes =>
-          throw serializer.json.exceptionFromBytes(exBytes)
+          throw errorReply(exBytes)
         }
         Done.done()
       }
       .asJava
   }
+
+  private def errorReply(exBytes: BytesPayload): RuntimeException =
+    serializer.json.exceptionFromBytes(exBytes) match {
+      case _: TaskNotFoundCommandException => new TaskException.NotFound(taskId)
+      case other                           => other
+    }
 
   private def deserializeResult[R](taskState: TaskState, taskDefinition: TaskDefinition[R]): Optional[R] = {
     validateTaskDefinition(taskState, taskDefinition)
