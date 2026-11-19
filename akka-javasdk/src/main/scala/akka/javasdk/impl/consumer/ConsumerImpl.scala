@@ -93,6 +93,8 @@ private[impl] final class ConsumerImpl[C <: Consumer](
       ignoreUnknown,
       consumesFromTopic = consumerSource.isInstanceOf[TopicSource])
 
+  private lazy val ledgerHandlers = LedgerConsumerRouter.handlers(consumerClass)
+
   override def handleMessage(message: Message): Future[Effect] = {
     val metadata = {
       val asIs = MetadataImpl.of(message.metadata)
@@ -146,20 +148,20 @@ private[impl] final class ConsumerImpl[C <: Consumer](
 
         val consumer = factory(messageContext)
 
-        val effect = new LedgerConsumerRouter(consumer).handleRecord(record, messageContext)
+        val effect = new LedgerConsumerRouter(consumer, ledgerHandlers).handleRecord(record, messageContext)
         toSpiEffect(message, effect)
     }
   }
 
   // Sets the CloudEvent attributes of a ledger record. Also sets the flow id when the record has one.
   private def withRecordAttributes(metadata: MetadataImpl, record: FlowRecord): MetadataImpl = {
-    val (recordType, sourceComponentId, flowId) = record match {
+    val (recordType, sourceId, flowId) = record match {
       case interaction: InteractionRecord =>
         ("interaction", interaction.agentComponentId, interaction.flowId.toScala)
       case activity: ActivityRecord =>
         ("activity", activity.agentComponentId, Some(activity.flowId))
       case decision: GuardrailDecisionRecord =>
-        ("guardrail-decision", decision.agentComponentId, decision.flowId.toScala)
+        ("guardrail-decision", decision.name, decision.flowId.toScala)
       case evaluation: EvaluationRecord =>
         ("evaluation", evaluation.evaluatorComponentId, None)
       case classification: ClassificationRecord =>
@@ -171,7 +173,7 @@ private[impl] final class ConsumerImpl[C <: Consumer](
       .set(MetadataImpl.CeId, record.recordId)
       .set(MetadataImpl.CeSubject, record.recordId)
       .set(MetadataImpl.CeType, recordType)
-      .set(MetadataImpl.CeSource, sourceComponentId)
+      .set(MetadataImpl.CeSource, sourceId)
 
     flowId.fold(withCloudEvent)(withCloudEvent.set(ConsumerImpl.FlowIdKey, _))
   }

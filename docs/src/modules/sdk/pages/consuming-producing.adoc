@@ -121,7 +121,23 @@ include::example$doc-snippets/src/main/java/com/example/application/DeniedGuardr
 <3> Return `effects().ignore()` for a decision that is not a denial.
 <4> `messageContext().eventSubject()` returns the id of the record.
 
-The record types are `InteractionRecord`, `ActivityRecord`, `GuardrailDecisionRecord`, `EvaluationRecord` and `ClassificationRecord`, in the package `akka.javasdk.ledger`. Each implements link:{attachmentsdir}/api/akka/javasdk/ledger/FlowRecord.html[`FlowRecord`]. A handler for `FlowRecord` receives all five kinds. If a consumer has handlers for both `FlowRecord` and one record type, the specific handler receives that type.
+The record types are `InteractionRecord`, `ActivityRecord`, `GuardrailDecisionRecord`, `EvaluationRecord` and `ClassificationRecord`, in the package `akka.javasdk.ledger`. Each implements link:{attachmentsdir}/api/akka/javasdk/ledger/FlowRecord.html[`FlowRecord`]. A handler for `FlowRecord` receives all record types. If a consumer has handlers for both `FlowRecord` and one record type, the specific handler receives that type.
+
+The metadata of a record carries these keys. Read them with `messageContext().metadata()`.
+
+[cols="1,3"]
+|===
+| Key | Value
+
+| `ce-type`
+| The record type: `interaction`, `activity`, `guardrail-decision`, `evaluation` or `classification`.
+
+| `ce-source`
+| The producer of the record. For an interaction or an activity, the component id of the agent. For a guardrail decision, the guardrail name. For an evaluation, the component id of the evaluator. For a classification, the classifier name.
+
+| `flow-id`
+| The id of the flow of the record. It is absent for a record outside a flow and for an evaluation.
+|===
 
 The ledger consumer has these delivery guarantees:
 
@@ -133,6 +149,7 @@ The ledger consumer has these delivery guarantees:
 * A new consumer receives every record that the ledger still holds. The consumer never receives a record that retention dropped.
 * A handler that you add later receives only the records after the current offset of the consumer. The consumer does not receive the earlier records of that kind.
 * The consumer receives allow decisions of guardrails by default. Set `guardrail-allow` to `false` to stop the runtime from recording and delivering them. See xref:sdk:evaluators.adoc#_optional_ledger_records[Optional ledger records].
+* The consumer receives no records when `akka.javasdk.agent.ledger.enabled` is `false`, because the runtime writes no records. The service logs a warning at startup.
 
 `@Consume.StartFrom` also works on a new ledger consumer. It sets a later start point. See xref:consuming-producing.adoc#_starting_from_the_latest_events_or_a_timestamp[Starting from the latest events or a timestamp].
 

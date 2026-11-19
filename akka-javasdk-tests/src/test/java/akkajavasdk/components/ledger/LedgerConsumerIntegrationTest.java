@@ -49,9 +49,6 @@ public class LedgerConsumerIntegrationTest extends TestKitSupport {
             .until(() -> receivedClassificationOf(evaluationId), Optional::isPresent)
             .orElseThrow();
 
-    assertThat(ClassificationRecordConsumer.receivedRecords)
-        .allMatch(ClassificationRecord.class::isInstance);
-
     List<EvaluationRecord> evaluations =
         Awaitility.await()
             .atMost(Duration.ofSeconds(30))

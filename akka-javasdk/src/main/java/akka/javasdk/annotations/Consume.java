@@ -191,10 +191,25 @@ public @interface Consume {
    * of its own service.
    *
    * <p>The parameter types of the handler methods select the kinds of records that the consumer
-   * receives. A handler for {@link akka.javasdk.ledger.FlowRecord} selects all five kinds. These
+   * receives. A handler for {@link akka.javasdk.ledger.FlowRecord} selects all record types. These
    * are {@link akka.javasdk.ledger.InteractionRecord}, {@link akka.javasdk.ledger.ActivityRecord},
    * {@link akka.javasdk.ledger.GuardrailDecisionRecord}, {@link
    * akka.javasdk.ledger.EvaluationRecord} and {@link akka.javasdk.ledger.ClassificationRecord}.
+   *
+   * <p>The metadata of a record carries these keys:
+   *
+   * <ul>
+   *   <li>{@code ce-type} holds the record type: {@code interaction}, {@code activity}, {@code
+   *       guardrail-decision}, {@code evaluation} or {@code classification}.
+   *   <li>{@code ce-source} names the producer of the record. For an interaction or an activity, it
+   *       is the component id of the agent. For a guardrail decision, it is the guardrail name. For
+   *       an evaluation, it is the component id of the evaluator. For a classification, it is the
+   *       classifier name.
+   *   <li>{@code flow-id} holds the id of the flow of the record. It is absent for a record outside
+   *       a flow and for an evaluation.
+   * </ul>
+   *
+   * <p>The ledger consumer has these delivery guarantees:
    *
    * <ul>
    *   <li>Delivery is at least once.
@@ -211,6 +226,8 @@ public @interface Consume {
    *       does not receive the earlier records of its kind.
    *   <li>The consumer receives allow decisions of guardrails, unless the service turns off allow
    *       records.
+   *   <li>The consumer receives no records when {@code akka.javasdk.agent.ledger.enabled} is {@code
+   *       false}.
    * </ul>
    */
   @Target(ElementType.TYPE)

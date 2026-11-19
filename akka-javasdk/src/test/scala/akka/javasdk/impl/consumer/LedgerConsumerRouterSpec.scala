@@ -94,13 +94,15 @@ class LedgerConsumerRouterSpec extends ScalaTestWithActorTestKit with LogCapturi
       failure = None,
       timestamp = Instant.EPOCH)
 
-  private def spiGuardrailDecisionRecord: SpiLedger.GuardrailDecisionRecord =
+  private def spiGuardrailDecisionRecord: SpiLedger.GuardrailDecisionRecord = spiGuardrailDecisionRecord(None)
+
+  private def spiGuardrailDecisionRecord(flowId: Option[String]): SpiLedger.GuardrailDecisionRecord =
     new SpiLedger.GuardrailDecisionRecord(
       recordId = "guardrail-1",
       agentComponentId = "support-agent",
       interactionId = "interaction-1",
       sessionId = "session-1",
-      flowId = None,
+      flowId = flowId,
       name = "no-refunds",
       controlId = None,
       category = "policy",
@@ -131,6 +133,18 @@ class LedgerConsumerRouterSpec extends ScalaTestWithActorTestKit with LogCapturi
       outcome = new SpiLedger.EvaluationInconclusive("no verdict"),
       timestamp = Instant.EPOCH,
       attributes = Map.empty)
+
+  private def spiClassificationRecord: SpiLedger.ClassificationRecord =
+    new SpiLedger.ClassificationRecord(
+      classificationId = "classification-1",
+      classifierComponentId = "sentiment-classifier",
+      label = Some("positive"),
+      score = None,
+      confidence = None,
+      attributes = Map.empty,
+      flowId = Some("flow-3"),
+      evaluationId = None,
+      timestamp = Instant.EPOCH)
 
   private def interactionRecord: InteractionRecord = LedgerClientImpl.toInteractionRecord(spiInteractionRecord())
 
@@ -163,6 +177,9 @@ class LedgerConsumerRouterSpec extends ScalaTestWithActorTestKit with LogCapturi
       OtelContext.root(),
       Some(record))
 
+  private def router[C <: Consumer](consumer: C): LedgerConsumerRouter[C] =
+    new LedgerConsumerRouter(consumer, LedgerConsumerRouter.handlers(consumer.getClass))
+
   private def consumerImpl[C <: Consumer](consumerClass: Class[C], consumer: C): ConsumerImpl[C] = {
     val serializer = new Serializer
     new ConsumerImpl(
@@ -185,10 +202,10 @@ class LedgerConsumerRouterSpec extends ScalaTestWithActorTestKit with LogCapturi
 
     "route each record to the handler of its class" in {
       val consumer = new InteractionAndGuardrailConsumer
-      val router = new LedgerConsumerRouter(consumer)
+      val consumerRouter = router(consumer)
 
-      router.handleRecord(interactionRecord, messageContext) shouldBe ConsumerEffectImpl.ConsumedEffect
-      router.handleRecord(guardrailDecisionRecord, messageContext) shouldBe ConsumerEffectImpl.ConsumedEffect
+      consumerRouter.handleRecord(interactionRecord, messageContext) shouldBe ConsumerEffectImpl.ConsumedEffect
+      consumerRouter.handleRecord(guardrailDecisionRecord, messageContext) shouldBe ConsumerEffectImpl.ConsumedEffect
 
       consumer.interaction shouldBe interactionRecord
       consumer.guardrailDecision shouldBe guardrailDecisionRecord
@@ -196,20 +213,20 @@ class LedgerConsumerRouterSpec extends ScalaTestWithActorTestKit with LogCapturi
 
     "route to the most specific handler" in {
       val consumer = new MixedConsumer
-      val router = new LedgerConsumerRouter(consumer)
+      val consumerRouter = router(consumer)
 
-      router.handleRecord(interactionRecord, messageContext)
+      consumerRouter.handleRecord(interactionRecord, messageContext)
       consumer.interaction shouldBe interactionRecord
       consumer.record shouldBe null
 
-      router.handleRecord(activityRecord, messageContext)
+      consumerRouter.handleRecord(activityRecord, messageContext)
       consumer.record shouldBe activityRecord
     }
 
     "ignore a record with no handler" in {
       val consumer = new InteractionAndGuardrailConsumer
 
-      new LedgerConsumerRouter(consumer)
+      router(consumer)
         .handleRecord(activityRecord, messageContext) shouldBe ConsumerEffectImpl.Builder.ignore()
 
       consumer.interaction shouldBe null
@@ -244,6 +261,31 @@ class LedgerConsumerRouterSpec extends ScalaTestWithActorTestKit with LogCapturi
       metadata.get("ce-type") shouldBe Optional.of("interaction")
       metadata.get("ce-source") shouldBe Optional.of("support-agent")
       metadata.get("flow-id") shouldBe Optional.of("flow-1")
+    }
+
+    "set the type, source and flow id of each record kind" in {
+      val cases = Seq(
+        (spiInteractionRecord(), "interaction-1", "interaction", "support-agent", None),
+        (spiActivityRecord, "activity-1", "activity", "coordinator-agent", Some("flow-1")),
+        (spiGuardrailDecisionRecord(Some("flow-2")), "guardrail-1", "guardrail-decision", "no-refunds", Some("flow-2")),
+        (spiWorkflowEvaluationRecord, "evaluation-1", "evaluation", "order-evaluator", None),
+        (spiClassificationRecord, "classification-1", "classification", "sentiment-classifier", Some("flow-3")))
+
+      cases.foreach { case (spiRecord, recordId, recordType, source, flowId) =>
+        withClue(s"$recordType: ") {
+          val consumer = new AllRecordsConsumer
+
+          consumerImpl(classOf[AllRecordsConsumer], consumer)
+            .handleMessage(ledgerMessage(spiRecord))
+            .futureValue shouldBe SpiConsumer.ConsumedEffect
+
+          val metadata = consumer.context.metadata()
+          metadata.get("ce-id") shouldBe Optional.of(recordId)
+          metadata.get("ce-type") shouldBe Optional.of(recordType)
+          metadata.get("ce-source") shouldBe Optional.of(source)
+          metadata.get("flow-id") shouldBe Optional.ofNullable(flowId.orNull)
+        }
+      }
     }
 
     "ignore a record of an unknown class" in {

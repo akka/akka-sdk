@@ -19,16 +19,7 @@ import akka.javasdk.ledger.FlowRecord
  * Routes a ledger record to the handler that takes its class. Falls back to the `FlowRecord` handler.
  */
 @InternalApi
-private[impl] final class LedgerConsumerRouter[A <: Consumer](consumer: A) {
-
-  private val handlers: Map[Class[_], MethodInvoker] =
-    consumer.getClass.getMethods
-      .filter(method =>
-        ComponentDescriptorFactory.hasConsumerOutput(method) &&
-        method.getParameterCount == 1 &&
-        classOf[FlowRecord].isAssignableFrom(method.getParameterTypes.head))
-      .map(method => method.getParameterTypes.head -> MethodInvoker(method))
-      .toMap
+private[impl] final class LedgerConsumerRouter[A <: Consumer](consumer: A, handlers: Map[Class[_], MethodInvoker]) {
 
   def handleRecord(record: FlowRecord, context: MessageContext): Consumer.Effect = {
     consumer._internalSetMessageContext(Optional.of(context))
@@ -38,4 +29,21 @@ private[impl] final class LedgerConsumerRouter[A <: Consumer](consumer: A) {
       case None          => ConsumerEffectImpl.Builder.ignore()
     }
   }
+}
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] object LedgerConsumerRouter {
+
+  /** The ledger record handlers of a consumer class, keyed by the record class they take. */
+  def handlers(consumerClass: Class[_]): Map[Class[_], MethodInvoker] =
+    consumerClass.getMethods
+      .filter(method =>
+        ComponentDescriptorFactory.hasConsumerOutput(method) &&
+        method.getParameterCount == 1 &&
+        classOf[FlowRecord].isAssignableFrom(method.getParameterTypes.head))
+      .map(method => method.getParameterTypes.head -> MethodInvoker(method))
+      .toMap
 }
