@@ -187,6 +187,38 @@ public @interface Consume {
   }
 
   /**
+   * Annotation for a {@link akka.javasdk.consumer.Consumer} that consumes the records of the ledger
+   * of its own service.
+   *
+   * <p>The parameter types of the handler methods select the kinds of records that the consumer
+   * receives. A handler for {@link akka.javasdk.ledger.FlowRecord} selects all five kinds. These
+   * are {@link akka.javasdk.ledger.InteractionRecord}, {@link akka.javasdk.ledger.ActivityRecord},
+   * {@link akka.javasdk.ledger.GuardrailDecisionRecord}, {@link
+   * akka.javasdk.ledger.EvaluationRecord} and {@link akka.javasdk.ledger.ClassificationRecord}.
+   *
+   * <ul>
+   *   <li>Delivery is at least once.
+   *   <li>The runtime writes the records of one flow in order. Records outside a flow have no order
+   *       guarantee.
+   *   <li>A guardrail decision or an activity record can arrive before its interaction. The runtime
+   *       writes an interaction when it ends.
+   *   <li>The consumer receives only the records of its own service.
+   *   <li>In a multi-region service, the consumer in every region receives the records of every
+   *       region. {@code messageContext().originRegion()} names the region that wrote the record.
+   *   <li>A new consumer receives every record the ledger still holds. {@link StartFrom} can set a
+   *       later start. Records dropped by retention never arrive.
+   *   <li>A handler added later receives only the records after the current offset. The consumer
+   *       does not receive the earlier records of its kind.
+   *   <li>The ledger recording mode sets the content of a record.
+   *   <li>The runtime records and delivers an allow decision only when allow records are enabled.
+   * </ul>
+   */
+  @Target(ElementType.TYPE)
+  @Retention(RetentionPolicy.RUNTIME)
+  @Documented
+  @interface FromLedger {}
+
+  /**
    * Where a {@link akka.javasdk.consumer.Consumer} starts when it is deployed for the first time.
    *
    * <p>Without this annotation a new consumer processes the whole history of its source. With

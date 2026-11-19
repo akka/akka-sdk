@@ -8,6 +8,9 @@ import java.time.Instant
 
 import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.testmodels.keyvalueentity.CounterState
+import akka.javasdk.testmodels.subscriptions.LedgerTestModels.AllRecordsConsumer
+import akka.javasdk.testmodels.subscriptions.LedgerTestModels.InteractionAndGuardrailConsumer
+import akka.javasdk.testmodels.subscriptions.LedgerTestModels.StartFromLatestLedgerConsumer
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.AclEventStreamPublishingConsumer
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.DenyAclEventStreamPublishingConsumer
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.EventStreamPublishingConsumer
@@ -29,6 +32,7 @@ import akka.runtime.sdk.spi.ConsumerDestination
 import akka.runtime.sdk.spi.ConsumerSource
 import akka.runtime.sdk.spi.ConsumerStartFrom
 import akka.runtime.sdk.spi.ServiceNamePattern
+import akka.runtime.sdk.spi.SpiLedger
 import akka.runtime.sdk.spi.SpiffePattern
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -168,6 +172,27 @@ class ConsumerDescriptorFactorySpec extends AnyWordSpec with Matchers {
       intercept[IllegalArgumentException] {
         ComponentDescriptorFactory.consumerSource(classOf[TemplatePlatformServiceStreamConsumer])
       }.getMessage should include("Invalid platform service name [${MY_PLATFORM_SERVICE}]")
+    }
+
+    "create a ledger source with the record types of the handler parameter types" in {
+      ComponentDescriptorFactory.consumerSource(classOf[InteractionAndGuardrailConsumer]) shouldBe
+      new ConsumerSource.LedgerSource(Set(SpiLedger.RecordType.Interaction, SpiLedger.RecordType.GuardrailDecision))
+    }
+
+    "create a ledger source with all record types for a FlowRecord handler" in {
+      ComponentDescriptorFactory.consumerSource(classOf[AllRecordsConsumer]) shouldBe
+      new ConsumerSource.LedgerSource(
+        Set(
+          SpiLedger.RecordType.Interaction,
+          SpiLedger.RecordType.Activity,
+          SpiLedger.RecordType.GuardrailDecision,
+          SpiLedger.RecordType.Evaluation,
+          SpiLedger.RecordType.Classification))
+    }
+
+    "read the start point of a ledger consumer from @Consume.StartFrom" in {
+      ComponentDescriptorFactory.consumerStartFrom(classOf[StartFromLatestLedgerConsumer]) shouldBe Some(
+        ConsumerStartFrom.Latest)
     }
 
     "generate mappings for service to service subscription with protobuf events, for Kalix interop" in {

@@ -20,9 +20,20 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /** Contains validation logic specific to Consumer components. */
 public class ConsumerValidations {
+
+  /** The parameter types that a @Consume.FromLedger handler can take. */
+  private static final Set<String> LEDGER_RECORD_TYPES =
+      Set.of(
+          "akka.javasdk.ledger.FlowRecord",
+          "akka.javasdk.ledger.InteractionRecord",
+          "akka.javasdk.ledger.ActivityRecord",
+          "akka.javasdk.ledger.GuardrailDecisionRecord",
+          "akka.javasdk.ledger.EvaluationRecord",
+          "akka.javasdk.ledger.ClassificationRecord");
 
   /**
    * Validates a Consumer component.
@@ -41,6 +52,7 @@ public class ConsumerValidations {
         .combine(typeLevelSubscriptionValidation(typeDef))
         .combine(valueEntitySubscriptionValidations(typeDef, effectType))
         .combine(workflowSubscriptionValidations(typeDef, effectType))
+        .combine(ledgerSubscriptionValidations(typeDef, effectType))
         .combine(topicPublicationValidations(typeDef))
         .combine(publishStreamIdMustBeFilled(typeDef))
         .combine(Validations.serviceStreamPlatformServiceValidation(typeDef))
@@ -84,6 +96,7 @@ public class ConsumerValidations {
     if (Validations.hasEventSourcedEntitySubscription(typeDef)) subscriptionCount++;
     if (hasStreamSubscription(typeDef)) subscriptionCount++;
     if (hasTopicSubscription(typeDef)) subscriptionCount++;
+    if (Validations.hasLedgerSubscription(typeDef)) subscriptionCount++;
 
     if (subscriptionCount > 1) {
       return Validation.of(
@@ -217,6 +230,43 @@ public class ConsumerValidations {
     }
 
     return commonStateSubscriptionValidation(typeDef, effectTypeName);
+  }
+
+  /**
+   * Validates ledger subscription-specific rules: each handler takes a ledger record type and the
+   * consumer does not produce a service stream.
+   */
+  private static Validation ledgerSubscriptionValidations(TypeDef typeDef, String effectTypeName) {
+    if (!Validations.hasLedgerSubscription(typeDef)) {
+      return Validation.Valid.instance();
+    }
+
+    List<String> errors = new ArrayList<>();
+
+    for (MethodDef method : typeDef.getPublicMethods()) {
+      String returnTypeName = method.getReturnType().getRawQualifiedName();
+      if (returnTypeName.equals(effectTypeName) && method.getParameters().size() == 1) {
+        String paramType = method.getParameters().getFirst().getType().getQualifiedName();
+        if (!LEDGER_RECORD_TYPES.contains(paramType)) {
+          errors.add(
+              Validations.errorMessage(
+                  method,
+                  "A @Consume.FromLedger handler must take akka.javasdk.ledger.FlowRecord or one of"
+                      + " its record types. Found ["
+                      + paramType
+                      + "]."));
+        }
+      }
+    }
+
+    if (typeDef.hasAnnotation("akka.javasdk.annotations.Produce.ServiceStream")) {
+      errors.add(
+          Validations.errorMessage(
+              typeDef,
+              "@Produce.ServiceStream is not supported for a Consumer with @Consume.FromLedger."));
+    }
+
+    return Validation.of(errors);
   }
 
   /**

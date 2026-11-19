@@ -15,6 +15,7 @@ import akka.javasdk.annotations.Acl
 import akka.javasdk.annotations.Component
 import akka.javasdk.annotations.Consume.FromEventSourcedEntity
 import akka.javasdk.annotations.Consume.FromKeyValueEntity
+import akka.javasdk.annotations.Consume.FromLedger
 import akka.javasdk.annotations.Consume.FromServiceStream
 import akka.javasdk.annotations.Consume.FromTopic
 import akka.javasdk.annotations.Consume.FromWorkflow
@@ -31,6 +32,12 @@ import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.Reflect.Syntax._
 import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.keyvalueentity.KeyValueEntity
+import akka.javasdk.ledger.ActivityRecord
+import akka.javasdk.ledger.ClassificationRecord
+import akka.javasdk.ledger.EvaluationRecord
+import akka.javasdk.ledger.FlowRecord
+import akka.javasdk.ledger.GuardrailDecisionRecord
+import akka.javasdk.ledger.InteractionRecord
 import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.view.TableUpdater
 import akka.javasdk.view.View
@@ -38,6 +45,7 @@ import akka.javasdk.workflow.Workflow
 import akka.runtime.sdk.spi.ConsumerDestination
 import akka.runtime.sdk.spi.ConsumerSource
 import akka.runtime.sdk.spi.ConsumerStartFrom
+import akka.runtime.sdk.spi.SpiLedger
 
 /**
  * INTERNAL API
@@ -57,6 +65,9 @@ private[impl] object ComponentDescriptorFactory {
   def hasEventSourcedEntitySubscription(clazz: Class[_]): Boolean =
     clazz.isPublic && clazz.hasAnnotation[FromEventSourcedEntity]
 
+  def hasLedgerSubscription(clazz: Class[_]): Boolean =
+    clazz.isPublic && clazz.hasAnnotation[FromLedger]
+
   def streamSubscription(clazz: Class[_]): Option[FromServiceStream] =
     clazz.annotationOption[FromServiceStream]
 
@@ -65,7 +76,8 @@ private[impl] object ComponentDescriptorFactory {
     hasWorkflowSubscription(clazz) ||
     hasEventSourcedEntitySubscription(clazz) ||
     hasTopicSubscription(clazz) ||
-    hasStreamSubscription(clazz)
+    hasStreamSubscription(clazz) ||
+    hasLedgerSubscription(clazz)
   }
 
   def eventSourcedEntitySubscription(clazz: Class[_]): Option[FromEventSourcedEntity] =
@@ -267,10 +279,29 @@ private[impl] object ComponentDescriptorFactory {
         streamAnn.id(),
         streamAnn.consumerGroup(),
         ServiceAddress.streamPlatformService(streamAnn.service(), streamAnn.platformService(), clazz))
+    } else if (hasLedgerSubscription(clazz)) {
+      new ConsumerSource.LedgerSource(ledgerRecordTypes(clazz))
     } else {
       throw new IllegalArgumentException(s"Component [$clazz] is missing a @Consume annotation")
     }
   }
+
+  private val ledgerRecordTypeOf: Map[Class[_], SpiLedger.RecordType] = Map(
+    classOf[InteractionRecord] -> SpiLedger.RecordType.Interaction,
+    classOf[ActivityRecord] -> SpiLedger.RecordType.Activity,
+    classOf[GuardrailDecisionRecord] -> SpiLedger.RecordType.GuardrailDecision,
+    classOf[EvaluationRecord] -> SpiLedger.RecordType.Evaluation,
+    classOf[ClassificationRecord] -> SpiLedger.RecordType.Classification)
+
+  /** The record types that the handler parameter types of a ledger consumer select. */
+  def ledgerRecordTypes(clazz: Class[_]): Set[SpiLedger.RecordType] =
+    clazz.getMethods.toSet
+      .filter(hasConsumerOutput)
+      .flatMap(_.getParameterTypes.headOption)
+      .flatMap { parameterType =>
+        if (parameterType == classOf[FlowRecord]) ledgerRecordTypeOf.values
+        else ledgerRecordTypeOf.get(parameterType)
+      }
 
   def consumerStartFrom(clazz: Class[_]): Option[ConsumerStartFrom] = {
     val ann = clazz.getAnnotation(classOf[StartFrom])

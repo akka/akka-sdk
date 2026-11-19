@@ -8,7 +8,7 @@ import java.util.Optional
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.jdk.OptionConverters.RichOption
+import scala.jdk.OptionConverters._
 import scala.util.control.NonFatal
 
 import akka.actor.ActorSystem
@@ -28,15 +28,23 @@ import akka.javasdk.impl.UnhandledExceptionReporting
 import akka.javasdk.impl.consumer.ConsumerEffectImpl.AsyncEffect
 import akka.javasdk.impl.consumer.ConsumerEffectImpl.ConsumedEffect
 import akka.javasdk.impl.consumer.ConsumerEffectImpl.ProduceEffect
+import akka.javasdk.impl.ledger.LedgerClientImpl
 import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.impl.timer.TimerSchedulerImpl
+import akka.javasdk.ledger.ActivityRecord
+import akka.javasdk.ledger.ClassificationRecord
+import akka.javasdk.ledger.EvaluationRecord
+import akka.javasdk.ledger.FlowRecord
+import akka.javasdk.ledger.GuardrailDecisionRecord
+import akka.javasdk.ledger.InteractionRecord
 import akka.javasdk.timer.TimerScheduler
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.ConsumerDestination
 import akka.runtime.sdk.spi.ConsumerDestination.TopicDestination
 import akka.runtime.sdk.spi.ConsumerSource
+import akka.runtime.sdk.spi.ConsumerSource.LedgerSource
 import akka.runtime.sdk.spi.ConsumerSource.TopicSource
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiConsumer
@@ -99,21 +107,19 @@ private[impl] final class ConsumerImpl[C <: Consumer](
     val telemetryContext = Option(message.telemetryContext)
     val traceScope = Telemetry.makeCurrent(telemetryContext)
     try {
-      val messageContext =
-        new MessageContextImpl(
-          metadata,
-          timerClient,
-          tracerFactory,
-          telemetryContext,
-          regionInfo.selfRegion,
-          message.originRegion.toJava)
+      consumerSource match {
+        case _: LedgerSource => handleLedgerMessage(message, metadata, telemetryContext)
+        case _ =>
+          val messageContext = newMessageContext(message, metadata, telemetryContext)
 
-      val consumer = factory(messageContext)
+          val consumer = factory(messageContext)
 
-      val payload: BytesPayload = message.payload.getOrElse(throw new IllegalArgumentException("No message payload"))
-      val effect = createRouter(consumer)
-        .handleCommand(MessageEnvelope.of(payload, messageContext.metadata), messageContext)
-      toSpiEffect(message, effect)
+          val payload: BytesPayload =
+            message.payload.getOrElse(throw new IllegalArgumentException("No message payload"))
+          val effect = createRouter(consumer)
+            .handleCommand(MessageEnvelope.of(payload, messageContext.metadata), messageContext)
+          toSpiEffect(message, effect)
+      }
     } catch {
       case NonFatal(ex) =>
         // command handler threw an "unexpected" error, also covers HandlerNotFoundException
@@ -122,6 +128,65 @@ private[impl] final class ConsumerImpl[C <: Consumer](
       traceScope.close()
     }
   }
+
+  private def handleLedgerMessage(
+      message: Message,
+      metadata: MetadataImpl,
+      telemetryContext: Option[OtelContext]): Future[Effect] = {
+    val spiRecord = message.record.getOrElse(
+      throw new IllegalArgumentException(s"No ledger record in a message for Consumer [${consumerClass.getName}]"))
+
+    LedgerClientImpl.toLedgerRecord(spiRecord) match {
+      case None =>
+        log.debug("Consumer [{}] ignored a ledger record of a class this SDK does not know", componentId)
+        Future.successful(SpiConsumer.ConsumedEffect)
+
+      case Some(record) =>
+        val messageContext = newMessageContext(message, withRecordAttributes(metadata, record), telemetryContext)
+
+        val consumer = factory(messageContext)
+
+        val effect = new LedgerConsumerRouter(consumer).handleRecord(record, messageContext)
+        toSpiEffect(message, effect)
+    }
+  }
+
+  // Sets the CloudEvent attributes of a ledger record. Also sets the flow id when the record has one.
+  private def withRecordAttributes(metadata: MetadataImpl, record: FlowRecord): MetadataImpl = {
+    val (recordType, sourceComponentId, flowId) = record match {
+      case interaction: InteractionRecord =>
+        ("interaction", interaction.agentComponentId, interaction.flowId.toScala)
+      case activity: ActivityRecord =>
+        ("activity", activity.agentComponentId, Some(activity.flowId))
+      case decision: GuardrailDecisionRecord =>
+        ("guardrail-decision", decision.agentComponentId, decision.flowId.toScala)
+      case evaluation: EvaluationRecord =>
+        ("evaluation", evaluation.evaluatorComponentId, None)
+      case classification: ClassificationRecord =>
+        ("classification", classification.classifierName, classification.flowId.toScala)
+    }
+
+    val withCloudEvent = metadata
+      .set(MetadataImpl.CeSpecversion, MetadataImpl.CeSpecversionValue)
+      .set(MetadataImpl.CeId, record.recordId)
+      .set(MetadataImpl.CeSubject, record.recordId)
+      .set(MetadataImpl.CeType, recordType)
+      .set(MetadataImpl.CeSource, sourceComponentId)
+
+    flowId.fold(withCloudEvent)(withCloudEvent.set(ConsumerImpl.FlowIdKey, _))
+  }
+
+  private def newMessageContext(
+      message: Message,
+      metadata: MetadataImpl,
+      telemetryContext: Option[OtelContext]): MessageContextImpl =
+    new MessageContextImpl(
+      metadata,
+      timerClient,
+      tracerFactory,
+      telemetryContext,
+      regionInfo.selfRegion,
+      message.originRegion.toJava)
 
   private def toSpiEffect(message: Message, effect: Consumer.Effect): Future[Effect] = {
     effect match {
@@ -173,6 +238,16 @@ private[impl] final class ConsumerImpl[C <: Consumer](
       error = new SpiConsumer.Error(s"Unexpected error [$correlationId]", correlationId = Some(correlationId)))
   }
 
+}
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] object ConsumerImpl {
+
+  /** The metadata key of the flow id of a ledger record. */
+  val FlowIdKey = "flow-id"
 }
 
 /**
