@@ -18,6 +18,7 @@ import demo.publishing.application.ApprovalDecision;
 import demo.publishing.application.PublishingTasks;
 import demo.research.application.ResearchBrief;
 import demo.research.application.ResearchTasks;
+import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -68,6 +69,31 @@ class ClientApiSample {
     // tag::fail[]
     componentClient.forTask(taskId).fail("Approval rejected: tone is too informal");
     // end::fail[]
+  }
+
+  void cancelTask(String taskId) {
+    // tag::cancel[]
+    componentClient.forTask(taskId).cancel("Request withdrawn");
+    // end::cancel[]
+  }
+
+  void deleteTask(String taskId) {
+    // tag::delete[]
+    componentClient.forTask(taskId).delete();
+    // end::delete[]
+  }
+
+  void createTaskWithExpiry(String topic) {
+    // tag::expire-after[]
+    var taskId = UUID.randomUUID().toString();
+    componentClient
+      .forTask(taskId)
+      .create(
+        PipelineTasks.COLLECT.expireAfter(Duration.ofDays(30)).instructions(
+          "Collect data on: " + topic
+        )
+      );
+    // end::expire-after[]
   }
 
   void terminate(String agentInstanceId) {

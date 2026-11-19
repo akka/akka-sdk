@@ -114,7 +114,7 @@ A task progresses through these statuses:
 | `RESULT_REJECTED` | A xref:#task-rules[task rule] rejected the result. The agent retries on the next iteration.
 | `COMPLETED` | Finished successfully with a typed result
 | `FAILED` | Failed during execution (model decision or iteration limit)
-| `CANCELLED` | Terminated before execution began (for example, by a dependency failure)
+| `CANCELLED` | Terminated before execution began, for example by a dependency failure or a call of `cancel`
 |===
 
 === Task failure
@@ -138,6 +138,33 @@ Query a task's current state with the `ComponentClient`. The snapshot includes t
 include::example$autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[tag=snapshot]
 ----
 
+[#task-retention]
+== Task retention
+
+Akka stores a task until it is deleted or expires. Set `expireAfter` on a task definition, a task template or a task to delete the task that long after it completes, fails or is cancelled. A task that has not ended does not expire.
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[ClientApiSample.java]
+----
+include::example$autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[tag=expire-after]
+----
+
+The `expireAfter` of a definition applies to the tasks that the application creates from it with `forTask(...).create(...)` or `runSingleTask`. A task created without its own value gets the value of `akka.javasdk.agent.task.expire-after`, which is `off` by default. This includes the tasks that agents create when they delegate or add a task to a backlog. Akka sets the value on the task when the task is created, so a change of the setting applies only to tasks created after the change.
+
+Delete a task that has ended with `delete()`:
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[ClientApiSample.java]
+----
+include::example$autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[tag=delete]
+----
+
+Only a task that has ended can be deleted. Deleting a task that does not exist, or that was already deleted, succeeds.
+
+After a delete or an expiry, the task reads as a task that does not exist: `get`, `result`, `assign`, `complete`, `fail` and `cancel` fail with `TaskException.NotFound`. A consumer of task events gets a `TaskEvent.TaskDeleted` event for a delete and no event for an expiry. Akka removes the stored data of the task after `akka.javasdk.entity.cleanup-deleted-after`, 7 days by default. That setting applies to all entities, see xref:sdk:event-sourced-entities.adoc#_deleting_an_entity[Deleting an entity].
+
+Cancel or fail a task that the application gives up on, with `cancel(...)` or `fail(...)`, so that the task ends and its expiry applies.
+
 == Task dependencies
 
 Tasks can declare dependencies on other tasks. A task with dependencies will not be started by the agent until all dependencies have completed. This enables pipeline patterns where work flows through ordered phases.
@@ -158,7 +185,7 @@ Once the tasks are created, they can be assigned to a single agent instance. The
 include::example$autonomous-agent-playground/src/main/java/demo/pipeline/api/PipelineEndpoint.java[tag=assign-tasks]
 ----
 
-If a dependency fails or is cancelled, dependents are cancelled automatically.
+If a dependency fails, is cancelled, or was deleted or expired, dependents are cancelled automatically.
 
 == Task notifications
 

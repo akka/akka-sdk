@@ -134,7 +134,7 @@ To run a task, ask the `ComponentClient` to start an instance and run a single t
 include::example$autonomous-agent-playground/src/main/java/demo/helloworld/api/QuestionEndpoint.java[tag=run-single-task]
 ----
 
-`runSingleTask` returns the task id immediately, without waiting for the task to complete. The task runs asynchronously and is itself the durable record of the work: its status and typed result are recovered after restarts and queryable at any time with `componentClient.forTask(taskId).get(QuestionTasks.ANSWER)`. There is no need to wrap the call in a Workflow for durability or to await the result. See xref:sdk:autonomous-agents/client.adoc[] for details.
+`runSingleTask` returns the task id immediately, without waiting for the task to complete. The task runs asynchronously and is itself the durable record of the work: its status and typed result are recovered after restarts and queryable with `componentClient.forTask(taskId).get(QuestionTasks.ANSWER)` until the task is deleted or expires, see xref:sdk:autonomous-agents/tasks.adoc#task-retention[Task retention]. There is no need to wrap the call in a Workflow for durability or to await the result. See xref:sdk:autonomous-agents/client.adoc[] for details.
 
 == Testing
 
