@@ -196,9 +196,6 @@ Boundary rules:
   - `componentClient.forTask(taskId).create(task)` — pre-create tasks
   - `componentClient.forAutonomousAgent(AgentClass.class, instanceId).assignTasks(taskIds...)` — assign multiple
   - `componentClient.forTask(taskId).get(taskDef)` — query typed result via `TaskSnapshot<R>`
-  - `componentClient.forTask(taskId).cancel(reason)` — cancel a task that has not started (`PENDING` or `ASSIGNED`)
-  - `componentClient.forTask(taskId).delete()` — delete a task that has ended; afterwards the task reads as not found (`TaskException.NotFound`)
-  - `task.expireAfter(Duration)` — delete the task this long after it ends; `akka.javasdk.agent.task.expire-after` sets the default for tasks without one, including tasks that agents create (`off` by default)
 - Instance ID typically `UUID.randomUUID().toString()` for one-off work
 - Stateless design (no mutable state in agent class) — tasks carry state
 - `@FunctionTool` methods can also be defined directly on the agent class
