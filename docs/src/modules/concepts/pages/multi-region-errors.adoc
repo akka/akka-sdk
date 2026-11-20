@@ -1,0 +1,98 @@
+= Multi-region error scenarios
+:page-summary: Shows how unreachable regions, delayed replication, and regional recovery affect entity writes and reads.
+:page-when-to-use: When you need to understand failed writes, stale reads, or data conflicts during a regional outage
+:page-related: concepts:multi-region.adoc, concepts:availability.adoc, operations:regions/setup.adoc, sdk:multi-region-development.adoc
+:page-persona: builder-developer, operator-platform, operator-sre
+
+include::ROOT:partial$include.adoc[]
+
+Multi-region replication is asynchronous. A replica can be behind, and failover does not recover writes that never reached a surviving region.
+The scenarios below use the setup from xref:multi-region.adoc[]: Alice's entity has its primary in Los Angeles, and a replica marked with an asterisk (*) in London.
+A dashed box marks an unreachable region.
+
+== A primary move fails when the old primary is unreachable
+
+In request-region mode, the entity has one primary region at a time. A write that arrives in another region asks the runtime to move the primary there.
+
+image::multi-region-error-primary-move.svg[A write in London cannot move the primary because Los Angeles is unreachable,width=600]
+
+Client B writes to Alice's entity in London image:steps-1.svg[Step 1,width=20].
+London must synchronize events with the current primary in Los Angeles before it can take over image:steps-2.svg[Step 2,width=20].
+Los Angeles does not respond, so synchronization cannot finish.
+The runtime rejects the write image:steps-3.svg[Step 3,width=20]. London does not accept the event and does not become primary.
+
+Retry the write after connectivity recovers. If the region is down, follow the failover procedure.
+
+The first write to an Event Sourced Entity or Key Value Entity in request-region mode has the same limit: every region must respond.
+A Workflow selects its local region when its first event is persisted.
+
+== A local read can lag behind a successful write
+
+A write reply confirms the write in the primary region. Replication to other regions is asynchronous, so the reply does not mean every replica has the new state.
+
+image::multi-region-error-lagging-read.svg[A read in London returns state from before a write that has not replicated yet,width=600]
+
+Client A writes to Alice's entity in Los Angeles image:steps-1.svg[Step 1,width=20].
+The primary persists the change and replies without waiting for London image:steps-2.svg[Step 2,width=20].
+Before replication catches up, client B reads from London image:steps-3.svg[Step 3,width=20].
+London replies with its local state, which does not include the write image:steps-4.svg[Step 4,width=20].
+
+If the read must observe the write, run it in the primary region. For replicated Event Sourced Entities and Key Value Entities, return `Effect` from the handler so the request runs at the primary.
+Use `ReadOnlyEffect` for local reads that can accept stale state.
+See the component replication documentation linked from xref:multi-region.adoc[].
+
+== A surviving region may not have the latest writes
+
+If the primary region fails before a change reaches another region, the surviving region has no copy of that change.
+Failover changes which region accepts writes. It cannot reconstruct a write that was never replicated.
+
+image::multi-region-error-unreplicated-write.svg[Los Angeles accepts a write and becomes unreachable before London receives it,width=600]
+
+Client A writes to Alice's entity in Los Angeles image:steps-1.svg[Step 1,width=20].
+The primary persists the change and replies image:steps-2.svg[Step 2,width=20].
+Los Angeles becomes unreachable before replication delivers the change to London.
+
+After the operator marks Los Angeles as down, client B reads from London image:steps-3.svg[Step 3,width=20].
+London replies with the state it already received, which does not include the write image:steps-4.svg[Step 4,width=20].
+
+The write can be recovered if the original region returns with its data intact. During the outage, no surviving replica holds it.
+Replication status in Control Tower shows lag and errors. It does not make a write durable in another region.
+
+== A recovered region can contain conflicting changes
+
+After failover, the surviving region accepts writes. When the failed region returns, it sends its previously unreplicated events.
+If both regions accepted writes for the same entity without seeing each other's events, the histories conflict.
+
+image::multi-region-error-conflict.svg[A recovered region sends events that conflict with writes made after failover,width=600]
+
+The operator downs Los Angeles. Client B writes to Alice's entity in London image:steps-1.svg[Step 1,width=20], and London replies image:steps-2.svg[Step 2,width=20].
+These events are the authoritative history for writes after failover.
+
+The operator then brings Los Angeles back. Los Angeles sends its unreplicated events to London image:steps-3.svg[Step 3,width=20].
+Events that do not conflict are applied normally.
+The runtime detects conflicting events with version vectors. Conflicting events stay in the event journal but are not applied to the entity state.
+
+The entity's primary in the region that was not downed replays the history, applies the events selected by the conflict rules, and persists the resolved state.
+Conflicting events from the previously downed region are discarded. The resolved state replicates to the other regions image:steps-4.svg[Step 4,width=20].
+
+Follow xref:operations:regions/setup.adoc#_bring_up_region_for_disaster_recovery[Bring up region for disaster recovery].
+Do not restore client traffic to the recovered region before the procedure is complete.
+
+== Writes to an unavailable pinned primary fail
+
+In pinned-region mode, the project's primary region is the write primary for all entities. A request that arrives in another region does not move the primary.
+
+image::multi-region-error-pinned-primary.svg[A write in London fails because the pinned primary in Los Angeles is unreachable,width=600]
+
+Client B sends a write to the service in London image:steps-1.svg[Step 1,width=20].
+The runtime forwards the command to the primary in Los Angeles image:steps-2.svg[Step 2,width=20].
+Los Angeles is unreachable, so the runtime cannot handle the command and the write fails image:steps-3.svg[Step 3,width=20].
+
+Retry after recovery. During a regional outage, the operator must perform failover and change the project primary. Routing traffic to London does not move the entity's primary.
+See xref:operations:regions/setup.adoc#_downing_of_region_for_disaster_recovery[Downing of region for disaster recovery].
+
+== Next steps
+
+* xref:multi-region.adoc[] explains primary selection and normal multi-region operation.
+* xref:availability.adoc[] compares failure scopes and recovery objectives.
+* xref:operations:regions/setup.adoc[] describes region configuration and failover.

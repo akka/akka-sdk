@@ -29,6 +29,7 @@
 **** xref:concepts:runtime.adoc[]
 **** xref:concepts:deployment-model.adoc[]
 **** xref:concepts:multi-region.adoc[]
+**** xref:concepts:multi-region-errors.adoc[]
 **** xref:concepts:availability.adoc[]
 **** xref:concepts:security-and-identity.adoc[]
 **** xref:concepts:observability.adoc[]
