@@ -8,7 +8,7 @@ object Dependencies {
     val ProtocolVersionMinor = 1
   }
 
-  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.7.6-10-89d0cd55-SNAPSHOT")
+  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.7.7")
 
   // NOTE: embedded SDK should have the AkkaVersion aligned, when updating RuntimeVersion, make sure to check
   // if AkkaVersion and AkkaHttpVersion are aligned
@@ -88,7 +88,7 @@ object Dependencies {
   val opentelemetryContext = "io.opentelemetry" % "opentelemetry-context" % OpenTelemetryVersion
   val opentelemetrySemConv = "io.opentelemetry.semconv" % "opentelemetry-semconv" % OpenTelemetrySemConv
 
-  val typesafeConfig = "com.typesafe" % "config" % "1.4.9"
+  val typesafeConfig = "com.typesafe" % "config" % "1.4.10"
   val protobufJavaUtil = "com.google.protobuf" % "protobuf-java-util" % GoogleProtobufVersion
 
   private val deps = libraryDependencies
