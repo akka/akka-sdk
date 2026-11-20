@@ -78,6 +78,7 @@ import akka.javasdk.grpc.GrpcClientProvider
 import akka.javasdk.grpc.GrpcRequestContext
 import akka.javasdk.http.AbstractHttpEndpoint
 import akka.javasdk.a2a.A2aClient
+import akka.javasdk.a2a.A2aTaskContext
 import akka.javasdk.http.HttpClientProvider
 import akka.javasdk.http.RequestContext
 import akka.javasdk.impl.ComponentDescriptorFactory.consumerDestination
@@ -115,6 +116,7 @@ import akka.javasdk.impl.a2a.A2aAgentCardEndpoint
 import akka.javasdk.impl.a2a.A2aClientImpl
 import akka.javasdk.impl.a2a.A2aRemoteAgents
 import akka.javasdk.impl.a2a.A2aRequestHandler
+import akka.javasdk.impl.a2a.A2aTaskContextImpl
 import akka.javasdk.impl.http.HttpClientProviderImpl
 import akka.javasdk.impl.http.HttpRequestContextImpl
 import akka.javasdk.impl.http.JwtClaimsImpl
@@ -888,6 +890,10 @@ private final class Sdk(
             .orElse {
               // remember to update component type API doc and docs if changing the set of injectables
               case p if p == classOf[WorkflowContext] => context
+              case p if p == classOf[A2aTaskContext] =>
+                new A2aTaskContextImpl(
+                  context.workflowId(),
+                  componentClient(context.asInstanceOf[WorkflowContextImpl].telemetryContext))
               case p if p == classOf[NotificationPublisher[_]] =>
                 new NotificationPublisher[Any] {
                   override def publish(msg: Any): Unit = {
@@ -1177,7 +1183,7 @@ private final class Sdk(
             ctx => workflowInstanceFactory(componentId, ctx, clz.asInstanceOf[Class[Workflow[Nothing]]]),
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
-            provided = false,
+            provided = isProvided(clz),
             protobufDescriptors = protobufDescriptors.toVector,
             componentType = WorkflowType,
             // FIXME: pass the workflow step names

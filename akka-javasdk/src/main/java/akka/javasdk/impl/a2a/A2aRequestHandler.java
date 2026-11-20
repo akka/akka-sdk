@@ -200,6 +200,11 @@ public final class A2aRequestHandler {
             case A2aMethods.GET_TASK ->
                 mapper.valueToTree(
                     getTask(read(params, A2aGetTaskRequest.class, A2aErrorCode.INVALID_PARAMS)));
+            case A2aMethods.CREATE_TASK_PUSH_NOTIFICATION_CONFIG,
+                A2aMethods.GET_TASK_PUSH_NOTIFICATION_CONFIG,
+                A2aMethods.LIST_TASK_PUSH_NOTIFICATION_CONFIGS,
+                A2aMethods.DELETE_TASK_PUSH_NOTIFICATION_CONFIG ->
+                pushConfigMethods().jsonRpc(request.method(), params);
             default -> throw unsupported(request.method());
           };
       return response(200, ContentTypes.APPLICATION_JSON, JsonRpcResponse.success(id, result));
@@ -347,6 +352,10 @@ public final class A2aRequestHandler {
                 + message.taskId()
                 + "]");
       }
+      var continued =
+          new A2aTaskWorkflows(componentClient)
+              .continueTask(skillTable(), existing, message, configuration);
+      if (continued.isPresent()) return continued.get();
       var state = existing.status().state();
       throw new A2aException(
           A2aErrorCode.UNSUPPORTED_OPERATION,
@@ -374,6 +383,10 @@ public final class A2aRequestHandler {
             message.metadata(),
             message.extensions(),
             message.referenceTaskIds());
+    if (skill.taskWorkflow() != null) {
+      return new A2aTaskWorkflows(componentClient)
+          .start(skill, userMessage, owner(), configuration);
+    }
     var submitted =
         new A2aTask(
             taskId, contextId, status(A2aTaskState.SUBMITTED), null, List.of(userMessage), null);
@@ -428,11 +441,29 @@ public final class A2aRequestHandler {
   }
 
   A2aTask store(A2aTask task) {
-    return componentClient
-        .forKeyValueEntity(task.id())
-        .method(A2aTaskEntity::update)
-        .invoke(task)
-        .task();
+    var stored =
+        componentClient.forKeyValueEntity(task.id()).method(A2aTaskEntity::update).invoke(task);
+    A2aPushNotifier.taskChanged(componentClient, stored);
+    return stored.task();
+  }
+
+  A2aSkillTable skillTable() {
+    return A2aSkillTable.of(endpoint._internalAgents(), agentRegistry);
+  }
+
+  private A2aPushConfigMethods pushConfigMethods() {
+    return new A2aPushConfigMethods(
+        componentClient, skillTable().hasTaskWorkflows(), this::lookup, mapper);
+  }
+
+  /** An HTTP+JSON route of the push notification configuration methods. */
+  public HttpResponse pushConfigRoute(
+      String method, String taskId, String configId, HttpEntity.Strict body) {
+    return httpJson(
+        () -> {
+          checkVersion();
+          return pushConfigMethods().http(method, taskId, configId, body, httpContext);
+        });
   }
 
   // Tasks are scoped to the JWT subject when the endpoint requires a token.
@@ -575,7 +606,8 @@ public final class A2aRequestHandler {
   // Agent Card
 
   private A2aAgentCard buildAgentCard() {
-    var skills = A2aSkillTable.of(endpoint._internalAgents(), agentRegistry).skills();
+    var table = skillTable();
+    var skills = table.skills();
     var url = baseUrl() + endpointPath();
     var interfaces =
         List.of(
@@ -596,7 +628,7 @@ public final class A2aRequestHandler {
         null,
         annotation.version(),
         null,
-        new A2aAgentCard.Capabilities(true, false, null, null),
+        new A2aAgentCard.Capabilities(true, table.hasTaskWorkflows(), null, null),
         schemes,
         requirements,
         DEFAULT_INPUT_MODES,

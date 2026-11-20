@@ -13,11 +13,14 @@ import java.lang.annotation.Target;
 
 /**
  * Describes a skill that an agent offers to A2A clients. Each annotation is one entry in the {@code
- * skills} of the Agent Card. Use it on an {@link akka.javasdk.agent.Agent} that an {@link
- * akka.javasdk.a2a.AbstractA2aEndpoint} publishes.
+ * skills} of the Agent Card. Use it on an {@link akka.javasdk.agent.Agent} or on a {@link
+ * akka.javasdk.workflow.Workflow} that an {@link akka.javasdk.a2a.AbstractA2aEndpoint} publishes. A
+ * workflow with this annotation must have the command handler {@code public Effect<Done>
+ * onMessage(A2aMessage message)}.
  *
- * <p>An agent without this annotation is published as one skill. Its id is the component id, and
- * its name and description are those of the {@link akka.javasdk.annotations.Component} annotation.
+ * <p>An agent or workflow without this annotation is published as one skill. Its id is the
+ * component id, and its name and description are those of the {@link
+ * akka.javasdk.annotations.Component} annotation.
  *
  * <p>Skill ids are unique within a service. A client selects a skill with the {@code skillId} field
  * in the metadata of its message.

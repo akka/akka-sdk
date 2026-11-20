@@ -11,6 +11,7 @@ import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.AgentRegistry;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.a2a.A2aSkill;
+import akka.javasdk.workflow.Workflow;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.Arrays;
@@ -19,16 +20,29 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-/** INTERNAL API The skills of an A2A endpoint, each with the agent that answers it. */
+/**
+ * INTERNAL API The skills of an A2A endpoint, each with the agent or task workflow that answers it.
+ */
 @InternalApi
 public final class A2aSkillTable {
 
   /**
-   * A skill and its agent.
+   * A skill and the component that answers it.
    *
+   * @param agentId the component id of the agent, or of the task workflow
    * @param inputType the type of the agent's command handler parameter, or null when it has none
+   * @param taskWorkflow the task workflow that answers the skill, or null for an agent
    */
-  public record Entry(A2aAgentSkill skill, String agentId, Type inputType) {}
+  public record Entry(
+      A2aAgentSkill skill,
+      String agentId,
+      Type inputType,
+      Class<? extends Workflow<?>> taskWorkflow) {
+
+    public Entry(A2aAgentSkill skill, String agentId, Type inputType) {
+      this(skill, agentId, inputType, null);
+    }
+  }
 
   private final Map<String, Entry> entries;
 
@@ -42,7 +56,20 @@ public final class A2aSkillTable {
    */
   public static A2aSkillTable of(A2aAgents agents, AgentRegistry agentRegistry) {
     var entries = new LinkedHashMap<String, Entry>();
-    for (Class<? extends Agent> agentClass : agents.agents()) {
+    for (Class<?> published : agents.all()) {
+      if (Workflow.class.isAssignableFrom(published)) {
+        @SuppressWarnings("unchecked")
+        var workflowClass = (Class<? extends Workflow<?>>) published;
+        var workflowId = A2aTaskWorkflows.componentId(workflowClass);
+        var component = workflowClass.getAnnotation(Component.class);
+        for (A2aAgentSkill skill :
+            skills(workflowClass, workflowId, component.name(), component.description())) {
+          put(entries, new Entry(skill, workflowId, null, workflowClass));
+        }
+        continue;
+      }
+      @SuppressWarnings("unchecked")
+      var agentClass = (Class<? extends Agent>) published;
       var component = agentClass.getAnnotation(Component.class);
       var info =
           Optional.ofNullable(component)
@@ -55,49 +82,65 @@ public final class A2aSkillTable {
                               + "] is published by the A2A endpoint, but it is not an agent"
                               + " component of this service"));
       var inputType = inputType(agentClass);
-      var annotations = agentClass.getAnnotationsByType(A2aSkill.class);
-      List<A2aAgentSkill> skills =
-          annotations.length == 0
-              ? List.of(
-                  new A2aAgentSkill(
-                      info.id(),
-                      orElse(info.name(), info.id()),
-                      orElse(info.description(), orElse(info.name(), info.id())),
-                      null,
-                      null,
-                      null,
-                      null,
-                      null))
-              : Arrays.stream(annotations)
-                  .map(
-                      a ->
-                          new A2aAgentSkill(
-                              a.id(),
-                              orElse(a.name(), a.id()),
-                              orElse(
-                                  a.description(),
-                                  orElse(info.description(), orElse(info.name(), info.id()))),
-                              List.of(a.tags()),
-                              List.of(a.examples()),
-                              List.of(a.inputModes()),
-                              List.of(a.outputModes()),
-                              null))
-                  .toList();
-      for (A2aAgentSkill skill : skills) {
-        var previous = entries.put(skill.id(), new Entry(skill, info.id(), inputType));
-        if (previous != null) {
-          throw new IllegalStateException(
-              "The A2A skill id ["
-                  + skill.id()
-                  + "] is used by agents ["
-                  + previous.agentId()
-                  + "] and ["
-                  + info.id()
-                  + "]. Skill ids must be unique.");
-        }
+      for (A2aAgentSkill skill : skills(agentClass, info.id(), info.name(), info.description())) {
+        put(entries, new Entry(skill, info.id(), inputType));
       }
     }
     return new A2aSkillTable(entries);
+  }
+
+  private static List<A2aAgentSkill> skills(
+      Class<?> componentClass, String id, String name, String description) {
+    var annotations = componentClass.getAnnotationsByType(A2aSkill.class);
+    if (annotations.length == 0) {
+      return List.of(
+          new A2aAgentSkill(
+              id,
+              orElse(name, id),
+              orElse(description, orElse(name, id)),
+              null,
+              null,
+              null,
+              null,
+              null));
+    }
+    return Arrays.stream(annotations)
+        .map(
+            a ->
+                new A2aAgentSkill(
+                    a.id(),
+                    orElse(a.name(), a.id()),
+                    orElse(a.description(), orElse(description, orElse(name, id))),
+                    List.of(a.tags()),
+                    List.of(a.examples()),
+                    List.of(a.inputModes()),
+                    List.of(a.outputModes()),
+                    null))
+        .toList();
+  }
+
+  private static void put(Map<String, Entry> entries, Entry entry) {
+    var previous = entries.put(entry.skill().id(), entry);
+    if (previous != null) {
+      throw new IllegalStateException(
+          "The A2A skill id ["
+              + entry.skill().id()
+              + "] is used by components ["
+              + previous.agentId()
+              + "] and ["
+              + entry.agentId()
+              + "]. Skill ids must be unique.");
+    }
+  }
+
+  /** True when a task workflow answers one of the skills. */
+  public boolean hasTaskWorkflows() {
+    return entries.values().stream().anyMatch(e -> e.taskWorkflow() != null);
+  }
+
+  /** The entry of the component with this id, for any of its skills. */
+  public Optional<Entry> findByComponent(String componentId) {
+    return entries.values().stream().filter(e -> e.agentId().equals(componentId)).findFirst();
   }
 
   public List<A2aAgentSkill> skills() {

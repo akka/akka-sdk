@@ -58,7 +58,19 @@ abstract class AbstractA2aValidationSpec(val validationMode: ValidationMode)
     }
 
     "reject @A2aSkill on a class that is not an agent" in {
-      assertInvalid("invalid/A2aSkillOnEntity.java", "@A2aSkill is only allowed on classes that extend Agent.")
+      assertInvalid(
+        "invalid/A2aSkillOnEntity.java",
+        "@A2aSkill is only allowed on classes that extend Agent or Workflow.")
+    }
+
+    "accept a workflow with @A2aSkill and an onMessage command handler" in {
+      assertValid("valid/ValidA2aTaskWorkflow.java")
+    }
+
+    "reject a workflow with @A2aSkill without an onMessage(A2aMessage) command handler" in {
+      assertInvalid(
+        "invalid/A2aSkillWorkflowWithoutOnMessage.java",
+        "A workflow with @A2aSkill must have the command handler 'public Effect<Done> onMessage(A2aMessage message)'.")
     }
 
     "reject @A2aSkill on an autonomous agent" in {

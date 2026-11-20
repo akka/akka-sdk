@@ -25,6 +25,9 @@ public class A2aValidations {
   private static final String ABSTRACT_A2A_ENDPOINT = "akka.javasdk.a2a.AbstractA2aEndpoint";
   private static final String AGENT = "akka.javasdk.agent.Agent";
   private static final String AUTONOMOUS_AGENT = "akka.javasdk.agent.autonomous.AutonomousAgent";
+  private static final String WORKFLOW = "akka.javasdk.workflow.Workflow";
+  private static final String A2A_MESSAGE = "akka.javasdk.a2a.A2aMessage";
+  private static final String WORKFLOW_EFFECT = "akka.javasdk.workflow.Workflow.Effect";
 
   private static final Pattern SKILL_ID = Pattern.compile("[A-Za-z0-9_.-]{1,64}");
 
@@ -73,8 +76,9 @@ public class A2aValidations {
   }
 
   /**
-   * Validates the {@code @A2aSkill} annotations of a component: they are only allowed on agents,
-   * and their ids are valid and unique within the class.
+   * Validates the {@code @A2aSkill} annotations of a component: they are only allowed on agents and
+   * workflows, their ids are valid and unique within the class, and a workflow has the command
+   * handler {@code public Effect<Done> onMessage(A2aMessage message)}.
    *
    * @param typeDef the component class
    * @return a Validation result indicating success or failure
@@ -91,12 +95,20 @@ public class A2aValidations {
               "@A2aSkill is not allowed on an autonomous agent. Autonomous agents take no part in"
                   + " A2A. Publish a request-based agent that extends Agent."));
     }
-    if (!typeDef.extendsType(AGENT)) {
+    boolean workflow = typeDef.extendsType(WORKFLOW);
+    if (!typeDef.extendsType(AGENT) && !workflow) {
       return Validation.of(
           Validations.errorMessage(
-              typeDef, "@A2aSkill is only allowed on classes that extend Agent."));
+              typeDef, "@A2aSkill is only allowed on classes that extend Agent or Workflow."));
     }
     List<String> errors = new ArrayList<>();
+    if (workflow && !hasOnMessage(typeDef)) {
+      errors.add(
+          Validations.errorMessage(
+              typeDef,
+              "A workflow with @A2aSkill must have the command handler"
+                  + " 'public Effect<Done> onMessage(A2aMessage message)'."));
+    }
     Set<String> seen = new HashSet<>();
     for (AnnotationDef skill : skills) {
       var id = skill.getStringValue("id").orElse("");
@@ -154,6 +166,22 @@ public class A2aValidations {
           }
         });
     return errors;
+  }
+
+  private static boolean hasOnMessage(TypeDef typeDef) {
+    return typeDef.getPublicMethods().stream()
+        .anyMatch(
+            m ->
+                m.getName().equals("onMessage")
+                    && m.getParameters().size() == 1
+                    && m.getParameters().get(0).getType().getRawQualifiedName().equals(A2A_MESSAGE)
+                    && m.getReturnType().getRawQualifiedName().equals(WORKFLOW_EFFECT)
+                    && m.getReturnType().getTypeArguments().size() == 1
+                    && m.getReturnType()
+                        .getTypeArguments()
+                        .get(0)
+                        .getRawQualifiedName()
+                        .equals("akka.Done"));
   }
 
   private static List<AnnotationDef> skills(TypeDef typeDef) {

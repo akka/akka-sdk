@@ -124,25 +124,29 @@ public abstract class AbstractA2aEndpoint {
   @Post("/tasks/{taskId}/pushNotificationConfigs")
   public final HttpResponse createTaskPushNotificationConfig(
       String taskId, HttpEntity.Strict body) {
-    return handler().unsupportedMethod(A2aMethods.CREATE_TASK_PUSH_NOTIFICATION_CONFIG);
+    return handler()
+        .pushConfigRoute(A2aMethods.CREATE_TASK_PUSH_NOTIFICATION_CONFIG, taskId, null, body);
   }
 
   /** The HTTP+JSON binding of {@code ListTaskPushNotificationConfigs}. */
   @Get("/tasks/{taskId}/pushNotificationConfigs")
   public final HttpResponse listTaskPushNotificationConfigs(String taskId) {
-    return handler().unsupportedMethod(A2aMethods.LIST_TASK_PUSH_NOTIFICATION_CONFIGS);
+    return handler()
+        .pushConfigRoute(A2aMethods.LIST_TASK_PUSH_NOTIFICATION_CONFIGS, taskId, null, null);
   }
 
   /** The HTTP+JSON binding of {@code GetTaskPushNotificationConfig}. */
   @Get("/tasks/{taskId}/pushNotificationConfigs/{configId}")
   public final HttpResponse getTaskPushNotificationConfig(String taskId, String configId) {
-    return handler().unsupportedMethod(A2aMethods.GET_TASK_PUSH_NOTIFICATION_CONFIG);
+    return handler()
+        .pushConfigRoute(A2aMethods.GET_TASK_PUSH_NOTIFICATION_CONFIG, taskId, configId, null);
   }
 
   /** The HTTP+JSON binding of {@code DeleteTaskPushNotificationConfig}. */
   @Delete("/tasks/{taskId}/pushNotificationConfigs/{configId}")
   public final HttpResponse deleteTaskPushNotificationConfig(String taskId, String configId) {
-    return handler().unsupportedMethod(A2aMethods.DELETE_TASK_PUSH_NOTIFICATION_CONFIG);
+    return handler()
+        .pushConfigRoute(A2aMethods.DELETE_TASK_PUSH_NOTIFICATION_CONFIG, taskId, configId, null);
   }
 
   /** The HTTP+JSON binding of {@code GetExtendedAgentCard}. */

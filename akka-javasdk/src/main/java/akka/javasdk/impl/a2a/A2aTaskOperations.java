@@ -109,7 +109,10 @@ final class A2aTaskOperations {
     if (A2aRequestHandler.isBlank(request.id())) {
       throw A2aRequestHandler.invalidParams("The request has no task id");
     }
-    handler.lookup(request.id());
+    var task = handler.lookup(request.id());
+    var workflowTask =
+        new A2aTaskWorkflows(handler.componentClient).cancel(handler.skillTable(), task);
+    if (workflowTask.isPresent()) return workflowTask.get();
     var result =
         handler
             .componentClient
