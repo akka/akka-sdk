@@ -113,6 +113,13 @@ private[akka] object A2aRemoteAgentSettings {
       value
     }
     def duration(key: String): FiniteDuration = config.getDuration(key).toScala
+    def credentialUrl(key: String, value: String): String = {
+      if (!safeForCredentials(value))
+        throw new IllegalArgumentException(
+          s"${where(key)} must be an https:// URL, because credentials are sent to it. " +
+          "An http:// URL is accepted only for localhost.")
+      value
+    }
 
     val auth = config.getString("auth.type") match {
       case "none" => A2aAuth.NoAuth
@@ -120,7 +127,7 @@ private[akka] object A2aRemoteAgentSettings {
         A2aAuth.Header(required("auth.header-name"), required("auth.header-value"))
       case "oauth2-client-credentials" =>
         A2aAuth.OAuth2ClientCredentials(
-          httpUrl("auth.token-url", required("auth.token-url")),
+          credentialUrl("auth.token-url", httpUrl("auth.token-url", required("auth.token-url"))),
           required("auth.client-id"),
           required("auth.client-secret"),
           optional("auth.scope"))
@@ -135,9 +142,12 @@ private[akka] object A2aRemoteAgentSettings {
       throw new IllegalArgumentException(
         s"${where("client-certificate")} and ${where("client-key")} must be set together")
 
+    val cardUrl = httpUrl("card-url", required("card-url"))
+    if (auth != A2aAuth.NoAuth) credentialUrl("card-url", cardUrl)
+
     A2aRemoteAgentSettings(
       name,
-      httpUrl("card-url", required("card-url")),
+      cardUrl,
       duration("timeout"),
       duration("poll-interval"),
       duration("card-refresh"),
@@ -146,6 +156,20 @@ private[akka] object A2aRemoteAgentSettings {
       clientCertificate,
       clientKey)
   }
+
+  private val LoopbackIpv4 = """127\.\d{1,3}\.\d{1,3}\.\d{1,3}""".r
+
+  /**
+   * Credentials travel over https only, or over http to the local host, where tests and local development run.
+   */
+  def safeForCredentials(url: String): Boolean =
+    try {
+      val uri = new URI(url)
+      val host = Option(uri.getHost).getOrElse("")
+      uri.getScheme == "https" ||
+      (uri.getScheme == "http" &&
+      (host.equalsIgnoreCase("localhost") || host == "[::1]" || LoopbackIpv4.matches(host)))
+    } catch { case NonFatal(_) => false }
 
   /**
    * PEM text is used as it is. Anything else is the path of a file that holds the PEM text.

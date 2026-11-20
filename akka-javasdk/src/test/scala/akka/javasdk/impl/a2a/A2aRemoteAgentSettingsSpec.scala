@@ -111,6 +111,40 @@ class A2aRemoteAgentSettingsSpec extends AnyWordSpec with Matchers {
           "claims")).getMessage should include("http:// or https://")
     }
 
+    "reject a token URL that is plain http to another host" in {
+      intercept[IllegalArgumentException](
+        A2aRemoteAgentSettings.resolve(
+          a2a("""remote-agents.claims { card-url = "https://x.example.com/c.json"
+                 auth { type = oauth2-client-credentials, token-url = "http://t.example.com/t", client-id = a, client-secret = b } }"""),
+          "claims")).getMessage should include("auth.token-url must be an https:// URL")
+    }
+
+    "reject a plain http card URL to another host when credentials are configured" in {
+      intercept[IllegalArgumentException](
+        A2aRemoteAgentSettings.resolve(
+          a2a("""remote-agents.claims { card-url = "http://x.example.com/c.json"
+                 auth { type = header, header-name = X, header-value = v } }"""),
+          "claims")).getMessage should include("card-url must be an https:// URL")
+    }
+
+    "accept a plain http card URL to another host without credentials" in {
+      A2aRemoteAgentSettings
+        .resolve(a2a("""remote-agents.claims.card-url = "http://x.example.com/c.json" """), "claims")
+        .cardUrl shouldBe "http://x.example.com/c.json"
+    }
+
+    "send credentials over https, or over http to localhost only" in {
+      import A2aRemoteAgentSettings.safeForCredentials
+      safeForCredentials("https://x.example.com/t") shouldBe true
+      safeForCredentials("http://localhost:9000/t") shouldBe true
+      safeForCredentials("http://127.0.0.1:9000/t") shouldBe true
+      safeForCredentials("http://[::1]:9000/t") shouldBe true
+      safeForCredentials("http://x.example.com/t") shouldBe false
+      safeForCredentials("http://127.0.0.1.example.com/t") shouldBe false
+      safeForCredentials("http://localhost.example.com/t") shouldBe false
+      safeForCredentials("ftp://localhost/t") shouldBe false
+    }
+
     "reject header authentication without a value" in {
       val e = intercept[IllegalArgumentException](
         A2aRemoteAgentSettings.resolve(

@@ -77,6 +77,8 @@ A call fails with one of two exceptions:
 
 The `auth` setting of a remote agent chooses how the service proves its identity. The client sends the credentials on every request to the agent, including the request for the Agent Card.
 
+The client sends credentials only to `https://` URLs, and to `http://` URLs on `localhost` for local development and tests. `forAgent` throws `IllegalArgumentException` when the `card-url` or the `token-url` of an agent with credentials is another `http://` URL. A call fails with `A2aClientException` when the Agent Card lists an interface at such a URL.
+
 Take secret values from environment variables with an optional substitution, such as `${?POLICIES_API_KEY}`. Do not write secrets in `application.conf`. To supply the variables to a deployed service, see xref:operations:projects/secrets.adoc[]. An optional substitution for a variable that is not set leaves the setting out. When the setting is required, such as `client-secret`, `forAgent` throws `IllegalArgumentException` with a message that names the missing setting.
 
 === A static header

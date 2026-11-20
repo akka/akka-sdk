@@ -346,17 +346,26 @@ private[akka] final class RemoteA2aAgentClientImpl(
   // rejected OAuth token is replaced once. Only the time to the response headers is limited, so a stream can run
   // longer than the timeout.
   private def call(makeRequest: () => HttpRequest): Future[HttpResponse] = {
-    def attempt(retryOnUnauthorized: Boolean): Future[HttpResponse] =
-      authorization().flatMap { case (headers, usedToken) =>
-        state.send(addHeaders(makeRequest(), headers)).flatMap { response =>
-          if (response.status == StatusCodes.Unauthorized && retryOnUnauthorized && usedToken.isDefined) {
-            response.discardEntityBytes()
-            usedToken.foreach(t => state.tokens.foreach(_.invalidate(t)))
-            log.debug("Remote A2A agent [{}] rejected the access token, requesting a new one", settings.name)
-            attempt(retryOnUnauthorized = false)
-          } else Future.successful(response)
+    def attempt(retryOnUnauthorized: Boolean): Future[HttpResponse] = {
+      val request = makeRequest()
+      // The Agent Card names the URLs of the calls, so a card can point them at plain http
+      if (settings.auth != A2aAuth.NoAuth && !A2aRemoteAgentSettings.safeForCredentials(request.uri.toString))
+        Future.failed(
+          new A2aClientException(
+            s"Remote agent [${settings.name}] was not called at ${request.uri}, because the client sends credentials " +
+            "only to https:// URLs, or to http:// URLs on localhost"))
+      else
+        authorization().flatMap { case (headers, usedToken) =>
+          state.send(addHeaders(request, headers)).flatMap { response =>
+            if (response.status == StatusCodes.Unauthorized && retryOnUnauthorized && usedToken.isDefined) {
+              response.discardEntityBytes()
+              usedToken.foreach(t => state.tokens.foreach(_.invalidate(t)))
+              log.debug("Remote A2A agent [{}] rejected the access token, requesting a new one", settings.name)
+              attempt(retryOnUnauthorized = false)
+            } else Future.successful(response)
+          }
         }
-      }
+    }
     val timeout = after(settings.timeout)(
       Future.failed(
         new A2aClientException(s"Remote agent [${settings.name}] did not answer within ${settings.timeout}")))(

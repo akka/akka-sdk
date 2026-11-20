@@ -219,6 +219,25 @@ class RemoteA2aAgentClientSpec
       server.tokenRequests.get() shouldBe 2
     }
 
+    "not send credentials to a plain http URL that the Agent Card names" in {
+      reset()
+      val agents = new A2aRemoteAgents(
+        system,
+        a2aConfig(
+          "card-url" -> server.cardUrl,
+          "auth.type" -> "header",
+          "auth.header-name" -> "X-Api-Key",
+          "auth.header-value" -> "abc"))
+      val c = new RemoteA2aAgentClientImpl(
+        agents.stateFor("agent"),
+        Nil,
+        _ => A2aBinding.JsonRpc("http://agent.example.com/a2a", None))
+      val e = intercept[A2aClientException](c.send("s", hello).invoke())
+      e.getMessage should include("http://agent.example.com/a2a")
+      e.getMessage should include("only to https://")
+      server.requests.map(_.path) shouldBe Seq("/.well-known/agent-card.json")
+    }
+
     "fail with a client exception when the token endpoint refuses the client" in {
       reset()
       val c = client(oauth("auth.token-url" -> server.cardUrl): _*)()
