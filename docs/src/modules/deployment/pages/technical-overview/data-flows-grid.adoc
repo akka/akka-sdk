@@ -4,50 +4,68 @@
 :page-breadcrumb: Akka / Deployment / How AAO works / Data flows
 :page-summary: Every network flow between your environment and the Akka Automated Operations platform in one filterable grid, for security review.
 
-[.dense, cols="2,5,2,2,4,4", options="header"]
+The flows that Akka Optimize adds are in the xref:deployment:technical-overview/data-flows-optimize-grid.adoc[Akka Optimize data flows] grid.
+
+[.dense, cols="1,2,4,3,2,2,3,3,4", options="header"]
 |===
-| Actor | Flow | From | To | Connectivity | Auth
+| ID | Actor | Flow | What data | From | To | Connectivity | Auth | Notes
 
-6+h| Your end users
+9+h| Your end users
 
-| End users | End user accessing an Akka service from outside your environment | End user | Akka Region | [.conn-public]#Public# (through your firewall) | Your keys, secrets, and tokens
-| End users | End user accessing an Akka service from inside your environment | End user | Akka Region | [.conn-private]#Private# (peering) | Your keys, secrets, and tokens
+|  | End users | End user accessing an Akka service from outside your environment | Application data | End user | Akka Region | [.conn-public]#Public# (through your firewall) | Your keys, secrets, and tokens | 
+|  | End users | End user accessing an Akka service from inside your environment | Application data | End user | Akka Region | [.conn-private]#Private# (peering) | Your keys, secrets, and tokens | 
 
-6+h| Your deployed Akka services
+9+h| Your deployed Akka services
 
-| Deployed services | Access to your private internal systems | Your service | Your APIs | [.conn-private]#Private# (peering) | Your keys, secrets, and tokens
-| Deployed services | Pushing observability metrics for your services to your observability | Akka Region | Your observability | [.conn-private]#Private# (peering) | Your keys, secrets, and tokens
+|  | Deployed services | Access to your private internal systems | Application data | Your service | Your APIs | [.conn-private]#Private# (peering) | Your keys, secrets, and tokens | 
+|  | Deployed services | Pushing observability metrics for your services to your observability | OTLP | Akka Region | Your observability | [.conn-private]#Private# (peering) | Your keys, secrets, and tokens | 
 
-6+h| Your operators, admins, and developers
+9+h| Your operators, admins, and developers
 
-| Operators and developers | Akka CLI or console authentication initiation | CLI or console | Federation Plane | [.conn-public]#Public# (firewall, Federation Plane allowlisted) | Akka authentication
-| Operators and developers | OpenID authentication | Console | Your IAM | [.conn-public]#Public# | OpenID
-| Operators and developers | Add a region to a project | CLI | Federation Plane | [.conn-public]#Public# (firewall, Federation Plane allowlisted) | Akka authenticated, valid access token
-| Operators and developers | Initiate multi-region failover | CLI | Akka Region | [.conn-private]#Private# (peering) | Akka authenticated, valid access token
-| Operators and developers | List services and projects | CLI | Akka Region | [.conn-private]#Private# (peering) | Akka authenticated, valid access token
-| Operators and developers | Create a project | CLI | Federation Plane | [.conn-public]#Public# (firewall, Federation Plane allowlisted) | Akka authenticated, valid access token
-| Operators and developers | Add a user, role, or permission | CLI | Federation Plane | [.conn-public]#Public# (firewall, Federation Plane allowlisted) | Akka authenticated, valid access token
-| Operators and developers | Inspect service components in a region | CLI | Akka Region | [.conn-private]#Private# (peering) | Akka authenticated, valid access token
-| Operators and developers | Deploy a service: initiate deployment | CI/CD or developer | Akka Region | [.conn-private]#Private# (peering) | Akka authenticated, valid access token
-| Operators and developers | Deploy a service: region pulls the image | Akka Region | Your image registry | [.conn-private]#Private# (peering) | Akka authenticated, valid access token
+|  | Operators and developers | Akka CLI or console authentication initiation | None | CLI or console | Federation Plane | [.conn-public]#Public# (firewall, Federation Plane allowlisted) | Akka authentication | 
+|  | Operators and developers | OpenID authentication | OpenID | Console | Your IAM | [.conn-public]#Public# | OpenID | 
+|  | Operators and developers | Add a region to a project | Service information | CLI | Federation Plane | [.conn-public]#Public# (firewall, Federation Plane allowlisted) | Akka authenticated, valid access token | 
+|  | Operators and developers | Initiate multi-region failover | Service information | CLI | Akka Region | [.conn-private]#Private# (peering) | Akka authenticated, valid access token | 
+|  | Operators and developers | List services and projects | Service information | CLI | Akka Region | [.conn-private]#Private# (peering) | Akka authenticated, valid access token | 
+|  | Operators and developers | Other access to services (Akka CLI) | Varies by role, see xref:operations:projects/manage-project-access.adoc[] | CLI | Akka Region | [.conn-private]#Private# (peering) | Akka authenticated, valid access token | 
+|  | Operators and developers | Create a project | Project metadata | CLI | Federation Plane | [.conn-public]#Public# (firewall, Federation Plane allowlisted) | Akka authenticated, valid access token | 
+|  | Operators and developers | Add a user, role, or permission | User metadata | CLI | Federation Plane | [.conn-public]#Public# (firewall, Federation Plane allowlisted) | Akka authenticated, valid access token | 
+|  | Operators and developers | Inspect service components in a region | Services metadata | CLI | Akka Region | [.conn-private]#Private# (peering) | Akka authenticated, valid access token | 
+|  | Operators and developers | Backoffice administration | Numerous application powers, see xref:operations:projects/manage-project-access.adoc[] | CLI | Akka Region | [.conn-private]#Private# (peering) | Akka authenticated, valid access token | 
+|  | Operators and developers | Check utilization | Metrics | Your admin | Federation Plane | [.conn-public]#Public# (firewall, Federation Plane allowlisted) | Akka authenticated, valid access token | 
+|  | Operators and developers | Set up a local development environment | Akka SDK libraries from Akka's Maven repository, which you can stage on your internal repository | Developer machine | Developer machine | [.conn-private]#Private# (peering) | Your internal repository credentials | 
+|  | Operators and developers | Install a new Akka CLI version | The Akka CLI from Akka's Cloudsmith servers, which you can stage on your internal repository | Developer machine | Developer machine | [.conn-private]#Private# (peering) | Your internal repository credentials | 
+|  | Operators and developers | Local build | None, no external dependencies | Developer machine | Developer machine | [.conn-private]#Private# (peering) |  | 
+|  | Operators and developers | Deploy a service: package the service | Akka SDK libraries that CI/CD downloads from the appropriate repository | CI/CD or developer | Your library repository | [.conn-private]#Private# (peering) |  | 
+|  | Operators and developers | Deploy a service: upload the package to your repository | Image artifact | CI/CD or developer | Your image registry | [.conn-private]#Private# (peering) |  | 
+|  | Operators and developers | Deploy a service: initiate deployment | Image artifact | CI/CD or developer | Akka Region | [.conn-private]#Private# (peering) | Akka authenticated, valid access token | 
+|  | Operators and developers | Deploy a service: region pulls the image | Image artifact | Akka Region | Your image registry | [.conn-private]#Private# (peering) | Akka authenticated, valid access token | 
 
-6+h| Akka SRE
+9+h| Akka SRE
 
-| Akka SRE | Troubleshoot a region (cloud console or kubectl) | Your VDI, when needed | Akka Region | [.conn-private]#Private# (your remote desktop) | Your cloud credentials, granted through Teleport
+|  | Akka SRE | Troubleshoot a region (cloud console or kubectl) | Operations | Your VDI, when needed | Akka Region | [.conn-private]#Private# (your remote desktop) | Your cloud credentials, granted through Teleport | 
 
-6+h| Akka Region
+9+h| Akka Region
 
-| Akka Region | Region observability metadata to the Federation Plane | Akka Region | Federation Plane | [.conn-public]#Public# (Akka NAT gateway) | Kubernetes RBAC and Federation Plane observability token
-| Akka Region | Region requests the public key set | Akka Region | Federation Plane | [.conn-public]#Public# (Akka NAT gateway) | Internal Akka JWT authentication
-| Akka Region | Certificate expiration monitoring (can be disabled) | Akka Region | Akka SRE | [.conn-public]#Public# (Akka NAT gateway) | Kubernetes RBAC
-| Akka Region | Replication to another Akka Region | Akka Region | Akka Region | [.conn-private]#Private# (peering) | Mutual TLS and ACLs
+|  | Akka Region | Region observability metadata to the Federation Plane | Platform telemetry | Akka Region | Federation Plane | [.conn-public]#Public# (Akka NAT gateway) | Kubernetes RBAC and Federation Plane observability token | 
+|  | Akka Region | Billing job | Billing data | Akka Region | Federation Plane | [.conn-public]#Public# (Akka NAT gateway) | Kubernetes RBAC | 
+|  | Akka Region | Region requests the public key set | Public key set | Akka Region | Federation Plane | [.conn-public]#Public# (Akka NAT gateway) | Internal Akka JWT authentication | 
+|  | Akka Region | Certificate expiration monitoring (can be disabled) | Certificate expiry date | Akka Region | Akka SRE | [.conn-public]#Public# (Akka NAT gateway) | Kubernetes RBAC | 
+|  | Akka Region | Replication to another Akka Region | Application data | Akka Region | Akka Region | [.conn-private]#Private# (peering) | Mutual TLS and ACLs | 
 
-6+h| Akka Federation Plane (all flows use the bootstrap credential you create and share with Akka)
+9+h| Akka Federation Plane (all flows use the bootstrap credential you create and share with Akka)
 
-| Federation Plane | Bootstrap a new Akka Region | Federation Plane | Akka Region | [.conn-public]#Public# (pre-authorized IP ranges) |
-| Federation Plane | Install a new version of Akka into a region | Federation Plane | Akka Region | [.conn-public]#Public# (pre-authorized IP ranges) |
-| Federation Plane | Maintain infrastructure (drift detection) | Federation Plane | Akka Region | [.conn-public]#Public# (pre-authorized IP ranges) |
-| Federation Plane | Upgrade infrastructure (Kubernetes, database) | Federation Plane | Akka Region | [.conn-public]#Public# (pre-authorized IP ranges) |
-| Federation Plane | Multi-region root CA management for cross-region mTLS | Federation Plane | Akka Region | [.conn-public]#Public# (pre-authorized IP ranges) |
-| Federation Plane | Synchronize project, user, role, organization, and region metadata | Federation Plane | Akka Region | [.conn-public]#Public# (pre-authorized IP ranges) |
+|  | Federation Plane | Bootstrap a new Akka Region | Configuration data and Akka artifacts | Federation Plane | Akka Region | [.conn-public]#Public# (pre-authorized IP ranges) |  | 
+|  | Federation Plane | Install a new version of Akka into a region | Configuration data and Akka artifacts | Federation Plane | Akka Region | [.conn-public]#Public# (pre-authorized IP ranges) |  | 
+|  | Federation Plane | Maintain infrastructure (drift detection) | Infrastructure as code | Federation Plane | Akka Region | [.conn-public]#Public# (pre-authorized IP ranges) |  | 
+|  | Federation Plane | Upgrade infrastructure (Kubernetes, database) | Infrastructure as code | Federation Plane | Akka Region | [.conn-public]#Public# (pre-authorized IP ranges) |  | 
+|  | Federation Plane | Multi-region root CA management for cross-region mTLS | Infrastructure as code | Federation Plane | Akka Region | [.conn-public]#Public# (pre-authorized IP ranges) |  | 
+|  | Federation Plane | Synchronize project, user, role, organization, and region metadata | Metadata | Federation Plane | Akka Region | [.conn-public]#Public# (pre-authorized IP ranges) |  | 
+
+9+h| Akka Verify
+
+| VER-01 | Akka Region (Verify) | Runtime writes interaction and control records | Interaction transcript (masked only where sanitizers are configured), token counts, control inventory | Akka runtime | Regional Postgres (event journal) | [.conn-private]#Private# in-region | Existing runtime database credentials | 
+| VER-02 | Akka Region (Verify) | Evaluator judges an interaction | Interaction transcript sent to the judge model; verdict written back | Akka runtime, after each interaction | Ledger, and the configured LLM provider | [.conn-private]#Private# to the ledger; egress to the model provider (or the Optimize gateway) | Runtime-internal for the ledger; provider API key for the model | The judge model receives the full interaction. Use an in-region model to keep evaluation data in the region.
+| VER-03 | Admins and operators | Operator views interactions | Interaction records | User (console or CLI) | Service backoffice API through backoffice-proxy | Same path as existing console and CLI access | Akka access token plus Kubernetes SubjectAccessReview for the backoffice role | Access requires the backoffice role in the project.
+| VER-04 | Deployed Akka services (Optimize) | Offline evaluation experiments: record, replay, and report | Evaluation datasets, replayed prompts, model outputs, experiment reports and scores | Developer (akka optimize eval experiments) | offline-evaluation service, the target agent, and the storage account | [.conn-public]#Public# to the region ingress (TLS); private in-region (Akka route) | Akka platform JWT | Experiment reports are stored in the region. Replay sends prompts to the target URL that the developer gives.
 |===
