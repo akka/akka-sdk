@@ -464,6 +464,123 @@ class ModelProviderSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike w
     }
   }
 
+  "The Anthropic model provider" should {
+
+    def spiAnthropic(modelProvider: ModelProvider): SpiAgent.ModelProvider.Anthropic =
+      AgentImpl.toSpiModelProvider(modelProvider, config, "myagent").asInstanceOf[SpiAgent.ModelProvider.Anthropic]
+
+    def fromAnthropicConfig(settings: String): ModelProvider.Anthropic =
+      ModelProvider.Anthropic.fromConfig(
+        ConfigFactory.parseString(settings).withFallback(defaultConfig.getConfig("akka.javasdk.agent.anthropic")))
+
+    val headers = List[HttpHeader](RawHeader.create("X-Request-Id", "r-1")).asJava
+
+    // every component other than adaptiveThinking and effort has a value other than its default
+    def anthropicWithSettings(adaptiveThinking: Boolean, effort: String): ModelProvider.Anthropic =
+      new ModelProvider.Anthropic(
+        "key",
+        "claude-haiku-4-5",
+        "http://localhost:8080",
+        0.3,
+        0.8,
+        40,
+        100,
+        Duration.ofSeconds(3),
+        Duration.ofSeconds(30),
+        5,
+        1024,
+        adaptiveThinking,
+        effort,
+        headers,
+        true,
+        true)
+
+    "pass no adaptive thinking and no effort on to the runtime by default" in {
+      Seq(ModelProvider.anthropic(), ModelProvider.fromConfig("anthropic")).foreach { provider =>
+        withClue(provider) {
+          val spi = spiAnthropic(provider)
+          spi.adaptiveThinking shouldBe false
+          spi.effort shouldBe ""
+        }
+      }
+    }
+
+    "pass adaptive thinking and the effort from config on to the runtime" in {
+      val m = fromAnthropicConfig("""
+        adaptive-thinking = true
+        effort = "high"
+        """)
+      m shouldBe ModelProvider.anthropic().withAdaptiveThinking(true).withEffort("high")
+
+      val spi = spiAnthropic(m)
+      spi.adaptiveThinking shouldBe true
+      spi.effort shouldBe "high"
+    }
+
+    "keep adaptive thinking and the effort in every other with method" in {
+      val base = ModelProvider.anthropic().withAdaptiveThinking(true).withEffort("high")
+      val updated = Seq(
+        "withApiKey" -> base.withApiKey("key"),
+        "withModelName" -> base.withModelName("claude-haiku-4-5"),
+        "withBaseUrl" -> base.withBaseUrl("http://localhost:8080"),
+        "withTemperature" -> base.withTemperature(0.3),
+        "withTopP" -> base.withTopP(0.8),
+        "withTopK" -> base.withTopK(40),
+        "withMaxTokens" -> base.withMaxTokens(100),
+        "withConnectionTimeout" -> base.withConnectionTimeout(Duration.ofSeconds(3)),
+        "withResponseTimeout" -> base.withResponseTimeout(Duration.ofSeconds(30)),
+        "withMaxRetries" -> base.withMaxRetries(5),
+        "withThinkingBudgetTokens" -> base.withThinkingBudgetTokens(1024),
+        "withAdditionalModelRequestHeaders" -> base.withAdditionalModelRequestHeaders(headers),
+        "withCacheSystemMessages" -> base.withCacheSystemMessages(true),
+        "withCacheTools" -> base.withCacheTools(true))
+      updated.foreach { case (method, provider) =>
+        withClue(method) {
+          provider.adaptiveThinking() shouldBe true
+          provider.effort() shouldBe "high"
+        }
+      }
+    }
+
+    "keep every other setting in withAdaptiveThinking and withEffort" in {
+      val provider = anthropicWithSettings(adaptiveThinking = false, effort = "low")
+      provider.withAdaptiveThinking(true) shouldBe anthropicWithSettings(adaptiveThinking = true, effort = "low")
+      provider.withEffort("high") shouldBe anthropicWithSettings(adaptiveThinking = false, effort = "high")
+    }
+
+    "give no adaptive thinking and no effort from the constructor without them" in {
+      @nowarn("cat=deprecation")
+      val provider = new ModelProvider.Anthropic(
+        "key",
+        "claude-haiku-4-5",
+        "http://localhost:8080",
+        0.3,
+        0.8,
+        40,
+        100,
+        Duration.ofSeconds(3),
+        Duration.ofSeconds(30),
+        5,
+        1024,
+        headers,
+        true,
+        true)
+      provider shouldBe anthropicWithSettings(adaptiveThinking = false, effort = "")
+    }
+
+    "accept both thinking settings in the record and fail to map them to the runtime" in {
+      spiAnthropic(ModelProvider.anthropic().withThinkingBudgetTokens(1024)).thinkingBudgetTokens shouldBe 1024
+      spiAnthropic(ModelProvider.anthropic().withAdaptiveThinking(true)).adaptiveThinking shouldBe true
+
+      val provider = ModelProvider.anthropic().withThinkingBudgetTokens(1024).withAdaptiveThinking(true)
+      provider.thinkingBudgetTokens() shouldBe 1024
+      provider.adaptiveThinking() shouldBe true
+      intercept[IllegalArgumentException] {
+        spiAnthropic(provider)
+      }
+    }
+  }
+
   "Additional model request headers" should {
 
     def spiHeaders(modelProvider: ModelProvider): Seq[(String, String)] =

@@ -136,6 +136,8 @@ public sealed interface ModelProvider {
         Duration.ofMinutes(1),
         2,
         0,
+        false,
+        "",
         List.of(),
         false,
         false);
@@ -180,8 +182,26 @@ public sealed interface ModelProvider {
        * retry this many times.
        */
       int maxRetries,
-      /** A maximum number of tokens to spend on thinking, use 0 to disable thinking */
+      /**
+       * A maximum number of tokens to spend on thinking, 0 for no thinking budget. For models that
+       * take a thinking budget, such as Claude Haiku 4.5. Claude Opus 4.6 and Sonnet 4.6 accept it,
+       * and newer Claude models reject it. Cannot be combined with adaptiveThinking.
+       */
       int thinkingBudgetTokens,
+      /**
+       * Ask the model for adaptive thinking, where the model decides when and how much to think,
+       * and for a summary of its thinking. The reply has the summary as its thinking if the model
+       * returns one. The agent does not send the thinking back to the model. For Claude Opus 4.6,
+       * Sonnet 4.6 and newer models. Some of them think by default also when this is off, and then
+       * return no summary. Cannot be combined with thinkingBudgetTokens.
+       */
+      boolean adaptiveThinking,
+      /**
+       * How much effort the model spends on thinking and on the reply, such as "low", "medium" or
+       * "high". The values that a model accepts depend on the model. Empty for the model default.
+       * For Claude Opus 4.5, Opus 4.6, Sonnet 4.6 and newer models.
+       */
+      String effort,
       /** Additional HTTP headers to include in each request to the model API */
       List<HttpHeader> additionalModelRequestHeaders,
       /**
@@ -196,6 +216,45 @@ public sealed interface ModelProvider {
       boolean cacheTools)
       implements ModelProvider {
 
+    /**
+     * @deprecated Use constructor with adaptiveThinking and effort, or the static factory method
+     *     and {@code with} methods.
+     */
+    @Deprecated(since = "3.7.2", forRemoval = true)
+    public Anthropic(
+        String apiKey,
+        String modelName,
+        String baseUrl,
+        double temperature,
+        double topP,
+        int topK,
+        int maxTokens,
+        Duration connectionTimeout,
+        Duration responseTimeout,
+        int maxRetries,
+        int thinkingBudgetTokens,
+        List<HttpHeader> additionalModelRequestHeaders,
+        boolean cacheSystemMessages,
+        boolean cacheTools) {
+      this(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          topK,
+          maxTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          thinkingBudgetTokens,
+          false,
+          "",
+          additionalModelRequestHeaders,
+          cacheSystemMessages,
+          cacheTools);
+    }
+
     public static Anthropic fromConfig(Config config) {
       return new Anthropic(
           config.getString("api-key"),
@@ -209,6 +268,8 @@ public sealed interface ModelProvider {
           config.getDuration("response-timeout"),
           config.getInt("max-retries"),
           config.getInt("thinking-budget-tokens"),
+          config.getBoolean("adaptive-thinking"),
+          config.getString("effort"),
           headersFromConfig(config),
           config.getBoolean("cache-system-messages"),
           config.getBoolean("cache-tools"));
@@ -227,6 +288,8 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
+          adaptiveThinking,
+          effort,
           additionalModelRequestHeaders,
           cacheSystemMessages,
           cacheTools);
@@ -245,6 +308,8 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
+          adaptiveThinking,
+          effort,
           additionalModelRequestHeaders,
           cacheSystemMessages,
           cacheTools);
@@ -263,6 +328,8 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
+          adaptiveThinking,
+          effort,
           additionalModelRequestHeaders,
           cacheSystemMessages,
           cacheTools);
@@ -281,6 +348,8 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
+          adaptiveThinking,
+          effort,
           additionalModelRequestHeaders,
           cacheSystemMessages,
           cacheTools);
@@ -299,6 +368,8 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
+          adaptiveThinking,
+          effort,
           additionalModelRequestHeaders,
           cacheSystemMessages,
           cacheTools);
@@ -317,6 +388,8 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
+          adaptiveThinking,
+          effort,
           additionalModelRequestHeaders,
           cacheSystemMessages,
           cacheTools);
@@ -335,6 +408,8 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
+          adaptiveThinking,
+          effort,
           additionalModelRequestHeaders,
           cacheSystemMessages,
           cacheTools);
@@ -353,6 +428,8 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
+          adaptiveThinking,
+          effort,
           additionalModelRequestHeaders,
           cacheSystemMessages,
           cacheTools);
@@ -371,6 +448,8 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
+          adaptiveThinking,
+          effort,
           additionalModelRequestHeaders,
           cacheSystemMessages,
           cacheTools);
@@ -389,6 +468,8 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
+          adaptiveThinking,
+          effort,
           additionalModelRequestHeaders,
           cacheSystemMessages,
           cacheTools);
@@ -407,6 +488,48 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
+          adaptiveThinking,
+          effort,
+          additionalModelRequestHeaders,
+          cacheSystemMessages,
+          cacheTools);
+    }
+
+    public Anthropic withAdaptiveThinking(boolean adaptiveThinking) {
+      return new Anthropic(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          topK,
+          maxTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          thinkingBudgetTokens,
+          adaptiveThinking,
+          effort,
+          additionalModelRequestHeaders,
+          cacheSystemMessages,
+          cacheTools);
+    }
+
+    public Anthropic withEffort(String effort) {
+      return new Anthropic(
+          apiKey,
+          modelName,
+          baseUrl,
+          temperature,
+          topP,
+          topK,
+          maxTokens,
+          connectionTimeout,
+          responseTimeout,
+          maxRetries,
+          thinkingBudgetTokens,
+          adaptiveThinking,
+          effort,
           additionalModelRequestHeaders,
           cacheSystemMessages,
           cacheTools);
@@ -426,6 +549,8 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
+          adaptiveThinking,
+          effort,
           additionalModelRequestHeaders,
           cacheSystemMessages,
           cacheTools);
@@ -444,6 +569,8 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
+          adaptiveThinking,
+          effort,
           additionalModelRequestHeaders,
           cacheSystemMessages,
           cacheTools);
@@ -462,6 +589,8 @@ public sealed interface ModelProvider {
           responseTimeout,
           maxRetries,
           thinkingBudgetTokens,
+          adaptiveThinking,
+          effort,
           additionalModelRequestHeaders,
           cacheSystemMessages,
           cacheTools);

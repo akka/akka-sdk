@@ -37,7 +37,7 @@ thought process, breaking down bigger problems into smaller more manageable task
 at the price of tokens used for the thought process. 
 
 For models that support thinking, it is enabled through model-specific configuration, either by setting a thinking token budget, or
-by a toggle. Thinking is disabled for all models by default.
+by a toggle. Some models think by default, also when the configuration does not enable thinking.
 
 === Retries
 Akka retries a request to the model when it fails with a rate limit (HTTP 429), a request timeout (HTTP 408), a server error (HTTP 5xx), a timeout or a connection failure. Other failures are not retried. Examples are an invalid request, an authentication error, a response that cannot be parsed and a response that is larger than the maximum response size.
@@ -112,7 +112,15 @@ The following is a list of all natively supported model configurations. Remember
 
 | thinking-budget-tokens
 | Integer
-| A maximum number of tokens to spend on thinking, use 0 to disable thinking
+| A maximum number of tokens to spend on thinking, 0 for no thinking budget. For models that take a thinking budget, such as Claude Haiku 4.5. Claude Opus 4.6 and Sonnet 4.6 accept it, and newer Claude models reject it. Cannot be combined with `adaptive-thinking`.
+
+| adaptive-thinking
+| Boolean
+| Ask the model for adaptive thinking, where the model decides when and how much to think, and for a summary of its thinking. The reply has the summary as its thinking if the model returns one. The agent does not send the thinking back to the model. For Claude Opus 4.6, Sonnet 4.6 and newer models. Some of them think by default also when this is off, and then return no summary.
+
+| effort
+| String
+| How much effort the model spends on thinking and on the reply, for example `low`, `medium` or `high`. Leave empty for the model default. The values that a model accepts depend on the model. For Claude Opus 4.5, Opus 4.6, Sonnet 4.6 and newer models.
 
 | cache-system-messages
 | Boolean
@@ -128,6 +136,15 @@ The following is a list of all natively supported model configurations. Remember
 
 |===
 
+Use `adaptive-thinking` and `effort` for Claude Opus 4.6, Sonnet 4.6 and newer models, and `thinking-budget-tokens` for older models, such as Claude Haiku 4.5. The agent sends the effort with each request to the model, also for a structured response. With a `thinking-budget-tokens` above 0, the agent sends the thinking back to the model. With `adaptive-thinking` it does not, neither in the request that follows a round of tool calls nor from session memory. The service starts with both `adaptive-thinking` and a `thinking-budget-tokens` above 0. Each request to an agent with both fails before the agent calls the model. An autonomous agent instance with both fails when it starts.
+
+Example configuration for adaptive thinking:
+
+[source,json,indent=0]
+.src/main/resources/application.conf
+----
+include::sdk:example$doc-snippets/src/main/resources/application.conf[tags=agent-model-config-anthropic]
+----
 
 See link:{attachmentsdir}/api/akka/javasdk/agent/ModelProvider.Anthropic.html[`ModelProvider.Anthropic`] for programmatic settings.
 
