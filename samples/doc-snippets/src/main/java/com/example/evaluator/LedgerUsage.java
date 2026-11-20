@@ -1,5 +1,6 @@
 package com.example.evaluator;
 
+import akka.javasdk.client.ComponentClient;
 import akka.javasdk.ledger.EvaluationRecord;
 import akka.javasdk.ledger.FlowPage;
 import akka.javasdk.ledger.FlowRecord;
@@ -50,5 +51,24 @@ public class LedgerUsage {
     String transcript = FlowRecord.transcript(records); // <3>
     // end::flow[]
     return transcript;
+  }
+
+  String summarizeForCall(ComponentClient componentClient, String callId, String document) {
+    // tag::correlation-call[]
+    String summary = componentClient
+      .withCorrelationId(callId) // <1>
+      .forAgent()
+      .inSession(callId)
+      .method(DocumentSummarizer::summarize)
+      .invoke(new DocumentSummarizer.Request(document, ""));
+    // end::correlation-call[]
+    return summary;
+  }
+
+  List<FlowRecord> recordsOfCall(String callId) {
+    // tag::correlation-read[]
+    List<FlowRecord> records = ledger.getCorrelationRecords(callId); // <1>
+    // end::correlation-read[]
+    return records;
   }
 }

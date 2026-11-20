@@ -69,6 +69,10 @@ public final class TestLedgerClient implements LedgerClient {
   private final Map<FlowRecord, Long> seedOrder =
       Collections.synchronizedMap(new IdentityHashMap<>());
 
+  // The correlation id of each record that was seeded with one.
+  private final Map<FlowRecord, String> correlationIds =
+      Collections.synchronizedMap(new IdentityHashMap<>());
+
   /** Create an empty in-memory ledger client. */
   public static TestLedgerClient create() {
     return new TestLedgerClient();
@@ -260,6 +264,50 @@ public final class TestLedgerClient implements LedgerClient {
     seedOrder.put(record, seedCount.getAndIncrement());
     activities.put(record.recordId(), record);
     return this;
+  }
+
+  /**
+   * Seed an interaction, a guardrail decision or an activity record, as {@link
+   * #seed(InteractionRecord)}, {@link #seed(GuardrailDecisionRecord)} or {@link
+   * #seed(ActivityRecord)} does, and give it a correlation id. {@link
+   * #getCorrelationRecords(String)} returns the record for that id.
+   *
+   * @param correlationId the correlation id of the record
+   * @param record the record to seed
+   * @return this client, for chaining
+   * @throws IllegalArgumentException if the record is an evaluation record, which carries no
+   *     correlation id
+   */
+  public TestLedgerClient seed(String correlationId, FlowRecord record) {
+    switch (record) {
+      case InteractionRecord interaction -> seed(interaction);
+      case GuardrailDecisionRecord decision -> seed(decision);
+      case ActivityRecord activity -> seed(activity);
+      case EvaluationRecord ignored ->
+          throw new IllegalArgumentException("An evaluation record carries no correlation id");
+    }
+    correlationIds.put(record, correlationId);
+    return this;
+  }
+
+  /**
+   * The seeded records with the given correlation id, newest first by their timestamp. See {@link
+   * #seed(String, FlowRecord)}.
+   */
+  @Override
+  public List<FlowRecord> getCorrelationRecords(String correlationId) {
+    List<FlowRecord> seeded = new ArrayList<>(records.values());
+    seeded.addAll(guardrailDecisions.values());
+    seeded.addAll(activities.values());
+    return seeded.stream()
+        .filter(record -> correlationId.equals(correlationIds.get(record)))
+        .sorted(Comparator.comparing(FlowRecord::timestamp).reversed())
+        .toList();
+  }
+
+  @Override
+  public CompletionStage<List<FlowRecord>> getCorrelationRecordsAsync(String correlationId) {
+    return CompletableFuture.completedFuture(getCorrelationRecords(correlationId));
   }
 
   @Override

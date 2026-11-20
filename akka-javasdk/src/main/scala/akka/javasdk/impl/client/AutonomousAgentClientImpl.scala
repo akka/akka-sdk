@@ -33,6 +33,8 @@ import akka.runtime.sdk.spi.SpiAutonomousAgent.{ Notification => SpiNotification
 import akka.runtime.sdk.spi.{ ComponentClients => RuntimeComponentClients }
 import akka.stream.Materializer
 import akka.stream.javadsl.Source
+import io.opentelemetry.api.baggage.Baggage
+import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.LoggerFactory
 
 /**
@@ -45,8 +47,21 @@ private[javasdk] final class AutonomousAgentClientImpl(
     runtimeComponentClients: RuntimeComponentClients,
     agentCapabilityConverter: Option[CapabilityConverter],
     serializer: Serializer,
-    callMetadata: Option[Metadata])(implicit ec: ExecutionContext, system: ActorSystem[_])
+    callMetadata: Option[Metadata],
+    telemetryContext: Option[OtelContext])(implicit ec: ExecutionContext, system: ActorSystem[_])
     extends AutonomousAgentClient {
+
+  // The trace context of the call, with the correlation id of the call as its only baggage.
+  private val runtimeContext: Option[OtelContext] = {
+    val traceContext = callMetadata.flatMap(_.asInstanceOf[MetadataImpl].context)
+    val correlationId = telemetryContext.flatMap { context =>
+      Option(Baggage.fromContext(context).getEntryValue(ComponentClientImpl.CorrelationIdBaggageKey))
+    }
+    correlationId.fold(traceContext) { id =>
+      val baggage = Baggage.builder().put(ComponentClientImpl.CorrelationIdBaggageKey, id).build()
+      Some(traceContext.getOrElse(OtelContext.root()).`with`(baggage))
+    }
+  }
 
   private val log = LoggerFactory.getLogger(classOf[AutonomousAgentClientImpl])
 
@@ -72,12 +87,7 @@ private[javasdk] final class AutonomousAgentClientImpl(
           agentInstanceId)
 
         runtimeComponentClients.autonomousAgentClient
-          .assignTask(
-            agentComponentId,
-            agentInstanceId,
-            taskId,
-            stopWhenDone = true,
-            callMetadata.flatMap(_.asInstanceOf[MetadataImpl].context))
+          .assignTask(agentComponentId, agentInstanceId, taskId, stopWhenDone = true, runtimeContext)
           .map { _ =>
             log.debug("runSingleTask: AssignTask ack for task [{}], returning id [{}]", taskId, agentInstanceId)
             taskId
@@ -97,12 +107,7 @@ private[javasdk] final class AutonomousAgentClientImpl(
       .foldLeft(Future.successful(Done.done())) { (prev, taskId) =>
         prev.flatMap { _ =>
           runtimeComponentClients.autonomousAgentClient
-            .assignTask(
-              agentComponentId,
-              agentInstanceId,
-              taskId,
-              stopWhenDone = false,
-              callMetadata.flatMap(_.asInstanceOf[MetadataImpl].context))
+            .assignTask(agentComponentId, agentInstanceId, taskId, stopWhenDone = false, runtimeContext)
         }
       }
       .asJava
@@ -140,29 +145,21 @@ private[javasdk] final class AutonomousAgentClientImpl(
   override def suspendAsync(reason: String): CompletionStage[Done] = {
     log.debug("suspend: agent [{}] instance [{}] reason [{}]", agentComponentId, agentInstanceId, reason)
     runtimeComponentClients.autonomousAgentClient
-      .suspend(
-        agentComponentId,
-        agentInstanceId,
-        Option(reason),
-        callMetadata.flatMap(_.asInstanceOf[MetadataImpl].context))
+      .suspend(agentComponentId, agentInstanceId, Option(reason), runtimeContext)
       .asJava
   }
 
   override def resumeAsync(): CompletionStage[Done] = {
     log.debug("resume: agent [{}] instance [{}]", agentComponentId, agentInstanceId)
     runtimeComponentClients.autonomousAgentClient
-      .resume(agentComponentId, agentInstanceId, callMetadata.flatMap(_.asInstanceOf[MetadataImpl].context))
+      .resume(agentComponentId, agentInstanceId, runtimeContext)
       .asJava
   }
 
   override def terminateAsync(reason: String): CompletionStage[Done] = {
     log.debug("terminate: agent [{}] instance [{}] reason [{}]", agentComponentId, agentInstanceId, reason)
     runtimeComponentClients.autonomousAgentClient
-      .terminate(
-        agentComponentId,
-        agentInstanceId,
-        Option(reason),
-        callMetadata.flatMap(_.asInstanceOf[MetadataImpl].context))
+      .terminate(agentComponentId, agentInstanceId, Option(reason), runtimeContext)
       .asJava
   }
 

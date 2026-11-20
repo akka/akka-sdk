@@ -38,6 +38,11 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
       page
     }
 
+    override def getCorrelationRecords(
+        correlationId: String,
+        from: Option[Instant],
+        limit: Int): Future[Seq[SpiLedger.FlowRecord]] = unexpected
+
     override def getInteraction(interactionId: String): Future[SpiLedger.InteractionRecord] = unexpected
     override def getEvaluation(evaluationId: String): Future[SpiLedger.EvaluationRecord] = unexpected
     override def getClassification(classificationId: String): Future[SpiLedger.ClassificationRecord] = unexpected
@@ -176,6 +181,12 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
 
     override def getFlowRecords(flowId: String, fromPosition: Long, limit: Int): Future[SpiLedger.FlowPage] =
       Future.successful(new SpiLedger.FlowPage(Seq.empty, fromPosition, hasMore = false))
+
+    override def getCorrelationRecords(
+        correlationId: String,
+        from: Option[Instant],
+        limit: Int): Future[Seq[SpiLedger.FlowRecord]] =
+      Future.successful(Seq.empty)
   }
 
   "Mapping an interaction record" should {
@@ -437,6 +448,34 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
         new ActivityRecord.Event.HandoffStarted("task-6", "specialist-agent"),
         new ActivityRecord.Event.HandoffReceived("task-7", "triage-agent", "triage-1"),
         new ActivityRecord.Event.Other("worker_task_received"))
+    }
+  }
+
+  "Reading the records of a correlation id" should {
+
+    "map each kind to the public records, in order, and ask for a limit of 100 without a from time" in {
+      val interaction = spiInteractionRecord()
+      val activity = spiActivityRecord(new SpiLedger.ActivityEvent.TaskAssigned("task-1"))
+      val decision = spiGuardrailDecisionRecord(controlId = None, toolCall = None)
+      val reads = mutable.ArrayBuffer.empty[(String, Option[Instant], Int)]
+      val spiClient = new EmptySpiLedgerClient {
+        override def getCorrelationRecords(
+            correlationId: String,
+            from: Option[Instant],
+            limit: Int): Future[Seq[SpiLedger.FlowRecord]] = {
+          reads += ((correlationId, from, limit))
+          Future.successful(Seq(decision, activity, interaction))
+        }
+      }
+      val client = new LedgerClientImpl(spiClient, ExecutionContext.parasitic)
+
+      val expected = Seq(
+        LedgerClientImpl.toGuardrailDecisionRecord(decision),
+        LedgerClientImpl.toActivityRecord(activity),
+        LedgerClientImpl.toInteractionRecord(interaction))
+      client.getCorrelationRecords("call-1").asScala.toSeq shouldEqual expected
+      client.getCorrelationRecordsAsync("call-2").toCompletableFuture.get().asScala.toSeq shouldEqual expected
+      reads.toSeq shouldEqual Seq(("call-1", None, 100), ("call-2", None, 100))
     }
   }
 
