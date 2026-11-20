@@ -34,7 +34,7 @@ include::example$doc-snippets/src/main/java/com/example/a2a/ClaimStatusEndpoint.
 <2> `forAgent("claims")` reads the settings of `akka.javasdk.a2a.remote-agents.claims`. It throws `IllegalArgumentException` when the name is not configured or its settings are not valid.
 <3> `send` takes the id of a skill and a message. A2A has no field for the skill, so the client sends the id as `skillId` in the metadata of the request. Call `inContext` on the result to continue a conversation with a context id.
 
-For a one-off call, pass the URL of an Agent Card to `forAgent` instead of a name. An agent that you give by URL has no credentials and no custom TLS settings, and takes its timeouts from `akka.javasdk.a2a.defaults`.
+For a one-off call, pass the URL of an Agent Card to `forAgent` instead of a name. An agent that you give by URL has no credentials and no custom TLS settings, and takes its timeouts from `akka.javasdk.a2a.defaults`. For this reason, the `defaults` cannot hold credentials: the service fails to start when `akka.javasdk.a2a.defaults.auth.type` is not `none`.
 
 The settings of a remote agent are:
 

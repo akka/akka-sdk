@@ -145,6 +145,22 @@ class A2aRemoteAgentSettingsSpec extends AnyWordSpec with Matchers {
       safeForCredentials("ftp://localhost/t") shouldBe false
     }
 
+    "reject credentials in the defaults" in {
+      intercept[IllegalArgumentException](
+        A2aRemoteAgentSettings.validateDefaults(
+          a2a("""defaults.auth { type = header, header-name = X, header-value = v }"""))).getMessage should include(
+        "akka.javasdk.a2a.defaults.auth.type must be none")
+      A2aRemoteAgentSettings.validateDefaults(a2a(""))
+    }
+
+    "give an agent reached by URL no credentials and no custom TLS" in {
+      val settings = A2aRemoteAgentSettings.resolve(
+        a2a("""defaults { auth { type = header, header-name = X, header-value = v }, ca-bundle = ca }"""),
+        "https://x.example.com/c.json")
+      settings.auth shouldBe A2aAuth.NoAuth
+      settings.caBundle shouldBe None
+    }
+
     "reject header authentication without a value" in {
       val e = intercept[IllegalArgumentException](
         A2aRemoteAgentSettings.resolve(

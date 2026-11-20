@@ -696,7 +696,8 @@ private final class Sdk(
     None,
     httpMockLookup)
 
-  private lazy val a2aRemoteAgents = new A2aRemoteAgents(system, sdkConfig.getConfig("a2a"))
+  // Not lazy, so that invalid A2A defaults fail the service at startup
+  private val a2aRemoteAgents = new A2aRemoteAgents(system, sdkConfig.getConfig("a2a"))
 
   private lazy val userServiceConfig = {
     // hiding these paths from the config provided to user

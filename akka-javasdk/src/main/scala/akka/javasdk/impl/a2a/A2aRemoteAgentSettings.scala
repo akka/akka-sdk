@@ -16,6 +16,7 @@ import scala.util.control.NonFatal
 
 import akka.annotation.InternalApi
 import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueFactory
 
 /**
  * INTERNAL API
@@ -98,10 +99,16 @@ private[akka] object A2aRemoteAgentSettings {
    */
   def resolve(a2a: Config, nameOrCardUrl: String): A2aRemoteAgentSettings = {
     val defaults = a2a.getConfig("defaults")
-    if (nameOrCardUrl.startsWith("http://") || nameOrCardUrl.startsWith("https://"))
+    if (isCardUrl(nameOrCardUrl))
+      // The URL can come from anywhere, so an agent that is not configured gets no credentials and no custom TLS
       fromConfig(
         nameOrCardUrl,
-        defaults.withValue("card-url", com.typesafe.config.ConfigValueFactory.fromAnyRef(nameOrCardUrl)))
+        defaults
+          .withoutPath("ca-bundle")
+          .withoutPath("client-certificate")
+          .withoutPath("client-key")
+          .withValue("card-url", ConfigValueFactory.fromAnyRef(nameOrCardUrl))
+          .withValue("auth.type", ConfigValueFactory.fromAnyRef("none")))
     else {
       val remoteAgents = a2a.getConfig("remote-agents")
       if (!remoteAgents.hasPath(quoted(nameOrCardUrl)))
@@ -111,6 +118,20 @@ private[akka] object A2aRemoteAgentSettings {
           "Pass the URL of an Agent Card to call an agent that is not configured.")
       fromConfig(nameOrCardUrl, remoteAgents.getConfig(quoted(nameOrCardUrl)).withFallback(defaults))
     }
+  }
+
+  def isCardUrl(nameOrCardUrl: String): Boolean =
+    nameOrCardUrl.startsWith("http://") || nameOrCardUrl.startsWith("https://")
+
+  /**
+   * The defaults apply to every agent, including one given by a URL, so they must not hold credentials.
+   */
+  def validateDefaults(a2a: Config): Unit = {
+    val authType = a2a.getString("defaults.auth.type")
+    if (authType != "none")
+      throw new IllegalArgumentException(
+        s"akka.javasdk.a2a.defaults.auth.type must be none, got [$authType]. Set the credentials of each agent " +
+        "under akka.javasdk.a2a.remote-agents.<name>.auth")
   }
 
   private def quoted(name: String): String = com.typesafe.config.ConfigUtil.quoteString(name)

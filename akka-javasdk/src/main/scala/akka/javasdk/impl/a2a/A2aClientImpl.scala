@@ -24,12 +24,39 @@ import io.opentelemetry.context.{ Context => OtelContext }
  */
 @InternalApi
 private[akka] final class A2aRemoteAgents(system: ActorSystem[_], a2aConfig: Config) {
-  private val states = new ConcurrentHashMap[String, RemoteA2aAgentState]()
+  A2aRemoteAgentSettings.validateDefaults(a2aConfig)
+
+  private val named = new ConcurrentHashMap[String, RemoteA2aAgentState]()
+
+  // Agents given by URL are not limited by the configuration, so only the most recently used are kept
+  private val byUrl = new java.util.LinkedHashMap[String, RemoteA2aAgentState](16, 0.75f, true) {
+    override def removeEldestEntry(eldest: java.util.Map.Entry[String, RemoteA2aAgentState]): Boolean =
+      size() > A2aRemoteAgents.MaxAgentsByUrl
+  }
 
   def stateFor(nameOrCardUrl: String): RemoteA2aAgentState =
-    states.computeIfAbsent(
-      nameOrCardUrl,
-      name => new RemoteA2aAgentState(system, A2aRemoteAgentSettings.resolve(a2aConfig, name)))
+    if (A2aRemoteAgentSettings.isCardUrl(nameOrCardUrl))
+      byUrl.synchronized {
+        Option(byUrl.get(nameOrCardUrl)).getOrElse {
+          val state = newState(nameOrCardUrl)
+          byUrl.put(nameOrCardUrl, state)
+          state
+        }
+      }
+    else named.computeIfAbsent(nameOrCardUrl, newState(_))
+
+  private def newState(nameOrCardUrl: String): RemoteA2aAgentState =
+    new RemoteA2aAgentState(system, A2aRemoteAgentSettings.resolve(a2aConfig, nameOrCardUrl))
+
+  private[a2a] def agentsByUrl: Int = byUrl.synchronized(byUrl.size())
+}
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[akka] object A2aRemoteAgents {
+  val MaxAgentsByUrl = 64
 }
 
 /**

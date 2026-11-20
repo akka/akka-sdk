@@ -88,6 +88,27 @@ class RemoteA2aAgentClientSpec
       A2aClientImpl(agents, None, None).forAgent(server.cardUrl).card().name() shouldBe "fake"
     }
 
+    "refuse defaults that hold credentials" in {
+      val config = ConfigFactory
+        .parseString("""defaults.auth { type = header, header-name = X, header-value = v }""")
+        .withFallback(a2aConfig())
+      intercept[IllegalArgumentException](new A2aRemoteAgents(system, config)).getMessage should include(
+        "defaults.auth.type must be none")
+    }
+
+    "keep the most recently used agents given by URL, up to a limit" in {
+      val agents = new A2aRemoteAgents(system, a2aConfig())
+      val first = agents.stateFor("https://agent-0.example.com/card.json")
+      val evicted = agents.stateFor("https://agent-1.example.com/card.json")
+      (2 to A2aRemoteAgents.MaxAgentsByUrl + 5).foreach { i =>
+        agents.stateFor(s"https://agent-$i.example.com/card.json")
+        agents.stateFor("https://agent-0.example.com/card.json")
+      }
+      agents.agentsByUrl shouldBe A2aRemoteAgents.MaxAgentsByUrl
+      (agents.stateFor("https://agent-0.example.com/card.json") should be).theSameInstanceAs(first)
+      (agents.stateFor("https://agent-1.example.com/card.json") should not).be(theSameInstanceAs(evicted))
+    }
+
     "reject a name that is not configured" in {
       intercept[IllegalArgumentException](
         A2aClientImpl(new A2aRemoteAgents(system, a2aConfig()), None, None)
