@@ -6,6 +6,8 @@ package akka.javasdk.impl.a2a
 
 import java.util.concurrent.ConcurrentHashMap
 
+import scala.concurrent.duration.FiniteDuration
+
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.http.scaladsl.model.HttpHeader
@@ -90,4 +92,8 @@ private[akka] final class A2aClientImpl(agents: A2aRemoteAgents, headers: Seq[Ht
 
   override def forAgent(nameOrCardUrl: String): RemoteA2aAgentClient =
     new RemoteA2aAgentClientImpl(agents.stateFor(nameOrCardUrl), headers)
+
+  /** A client whose calls use the given timeout instead of the one configured for the agent. */
+  def forAgent(nameOrCardUrl: String, timeout: Option[FiniteDuration]): RemoteA2aAgentClient =
+    new RemoteA2aAgentClientImpl(agents.stateFor(nameOrCardUrl), headers, timeoutOverride = timeout)
 }

@@ -158,7 +158,8 @@ private[akka] object RemoteA2aAgentClientImpl {
 private[akka] final class RemoteA2aAgentClientImpl(
     state: RemoteA2aAgentState,
     extraHeaders: Seq[HttpHeader],
-    selectBinding: A2aAgentCard => A2aBinding = A2aBinding.select)
+    selectBinding: A2aAgentCard => A2aBinding = A2aBinding.select,
+    timeoutOverride: Option[FiniteDuration] = None)
     extends RemoteA2aAgentClient {
 
   import RemoteA2aAgentState.mapper
@@ -167,6 +168,7 @@ private[akka] final class RemoteA2aAgentClientImpl(
 
   private val log = LoggerFactory.getLogger(classOf[RemoteA2aAgentClient])
   private val settings = state.settings
+  private val timeout = timeoutOverride.getOrElse(settings.timeout)
   private val requestIds = new AtomicLong()
   private val MaxResponseBytes = 16L * 1024 * 1024
   private val A2aVersion = "1.0"
@@ -355,7 +357,7 @@ private[akka] final class RemoteA2aAgentClientImpl(
     catch { case NonFatal(_) => None }
 
   private def strict(response: HttpResponse): Future[Array[Byte]] =
-    response.entity.withSizeLimit(MaxResponseBytes).toStrict(settings.timeout).map(_.data.toArray)
+    response.entity.withSizeLimit(MaxResponseBytes).toStrict(timeout).map(_.data.toArray)
 
   private sealed trait StreamErrors
   private case object JsonRpcErrors extends StreamErrors
@@ -417,9 +419,9 @@ private[akka] final class RemoteA2aAgentClientImpl(
     RemoteA2aAgentClientImpl
       .within(
         attempt(retryOnUnauthorized = true),
-        settings.timeout,
+        timeout,
         state.system.classicSystem.scheduler,
-        new A2aClientException(s"Remote agent [${settings.name}] did not answer within ${settings.timeout}"))
+        new A2aClientException(s"Remote agent [${settings.name}] did not answer within $timeout"))
       .recoverWith {
         case e: A2aClientException => Future.failed(e)
         case NonFatal(e) =>
@@ -440,10 +442,10 @@ private[akka] final class RemoteA2aAgentClientImpl(
     }
 
   private def await[T](stage: CompletionStage[T]): T =
-    try stage.toCompletableFuture.get(settings.timeout.toMillis + 5000, TimeUnit.MILLISECONDS)
+    try stage.toCompletableFuture.get(timeout.toMillis + 5000, TimeUnit.MILLISECONDS)
     catch {
       case e: ExecutionException if e.getCause != null => throw e.getCause
       case _: TimeoutException =>
-        throw new A2aClientException(s"Remote agent [${settings.name}] did not answer within ${settings.timeout}")
+        throw new A2aClientException(s"Remote agent [${settings.name}] did not answer within $timeout")
     }
 }

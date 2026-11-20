@@ -1396,6 +1396,7 @@ private final class Sdk(
             applicationConfig,
             eventLogClient,
             agentRegistry,
+            telemetryContext => A2aClientImpl(a2aRemoteAgents, telemetryContext, callerSpiffe),
             system)
         }
 

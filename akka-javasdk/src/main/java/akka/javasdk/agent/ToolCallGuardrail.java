@@ -25,7 +25,10 @@ import java.util.concurrent.CompletionStage;
  */
 public non-sealed interface ToolCallGuardrail extends Guardrail {
 
-  /** Where the called tool runs: {@link FunctionTool}, {@link RemoteMcp} or {@link Unknown}. */
+  /**
+   * Where the called tool runs: {@link FunctionTool}, {@link RemoteMcp}, {@link RemoteA2a} or
+   * {@link Unknown}.
+   */
   sealed interface ToolOrigin {
 
     /** A function tool of the agent. */
@@ -75,6 +78,24 @@ public non-sealed interface ToolCallGuardrail extends Guardrail {
 
       private static String rawPath(URI uri) {
         return uri.getRawPath() == null ? "" : uri.getRawPath();
+      }
+    }
+
+    /**
+     * A skill of a remote Agent2Agent (A2A) agent, offered to the model through {@link
+     * Agent.Effect.Builder#a2aAgents}.
+     *
+     * @param agent the remote agent as the caller names it: the name given to {@link
+     *     akka.javasdk.a2a.RemoteA2aAgent#named}, or the Agent Card URL given to {@link
+     *     akka.javasdk.a2a.RemoteA2aAgent#fromCard}
+     * @param skill the id of the skill on the remote agent's Agent Card
+     * @param caller the component id of the agent that makes the call
+     */
+    record RemoteA2a(String agent, String skill, String caller) implements ToolOrigin {
+      public RemoteA2a {
+        Objects.requireNonNull(agent, "agent");
+        Objects.requireNonNull(skill, "skill");
+        Objects.requireNonNull(caller, "caller");
       }
     }
 

@@ -13,6 +13,7 @@ import akka.javasdk.agent.Agent.StreamEffect
 import akka.javasdk.agent.ContentLoader
 import akka.javasdk.agent.MemoryProvider
 import akka.javasdk.agent.ModelProvider
+import akka.javasdk.a2a.RemoteA2aAgent
 import akka.javasdk.agent.RemoteMcpTools
 import akka.javasdk.agent.UserMessage
 import akka.javasdk.impl.effect.ErrorReplyImpl
@@ -110,6 +111,16 @@ private[javasdk] final class AgentStreamEffectImpl
 
   override def mcpTools(tools: java.util.List[RemoteMcpTools]): StreamEffect.Builder = {
     updateRequestModel(_.addMcpTools(tools.asScala.toSeq))
+    this
+  }
+
+  override def a2aAgents(agent: RemoteA2aAgent, moreAgents: RemoteA2aAgent*): StreamEffect.Builder = {
+    updateRequestModel(_.addA2aAgents(agent +: moreAgents))
+    this
+  }
+
+  override def a2aAgents(agents: java.util.List[RemoteA2aAgent]): StreamEffect.Builder = {
+    updateRequestModel(_.addA2aAgents(agents.asScala.toSeq))
     this
   }
 

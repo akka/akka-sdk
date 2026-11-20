@@ -167,11 +167,15 @@ import org.slf4j.LoggerFactory
 
     // The ToolCallGuardrails applicable to the given tool. An entry with an empty `tools` set
     // applies to every tool on the agent; otherwise only to the named tools.
-    private[agent] def toolCallGuardrails(toolName: String): Seq[SpiGuardrail.ToolCall] =
+    // The origin, when given, replaces the one the runtime reports, which is a function tool for every tool that the
+    // SDK describes to the runtime.
+    private[agent] def toolCallGuardrails(
+        toolName: String,
+        origin: Option[ToolCallGuardrail.ToolOrigin] = None): Seq[SpiGuardrail.ToolCall] =
       entries.collect {
         case GuardrailEntry(configured, g: ToolCallGuardrail)
             if configured.tools.isEmpty || configured.tools.contains(toolName) =>
-          new ToolCallGuardrailAdapter(toSettings(configured), g, tracerFactory)
+          new ToolCallGuardrailAdapter(toSettings(configured), g, tracerFactory, origin)
       }
 
     /** The given tool descriptors with their tool-call guardrails attached. */
@@ -181,6 +185,15 @@ import org.slf4j.LoggerFactory
         if (guardrails.isEmpty) descriptor
         else new SpiAgent.ToolDescriptor(descriptor.name, descriptor.description, descriptor.schema, guardrails)
       }
+
+    /** The given tool descriptor with its tool-call guardrails attached, which see the given origin. */
+    def withToolGuardrails(
+        descriptor: SpiAgent.ToolDescriptor,
+        origin: ToolCallGuardrail.ToolOrigin): SpiAgent.ToolDescriptor = {
+      val guardrails = toolCallGuardrails(descriptor.name, Some(origin))
+      if (guardrails.isEmpty) descriptor
+      else new SpiAgent.ToolDescriptor(descriptor.name, descriptor.description, descriptor.schema, guardrails)
+    }
   }
 
   @nowarn("cat=deprecation")
@@ -205,7 +218,8 @@ import org.slf4j.LoggerFactory
   final class ToolCallGuardrailAdapter(
       override val settings: SpiGuardrail.Settings,
       guardrail: ToolCallGuardrail,
-      tracerFactory: () => Tracer)
+      tracerFactory: () => Tracer,
+      origin: Option[ToolCallGuardrail.ToolOrigin] = None)
       extends SpiGuardrail.ToolCall {
 
     override def decide(ctx: SpiGuardrail.ToolCallContext): Future[SpiGuardrail.Decision] =
@@ -217,7 +231,7 @@ import org.slf4j.LoggerFactory
             Option(ctx.toolCallId).getOrElse(""),
             ctx.arguments,
             ctx.sessionId,
-            toToolOrigin(ctx.origin),
+            origin.getOrElse(toToolOrigin(ctx.origin)),
             Option(ctx.telemetryContext),
             tracerFactory)))
   }

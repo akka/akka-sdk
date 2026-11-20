@@ -9,6 +9,7 @@ import akka.javasdk.CommandException;
 import akka.javasdk.DependencyProvider;
 import akka.javasdk.Metadata;
 import akka.javasdk.SanitizerException;
+import akka.javasdk.a2a.RemoteA2aAgent;
 import akka.javasdk.agent.Guardrail.GuardrailException;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.FunctionTool;
@@ -288,6 +289,26 @@ public abstract class Agent implements AgentDelegationWorker {
        * <p>Construct instances using {@link RemoteMcpTools#fromServer(String)}
        */
       Builder mcpTools(List<RemoteMcpTools> tools);
+
+      /**
+       * Offers the skills of one or more remote Agent2Agent (A2A) agents to the model as tools.
+       *
+       * <p>Each allowed skill on a remote agent's Agent Card becomes one tool. A tool call sends
+       * the model's message to the skill with the session id as the A2A context id, and returns the
+       * reply to the model.
+       *
+       * <p>Construct instances using {@link RemoteA2aAgent#named(String)} or {@link
+       * RemoteA2aAgent#fromCard(String)}.
+       */
+      Builder a2aAgents(RemoteA2aAgent agent, RemoteA2aAgent... moreAgents);
+
+      /**
+       * Offers the skills of one or more remote Agent2Agent (A2A) agents to the model as tools.
+       *
+       * <p>Construct instances using {@link RemoteA2aAgent#named(String)} or {@link
+       * RemoteA2aAgent#fromCard(String)}.
+       */
+      Builder a2aAgents(List<RemoteA2aAgent> agents);
 
       /**
        * Sets a custom content loader.
@@ -651,6 +672,26 @@ public abstract class Agent implements AgentDelegationWorker {
        * <p>Construct instances using {@link RemoteMcpTools#fromServer(String)}
        */
       Builder mcpTools(List<RemoteMcpTools> tools);
+
+      /**
+       * Offers the skills of one or more remote Agent2Agent (A2A) agents to the model as tools.
+       *
+       * <p>Each allowed skill on a remote agent's Agent Card becomes one tool. A tool call sends
+       * the model's message to the skill with the session id as the A2A context id, and returns the
+       * reply to the model.
+       *
+       * <p>Construct instances using {@link RemoteA2aAgent#named(String)} or {@link
+       * RemoteA2aAgent#fromCard(String)}.
+       */
+      Builder a2aAgents(RemoteA2aAgent agent, RemoteA2aAgent... moreAgents);
+
+      /**
+       * Offers the skills of one or more remote Agent2Agent (A2A) agents to the model as tools.
+       *
+       * <p>Construct instances using {@link RemoteA2aAgent#named(String)} or {@link
+       * RemoteA2aAgent#fromCard(String)}.
+       */
+      Builder a2aAgents(List<RemoteA2aAgent> agents);
 
       /**
        * Sets a custom content loader.
