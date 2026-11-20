@@ -12,6 +12,10 @@ Current versions
 
 == November 2026
 
+* xref:release-notes/runtime/1.7.7.adoc[Akka Runtime 1.7.7]
+- Enforced ACL for service stream producers.
+- Fixes for autonomous agents.
+
 * Akka libraries 26.11 releases
 - overview in xref:release-notes/2026-11-20-akka-26.11-released.adoc[]
 - Jackson 2.21 long-term-support line
