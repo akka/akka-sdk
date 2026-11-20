@@ -9,6 +9,7 @@ The folder lives in `akka-javasdk-tests` because that module tests a running ser
 | `run_tck.sh` | Runs the [A2A compatibility kit](https://github.com/a2aproject/a2a-tck) against a running agent. |
 | `adk_client_check.py` | Checks an agent with the [a2a-python](https://github.com/a2aproject/a2a-python) client. |
 | `adk_echo_server.py` | An a2a-python server for testing A2A clients. |
+| `bearer_proxy.py` | A reverse proxy that adds a bearer token to each request, for agents that require one. |
 | `requirements.txt` | The pinned versions of a2a-python and the compatibility kit. |
 
 ## Requirements
@@ -76,6 +77,18 @@ The server serves both bindings. The JSON-RPC endpoint is `/` and the HTTP+JSON 
 - `ask` returns an input-required task that asks for a name. The next message on the task completes it with a greeting. The skill has the tag `input-required`.
 
 With `--token` or the environment variable `A2A_ECHO_TOKEN`, the server answers every request except the Agent Card with 401 unless the request has the matching bearer token.
+
+## Check the A2A test service of the SDK
+
+`akkajavasdk.A2aInteropServiceTest` runs the test service of `akka-javasdk-tests` on port 19391 for the number of seconds in `A2A_INTEROP_SECONDS`. The service publishes only the echo skill, because the checks do not select a skill. Its A2A routes require a bearer token from the issuer `a2a-test-issuer`, which the testkit accepts without a signature. The compatibility kit has no option for credentials, so run the checks through `bearer_proxy.py`:
+
+```shell
+A2A_INTEROP_SECONDS=1200 sbt "akka-javasdk-tests/testOnly akkajavasdk.A2aInteropServiceTest"
+.venv/bin/python bearer_proxy.py --port 9000 --target http://localhost:19391 --token <token>
+./run_tck.sh http://127.0.0.1:9000/.well-known/agent-card.json
+```
+
+The token is an unsigned JWT with the claims `{"iss": "a2a-test-issuer", "sub": "interop"}`. The proxy keeps the `Host` header, so the Agent Card lists the proxy's address.
 
 ## Pinned versions
 
