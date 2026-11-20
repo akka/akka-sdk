@@ -17,6 +17,7 @@ import scala.util.control.NonFatal
 import akka.annotation.InternalApi
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
+import com.typesafe.config.ConfigValueType
 
 /**
  * INTERNAL API
@@ -132,6 +133,26 @@ private[akka] object A2aRemoteAgentSettings {
       throw new IllegalArgumentException(
         s"akka.javasdk.a2a.defaults.auth.type must be none, got [$authType]. Set the credentials of each agent " +
         "under akka.javasdk.a2a.remote-agents.<name>.auth")
+  }
+
+  /**
+   * A warning for each configured agent whose TLS settings are not used, because its card URL is http.
+   */
+  def unusedTlsWarnings(a2a: Config): Seq[String] = {
+    val defaults = a2a.getConfig("defaults")
+    val remoteAgents = a2a.getConfig("remote-agents")
+    remoteAgents.root().keySet().asScala.toSeq.sorted.flatMap { name =>
+      val agent =
+        if (remoteAgents.getValue(quoted(name)).valueType() != ConfigValueType.OBJECT) None
+        else Some(remoteAgents.getConfig(quoted(name)).withFallback(defaults))
+      def set(key: String) = agent.exists(c => c.hasPath(key) && c.getString(key).trim.nonEmpty)
+      val plainHttp = agent.exists(c => c.hasPath("card-url") && c.getString("card-url").trim.startsWith("http://"))
+      if (plainHttp && (set("ca-bundle") || set("client-certificate")))
+        Some(
+          s"Remote A2A agent [$name] has a ca-bundle or client-certificate, but its card-url is an http:// URL, " +
+          "so the TLS settings are not used")
+      else None
+    }
   }
 
   private def quoted(name: String): String = com.typesafe.config.ConfigUtil.quoteString(name)

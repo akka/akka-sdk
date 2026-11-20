@@ -161,6 +161,19 @@ class A2aRemoteAgentSettingsSpec extends AnyWordSpec with Matchers {
       settings.caBundle shouldBe None
     }
 
+    "warn about TLS settings of an agent with an http card URL" in {
+      val warnings = A2aRemoteAgentSettings.unusedTlsWarnings(a2a("""remote-agents {
+          plain { card-url = "http://a.example.com/c.json", ca-bundle = ca }
+          mtls { card-url = "http://b.example.com/c.json", client-certificate = c, client-key = k }
+          tls { card-url = "https://c.example.com/c.json", ca-bundle = ca }
+          none { card-url = "http://d.example.com/c.json" }
+        }"""))
+      warnings.size shouldBe 2
+      warnings.head should include("[mtls]")
+      warnings(1) should include("[plain]")
+      warnings.head should include("not used")
+    }
+
     "reject header authentication without a value" in {
       val e = intercept[IllegalArgumentException](
         A2aRemoteAgentSettings.resolve(

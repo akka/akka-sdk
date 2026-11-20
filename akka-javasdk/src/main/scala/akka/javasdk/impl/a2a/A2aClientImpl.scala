@@ -15,6 +15,7 @@ import akka.javasdk.a2a.RemoteA2aAgentClient
 import com.typesafe.config.Config
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.context.{ Context => OtelContext }
+import org.slf4j.LoggerFactory
 
 /**
  * INTERNAL API
@@ -25,6 +26,7 @@ import io.opentelemetry.context.{ Context => OtelContext }
 @InternalApi
 private[akka] final class A2aRemoteAgents(system: ActorSystem[_], a2aConfig: Config) {
   A2aRemoteAgentSettings.validateDefaults(a2aConfig)
+  A2aRemoteAgentSettings.unusedTlsWarnings(a2aConfig).foreach(A2aRemoteAgents.log.warn)
 
   private val named = new ConcurrentHashMap[String, RemoteA2aAgentState]()
 
@@ -57,6 +59,7 @@ private[akka] final class A2aRemoteAgents(system: ActorSystem[_], a2aConfig: Con
 @InternalApi
 private[akka] object A2aRemoteAgents {
   val MaxAgentsByUrl = 64
+  private val log = LoggerFactory.getLogger(classOf[A2aRemoteAgents])
 }
 
 /**
