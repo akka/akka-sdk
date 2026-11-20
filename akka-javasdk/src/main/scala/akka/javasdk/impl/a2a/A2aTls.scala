@@ -109,7 +109,8 @@ private[akka] object A2aTls {
     if (begin < 0 || end < begin) throw new IllegalArgumentException("The client key is not PKCS#8 PEM text")
     val der =
       try Base64.getMimeDecoder.decode(pem.substring(begin + KeyBegin.length, end))
-      catch { case NonFatal(e) => throw new IllegalArgumentException("The client key is not valid Base64", e) }
+      // Without the cause, so that no detail of the key text leaves this method
+      catch { case NonFatal(_) => throw new IllegalArgumentException("The client key is not valid Base64") }
     val spec = new PKCS8EncodedKeySpec(der)
     // A PKCS#8 key does not say which algorithm it is for, so each supported one is tried
     Iterator("RSA", "EC", "Ed25519")

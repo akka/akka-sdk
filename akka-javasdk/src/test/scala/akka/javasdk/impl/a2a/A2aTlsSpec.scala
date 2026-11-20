@@ -171,6 +171,16 @@ class A2aTlsSpec
       include("must be set together")
     }
 
+    "reject a client key that is not valid Base64, without quoting the key" in {
+      val e = intercept[IllegalArgumentException](
+        A2aTls.sslContext(
+          None,
+          Some(pki.clientCertificate),
+          Some("-----BEGIN PRIVATE KEY-----\nMQ=x\n-----END PRIVATE KEY-----")))
+      e.getMessage shouldBe "The client key is not valid Base64"
+      e.getCause shouldBe null
+    }
+
     "reject a CA bundle that holds no certificate" in {
       intercept[IllegalArgumentException](client(mutualTlsServer.cardUrl, "ca-bundle" -> "-----BEGIN NOTHING-----\nx"))
     }
