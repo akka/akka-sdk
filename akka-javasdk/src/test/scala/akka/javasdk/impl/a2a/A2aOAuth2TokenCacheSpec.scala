@@ -233,6 +233,24 @@ class A2aOAuth2TokenCacheSpec
       (e.getMessage should not).include("my-secret")
     }
 
+    "ask again after a request that fails on the calling thread" in {
+      val attempts = new AtomicInteger()
+      val okResponse =
+        HttpResponse(entity = HttpEntity(ContentTypes.`application/json`, """{"access_token":"t","expires_in":3600}"""))
+      val c = new A2aOAuth2TokenCache(
+        A2aAuth.OAuth2ClientCredentials("https://t.example.com/t", "id", "secret", None),
+        _ =>
+          attempts.incrementAndGet() match {
+            case 1 => throw new IllegalStateException("thrown")
+            case 2 => Future.failed(new IllegalStateException("failed"))
+            case _ => Future.successful(okResponse)
+          },
+        JsonSupport.getObjectMapper)(scala.concurrent.ExecutionContext.parasitic, materializer)
+      (the[IllegalStateException] thrownBy get(c) should have).message("thrown")
+      (the[IllegalStateException] thrownBy get(c) should have).message("failed")
+      get(c) shouldBe "t"
+    }
+
     "ask again after a failure" in {
       reset()
       failWith = Some("temporarily_unavailable")

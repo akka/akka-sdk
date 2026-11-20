@@ -10,7 +10,9 @@ import java.time.Instant
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.Promise
 import scala.concurrent.duration._
+import scala.util.control.NonFatal
 
 import akka.annotation.InternalApi
 import akka.http.scaladsl.model.FormData
@@ -58,15 +60,21 @@ private[akka] final class A2aOAuth2TokenCache(
       case Some(t) => Future.successful(t.value)
       case None =>
         val request = inFlight.getOrElse {
-          // andThen completes the future after the cache is updated, so a caller never sees a settled request still in flight
-          val f = fetch().andThen { case result =>
+          // inFlight is set before the fetch starts and cleared before the promise completes, so it is cleared even
+          // when the fetch completes on this thread, and a caller never sees a settled request still in flight
+          val promise = Promise[Token]()
+          inFlight = Some(promise.future)
+          val fetched =
+            try fetch()
+            catch { case NonFatal(e) => Future.failed(e) }
+          fetched.onComplete { result =>
             synchronized {
               inFlight = None
               result.foreach(t => cached = Some(t))
             }
+            promise.complete(result)
           }
-          inFlight = Some(f)
-          f
+          promise.future
         }
         request.map(_.value)
     }
