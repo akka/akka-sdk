@@ -7,7 +7,7 @@ Released 2026-11-20.
 
 == Changes
 
-* Runtime image: workaround for CVE-2026-114938 on vulnerable CPUs.
+* Runtime image: workaround for CVE-2026-114938 on vulnerable processors.
 * Service streams: the runtime enforces the ACL of a service stream producer. A stream without an ACL allows only services in the same project. Callers that the ACL denies get a permission denied error, and the runtime logs the denial. Check the ACL of each service stream that other projects or the internet consume.
 * Autonomous agents: the team lead and moderation of an agent setup take effect.
 * Autonomous agents: an agent instance accepts one setup. Repeating the same setup succeeds. A different setup fails with an error that names the differences.
