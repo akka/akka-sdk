@@ -1,0 +1,23 @@
+= Akka Runtime 1.7.7
+:page-summary: Runtime 1.7.7 works around CVE-2026-114938 and enforces the ACL of service stream producers. It also fixes several autonomous agent defects.
+
+include::ROOT:partial$include.adoc[]
+
+Released 2026-11-20.
+
+== Changes
+
+* Runtime image: workaround for CVE-2026-114938 on vulnerable processors.
+* Service streams: the runtime enforces the ACL of a service stream producer. A stream without an ACL allows only services in the same project. Callers that the ACL denies get a permission denied error, and the runtime logs the denial. Check the ACL of each service stream that other projects or the internet consume.
+* Autonomous agents: the team lead and moderation of an agent setup take effect.
+* Autonomous agents: an agent instance accepts one setup. Repeating the same setup succeeds. A different setup fails with an error that names the differences.
+* Autonomous agents: a late result of an earlier model call no longer disturbs the current call. This affected agents after a ledger write failure or a restart.
+* Autonomous agents: the model call stops when the agent stops or restarts.
+* Autonomous agents: a running task completes when a dependency of a waiting task resolves, or when the waiting task is cancelled.
+* Autonomous agents: a cancelled waiting task records 0 iterations in the ledger and metrics.
+* Observability: the `akka.db.slice_range` attribute reports the inclusive end of the range.
+* Local development: the runtime exports runtime metrics and custom metrics to the local console.
+
+== Noteworthy dependency updates
+
+* Guava 33.8.0-jre
