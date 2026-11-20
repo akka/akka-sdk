@@ -4,6 +4,8 @@
 
 package akka.javasdk.impl.a2a
 
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import java.time.Instant
 
 import scala.concurrent.ExecutionContext
@@ -17,6 +19,8 @@ import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.model.MediaTypes
 import akka.http.scaladsl.model.headers.Accept
+import akka.http.scaladsl.model.headers.Authorization
+import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.javasdk.a2a.A2aClientException
 import akka.stream.Materializer
 import com.fasterxml.jackson.databind.JsonNode
@@ -75,12 +79,19 @@ private[akka] final class A2aOAuth2TokenCache(
   }
 
   private def fetch(): Future[Token] = {
-    val form = Seq(
-      "grant_type" -> "client_credentials",
-      "client_id" -> credentials.clientId,
-      "client_secret" -> credentials.clientSecret) ++ credentials.scope.map("scope" -> _)
-    val request = HttpRequest(HttpMethods.POST, credentials.tokenUrl, entity = FormData(form: _*).toEntity)
-      .withHeaders(Accept(MediaTypes.`application/json`))
+    val grant = Seq("grant_type" -> "client_credentials") ++ credentials.scope.map("scope" -> _)
+    val request = credentials.authMethod match {
+      case A2aAuth.ClientSecretBasic =>
+        // RFC 6749 section 2.3.1 form-encodes the id and the secret before the Basic encoding
+        def formEncode(value: String) = URLEncoder.encode(value, StandardCharsets.UTF_8)
+        HttpRequest(HttpMethods.POST, credentials.tokenUrl, entity = FormData(grant: _*).toEntity).withHeaders(
+          Accept(MediaTypes.`application/json`),
+          Authorization(BasicHttpCredentials(formEncode(credentials.clientId), formEncode(credentials.clientSecret))))
+      case A2aAuth.ClientSecretPost =>
+        val form = grant ++ Seq("client_id" -> credentials.clientId, "client_secret" -> credentials.clientSecret)
+        HttpRequest(HttpMethods.POST, credentials.tokenUrl, entity = FormData(form: _*).toEntity)
+          .withHeaders(Accept(MediaTypes.`application/json`))
+    }
     send(request).flatMap { response =>
       response.entity.withSizeLimit(MaxResponseBytes).toStrict(10.seconds).map { entity =>
         val json: Option[JsonNode] =

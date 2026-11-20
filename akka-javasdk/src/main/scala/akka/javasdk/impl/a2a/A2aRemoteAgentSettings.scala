@@ -41,10 +41,22 @@ private[akka] object A2aAuth {
       tokenUrl: String,
       clientId: String,
       clientSecret: String,
-      scope: Option[String])
+      scope: Option[String],
+      authMethod: TokenEndpointAuthMethod = ClientSecretBasic)
       extends A2aAuth {
-    override def toString: String = s"OAuth2ClientCredentials($tokenUrl,$clientId,***,$scope)"
+    override def toString: String = s"OAuth2ClientCredentials($tokenUrl,$clientId,***,$scope,$authMethod)"
   }
+
+  /**
+   * How the client authenticates to the token endpoint, named as in RFC 7591.
+   */
+  sealed trait TokenEndpointAuthMethod
+
+  /** The client id and secret in an HTTP Basic `Authorization` header, which RFC 6749 requires servers to support. */
+  case object ClientSecretBasic extends TokenEndpointAuthMethod
+
+  /** The client id and secret in the form body. */
+  case object ClientSecretPost extends TokenEndpointAuthMethod
 }
 
 /**
@@ -130,7 +142,14 @@ private[akka] object A2aRemoteAgentSettings {
           credentialUrl("auth.token-url", httpUrl("auth.token-url", required("auth.token-url"))),
           required("auth.client-id"),
           required("auth.client-secret"),
-          optional("auth.scope"))
+          optional("auth.scope"),
+          optional("auth.token-endpoint-auth-method") match {
+            case None | Some("client_secret_basic") => A2aAuth.ClientSecretBasic
+            case Some("client_secret_post")         => A2aAuth.ClientSecretPost
+            case Some(other) =>
+              throw new IllegalArgumentException(
+                s"${where("auth.token-endpoint-auth-method")} must be client_secret_basic or client_secret_post, got [$other]")
+          })
       case other =>
         throw new IllegalArgumentException(
           s"${where("auth.type")} must be one of none, header, oauth2-client-credentials, got [$other]")

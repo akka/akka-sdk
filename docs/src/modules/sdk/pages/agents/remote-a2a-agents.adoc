@@ -101,7 +101,7 @@ With `type = oauth2-client-credentials`, the client gets an access token from th
 include::example$doc-snippets/src/main/resources/application.conf[tag=a2a-remote-agent-oauth]
 ----
 
-The client requests a token with a form post of `grant_type=client_credentials`, the `client_id`, the `client_secret` and, when you set it, the `scope`. It reuses the token until 30 seconds before the token expires. When the token lives for less than one minute, the client refreshes after half of its lifetime. When the token endpoint does not give a lifetime, the client assumes five minutes. Calls that start at the same time share one token request.
+The client requests a token with a form post of `grant_type=client_credentials` and, when you set it, the `scope`. By default, the client sends the `client-id` and the `client-secret` in an HTTP Basic `Authorization` header (`client_secret_basic`). For a token endpoint that expects them in the form instead, set `token-endpoint-auth-method = "client_secret_post"`. It reuses the token until 30 seconds before the token expires. When the token lives for less than one minute, the client refreshes after half of its lifetime. When the token endpoint does not give a lifetime, the client assumes five minutes. Calls that start at the same time share one token request.
 
 When the remote agent answers a request with status 401, the client discards the token, requests a new one, and sends the request again once. A second 401 fails the call.
 

@@ -162,6 +162,22 @@ class A2aRemoteAgentSettingsSpec extends AnyWordSpec with Matchers {
       e.getMessage should include("auth.client-secret must be set")
     }
 
+    "use client_secret_basic unless client_secret_post is configured" in {
+      def method(extra: String) =
+        A2aRemoteAgentSettings
+          .resolve(
+            a2a(s"""remote-agents.claims { card-url = "https://x.example.com/c.json"
+                 auth { type = oauth2-client-credentials, token-url = "https://t.example.com/t", client-id = a, client-secret = b $extra } }"""),
+            "claims")
+          .auth
+          .asInstanceOf[A2aAuth.OAuth2ClientCredentials]
+          .authMethod
+      method("") shouldBe A2aAuth.ClientSecretBasic
+      method(", token-endpoint-auth-method = client_secret_post") shouldBe A2aAuth.ClientSecretPost
+      intercept[IllegalArgumentException](method(", token-endpoint-auth-method = private_key_jwt")).getMessage should
+      include("must be client_secret_basic or client_secret_post")
+    }
+
     "reject an unknown authentication type" in {
       intercept[IllegalArgumentException](
         A2aRemoteAgentSettings.resolve(

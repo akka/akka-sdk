@@ -41,6 +41,7 @@ class A2aOAuth2TokenCacheSpec
 
   private val fetches = new AtomicInteger()
   private val lastForm = new AtomicReference[Map[String, String]](Map.empty)
+  private val lastAuthorization = new AtomicReference[Option[String]](None)
   @volatile private var expiresIn: Option[Int] = Some(3600)
   @volatile private var tokenDelay: FiniteDuration = Duration.Zero
   @volatile private var failWith: Option[String] = None
@@ -50,7 +51,8 @@ class A2aOAuth2TokenCacheSpec
   private val tokenEndpoint = Route.seal {
     path("token") {
       post {
-        formFieldMap { form =>
+        (optionalHeaderValueByName("Authorization") & formFieldMap) { (authorization, form) =>
+          lastAuthorization.set(authorization)
           lastForm.set(form)
           val n = fetches.incrementAndGet()
           val answer: Future[HttpResponse] = afterDelay(tokenDelay)(Future.successful(failWith match {
@@ -81,9 +83,13 @@ class A2aOAuth2TokenCacheSpec
 
   @volatile private var clock = Instant.parse("2026-01-01T00:00:00Z")
 
-  private def cache(scope: Option[String] = None) =
+  private def cache(
+      scope: Option[String] = None,
+      authMethod: A2aAuth.TokenEndpointAuthMethod = A2aAuth.ClientSecretBasic,
+      clientId: String = "my-client",
+      clientSecret: String = "my-secret") =
     new A2aOAuth2TokenCache(
-      A2aAuth.OAuth2ClientCredentials(tokenUrl, "my-client", "my-secret", scope),
+      A2aAuth.OAuth2ClientCredentials(tokenUrl, clientId, clientSecret, scope, authMethod),
       http.singleRequest(_),
       JsonSupport.getObjectMapper,
       () => clock)
@@ -98,16 +104,33 @@ class A2aOAuth2TokenCacheSpec
 
   private def get(c: A2aOAuth2TokenCache): String = Await.result(c.token(), 10.seconds)
 
+  private def base64(s: String): String =
+    java.util.Base64.getEncoder.encodeToString(s.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+
   "The token cache" should {
 
-    "post the client credentials grant as a form" in {
+    "send the client id and secret in a Basic header by default" in {
       reset()
       get(cache(Some("claims.read")))
+      lastForm.get() shouldBe Map("grant_type" -> "client_credentials", "scope" -> "claims.read")
+      lastAuthorization.get() shouldBe Some("Basic " + base64("my-client:my-secret"))
+    }
+
+    "form-encode the client id and secret before the Basic encoding" in {
+      reset()
+      get(cache(clientId = "a b:c", clientSecret = "p%s+/:"))
+      lastAuthorization.get() shouldBe Some("Basic " + base64("a+b%3Ac:p%25s%2B%2F%3A"))
+    }
+
+    "post the client id and secret in the form when configured" in {
+      reset()
+      get(cache(Some("claims.read"), A2aAuth.ClientSecretPost))
       lastForm.get() shouldBe Map(
         "grant_type" -> "client_credentials",
         "client_id" -> "my-client",
         "client_secret" -> "my-secret",
         "scope" -> "claims.read")
+      lastAuthorization.get() shouldBe None
     }
 
     "leave the scope out when none is configured" in {
