@@ -12,6 +12,11 @@ Current versions
 
 == November 2026
 
+* Akka libraries 26.11 releases
+- overview in xref:release-notes/2026-11-20-akka-26.11-released.adoc[]
+- Jackson 2.21 long-term-support line
+- Removal of APIs deprecated in Akka 2.10.0 or earlier
+
 * [[cli-3-0-84]]Akka CLI 3.0.84
 - New local console with Akka Specify, Akka Verify, and Akka Optimize
 - Akka Optimize 0.11.0
