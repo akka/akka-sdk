@@ -301,6 +301,7 @@ public class ViewValidations {
   private static Validation validateViewTableUpdater(TypeDef tableUpdater) {
     String effectType = "akka.javasdk.view.TableUpdater.Effect";
     return viewTableUpdaterMustHaveConsumeAnnotation(tableUpdater)
+        .combine(viewTableUpdaterMustNotConsumeFromLedger(tableUpdater))
         .combine(validateViewUpdaterRowType(tableUpdater))
         .combine(validateViewRowTypeFields(tableUpdater))
         .combine(viewDeleteHandlerValidation(tableUpdater))
@@ -582,13 +583,30 @@ public class ViewValidations {
             || tableUpdater.hasAnnotation("akka.javasdk.annotations.Consume.FromKeyValueEntity")
             || tableUpdater.hasAnnotation("akka.javasdk.annotations.Consume.FromEventSourcedEntity")
             || tableUpdater.hasAnnotation("akka.javasdk.annotations.Consume.FromServiceStream")
-            || tableUpdater.hasAnnotation("akka.javasdk.annotations.Consume.FromWorkflow");
+            || tableUpdater.hasAnnotation("akka.javasdk.annotations.Consume.FromWorkflow")
+            || Validations.hasLedgerSubscription(tableUpdater);
 
     if (!hasConsumeAnnotation) {
       return Validation.of(
           Validations.errorMessage(
               tableUpdater,
               "A TableUpdater subclass must be annotated with `@Consume` annotation."));
+    }
+
+    return Validation.Valid.instance();
+  }
+
+  /**
+   * Validates that TableUpdater is not annotated with @Consume.FromLedger.
+   *
+   * @param tableUpdater the TableUpdater class to validate
+   * @return a Validation result indicating success or failure
+   */
+  private static Validation viewTableUpdaterMustNotConsumeFromLedger(TypeDef tableUpdater) {
+    if (Validations.hasLedgerSubscription(tableUpdater)) {
+      return Validation.of(
+          Validations.errorMessage(
+              tableUpdater, "@Consume.FromLedger is not supported on a TableUpdater."));
     }
 
     return Validation.Valid.instance();

@@ -72,7 +72,8 @@ public class TestLedgerClientTest {
         new EvaluationRecord.Subject.Workflow(workflowId, "order-workflow"),
         Map.of("interactionIds", "i1,i2"),
         new EvaluationRecord.Outcome.Verdict(Evaluation.passed("ok")),
-        timestamp);
+        timestamp,
+        Optional.empty());
   }
 
   private static EvaluationRecord interactionEvaluation(
@@ -85,7 +86,8 @@ public class TestLedgerClientTest {
         new EvaluationRecord.Subject.Interaction(interactionId, "support-agent"),
         Map.of(),
         new EvaluationRecord.Outcome.Verdict(Evaluation.passed("ok")),
-        timestamp);
+        timestamp,
+        Optional.empty());
   }
 
   private static GuardrailDecisionRecord decision(
@@ -125,6 +127,20 @@ public class TestLedgerClientTest {
         "coordinator-1",
         flowId,
         List.of(new ActivityRecord.Event.TaskAssigned("task-1")),
+        timestamp);
+  }
+
+  private static ClassificationRecord classification(
+      String id, Optional<String> flowId, Instant timestamp) {
+    return new ClassificationRecord(
+        id,
+        "sentiment-classifier",
+        Optional.of(0.9),
+        Optional.of("positive"),
+        Optional.of(0.8),
+        Map.of(),
+        flowId,
+        Optional.empty(),
         timestamp);
   }
 
@@ -232,6 +248,20 @@ public class TestLedgerClientTest {
             .seed(evaluation);
 
     assertEquals(List.of(interaction, evaluation), ledger.getFlowRecords("flow-1").records());
+  }
+
+  @Test
+  public void flowRecordsIncludeSeededClassifications() {
+    var flow = Optional.of("flow-1");
+    var classification = classification("c1", flow, Instant.ofEpochSecond(1));
+    var interaction = interaction("i1", "coordinator-agent", "s1", flow, Instant.ofEpochSecond(2));
+    var ledger =
+        TestLedgerClient.create()
+            .seed(classification)
+            .seed(interaction)
+            .seed(classification("c2", Optional.empty(), Instant.ofEpochSecond(3)));
+
+    assertEquals(List.of(classification, interaction), ledger.getFlowRecords("flow-1").records());
   }
 
   @Test

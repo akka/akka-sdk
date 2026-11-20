@@ -72,7 +72,9 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
       events = events,
       timestamp = Instant.ofEpochSecond(7))
 
-  private def spiEvaluationRecord(controlId: Option[String]): SpiLedger.EvaluationRecord =
+  private def spiEvaluationRecord(
+      controlId: Option[String],
+      flowId: Option[String] = None): SpiLedger.EvaluationRecord =
     new SpiLedger.EvaluationRecord(
       evaluationId = "evaluation-1",
       evaluatorComponentId = "quality-evaluator",
@@ -80,6 +82,7 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
       trigger = SpiLedger.EvaluationTrigger.OnInteraction,
       subject = new SpiLedger.InteractionSubject("interaction-1", "support-agent"),
       outcome = new SpiLedger.EvaluationInconclusive("no verdict"),
+      flowId = flowId,
       timestamp = Instant.EPOCH,
       attributes = Map.empty)
 
@@ -91,6 +94,7 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
       trigger = SpiLedger.EvaluationTrigger.Manual,
       subject = new SpiLedger.WorkflowSubject("workflow-1", "order-workflow"),
       outcome = new SpiLedger.EvaluationInconclusive("no verdict"),
+      flowId = None,
       timestamp = Instant.EPOCH,
       attributes = Map("interactionIds" -> "i1,i2"))
 
@@ -212,6 +216,18 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
       record.controlId() shouldEqual Optional.empty()
     }
 
+    "carry the flow id of the evaluated interaction" in {
+      val record = LedgerClientImpl.toEvaluationRecord(spiEvaluationRecord(controlId = None, flowId = Some("flow-1")))
+
+      record.flowId() shouldEqual Optional.of("flow-1")
+    }
+
+    "carry an empty flow id when the evaluation has none" in {
+      val record = LedgerClientImpl.toEvaluationRecord(spiEvaluationRecord(controlId = None, flowId = None))
+
+      record.flowId() shouldEqual Optional.empty()
+    }
+
     "map a workflow subject and the attributes" in {
       val record = LedgerClientImpl.toEvaluationRecord(spiWorkflowEvaluationRecord)
 
@@ -235,6 +251,7 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
         trigger = SpiLedger.EvaluationTrigger.OnInteraction,
         subject = new SpiLedger.InteractionSubject("interaction-1", "support-agent"),
         outcome = new SpiLedger.EvaluationNotApplicable("no tool call"),
+        flowId = None,
         timestamp = Instant.EPOCH,
         attributes = Map.empty)
 
@@ -465,6 +482,30 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
         LedgerClientImpl.toEvaluationRecord(evaluation))
       page.nextPosition() shouldEqual 5L
       page.hasMore() shouldBe true
+    }
+
+    "map a classification in a flow page" in {
+      val classification = new SpiLedger.ClassificationRecord(
+        classificationId = "classification-1",
+        classifierComponentId = "sentiment-classifier",
+        label = Some("positive"),
+        score = Some(0.9),
+        confidence = Some(0.8),
+        attributes = Map.empty,
+        flowId = Some("flow-1"),
+        evaluationId = None,
+        timestamp = Instant.EPOCH)
+      val spiClient = new FlowReadingSpiLedgerClient(
+        Future.successful(new SpiLedger.FlowPage(Seq(classification), 1L, hasMore = false)))
+
+      val page = new LedgerClientImpl(spiClient, ExecutionContext.parasitic).getFlowRecords("flow-1")
+
+      val records = page.records().asScala.toSeq
+      records should have size 1
+      val record = records.head.asInstanceOf[ClassificationRecord]
+      record.classificationId() shouldEqual "classification-1"
+      record.classifierName() shouldEqual "sentiment-classifier"
+      record.flowId() shouldEqual Optional.of("flow-1")
     }
 
     "map an empty last page" in {

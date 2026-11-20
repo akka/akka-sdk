@@ -232,7 +232,8 @@ class ExperimentRunnerTest {
                       new EvaluationRecord.Subject.Interaction(interactionId, AGENT),
                       Map.of(),
                       new EvaluationRecord.Outcome.Verdict(Evaluation.passed("second try")),
-                      older.timestamp().plusSeconds(5)));
+                      older.timestamp().plusSeconds(5),
+                      Optional.empty()));
             });
 
     assertThat(resultOf(single(target, bindings(QUALITY)), QUALITY))

@@ -252,6 +252,35 @@ abstract class AbstractConsumerValidationSpec(val validationMode: ValidationMode
         "@Consume.StartFrom is not supported for a Consumer with @Produce.ServiceStream")
     }
 
+    // Ledger subscription validations
+    "accept Consumer from the ledger with record type handlers, a start point and topic publishing" in {
+      assertValid("valid/ConsumerFromLedger.java")
+    }
+
+    "accept Consumer from the ledger with one FlowRecord handler" in {
+      assertValid("valid/ConsumerFromLedgerAllRecords.java")
+    }
+
+    "reject Consumer from the ledger and from a topic" in {
+      assertInvalid("invalid/ConsumerFromLedgerAndTopic.java", "Only one subscription type is allowed on a type level.")
+    }
+
+    "reject Consumer from the ledger with a handler that does not take a ledger record" in {
+      assertInvalid(
+        "invalid/ConsumerFromLedgerWrongParameter.java",
+        "A @Consume.FromLedger handler must take akka.javasdk.ledger.FlowRecord or one of its record types. Found [java.lang.String].")
+    }
+
+    "reject Consumer from the ledger with service stream publishing" in {
+      assertInvalid(
+        "invalid/ConsumerFromLedgerServiceStream.java",
+        "@Produce.ServiceStream is not supported for a Consumer with @Consume.FromLedger.")
+    }
+
+    "reject TableUpdater from the ledger" in {
+      assertInvalid("invalid/TableUpdaterFromLedger.java", "@Consume.FromLedger is not supported on a TableUpdater.")
+    }
+
     // Publication validations
     "reject Consumer with topic publishing but no source" in {
       assertInvalid(

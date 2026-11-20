@@ -23,7 +23,8 @@ public class EvaluationRecordTest {
         subject,
         Map.of("interactionIds", "i1,i2"),
         new EvaluationRecord.Outcome.Inconclusive("no verdict"),
-        Instant.EPOCH);
+        Instant.EPOCH,
+        Optional.empty());
   }
 
   @Test
@@ -62,5 +63,23 @@ public class EvaluationRecordTest {
         new EvaluationRecord.Subject.Interaction("interaction-1", "support-agent"),
         record.subject());
     assertEquals(Map.of(), record.attributes());
+    assertEquals(Optional.empty(), record.flowId());
+  }
+
+  @Test
+  @SuppressWarnings("deprecation")
+  public void buildsAnEmptyFlowIdFromTheConstructorWithoutAFlowId() {
+    var record =
+        new EvaluationRecord(
+            "evaluation-1",
+            "order-evaluator",
+            Optional.empty(),
+            EvaluationRecord.Trigger.MANUAL,
+            new EvaluationRecord.Subject.Workflow("workflow-1", "order-workflow"),
+            Map.of(),
+            new EvaluationRecord.Outcome.Inconclusive("no verdict"),
+            Instant.EPOCH);
+
+    assertEquals(Optional.empty(), record.flowId());
   }
 }

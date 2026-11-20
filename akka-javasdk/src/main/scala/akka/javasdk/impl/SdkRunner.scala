@@ -145,6 +145,7 @@ import akka.runtime.sdk.spi.AgentDescriptor
 import akka.runtime.sdk.spi.AutonomousAgentDescriptor
 import akka.runtime.sdk.spi.ComponentClients
 import akka.runtime.sdk.spi.ConsumerDescriptor
+import akka.runtime.sdk.spi.ConsumerSource
 import akka.runtime.sdk.spi.DeploymentInfo
 import akka.runtime.sdk.spi.EvaluatorDescriptor
 import akka.runtime.sdk.spi.EventLogClient
@@ -198,6 +199,7 @@ import akka.runtime.sdk.spi.UserFunctionError
 import akka.runtime.sdk.spi.ViewDescriptor
 import akka.runtime.sdk.spi.WorkflowDescriptor
 import akka.runtime.sdk.spi.WorkflowEvaluatorDescriptor
+import akka.runtime.sdk.spi.WorkflowType
 import akka.runtime.sdk.spi.tracing.InMemorySpanExporter
 import akka.runtime.sdk.spi.{ LedgerClient => SpiLedgerClient }
 import akka.stream.Materializer
@@ -1139,7 +1141,10 @@ private final class Sdk(
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
             provided = false,
-            protobufDescriptors = protobufDescriptors.toVector)
+            protobufDescriptors = protobufDescriptors.toVector,
+            componentType = WorkflowType,
+            // FIXME: pass the workflow step names
+            stepNames = Nil)
 
       case clz if Reflect.isTimedAction(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -1178,6 +1183,12 @@ private final class Sdk(
         val consumerClass = clz.asInstanceOf[Class[Consumer]]
         val consumerDest = consumerDestination(consumerClass)
         val consumerSrc = consumerSource(consumerClass)
+        if (consumerSrc.isInstanceOf[ConsumerSource.LedgerSource] && !spiSettings.ledgerSettings.enabled)
+          logger.warn(
+            "Consumer [{}] consumes from the ledger, but the ledger is disabled with " +
+            "[akka.javasdk.agent.ledger.enabled = false]. The consumer receives no records.",
+            clz.getName)
+
         val componentDescriptor = ComponentDescriptor.descriptorFor(consumerClass, serializer)
         val consumerInstanceFactory: SpiConsumer.FactoryContext => SpiConsumer = { factoryContext =>
           val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)

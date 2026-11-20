@@ -244,6 +244,7 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
       trigger = trigger,
       subject = subject,
       outcome = outcome,
+      flowId = None,
       timestamp = Instant.EPOCH,
       attributes = Map.empty)
 

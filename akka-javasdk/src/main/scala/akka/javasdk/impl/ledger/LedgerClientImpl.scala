@@ -152,7 +152,7 @@ private[javasdk] final class LedgerClientImpl(spiLedgerClient: SpiLedgerClient, 
  * INTERNAL API
  */
 @InternalApi
-private[ledger] object LedgerClientImpl {
+private[impl] object LedgerClientImpl {
 
   /** Cap on the records returned by one listing or one flow page, matching the ledger page size. */
   private val ListLimit = 100
@@ -181,7 +181,8 @@ private[ledger] object LedgerClientImpl {
       toEvaluationSubject(record.subject),
       record.attributes.asJava,
       toEvaluationOutcome(record.outcome),
-      record.timestamp)
+      record.timestamp,
+      record.flowId.toJava)
 
   def toClassificationRecord(record: SpiLedger.ClassificationRecord): ClassificationRecord =
     new ClassificationRecord(
@@ -221,6 +222,24 @@ private[ledger] object LedgerClientImpl {
             case _: SpiLedger.InteractionSubject => Some(() => toEvaluationRecord(evaluation))
             case _: SpiLedger.WorkflowSubject    => None
           }
+        case classification: SpiLedger.ClassificationRecord => Some(() => toClassificationRecord(classification))
+      }
+    }.map(_.apply())
+
+  // Returns None for a record class this SDK does not know. Also returns None for an evaluation with an unknown
+  // subject class.
+  def toLedgerRecord(record: SpiLedger.FlowRecord): Option[FlowRecord] =
+    knownOr(Option.empty[() => FlowRecord]) {
+      record match {
+        case interaction: SpiLedger.InteractionRecord    => Some(() => toInteractionRecord(interaction))
+        case activity: SpiLedger.ActivityRecord          => Some(() => toActivityRecord(activity))
+        case decision: SpiLedger.GuardrailDecisionRecord => Some(() => toGuardrailDecisionRecord(decision))
+        case evaluation: SpiLedger.EvaluationRecord =>
+          evaluation.subject match {
+            case _: SpiLedger.InteractionSubject | _: SpiLedger.WorkflowSubject =>
+              Some(() => toEvaluationRecord(evaluation))
+          }
+        case classification: SpiLedger.ClassificationRecord => Some(() => toClassificationRecord(classification))
       }
     }.map(_.apply())
 
