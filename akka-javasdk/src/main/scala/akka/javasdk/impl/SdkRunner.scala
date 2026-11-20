@@ -75,6 +75,7 @@ import akka.javasdk.grpc.AbstractGrpcEndpoint
 import akka.javasdk.grpc.GrpcClientProvider
 import akka.javasdk.grpc.GrpcRequestContext
 import akka.javasdk.http.AbstractHttpEndpoint
+import akka.javasdk.a2a.A2aClient
 import akka.javasdk.http.HttpClientProvider
 import akka.javasdk.http.RequestContext
 import akka.javasdk.impl.ComponentDescriptorFactory.consumerDestination
@@ -108,6 +109,8 @@ import akka.javasdk.impl.evaluation.EvaluatorSettings
 import akka.javasdk.impl.evaluation.GuardedEvaluationClient
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityImpl
 import akka.javasdk.impl.grpc.GrpcClientProviderImpl
+import akka.javasdk.impl.a2a.A2aClientImpl
+import akka.javasdk.impl.a2a.A2aRemoteAgents
 import akka.javasdk.impl.http.HttpClientProviderImpl
 import akka.javasdk.impl.http.HttpRequestContextImpl
 import akka.javasdk.impl.http.JwtClaimsImpl
@@ -576,6 +579,7 @@ private[javasdk] object Sdk {
     classOf[ComponentClient],
     classOf[TimerScheduler],
     classOf[HttpClientProvider],
+    classOf[A2aClient],
     classOf[GrpcClientProvider],
     classOf[Tracer],
     classOf[Span],
@@ -691,6 +695,8 @@ private final class Sdk(
     sdkExecutionContext.asInstanceOf[Executor],
     None,
     httpMockLookup)
+
+  private lazy val a2aRemoteAgents = new A2aRemoteAgents(system, sdkConfig.getConfig("a2a"))
 
   private lazy val userServiceConfig = {
     // hiding these paths from the config provided to user
@@ -1460,6 +1466,7 @@ private final class Sdk(
     // remember to update component type API doc and docs if changing the set of injectables
     case p if p == classOf[ComponentClient]    => componentClient(telemetryContext)
     case h if h == classOf[HttpClientProvider] => httpClientProvider(telemetryContext, callerSpiffe)
+    case a if a == classOf[A2aClient]          => a2aClient(telemetryContext, callerSpiffe)
     case g if g == classOf[GrpcClientProvider] => grpcClientProvider(telemetryContext, callerSpiffe)
     case t if t == classOf[TimerScheduler]     => timerScheduler(telemetryContext)
     case m if m == classOf[Materializer]       => sdkMaterializer
@@ -1861,6 +1868,9 @@ private final class Sdk(
     val withSpiffe = callerSpiffe.fold(httpClientProvider)(httpClientProvider.withCallerSpiffeHeader)
     telemetryContext.fold(withSpiffe: HttpClientProvider)(withSpiffe.withTelemetryContext)
   }
+
+  private def a2aClient(telemetryContext: Option[OtelContext], callerSpiffe: Option[String]): A2aClient =
+    A2aClientImpl(a2aRemoteAgents, telemetryContext, callerSpiffe)
 
   private def objectStorageProvider(telemetryContext: Option[OtelContext]): ObjectStorageProvider =
     telemetryContext match {

@@ -1,0 +1,105 @@
+/*
+ * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
+ */
+
+package akka.javasdk.impl.a2a
+
+import java.time.Instant
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.concurrent.duration._
+
+import akka.annotation.InternalApi
+import akka.http.scaladsl.model.FormData
+import akka.http.scaladsl.model.HttpMethods
+import akka.http.scaladsl.model.HttpRequest
+import akka.http.scaladsl.model.HttpResponse
+import akka.http.scaladsl.model.MediaTypes
+import akka.http.scaladsl.model.headers.Accept
+import akka.javasdk.a2a.A2aClientException
+import akka.stream.Materializer
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
+
+private object A2aOAuth2TokenCache {
+  final case class Token(value: String, refreshAt: Instant)
+}
+
+/**
+ * INTERNAL API
+ *
+ * Holds the access token of the OAuth 2.0 client credentials grant for one remote agent. A token is reused until
+ * shortly before it expires, and concurrent callers share one token request.
+ */
+@InternalApi
+private[akka] final class A2aOAuth2TokenCache(
+    credentials: A2aAuth.OAuth2ClientCredentials,
+    send: HttpRequest => Future[HttpResponse],
+    mapper: ObjectMapper,
+    now: () => Instant = () => Instant.now())(implicit ec: ExecutionContext, materializer: Materializer) {
+  import A2aOAuth2TokenCache.Token
+
+  // Used when the token endpoint does not say how long the token lives
+  private val DefaultLifetime = 5.minutes
+  private val MaxRefreshMargin = 30.seconds
+  private val MaxResponseBytes = 64L * 1024
+
+  private var cached: Option[Token] = None
+  private var inFlight: Option[Future[Token]] = None
+
+  def token(): Future[String] = synchronized {
+    cached.filter(t => now().isBefore(t.refreshAt)) match {
+      case Some(t) => Future.successful(t.value)
+      case None =>
+        val request = inFlight.getOrElse {
+          val f = fetch()
+          inFlight = Some(f)
+          f.onComplete { result =>
+            synchronized {
+              inFlight = None
+              result.foreach(t => cached = Some(t))
+            }
+          }
+          f
+        }
+        request.map(_.value)
+    }
+  }
+
+  /**
+   * Drops the token that the remote agent rejected. A token that has already been replaced stays.
+   */
+  def invalidate(rejected: String): Unit = synchronized {
+    if (cached.exists(_.value == rejected)) cached = None
+  }
+
+  private def fetch(): Future[Token] = {
+    val form = Seq(
+      "grant_type" -> "client_credentials",
+      "client_id" -> credentials.clientId,
+      "client_secret" -> credentials.clientSecret) ++ credentials.scope.map("scope" -> _)
+    val request = HttpRequest(HttpMethods.POST, credentials.tokenUrl, entity = FormData(form: _*).toEntity)
+      .withHeaders(Accept(MediaTypes.`application/json`))
+    send(request).flatMap { response =>
+      response.entity.withSizeLimit(MaxResponseBytes).toStrict(10.seconds).map { entity =>
+        val json: Option[JsonNode] =
+          try Some(mapper.readTree(entity.data.utf8String))
+          catch { case _: Exception => None }
+        def field(name: String): Option[JsonNode] = json.flatMap(j => Option(j.get(name)))
+        if (!response.status.isSuccess())
+          throw new A2aClientException(
+            s"The token endpoint [${credentials.tokenUrl}] answered ${response.status.intValue()}" +
+            field("error").filter(_.isTextual).fold("")(e => s" (${e.asText()})"))
+        field("access_token").filter(_.isTextual).map(_.asText()).filter(_.nonEmpty) match {
+          case Some(value) =>
+            val lifetime = field("expires_in").filter(_.isNumber).map(_.asLong().seconds).getOrElse(DefaultLifetime)
+            val margin = MaxRefreshMargin.min(lifetime / 2)
+            Token(value, now().plusMillis((lifetime - margin).toMillis))
+          case None =>
+            throw new A2aClientException(s"The token endpoint [${credentials.tokenUrl}] returned no access_token")
+        }
+      }
+    }
+  }
+}
