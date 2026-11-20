@@ -113,6 +113,20 @@ When partitioning, use the cloud event `ce-subject` (typically the entity id) as
 
 include::partial$broker-kafka-setup-common.adoc[]
 
+[#start-from]
+== Starting a consumer from latest or a timestamp
+
+A consumer with xref:sdk:consuming-producing.adoc#_starting_from_the_latest_events_or_a_timestamp[`@Consume.StartFrom`] starts at the first record with a timestamp at or after the start point.
+
+* A consumer group that has no committed offset is positioned at that record. If no record is at or after the start point, it starts at the end of each partition.
+* A consumer group that already has a committed offset keeps it, unless the offset is lower than the position of the start point. The start point never moves a consumer back.
+* A start point in the future holds back records with an earlier timestamp until the start point has passed. After that, the position is the only boundary.
+* A record without a timestamp is not held back.
+
+The boundary is the record timestamp. Kafka sets it from the clock of the producer by default (`CreateTime`), or from the broker when the topic uses `LogAppendTime`. With `latest = true` the start point is the time of the first deployment of the consumer. A producer with a clock that runs behind can stamp a record before the start point, although it appends the record after it. Kafka positions the consumer by timestamp, so it can start after such a record.
+
+Kafka keeps records for the retention time of the topic. A start point before the oldest record in a partition starts at the oldest record.
+
 == See also
 
 * xref:operations:projects/message-brokers.adoc[Configure message brokers]

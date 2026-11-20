@@ -194,8 +194,11 @@ public @interface Consume {
    * starts from the given point in time. Exactly one of the two must be set. Events and state
    * changes from before the start point are not consumed.
    *
-   * <p>Supported for consumers of Event Sourced Entities, Key Value Entities, Workflows and service
-   * to service event streams. Not supported for consumers of message broker topics.
+   * <p>Supported for consumers of Event Sourced Entities, Key Value Entities, Workflows, service to
+   * service event streams and message broker topics. For a topic, the start point is compared with
+   * the time of each message. Apache Kafka, Azure Event Hubs and Google Cloud Pub/Sub differ in
+   * which messages they can still deliver, see the documentation of the broker. A consumer of an
+   * Azure Event Hubs topic must set a {@link FromTopic#consumerGroup() consumer group}.
    *
    * <p>The start point is recorded on the first deployment and is permanent. The service refuses to
    * start if it is removed or changed, except that a timestamp can change to {@code latest}. To
