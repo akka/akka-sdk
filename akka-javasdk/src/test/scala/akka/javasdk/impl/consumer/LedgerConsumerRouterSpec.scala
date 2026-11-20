@@ -131,6 +131,19 @@ class LedgerConsumerRouterSpec extends ScalaTestWithActorTestKit with LogCapturi
       trigger = SpiLedger.EvaluationTrigger.Manual,
       subject = new SpiLedger.WorkflowSubject("order-1", "order-workflow"),
       outcome = new SpiLedger.EvaluationInconclusive("no verdict"),
+      flowId = None,
+      timestamp = Instant.EPOCH,
+      attributes = Map.empty)
+
+  private def spiInteractionEvaluationRecord: SpiLedger.EvaluationRecord =
+    new SpiLedger.EvaluationRecord(
+      evaluationId = "evaluation-2",
+      evaluatorComponentId = "quality-evaluator",
+      controlId = None,
+      trigger = SpiLedger.EvaluationTrigger.OnInteraction,
+      subject = new SpiLedger.InteractionSubject("interaction-1", "support-agent"),
+      outcome = new SpiLedger.EvaluationInconclusive("no verdict"),
+      flowId = Some("flow-1"),
       timestamp = Instant.EPOCH,
       attributes = Map.empty)
 
@@ -286,6 +299,16 @@ class LedgerConsumerRouterSpec extends ScalaTestWithActorTestKit with LogCapturi
           metadata.get("flow-id") shouldBe Optional.ofNullable(flowId.orNull)
         }
       }
+    }
+
+    "set the flow id of an evaluation of an interaction" in {
+      val consumer = new AllRecordsConsumer
+
+      consumerImpl(classOf[AllRecordsConsumer], consumer)
+        .handleMessage(ledgerMessage(spiInteractionEvaluationRecord))
+        .futureValue shouldBe SpiConsumer.ConsumedEffect
+
+      consumer.context.metadata().get(ConsumerImpl.FlowIdKey) shouldBe Optional.of("flow-1")
     }
 
     "ignore a record of an unknown class" in {

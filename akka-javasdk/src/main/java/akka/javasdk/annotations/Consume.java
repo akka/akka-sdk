@@ -206,7 +206,7 @@ public @interface Consume {
    *       an evaluation, it is the component id of the evaluator. For a classification, it is the
    *       classifier name.
    *   <li>{@code flow-id} holds the id of the flow of the record. It is absent for a record outside
-   *       a flow and for an evaluation.
+   *       a flow. An evaluation of a workflow run is outside a flow.
    * </ul>
    *
    * <p>The ledger consumer has these delivery guarantees:

@@ -72,7 +72,9 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
       events = events,
       timestamp = Instant.ofEpochSecond(7))
 
-  private def spiEvaluationRecord(controlId: Option[String]): SpiLedger.EvaluationRecord =
+  private def spiEvaluationRecord(
+      controlId: Option[String],
+      flowId: Option[String] = None): SpiLedger.EvaluationRecord =
     new SpiLedger.EvaluationRecord(
       evaluationId = "evaluation-1",
       evaluatorComponentId = "quality-evaluator",
@@ -80,6 +82,7 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
       trigger = SpiLedger.EvaluationTrigger.OnInteraction,
       subject = new SpiLedger.InteractionSubject("interaction-1", "support-agent"),
       outcome = new SpiLedger.EvaluationInconclusive("no verdict"),
+      flowId = flowId,
       timestamp = Instant.EPOCH,
       attributes = Map.empty)
 
@@ -91,6 +94,7 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
       trigger = SpiLedger.EvaluationTrigger.Manual,
       subject = new SpiLedger.WorkflowSubject("workflow-1", "order-workflow"),
       outcome = new SpiLedger.EvaluationInconclusive("no verdict"),
+      flowId = None,
       timestamp = Instant.EPOCH,
       attributes = Map("interactionIds" -> "i1,i2"))
 
@@ -212,6 +216,18 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
       record.controlId() shouldEqual Optional.empty()
     }
 
+    "carry the flow id of the evaluated interaction" in {
+      val record = LedgerClientImpl.toEvaluationRecord(spiEvaluationRecord(controlId = None, flowId = Some("flow-1")))
+
+      record.flowId() shouldEqual Optional.of("flow-1")
+    }
+
+    "carry an empty flow id when the evaluation has none" in {
+      val record = LedgerClientImpl.toEvaluationRecord(spiEvaluationRecord(controlId = None, flowId = None))
+
+      record.flowId() shouldEqual Optional.empty()
+    }
+
     "map a workflow subject and the attributes" in {
       val record = LedgerClientImpl.toEvaluationRecord(spiWorkflowEvaluationRecord)
 
@@ -235,6 +251,7 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
         trigger = SpiLedger.EvaluationTrigger.OnInteraction,
         subject = new SpiLedger.InteractionSubject("interaction-1", "support-agent"),
         outcome = new SpiLedger.EvaluationNotApplicable("no tool call"),
+        flowId = None,
         timestamp = Instant.EPOCH,
         attributes = Map.empty)
 

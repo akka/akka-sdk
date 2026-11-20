@@ -181,7 +181,8 @@ private[impl] object LedgerClientImpl {
       toEvaluationSubject(record.subject),
       record.attributes.asJava,
       toEvaluationOutcome(record.outcome),
-      record.timestamp)
+      record.timestamp,
+      record.flowId.toJava)
 
   def toClassificationRecord(record: SpiLedger.ClassificationRecord): ClassificationRecord =
     new ClassificationRecord(

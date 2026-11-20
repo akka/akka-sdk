@@ -136,7 +136,7 @@ The metadata of a record carries these keys. Read them with `messageContext().me
 | The producer of the record. For an interaction or an activity, the component id of the agent. For a guardrail decision, the guardrail name. For an evaluation, the component id of the evaluator. For a classification, the classifier name.
 
 | `flow-id`
-| The id of the flow of the record. It is absent for a record outside a flow and for an evaluation.
+| The id of the flow of the record. It is absent for a record outside a flow. An evaluation of a workflow run is outside a flow.
 |===
 
 The ledger consumer has these delivery guarantees:

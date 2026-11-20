@@ -163,7 +163,7 @@ private[impl] final class ConsumerImpl[C <: Consumer](
       case decision: GuardrailDecisionRecord =>
         ("guardrail-decision", decision.name, decision.flowId.toScala)
       case evaluation: EvaluationRecord =>
-        ("evaluation", evaluation.evaluatorComponentId, None)
+        ("evaluation", evaluation.evaluatorComponentId, evaluation.flowId.toScala)
       case classification: ClassificationRecord =>
         ("classification", classification.classifierName, classification.flowId.toScala)
     }

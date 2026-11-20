@@ -46,7 +46,8 @@ public class RecordIdTest {
         new EvaluationRecord.Subject.Interaction("interaction-1", "coordinator-agent"),
         Map.of(),
         new EvaluationRecord.Outcome.Verdict(Evaluation.of(true, "good")),
-        Instant.EPOCH);
+        Instant.EPOCH,
+        Optional.empty());
   }
 
   private static ClassificationRecord classification() {

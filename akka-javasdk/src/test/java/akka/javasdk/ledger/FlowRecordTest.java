@@ -160,7 +160,8 @@ public class FlowRecordTest {
                 coordinator.interactionId(), "coordinator-agent"),
             Map.of(),
             new EvaluationRecord.Outcome.Verdict(Evaluation.of(false, "verdict of another judge")),
-            Instant.EPOCH);
+            Instant.EPOCH,
+            Optional.empty());
     var delegation =
         activity(
             new ActivityRecord.Event.DelegationStarted(

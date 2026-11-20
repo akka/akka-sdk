@@ -72,7 +72,8 @@ public class TestLedgerClientTest {
         new EvaluationRecord.Subject.Workflow(workflowId, "order-workflow"),
         Map.of("interactionIds", "i1,i2"),
         new EvaluationRecord.Outcome.Verdict(Evaluation.passed("ok")),
-        timestamp);
+        timestamp,
+        Optional.empty());
   }
 
   private static EvaluationRecord interactionEvaluation(
@@ -85,7 +86,8 @@ public class TestLedgerClientTest {
         new EvaluationRecord.Subject.Interaction(interactionId, "support-agent"),
         Map.of(),
         new EvaluationRecord.Outcome.Verdict(Evaluation.passed("ok")),
-        timestamp);
+        timestamp,
+        Optional.empty());
   }
 
   private static GuardrailDecisionRecord decision(
