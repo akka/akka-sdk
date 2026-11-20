@@ -112,9 +112,9 @@ import akka.javasdk.impl.evaluation.GuardedEvaluationClient
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityImpl
 import akka.javasdk.impl.grpc.GrpcClientProviderImpl
 import akka.javasdk.impl.a2a.A2aAgentCardEndpoint
-import akka.javasdk.impl.a2a.A2aRequestHandler
 import akka.javasdk.impl.a2a.A2aClientImpl
 import akka.javasdk.impl.a2a.A2aRemoteAgents
+import akka.javasdk.impl.a2a.A2aRequestHandler
 import akka.javasdk.impl.http.HttpClientProviderImpl
 import akka.javasdk.impl.http.HttpRequestContextImpl
 import akka.javasdk.impl.http.JwtClaimsImpl
