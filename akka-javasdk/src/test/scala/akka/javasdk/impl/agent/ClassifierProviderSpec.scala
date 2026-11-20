@@ -272,6 +272,13 @@ object ClassifierProviderSpec {
             .map(new SpiClassifier.ClassificationResult(Some(ClassificationId), _))(ExecutionContext.parasitic)
         case None => Future.failed(new IllegalArgumentException(s"No classifier registered with name [$name]"))
       }
+
+    // FIXME placeholder for the classification id of runtime #6113, which this SDK has not adopted.
+    // Take the implementation of ledger-classification-record (#2202) when the two branches meet.
+    override def classifyWithResult(
+        name: String,
+        content: SpiClassifier.Content): Future[SpiClassifier.ClassificationResult] =
+      classify(name, content).map(new SpiClassifier.ClassificationResult(None, _))(ExecutionContext.parasitic)
   }
 
   // Simplified stand-in for Sdk.wiredInstance: injects a ClassifierClient or ClassifierContext by

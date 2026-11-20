@@ -75,7 +75,11 @@ A `Decision` can be stored in component state, for example in workflow state, an
 
 == Configuring the model provider
 
-The client uses the provider configured in `akka.javasdk.decision.model-provider`. Set it to the name of a provider configuration section. The `system-one` section configures a model that implements the SystemOne API of link:{url-typesafe-jev}[TypeSafe Jev, window="new"]:
+The client uses the provider configured in `akka.javasdk.decision.model-provider`. Set it to the name of a provider configuration section. Two sections are predefined: `system-one` and `openai`.
+
+=== SystemOne decision models
+
+The `system-one` section configures a model that implements the SystemOne API of link:{url-typesafe-jev}[TypeSafe Jev, window="new"]:
 
 [source,hocon]
 .src/main/resources/application.conf
@@ -90,7 +94,26 @@ akka.javasdk.decision {
 
 The API key defaults to the `SYSTEM_ONE_API_KEY` environment variable. A call without an API key or model name fails with an `IllegalArgumentException`. Pin a model version once you have tuned your thresholds, because an alias such as `jev-latest` can move to a new version.
 
-To use a different provider for one call, define a configuration section that inherits the provider defaults, and pass its name to `DecisionModelClient.model`:
+=== OpenAI decision models
+
+The `openai` section configures a model of the link:{url-openai-decisions}[OpenAI Decisions API, window="new"]:
+
+[source,hocon]
+.src/main/resources/application.conf
+----
+akka.javasdk.decision {
+  model-provider = "openai"
+  openai {
+    model-name = "gpt-6-luna"
+  }
+}
+----
+
+The API key defaults to the `OPENAI_API_KEY` environment variable, which the OpenAI model provider of agents also reads. A call without an API key or model name fails with an `IllegalArgumentException`. The `base-url` setting includes the version path of the API, as in the default `https://api.openai.com/v1`.
+
+=== Choosing a provider for one call
+
+To use a different provider for one call, define a configuration section that inherits the provider defaults. Pass `DecisionModelProvider.fromConfig` with the section name to `DecisionModelClient.model`:
 
 [source,hocon]
 .src/main/resources/application.conf
@@ -107,7 +130,7 @@ akka.javasdk.decision {
 include::example$doc-snippets/src/main/java/com/example/decision/TriageEndpoint.java[tag=model]
 ----
 
-`DecisionModelProvider.systemOne()` creates a SystemOne provider in code, with `withApiKey`, `withModelName`, and `withBaseUrl` to adjust it. Implement `DecisionModelProvider.Custom` to answer requests without a SystemOne API.
+`DecisionModelProvider.systemOne()` and `DecisionModelProvider.openAi()` create a provider in code, with `withApiKey`, `withModelName`, and `withBaseUrl` to adjust it. Implement `DecisionModelProvider.Custom` to answer requests without a model API.
 
 == Handling failures
 
@@ -116,7 +139,9 @@ A failed call fails with an exception from `akka.javasdk.agent`:
 * `RateLimitException` when the model API answers with a rate limit status after the configured retries.
 * `ModelTimeoutException` when a request to the model API times out.
 * `InternalServerException` when the model API answers with a server error status after the configured retries.
-* `ModelException` for other failures, such as a rejected request or an unusable response.
+* `ModelException` for other failures, such as a rejected request, an unusable response, or a model that refuses to answer a question.
+
+A model of the OpenAI Decisions API can refuse to answer a question. A refusal of one question fails the whole call, with a message that names the refused questions.
 
 An invalid request or configuration fails with an `IllegalArgumentException`: an unsupported input, no questions, duplicate question keys, more options or levels than the provider supports, a provider configuration section without a required key, or a provider without a model name or API key.
 
