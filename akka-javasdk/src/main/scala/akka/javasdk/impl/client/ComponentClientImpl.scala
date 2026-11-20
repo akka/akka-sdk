@@ -30,7 +30,21 @@ import akka.javasdk.impl.serialization.Serializer
 import akka.runtime.sdk.spi.SpiEvaluationClient
 import akka.runtime.sdk.spi.{ ComponentClients => RuntimeComponentClients }
 import akka.stream.Materializer
+import io.opentelemetry.api.baggage.Baggage
 import io.opentelemetry.context.{ Context => OtelContext }
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[javasdk] object ComponentClientImpl {
+
+  /** The baggage key that carries the correlation id to the runtime. */
+  val CorrelationIdBaggageKey = "akka.correlation.id"
+
+  /** The longest correlation id that the runtime lists ledger records by. */
+  val MaxCorrelationIdLength = 256
+}
 
 /**
  * Note: new instance per call since it includes call metadata
@@ -113,6 +127,20 @@ private[javasdk] final case class ComponentClientImpl(
     if (evaluatorComponentId.isEmpty)
       throw new IllegalArgumentException(s"Evaluator [${evaluatorClass.getName}] has no component id")
     new EvaluatorClientImpl(evaluatorComponentId, evaluationClient, telemetryContext)
+  }
+
+  override def withCorrelationId(correlationId: String): ComponentClient = {
+    if (correlationId eq null) throw new NullPointerException("Correlation id is null")
+    if (correlationId.isEmpty) throw new IllegalArgumentException("Empty correlation id not allowed")
+    if (correlationId.length > ComponentClientImpl.MaxCorrelationIdLength)
+      throw new IllegalArgumentException(
+        s"Correlation id is longer than ${ComponentClientImpl.MaxCorrelationIdLength} characters")
+    val context = telemetryContext.getOrElse(OtelContext.root())
+    val baggage = Baggage.fromContext(context)
+    if (baggage.getEntryValue(ComponentClientImpl.CorrelationIdBaggageKey) ne null) this
+    else
+      copy(telemetryContext =
+        Some(context.`with`(baggage.toBuilder.put(ComponentClientImpl.CorrelationIdBaggageKey, correlationId).build())))
   }
 
 }
