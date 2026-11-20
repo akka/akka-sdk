@@ -28,5 +28,6 @@
       "acl": { "allow": [{ "service": "frontend" }], "denyCode": 401 },
       "jwt": { "bearerToken": true, "issuers": ["issuer-a", "issuer-b"], "staticClaims": [{ "claim": "tenant", "values": ["acme"] }, { "claim": "role", "pattern": "^ops-\\d+$" }] }
     }
-  ]
+  ],
+  "guardrails": []
 }

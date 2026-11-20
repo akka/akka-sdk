@@ -31,5 +31,6 @@
       "path": "/shop/",
       "acl": { "denyAll": true, "denyCode": 403 }
     }
-  ]
+  ],
+  "guardrails": []
 }

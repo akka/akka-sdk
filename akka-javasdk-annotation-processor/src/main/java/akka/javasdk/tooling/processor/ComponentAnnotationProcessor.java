@@ -8,11 +8,7 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigRenderOptions;
 import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.Writer;
-import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -200,27 +196,17 @@ public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
     var filer = processingEnv.getFiler();
     var descriptorFilePath = getDescriptorFilePath();
 
-    Config existingConfig;
-    try {
-      var existingDescriptorResource =
-          filer.getResource(StandardLocation.CLASS_OUTPUT, "", descriptorFilePath);
-
-      try (var in = existingDescriptorResource.openReader(true)) {
-        // this could be both user defined existing config, and a previous compile without clean
-        // inbetween
-        debug("Existing Akka component descriptor found, will merge with discovered components");
-        try (in) {
-          existingConfig = ConfigFactory.parseReader(in);
-        }
+    Config existingConfig = ConfigFactory.empty();
+    var existingDescriptorResource = existingOutputResource(descriptorFilePath);
+    if (existingDescriptorResource.isPresent()) {
+      // a user defined descriptor, or one from a previous compile without a clean in between
+      debug("Existing Akka component descriptor found, will merge with discovered components");
+      try (var in = existingDescriptorResource.get().openReader(true)) {
+        existingConfig = ConfigFactory.parseReader(in);
       }
-      existingDescriptorResource.delete();
-    } catch (NoSuchFileException | FileNotFoundException ex) {
-      // No existing descriptor — expected on a clean build or first compile in IntelliJ.
-      // Standard javac (Maven/Gradle) throws NoSuchFileException via PathFileObject.openReader(),
-      // while IntelliJ's JPS build system uses JpsFileObject/OutputFileObject backed by
-      // FileInputStream, which throws FileNotFoundException instead.
+      existingDescriptorResource.get().delete();
+    } else {
       debug("No existing Akka component descriptor found");
-      existingConfig = ConfigFactory.empty();
     }
 
     final Config foundExistingConfig = existingConfig;
@@ -271,17 +257,14 @@ public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
         filer.createResource(StandardLocation.CLASS_OUTPUT, "", descriptorFilePath);
     debug(
         "Akka SDK annotation processor writing component descriptor "
-            + new File(newDescriptorResource.toUri()));
+            + newDescriptorResource.toUri());
     writeConfig(newDescriptorResource, ConfigFactory.parseMap(config));
   }
 
   private void writeConfig(FileObject descriptorResource, Config config) throws IOException {
-    try (Writer out = descriptorResource.openWriter()) {
-      var writer = new BufferedWriter(out);
-      var configAsString =
-          config.root().render(ConfigRenderOptions.concise().setFormatted(true).setJson(false));
-      writer.write(configAsString);
-      writer.flush();
+    try (var writer = new BufferedWriter(descriptorResource.openWriter())) {
+      writer.write(
+          config.root().render(ConfigRenderOptions.concise().setFormatted(true).setJson(false)));
     }
   }
 }

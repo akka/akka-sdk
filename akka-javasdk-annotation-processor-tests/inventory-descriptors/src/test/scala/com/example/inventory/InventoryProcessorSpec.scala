@@ -7,7 +7,9 @@ package com.example.inventory
 import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.Files
 import java.nio.file.Paths
+import javax.tools.Diagnostic
 
+import com.example.inventory.InventoryCompiler.CoordinateOptions
 import com.example.inventory.InventoryCompiler.DefaultOptions
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -18,6 +20,42 @@ class InventoryProcessorSpec extends AnyWordSpec with Matchers {
     new String(Files.readAllBytes(Paths.get("src/test/resources/expected").resolve(name)), UTF_8)
 
   "InventoryProcessor" should {
+
+    "write no inventory without the inventory option" in {
+      val result = InventoryCompiler.compile("basic", CoordinateOptions)
+      withClue(result.diagnostics) { result.success shouldBe true }
+      result.inventory("com.example", "shop") shouldBe None
+    }
+
+    "write no inventory when the inventory option is false" in {
+      val result = InventoryCompiler.compile("basic", CoordinateOptions :+ "-Aakka.javasdk.inventory=false")
+      withClue(result.diagnostics) { result.success shouldBe true }
+      result.inventory("com.example", "shop") shouldBe None
+    }
+
+    "ignore a broken guardrail without the inventory option" in {
+      val result =
+        InventoryCompiler.compile("basic", CoordinateOptions, applicationConf = Some("broken-guardrail.conf"))
+      withClue(result.diagnostics) { result.success shouldBe true }
+      result.inventory("com.example", "shop") shouldBe None
+    }
+
+    "emit no warning with -Werror when the inventory option is false" in {
+      val result = InventoryCompiler.compile(
+        "supported-annotations-only",
+        CoordinateOptions ++ Seq("-Aakka.javasdk.inventory=false", "-Xlint:processing", "-Werror"),
+        applicationConf = Some("include-guardrails.conf"))
+      withClue(result.diagnostics) { result.success shouldBe true }
+    }
+
+    "require no coordinates without the inventory option" in {
+      val result =
+        InventoryCompiler.compile(
+          "basic",
+          options = Seq.empty,
+          processors = "akka.javasdk.tooling.processor.InventoryProcessor")
+      withClue(result.diagnostics) { result.success shouldBe true }
+    }
 
     "write the inventory of a service" in {
       val result = InventoryCompiler.compile("basic")
@@ -57,13 +95,154 @@ class InventoryProcessorSpec extends AnyWordSpec with Matchers {
       result.inventory("com.example", "shop") shouldBe None
     }
 
+    "write an empty guardrails list without application.conf" in {
+      val result = InventoryCompiler.compile("basic")
+      withClue(result.diagnostics) { result.success shouldBe true }
+      val json = new String(result.inventory("com.example", "shop").get, UTF_8)
+      json shouldBe expected("basic.json")
+      json should endWith("  ],\n  \"guardrails\": []\n}\n")
+    }
+
+    "list a guardrail from application.conf" in {
+      val result = InventoryCompiler.compile("basic", applicationConf = Some("refund-limit.conf"))
+      withClue(result.diagnostics) { result.success shouldBe true }
+      new String(result.inventory("com.example", "shop").get, UTF_8) should endWith("""|  ],
+           |  "guardrails": [
+           |    {
+           |      "name": "refund-limit",
+           |      "class": "com.example.eval.RefundLimitGuard",
+           |      "category": "POLICY",
+           |      "reportOnly": false,
+           |      "failMode": "fail-closed",
+           |      "agents": ["order-agent"],
+           |      "agentRoles": [],
+           |      "tools": ["issueRefund"],
+           |      "controlId": "CTRL-7"
+           |    }
+           |  ]
+           |}
+           |""".stripMargin)
+    }
+
+    "list an SDK default enabled from application.conf" in {
+      val result = InventoryCompiler.compile("basic", applicationConf = Some("default-jailbreak.conf"))
+      withClue(result.diagnostics) { result.success shouldBe true }
+      new String(result.inventory("com.example", "shop").get, UTF_8) should endWith("""|  "guardrails": [
+           |    {
+           |      "name": "default model-call jailbreak",
+           |      "class": "akka.javasdk.agent.ModelCallSimilarityGuard",
+           |      "category": "JAILBREAK",
+           |      "reportOnly": false,
+           |      "failMode": "fail-closed",
+           |      "agents": ["*"],
+           |      "agentRoles": [],
+           |      "tools": []
+           |    }
+           |  ]
+           |}
+           |""".stripMargin)
+    }
+
+    "write unresolved guardrail values as unknown and warn for each" in {
+      val result = InventoryCompiler.compile("basic", applicationConf = Some("unresolved-guardrail.conf"))
+      withClue(result.diagnostics) { result.success shouldBe true }
+      new String(result.inventory("com.example", "shop").get, UTF_8) should endWith("""|  "guardrails": [
+           |    {
+           |      "name": "refund-limit",
+           |      "class": "com.example.eval.RefundLimitGuard",
+           |      "category": "POLICY",
+           |      "reportOnly": "unknown",
+           |      "failMode": "fail-closed",
+           |      "agents": "unknown",
+           |      "agentRoles": [],
+           |      "tools": [],
+           |      "controlId": "unknown"
+           |    },
+           |    {
+           |      "name": "shared-guard",
+           |      "class": "unknown",
+           |      "category": "unknown",
+           |      "reportOnly": "unknown",
+           |      "failMode": "unknown",
+           |      "agents": "unknown",
+           |      "agentRoles": "unknown",
+           |      "tools": "unknown",
+           |      "controlId": "unknown"
+           |    }
+           |  ]
+           |}
+           |""".stripMargin)
+
+      val warnings = result.diagnostics.filter(_.getKind == Diagnostic.Kind.WARNING).map(_.getMessage(null))
+      warnings.count(_.contains("of guardrail [refund-limit] as unknown")) shouldBe 3
+      warnings.count(_.contains("of guardrail [shared-guard] as unknown")) shouldBe 8
+      warnings.mkString should include("application.conf")
+    }
+
+    "list a guardrail from an included file" in {
+      val result = InventoryCompiler.compile(
+        "basic",
+        applicationConf = Some("include-guardrails.conf"),
+        includedConfigs = Seq("refund-limit.conf"))
+      withClue(result.diagnostics) { result.success shouldBe true }
+      result.diagnostics.filter(_.getKind == Diagnostic.Kind.WARNING) shouldBe empty
+      new String(result.inventory("com.example", "shop").get, UTF_8) should include("\"name\": \"refund-limit\"")
+    }
+
+    "report an error for a file include" in {
+      val result = InventoryCompiler.compile("basic", applicationConf = Some("include-file.conf"))
+      result.success shouldBe false
+      result.diagnostics.map(_.getMessage(null)).mkString should include(
+        "The service inventory does not support include file(")
+      result.inventory("com.example", "shop") shouldBe None
+    }
+
+    "ignore a file include without the inventory option" in {
+      val result = InventoryCompiler.compile("basic", CoordinateOptions, applicationConf = Some("include-file.conf"))
+      withClue(result.diagnostics) { result.success shouldBe true }
+    }
+
+    "report an error when a required include is missing" in {
+      val result = InventoryCompiler.compile("basic", applicationConf = Some("include-required-missing.conf"))
+      result.success shouldBe false
+      result.diagnostics.map(_.getMessage(null)).mkString should include("missing-guardrails")
+      result.inventory("com.example", "shop") shouldBe None
+    }
+
+    "write no inventory when a guardrail is invalid" in {
+      val result = InventoryCompiler.compile("basic", applicationConf = Some("broken-guardrail.conf"))
+      result.success shouldBe false
+      val messages = result.diagnostics.map(_.getMessage(null)).mkString
+      messages should include("broken")
+      messages should include("class")
+      result.inventory("com.example", "shop") shouldBe None
+    }
+
     "report an error when the artifact id is missing" in {
       val result = InventoryCompiler.compile(
         "basic",
-        options = Seq("-Aakka.javasdk.groupId=com.example"),
+        options = Seq("-Aakka.javasdk.inventory=true", "-Aakka.javasdk.groupId=com.example"),
         processors = "akka.javasdk.tooling.processor.InventoryProcessor")
       result.success shouldBe false
       result.diagnostics.map(_.getMessage(null)).mkString should include("akka.javasdk.artifactId")
+    }
+
+    "report an error when the classpath option is missing" in {
+      val result = InventoryCompiler.compile("basic", CoordinateOptions :+ "-Aakka.javasdk.inventory=true")
+      result.success shouldBe false
+      result.diagnostics.map(_.getMessage(null)).mkString should include("akka.javasdk.inventory.classpath")
+      result.inventory("com.example", "shop") shouldBe None
+    }
+
+    "report an error when the build does not expand the classpath option" in {
+      val result = InventoryCompiler.compile(
+        "basic",
+        CoordinateOptions ++ Seq(
+          "-Aakka.javasdk.inventory=true",
+          "-Aakka.javasdk.inventory.classpath=${project.compileClasspathElements}"))
+      result.success shouldBe false
+      result.diagnostics.map(_.getMessage(null)).mkString should include("must be a list of paths")
+      result.inventory("com.example", "shop") shouldBe None
     }
 
     "claim the annotations" in {
@@ -89,7 +268,7 @@ class InventoryProcessorSpec extends AnyWordSpec with Matchers {
     "write an empty routes array when the compile has no endpoint" in {
       val result = InventoryCompiler.compile("no-endpoint")
       withClue(result.diagnostics) { result.success shouldBe true }
-      new String(result.inventory("com.example", "shop").get, UTF_8) should include("  \"routes\": []\n}")
+      new String(result.inventory("com.example", "shop").get, UTF_8) should include("  \"routes\": [],\n")
     }
 
     "deny every caller of a gRPC route without @Acl with PERMISSION_DENIED" in {
