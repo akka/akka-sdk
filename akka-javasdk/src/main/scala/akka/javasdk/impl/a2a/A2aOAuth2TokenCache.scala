@@ -53,14 +53,14 @@ private[akka] final class A2aOAuth2TokenCache(
       case Some(t) => Future.successful(t.value)
       case None =>
         val request = inFlight.getOrElse {
-          val f = fetch()
-          inFlight = Some(f)
-          f.onComplete { result =>
+          // andThen completes the future after the cache is updated, so a caller never sees a settled request still in flight
+          val f = fetch().andThen { case result =>
             synchronized {
               inFlight = None
               result.foreach(t => cached = Some(t))
             }
           }
+          inFlight = Some(f)
           f
         }
         request.map(_.value)

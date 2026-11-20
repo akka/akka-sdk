@@ -361,7 +361,11 @@ private[akka] final class RemoteA2aAgentClientImpl(
       Future.failed(
         new A2aClientException(s"Remote agent [${settings.name}] did not answer within ${settings.timeout}")))(
       state.system.classicSystem)
-    Future.firstCompletedOf(Seq(attempt(retryOnUnauthorized = true), timeout))
+    Future.firstCompletedOf(Seq(attempt(retryOnUnauthorized = true), timeout)).recoverWith {
+      case e: A2aClientException => Future.failed(e)
+      case NonFatal(e) =>
+        Future.failed(new A2aClientException(s"Calling remote agent [${settings.name}] failed: ${e.getMessage}", e))
+    }
   }
 
   private def addHeaders(request: HttpRequest, headers: Seq[HttpHeader]): HttpRequest =
