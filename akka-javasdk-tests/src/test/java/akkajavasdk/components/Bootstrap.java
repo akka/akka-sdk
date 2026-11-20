@@ -63,6 +63,8 @@ public class Bootstrap implements ServiceSetup {
         if (clazz == TestGrpcServiceClient.class) {
           // not normal usage, here for test coverage of lazily resolving grpc clients
           return (T) eagerlyCreatedGrpcClient;
+        } else if (clazz == OverridableDependency.class) {
+          return (T) new OverridableDependency("service");
         } else {
           throw new IllegalArgumentException("Unknown dependency type " + clazz.getName());
         }
