@@ -433,6 +433,7 @@ object SdkRunner {
 @InternalApi
 class SdkRunner private (
     dependencyProvider: Option[DependencyProvider],
+    dependencyOverrides: Map[Class[_], Any],
     disabledComponents: Set[Class[_]],
     overrideDisabledComponents: Boolean,
     httpMockLookup: String => Option[
@@ -442,19 +443,26 @@ class SdkRunner private (
   private val startedPromise = Promise[StartupContext]()
 
   // default constructor for runtime creation
-  def this() = this(None, Set.empty[Class[_]], false, _ => None, _ => None)
+  def this() = this(None, Map.empty[Class[_], Any], Set.empty[Class[_]], false, _ => None, _ => None)
 
   // constructor for testkit without mocks
   def this(
       dependencyProvider: java.util.Optional[DependencyProvider],
       disabledComponents: java.util.Set[Class[_]],
       overrideDisabledComponents: Boolean) =
-    this(dependencyProvider.toScala, disabledComponents.asScala.toSet, overrideDisabledComponents, _ => None, _ => None)
+    this(
+      dependencyProvider.toScala,
+      Map.empty[Class[_], Any],
+      disabledComponents.asScala.toSet,
+      overrideDisabledComponents,
+      _ => None,
+      _ => None)
 
   // constructor for testkit with mock lookups — only the testkit passes non-empty lookups here;
   // the default no-arg constructor used in prod/dev passes no-op lookups and mocks cannot fire.
   def this(
       dependencyProvider: java.util.Optional[DependencyProvider],
+      dependencyOverrides: java.util.Map[Class[_], AnyRef],
       disabledComponents: java.util.Set[Class[_]],
       overrideDisabledComponents: Boolean,
       httpMockLookup: java.util.function.Function[
@@ -466,6 +474,7 @@ class SdkRunner private (
         java.util.Optional[AkkaGrpcClient]]) =
     this(
       dependencyProvider.toScala,
+      dependencyOverrides.asScala.toMap[Class[_], Any],
       disabledComponents.asScala.toSet,
       overrideDisabledComponents,
       (name: String) => httpMockLookup.apply(name).toScala,
@@ -496,6 +505,7 @@ class SdkRunner private (
         startContext.regionInfo,
         startContext.deploymentInfo,
         dependencyProvider,
+        dependencyOverrides,
         disabledComponents,
         overrideDisabledComponents,
         startedPromise,
@@ -541,6 +551,31 @@ private object ComponentType {
   val AutonomousAgent = "autonomous-agent"
   val Evaluator = "evaluator"
   val DurableEvaluator = "durable-evaluator"
+}
+
+/**
+ * INTERNAL API
+ *
+ * Returns the override instance for a class that has one, and asks the delegate for every other class.
+ */
+@InternalApi
+private[javasdk] final class OverridingDependencyProvider(
+    overrides: Map[Class[_], Any],
+    delegate: Option[DependencyProvider])
+    extends DependencyProvider {
+
+  override def getDependency[T](clazz: Class[T]): T =
+    overrides.get(clazz) match {
+      case Some(instance) => instance.asInstanceOf[T]
+      case None =>
+        delegate match {
+          case Some(provider) => provider.getDependency(clazz)
+          case None =>
+            throw new IllegalStateException(
+              s"Could not provide dependency [${clazz.getName}] as the test has no dependency override for it " +
+              "and no DependencyProvider was configured.")
+        }
+    }
 }
 
 /**
@@ -636,6 +671,7 @@ private final class Sdk(
     regionInfo: RegionInfo,
     deploymentInfo: DeploymentInfo,
     dependencyProviderOverride: Option[DependencyProvider],
+    dependencyOverrides: Map[Class[_], Any],
     disabledComponents: Set[Class[_]],
     overrideDisabledComponents: Boolean,
     startedPromise: Promise[StartupContext],
@@ -656,7 +692,12 @@ private final class Sdk(
   private lazy val retries = new RetriesImpl(system.classicSystem)
   private val ComponentLocator.LocatedClasses(componentClasses, maybeServiceClass) =
     ComponentLocator.locateUserComponents(system)
-  @volatile private var dependencyProviderOpt: Option[DependencyProvider] = dependencyProviderOverride
+  @volatile private var dependencyProviderOpt: Option[DependencyProvider] =
+    withDependencyOverrides(dependencyProviderOverride)
+
+  private def withDependencyOverrides(provider: Option[DependencyProvider]): Option[DependencyProvider] =
+    if (dependencyOverrides.isEmpty) provider
+    else Some(new OverridingDependencyProvider(dependencyOverrides, provider))
 
   private val applicationConfig = ApplicationConfig(system).getConfig
   private val evaluationClient: SpiEvaluationClient =
@@ -1535,7 +1576,7 @@ private final class Sdk(
             StartupContext(
               runtimeComponentClients,
               eventLogClient,
-              None,
+              dependencyProviderOpt,
               httpClientProvider,
               grpcClientProvider,
               agentRegistry,
@@ -1552,12 +1593,13 @@ private final class Sdk(
               httpEndpointBound))
           Future.successful(Done)
         case Some(setup) =>
-          if (dependencyProviderOpt.nonEmpty) {
+          if (dependencyProviderOverride.nonEmpty) {
             logger.info("Service configured with TestKit DependencyProvider")
           } else {
             runUserCallback(setup, "createDependencyProvider()") {
-              dependencyProviderOpt = Option(setup.createDependencyProvider())
-              dependencyProviderOpt.foreach(_ => logger.info("Service configured with DependencyProvider"))
+              val serviceProvider = Option(setup.createDependencyProvider())
+              serviceProvider.foreach(_ => logger.info("Service configured with DependencyProvider"))
+              dependencyProviderOpt = withDependencyOverrides(serviceProvider)
             }
           }
           validateClassifiers()
