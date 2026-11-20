@@ -78,6 +78,8 @@ lazy val akkaJavaSdk =
         "scalaVersion" -> scalaVersion.value,
         "akkaVersion" -> Dependencies.AkkaVersion),
       buildInfoPackage := "akka.javasdk",
+      // path variables of endpoint methods inherited from SDK base classes are matched by parameter name
+      Compile / javacOptions ++= Seq("-parameters"),
       Test / javacOptions ++= Seq("-parameters"), // for Jackson
       Test / envVars ++= Map("ENV" -> "value1", "ENV2" -> "value2"),
       Test / akkaGrpcGeneratedLanguages := Seq(AkkaGrpc.Java))
