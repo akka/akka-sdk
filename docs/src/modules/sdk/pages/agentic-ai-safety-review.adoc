@@ -15,12 +15,12 @@ Akka provides runtime guardrails, sanitizers, and evaluators for different point
 For each agent or agent role, record:
 
 * The task (with its system and user message), model provider, and users or services that can invoke it.
-* The function tools and MCP tools it can call, including tools that change state or cause external effects.
+* The function tools and MCP tools it can call, including operations that change state, send messages, or cause external effects.
 * Whether it returns a streamed response.
 * The sensitive data it can receive, store in session memory, pass to a tool, send to a model, or write to logs.
 * The requirements that apply to its inputs, actions, responses, and data handling.
 
-Include agents that other agents call and agents that act as evaluators. Check the deployed configuration as well as the source code. A guardrail or sanitizer that is not enabled for an agent does not protect that agent.
+This inventory establishes which agents, tools, data paths, and callers are in scope, so the review can trace each interaction path and avoid overlooking agents or operations exposed indirectly. Include agents that other agents call and agents that act as evaluators. Check the deployed configuration as well as the source code. A guardrail or sanitizer that is not enabled for an agent does not protect that agent.
 
 == Screen model inputs and tool results
 
@@ -32,7 +32,7 @@ Test representative allowed and denied user inputs and tool results. Also test g
 
 == Constrain tool calls and high-impact actions
 
-Use a `ToolCallGuardrail` to inspect and deny a function or MCP tool call before the runtime invokes it. Review the tool name, arguments, and origin, and configure the guardrail for all relevant agents and tools.
+Use a `ToolCallGuardrail` to inspect and deny a function or MCP tool call before the runtime invokes it. Review the tool name, arguments, and origin (where the tool runs, such as a function tool or an MCP server), and configure the guardrail for all relevant agents and tools.
 
 Enforce user or service authorization, business limits, and input validation inside the tool or the service operation as well. Do not rely on the model or a guardrail as the only authorization check. A guardrail can deny a tool call, but it does not implement human approval. Add an application workflow or another explicit approval step when a requirement calls for approval before a high-impact action.
 
@@ -56,7 +56,7 @@ Set `control-id` on guardrail and sanitizer configuration when you use Akka cont
 
 Use an `Evaluator` to assess completed interactions and record verdicts in the ledger, metrics, and traces. Evaluators run after the interaction in the background. Their verdict cannot change the response or action that already occurred. Use them for monitoring and detection, not as a substitute for an enforcing guardrail or authorization check.
 
-Use deterministic tests with `TestModelProvider` for known model responses and tool calls. Run evaluation cases against representative examples before release. Confirm that each evaluator binding names the intended agents and review their sampling and enablement settings. Evaluations belong to the evaluations feature set. Confirm that your project has access before you make them a required part of the design.
+Use deterministic tests with `TestModelProvider` for known model responses and tool calls. Run evaluation cases against representative examples before release. Also run representative cases with the model and provider intended for production, and repeat them when changing the model or its configuration; record the exact model and configuration because model behavior can vary. Keep these live-model evaluations complementary to deterministic tests. Confirm that each evaluator binding names the intended agents and review their sampling and enablement settings. Evaluations belong to the evaluations feature set. Confirm that your project has access before you make them a required part of the design.
 
 == Collect source and ledger evidence
 
