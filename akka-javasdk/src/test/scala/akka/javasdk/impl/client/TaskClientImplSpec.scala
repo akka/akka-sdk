@@ -6,7 +6,6 @@ package akka.javasdk.impl.client
 
 import java.util.Optional
 
-import scala.annotation.nowarn
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -90,8 +89,6 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
     .name("String task")
     .description("A string task")
 
-  // The constructor without expireAfter is deprecated, and stays covered here.
-  @nowarn("cat=deprecation")
   private def taskState(
       status: TaskStatus,
       result: String = null,
@@ -110,7 +107,8 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
       Optional.empty(),
       Seq.empty[TaskAttachment].asJava,
       Seq.empty[String].asJava,
-      ruleClassNames)
+      ruleClassNames,
+      Optional.empty())
 
   private def entityReplyFor(state: TaskState): EntityReply =
     new EntityReply(serializer.toBytes(state), SpiMetadata.empty, None)
