@@ -36,7 +36,7 @@ public sealed interface TaskEvent {
     /**
      * @deprecated Use the constructor with {@code expireAfter}.
      */
-    @Deprecated(since = "3.7.2", forRemoval = true)
+    @Deprecated(since = "3.7.3", forRemoval = true)
     public TaskCreated(
         String taskId,
         String name,

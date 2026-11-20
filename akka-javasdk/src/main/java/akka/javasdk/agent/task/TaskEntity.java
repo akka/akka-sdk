@@ -62,7 +62,7 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
     /**
      * @deprecated Use the constructor with {@code expireAfter}.
      */
-    @Deprecated(since = "3.7.2", forRemoval = true)
+    @Deprecated(since = "3.7.3", forRemoval = true)
     public CreateRequest(
         String name,
         String description,
