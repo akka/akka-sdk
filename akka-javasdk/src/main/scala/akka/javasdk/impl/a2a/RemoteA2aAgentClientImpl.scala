@@ -16,10 +16,13 @@ import java.util.concurrent.atomic.AtomicReference
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.Promise
+import scala.concurrent.duration.FiniteDuration
 import scala.jdk.FutureConverters._
 import scala.util.control.NonFatal
 
 import akka.NotUsed
+import akka.actor.Scheduler
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.http.scaladsl.ConnectionContext
@@ -43,7 +46,6 @@ import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.unmarshalling.sse.EventStreamParser
 import akka.javasdk.JsonSupport
 import akka.javasdk.a2a._
-import akka.pattern.after
 import akka.stream.Materializer
 import akka.stream.SystemMaterializer
 import akka.stream.javadsl.{ Source => JavaSource }
@@ -123,6 +125,30 @@ private object RemoteA2aAgentState {
   // Agents in the field send members that this version does not know
   val mapper: ObjectMapper =
     JsonSupport.getObjectMapper.copy().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+}
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[akka] object RemoteA2aAgentClientImpl {
+
+  /**
+   * The response, or the timeout error when the response takes longer. A response that arrives after the timeout is
+   * discarded, so that its connection returns to the pool.
+   */
+  def within(response: Future[HttpResponse], timeout: FiniteDuration, scheduler: Scheduler, error: => Throwable)(
+      implicit
+      ec: ExecutionContext,
+      materializer: Materializer): Future[HttpResponse] = {
+    val result = Promise[HttpResponse]()
+    val timer = scheduler.scheduleOnce(timeout)(result.tryFailure(error))
+    response.onComplete { r =>
+      timer.cancel()
+      if (!result.tryComplete(r)) r.foreach(_.discardEntityBytes())
+    }
+    result.future
+  }
 }
 
 /**
@@ -388,15 +414,17 @@ private[akka] final class RemoteA2aAgentClientImpl(
           }
         }
     }
-    val timeout = after(settings.timeout)(
-      Future.failed(
-        new A2aClientException(s"Remote agent [${settings.name}] did not answer within ${settings.timeout}")))(
-      state.system.classicSystem)
-    Future.firstCompletedOf(Seq(attempt(retryOnUnauthorized = true), timeout)).recoverWith {
-      case e: A2aClientException => Future.failed(e)
-      case NonFatal(e) =>
-        Future.failed(new A2aClientException(s"Calling remote agent [${settings.name}] failed: ${e.getMessage}", e))
-    }
+    RemoteA2aAgentClientImpl
+      .within(
+        attempt(retryOnUnauthorized = true),
+        settings.timeout,
+        state.system.classicSystem.scheduler,
+        new A2aClientException(s"Remote agent [${settings.name}] did not answer within ${settings.timeout}"))
+      .recoverWith {
+        case e: A2aClientException => Future.failed(e)
+        case NonFatal(e) =>
+          Future.failed(new A2aClientException(s"Calling remote agent [${settings.name}] failed: ${e.getMessage}", e))
+      }
   }
 
   private def addHeaders(request: HttpRequest, headers: Seq[HttpHeader]): HttpRequest =

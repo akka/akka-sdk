@@ -109,6 +109,24 @@ class RemoteA2aAgentClientSpec
       (agents.stateFor("https://agent-1.example.com/card.json") should not).be(theSameInstanceAs(evicted))
     }
 
+    "discard a response that arrives after the timeout" in {
+      implicit val ec: scala.concurrent.ExecutionContext = system.executionContext
+      implicit val materializer: akka.stream.Materializer = akka.stream.SystemMaterializer(system).materializer
+      val drained = new java.util.concurrent.CountDownLatch(1)
+      val late = scala.concurrent.Promise[akka.http.scaladsl.model.HttpResponse]()
+      val result = RemoteA2aAgentClientImpl.within(
+        late.future,
+        100.millis,
+        system.classicSystem.scheduler,
+        new A2aClientException("timed out"))
+      intercept[A2aClientException](Await.result(result, 5.seconds)).getMessage shouldBe "timed out"
+      late.success(
+        akka.http.scaladsl.model.HttpResponse(entity = akka.http.scaladsl.model.HttpEntity(
+          akka.http.scaladsl.model.ContentTypes.`application/octet-stream`,
+          akka.stream.scaladsl.Source.single(akka.util.ByteString("x")).map { b => drained.countDown(); b })))
+      drained.await(5, java.util.concurrent.TimeUnit.SECONDS) shouldBe true
+    }
+
     "reject a name that is not configured" in {
       intercept[IllegalArgumentException](
         A2aClientImpl(new A2aRemoteAgents(system, a2aConfig()), None, None)
