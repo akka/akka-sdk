@@ -4,6 +4,7 @@
 
 package akka.javasdk.tooling.processor;
 
+import akka.javasdk.tooling.validation.A2aValidations;
 import akka.javasdk.tooling.validation.Validation;
 import akka.javasdk.tooling.validation.Validations;
 import akka.javasdk.validation.ast.compiletime.CompileTimeTypeDef;
@@ -30,13 +31,14 @@ import javax.tools.StandardLocation;
 
 /**
  * Annotation processor that performs compile-time validation on classes annotated
- * with @Component, @HttpEndpoint, @GrpcEndpoint, or @McpEndpoint.
+ * with @Component, @HttpEndpoint, @GrpcEndpoint, @McpEndpoint or @A2aEndpoint.
  */
 @SupportedAnnotationTypes({
   "akka.javasdk.annotations.Component",
   "akka.javasdk.annotations.http.HttpEndpoint",
   "akka.javasdk.annotations.GrpcEndpoint",
-  "akka.javasdk.annotations.mcp.McpEndpoint"
+  "akka.javasdk.annotations.mcp.McpEndpoint",
+  "akka.javasdk.annotations.a2a.A2aEndpoint"
 })
 public class ComponentValidationProcessor extends BaseAkkaProcessor {
 
@@ -45,6 +47,8 @@ public class ComponentValidationProcessor extends BaseAkkaProcessor {
 
   private static final String COMPONENT_ANNOTATION = "akka.javasdk.annotations.Component";
 
+  private static final String A2A_ENDPOINT_ANNOTATION = "akka.javasdk.annotations.a2a.A2aEndpoint";
+
   private static final String APPLICATION_CONF = "application.conf";
 
   private static final String ALLOW_DUPLICATE_COMPONENT_IDS_KEY =
@@ -52,6 +56,9 @@ public class ComponentValidationProcessor extends BaseAkkaProcessor {
 
   // Classes annotated with @Component in all rounds, keyed by qualified name.
   private final Map<String, TypeElement> componentsByName = new HashMap<>();
+
+  // Classes annotated with @A2aEndpoint in all rounds, keyed by qualified name.
+  private final Map<String, TypeElement> a2aEndpointsByName = new HashMap<>();
 
   // Qualified names of the classes already reported with a duplicate id.
   private final Set<String> reportedDuplicates = new HashSet<>();
@@ -81,6 +88,9 @@ public class ComponentValidationProcessor extends BaseAkkaProcessor {
         if (annotation.getQualifiedName().contentEquals(COMPONENT_ANNOTATION)) {
           componentsByName.put(element.getQualifiedName().toString(), element);
         }
+        if (annotation.getQualifiedName().contentEquals(A2A_ENDPOINT_ANNOTATION)) {
+          a2aEndpointsByName.put(element.getQualifiedName().toString(), element);
+        }
 
         // Wrap TypeElement in CompileTimeTypeDef
         CompileTimeTypeDef typeDef = new CompileTimeTypeDef(element);
@@ -104,6 +114,27 @@ public class ComponentValidationProcessor extends BaseAkkaProcessor {
         componentsByName.values().stream().map(CompileTimeTypeDef::new).toList();
 
     Validations.duplicateComponentIdErrors(componentTypeDefs, allowDuplicateComponentIds)
+        .forEach(
+            (className, message) -> {
+              if (reportedDuplicates.add(className)) {
+                allErrors.add(new ValidationError(componentsByName.get(className), message));
+              }
+            });
+
+    // A service has one Agent Card, so at most one A2A endpoint and unique skill ids
+    if (a2aEndpointsByName.size() > 1) {
+      var names = String.join(", ", new java.util.TreeSet<>(a2aEndpointsByName.keySet()));
+      a2aEndpointsByName.forEach(
+          (className, element) -> {
+            if (reportedDuplicates.add(className)) {
+              allErrors.add(
+                  new ValidationError(
+                      element,
+                      "A service can have at most one @A2aEndpoint. Found: " + names + "."));
+            }
+          });
+    }
+    A2aValidations.duplicateSkillIdErrors(componentTypeDefs)
         .forEach(
             (className, message) -> {
               if (reportedDuplicates.add(className)) {
