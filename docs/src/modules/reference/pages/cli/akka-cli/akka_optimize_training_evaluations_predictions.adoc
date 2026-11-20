@@ -4,39 +4,53 @@ Display predicted and expected answers for an evaluation
 
 == Synopsis
 
-Display per-example evaluation results: the example's position in the split, the prompt it asked, the expected output, the model's answer, the score, and the grader's explanation.
+Display per-example evaluation results: the example's position in the split, the prompt, the expected answer, the model's answer, the score, and the explanation.
+When tool calls are parsed and either answer calls tools, you also see the expected and actual calls.
+A call mismatch scores zero, and the explanation gives the first difference.
 
 Examples where the grader cannot determine a verdict are marked as unscored rather than scored as zero.
 
 Results are available while the evaluation is in progress.
+Examples are answered in split order and then graded in the same order, so an example answered but not graded yet is marked as such.
+--limit keeps the last examples answered so far.
+Without it, or with 0, you see every example.
+
+--result keeps the examples with one of these results, separated by commas: correct (a score of at least 1), incorrect (a score below 1), unscored and ungraded.
+--below keeps the examples scoring below a threshold, and leaves out the examples without a score.
+--offset skips that many matching examples, counted from the first in the split, and pages with --limit.
+A page says how many examples match.
 
 [source,shell]
 ----
-akka optimize training evaluations predictions EVALUATION [flags]
+akka optimize training evaluations predictions EVALUATION [--offset N] [--limit N] [--result RESULT,...] [--below SCORE] [flags]
 ----
 
 == Examples
 
 [source,shell]
 ----
-  # Display the first 5 predictions
+  # Display the last 5 examples answered so far
   akka optimize training evaluations predictions 9c2e4b7a1d63f085 --limit 5
 
-  # Filter incorrect predictions using jq
+  # Display the first 20 incorrect or unscored examples, then the next 20
   akka optimize training evaluations predictions 9c2e4b7a1d63f085 \
-    --jq '.[] | select(.score == 0)'
+    --result incorrect,unscored --offset 0 --limit 20
+  akka optimize training evaluations predictions 9c2e4b7a1d63f085 \
+    --result incorrect,unscored --offset 20 --limit 20
 
-  # Filter unscored predictions where the grader returned no verdict
-  akka optimize training evaluations predictions 9c2e4b7a1d63f085 \
-    --jq '.[] | select(.score == null)'
+  # Display the examples a judge scored below 0.5
+  akka optimize training evaluations predictions 9c2e4b7a1d63f085 --below 0.5
 ----
 
 == Options
 
 [source,text]
 ----
-  -h, --help        help for predictions
-      --limit int   Limit output to the specified number of examples
+      --below float      Display only the examples scoring below this threshold
+  -h, --help             help for predictions
+      --limit int        Display at most this many examples, up to 200: the last examples answered so far, or with --offset a page; 0 displays every example
+      --offset int       Skip this many matching examples, counted from the first in the split
+      --result strings   Display only the examples with these results: correct, incorrect, unscored, ungraded
 ----
 
 == Options inherited from parent commands

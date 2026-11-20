@@ -109,7 +109,7 @@ akka optimize training datasets analyze DATASET [--model BASE_MODEL] [-f RUN_FIL
 
 == SEE ALSO
 
-* link:akka_optimize_training_datasets.html[akka optimize training datasets]	 - Measure a registered dataset under a base model before training on it
+* link:akka_optimize_training_datasets.html[akka optimize training datasets]	 - Measure a registered dataset under a base model, and read its rows
 
 [discrete]
 

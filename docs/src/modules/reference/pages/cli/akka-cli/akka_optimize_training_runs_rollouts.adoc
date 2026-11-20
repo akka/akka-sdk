@@ -8,13 +8,20 @@ Display the rollouts a reinforcement run scored at one step: the prompt, the com
 
 Read them to check that a rising reward comes from better answers and not from a way around the reward.
 
+If your run reads tool calls, the "calls" term records the score determined by the calls.
+It is 0 when your reward terms score the text.
+If any displayed rollout has a call comparison, you also see a CALL MATCH column.
+It shows yes for matching calls, no with the first difference for a mismatch, and a dash for no comparison.
+
 The run keeps its rollouts one step at a time, once the training loop reports the step.
 The latest step kept is displayed unless --step names another, in the order the rollouts were scored.
 Use --worst or --best to sort by score and take that many, and --limit to take that many in scoring order.
 The service returns at most 200.
 
 The table shortens the prompt to its last message and cuts both texts to fit.
-The structured output (-o json or --jq) carries the whole prompt and completion, and every step the run kept rollouts for under "steps".
+The structured output (-o json or --jq) includes the whole prompt and completion, and lists every step with saved rollouts under "steps".
+If a rollout has a call comparison, you also get "expectedCalls", "actualCalls" and "callsMatch".
+"callsMismatch" gives the first difference when the calls do not match.
 
 [source,shell]
 ----

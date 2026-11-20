@@ -8,6 +8,11 @@ Display the pinned contract, target status, results, configuration differences, 
 
 COMPARISON takes an ID or an unambiguous prefix of one.
 
+Once a branch's evaluation and the source's have completed, the branch's line shows its score less the source's, over the examples both scored, with the 95% paired bootstrap interval of that difference.
+The verdict after it is higher or lower where the whole interval is on one side of zero.
+It is not distinguishable where the interval includes zero: the dataset then does not tell the branch apart from the source.
+The verdict refuses and gates nothing.
+
 COMPLETED means every target finished.
 PARTIAL keeps completed results beside terminal failures, refusals, or uncertain launches.
 FAILED means no target completed.

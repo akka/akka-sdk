@@ -1,0 +1,54 @@
+= akka specify probes findings
+
+Print draft findings for what the latest probe run established.
+
+== Synopsis
+
+Prints finding lines drafted from .akka/discovery/run.json and the result files of the probes that ran, and a question line for each gap a probe reported.
+Each draft is status observed with rung exercised: +++<probe>+++.
+A person confirms.+++</probe>+++
+
+Identifiers continue from the highest one with the same code under discovery/: F-`- with --topic, F- without.
+A claim already recorded is left out.`
+
+With --write research, system-map or behaviour the lines are appended to that file of the topic.
+Nothing is written otherwise, and existing text is never changed.
+
+[source,shell]
+----
+akka specify probes findings [flags]
+----
+
+== Options
+
+[source,text]
+----
+      --dir string     project directory (default: current)
+  -h, --help           help for findings
+      --topic string   the discovery topic whose code the identifiers carry (default: project level)
+      --write string   append to the topic's research, system-map or behaviour file
+----
+
+== Options inherited from parent commands
+
+[source,text]
+----
+      --cache-file string   location of cache file (default "~/.akka/cache.yaml")
+      --config string       location of config file (default "~/.akka/config.yaml")
+      --context string      configuration context to use
+      --disable-prompt      Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                            This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+  -o, --output string       set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string    the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet               set quiet output (helpful when used as part of a script)
+      --timeout duration    client command timeout (default 10s)
+      --use-grpc-web        use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose             set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_specify_probes.html[akka specify probes]	 - [Incubating] List, run, and test the probes that examine a system.
+
+[discrete]
+

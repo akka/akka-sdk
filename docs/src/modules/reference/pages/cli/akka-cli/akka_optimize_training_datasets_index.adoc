@@ -1,0 +1,97 @@
+= akka optimize training datasets index
+
+Index a dataset version's rows, so that they can be read and searched
+
+== Synopsis
+
+Index a dataset version's rows, so that "training datasets rows" can page through them and search them.
+The index claims no GPU.
+It decodes prepared token rows with the tokenizer their descriptor names, which the catalog has to allow at the commit it pins.
+
+DATASET is a registry reference that names its namespace, such as triage/train or triage/train:v3.
+A reference with no version indexes the latest version.
+
+Optimize keeps one index for each version's rows, and two names for the same rows share it.
+Running the command again for the same rows returns that index.
+A failed index is started again, except one that refused the rows, which is returned as it is.
+The command starts at most three attempts, and is refused once the third has failed.
+--retry starts another attempt after any failure, a refusal or the third attempt included, as many times as you run it.
+Anywhere else --retry does what the command does without it.
+
+An index is written in an index format.
+A later version of Optimize reads every format an earlier one wrote.
+The command indexes chat examples and pairs held in an older format again, in the current one, and their rows read from the older index until the new one is done.
+Prepared token rows are not indexed again, since every format holds the same for them.
+The text of prepared token rows is the text the version of Optimize that built the index decoded.
+
+Once the index of chat examples or pairs is done, the command prints what the rows carry: the rows with tool calls and the tools they call most, the rows with images, the rows of text alone, and the turns a row holds.
+Pairs are counted by their prompt, with how many differ in their answers' tool calls.
+
+Without --wait, the command starts the index or reads it, and prints where it stands.
+With --wait, it follows the index until it is done or failed.
+--timeout bounds the wait, not the index, which carries on.
+A failed index prints its reason and exits with a non-zero status.
+
+-o json prints the response as Optimize sends it.
+Once the index of chat examples or pairs is done, it adds what the rows carry as a composition field.
+
+[source,shell]
+----
+akka optimize training datasets index DATASET [--wait] [--retry] [flags]
+----
+
+== Examples
+
+[source,shell]
+----
+  # Index a dataset and wait for it
+  akka optimize training datasets index triage/train --wait
+
+  # Then read its rows
+  akka optimize training datasets rows triage/train
+
+  # Read how many rows call a tool
+  akka optimize training datasets index triage/train -o json --jq '.composition.withToolCalls'
+
+  # Start another attempt once the three attempts have failed
+  akka optimize training datasets index triage/train --retry --wait
+----
+
+== Options
+
+[source,text]
+----
+  -h, --help               help for index
+      --retry              Start another attempt where the last failed and the attempts a start gets are used
+      --timeout duration   With --wait, the longest to wait before timing out
+      --wait               Wait for the index to finish
+----
+
+== Options inherited from parent commands
+
+[source,text]
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color or a redrawn progress line, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then a local dev-mode service, then http://localhost:9001)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize_training_datasets.html[akka optimize training datasets]	 - Measure a registered dataset under a base model, and read its rows
+
+[discrete]
+

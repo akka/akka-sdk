@@ -12,6 +12,16 @@ Current versions
 
 == November 2026
 
+* Akka libraries 26.11 releases
+- overview in xref:release-notes/2026-11-20-akka-26.11-released.adoc[]
+- Jackson 2.21 long-term-support line
+- Removal of APIs deprecated in Akka 2.10.0 or earlier
+
+* [[cli-3-0-84]]Akka CLI 3.0.84
+- New local console with Akka Specify, Akka Verify, and Akka Optimize
+- Akka Optimize 0.11.0
+- `akka local services run` and `akka local services stop`
+
 * [[sdk-3-7-2]]https://github.com/akka/akka-sdk/releases/tag/v3.7.2[Akka SDK 3.7.2,window="new"]
 - Runtime 1.7.6
 - **Breaking change**: The evaluation runner of the TestKit uses evaluator components instead of its own evaluators, see xref:reference:migration-guide.adoc#migrating-from-the-evalkit-evaluators[Migrating from the EvalKit evaluators]

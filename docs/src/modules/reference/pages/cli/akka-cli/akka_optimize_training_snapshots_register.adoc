@@ -13,6 +13,9 @@ Registering does not alter the run that produced the snapshot and does not dupli
 The registration ID is derived from the snapshot, so registering the same snapshot again returns that same registration.
 SNAPSHOT may be a complete snapshot ID or an unambiguous prefix.
 
+The save at a run's last update registers nothing, unless the run ended without registering a model.
+Its adapter is the model the run registers itself, so the command outputs the run's own version, or says the run has not registered it yet.
+
 A snapshot holding only training state is refused.
 It can be resumed and branched from, but no adapter has been exported from it.
 

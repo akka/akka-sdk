@@ -37,8 +37,10 @@
 
 * link:akka_specify.html[akka specify]	 - [Incubating] Initialize and manage AI-assisted Akka development projects.
 * link:akka_specify_probes_approve.html[akka specify probes approve]	 - Record that a declared probe's command may run.
+* link:akka_specify_probes_findings.html[akka specify probes findings]	 - Print draft findings for what the latest probe run established.
 * link:akka_specify_probes_list.html[akka specify probes list]	 - Show which probes can reach this system, and which cannot.
 * link:akka_specify_probes_run.html[akka specify probes run]	 - Run the selected probes and record what they found.
+* link:akka_specify_probes_target.html[akka specify probes target]	 - Declare a running instance as a copy or as production, or list the declared ones.
 * link:akka_specify_probes_test.html[akka specify probes test]	 - Run one probe and print what it was asked and what it answered.
 
 [discrete]

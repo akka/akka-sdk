@@ -4,12 +4,13 @@ Manage training pipelines
 
 == Synopsis
 
-A training pipeline executes a sequence of curate, train, and evaluate stages.
+A training pipeline executes a sequence of curate, distill, train, and evaluate stages.
 
 Downstream stages can reference outputs from upstream stages using the syntax "@stageName" in place of a dataset or model reference.
+A distill stage's output is the dataset it registers, so a train stage names it as "@stageName" in config.dataset.
 Stages can also define a minimum required mean score to gate subsequent execution.
 
-Each stage executes as an individual training run linked to the pipeline ID.
+Each stage executes as a run of its own kind linked to the pipeline ID: a curation, a distillation, a training run or an evaluation.
 If a pipeline stops before completion, you can restart it using "training pipelines resume".
 
 == Examples

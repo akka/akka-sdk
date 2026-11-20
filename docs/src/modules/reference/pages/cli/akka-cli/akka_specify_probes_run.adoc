@@ -11,13 +11,19 @@ akka specify probes run [flags]
 
 [source,text]
 ----
-      --dir string       project directory (default: current)
-  -h, --help             help for run
-      --probe string     changes against the study level's defaults, e.g. +clock,-appearance
-      --rebuild string   a running instance of the rebuild, for the probes that compare two systems
-      --source string    a readable clone of the system being examined
-      --study string     how deeply to study it: read, run, or diff (default "read")
-      --target string    a running instance of it
+      --database-var string       the NAME of the environment variable holding the database's connection string, for the schema probe; its value is never printed or recorded
+      --dir string                project directory (default: current)
+  -h, --help                      help for run
+      --mask stringArray          a regular expression replaced before storage and ignored when answers are compared, such as a timestamp; repeatable
+      --original-version string   the version of the system the traffic was recorded from
+      --probe string              changes against the study level's defaults, e.g. +clock,-appearance
+      --rebuild string            a running instance of the rebuild, for the probes that compare two systems
+      --set string                the fixture set the traffic probe records into (default: default)
+      --source string             a readable clone of the system being examined
+      --study string              how deeply to study it: read, run, or diff (default "read")
+      --target string             a running instance of it
+      --traffic-file string       an access log or HAR file of requests the system served, for the traffic probe to import
+      --traffic-from-copy         the traffic file was recorded from a copy, so bodies and query values are kept; otherwise only shapes are
 ----
 
 == Options inherited from parent commands

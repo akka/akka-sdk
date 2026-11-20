@@ -21,8 +21,33 @@ The command returns after the pause request is accepted.
 The same request sent again while the run is pausing reports the pause already in progress.
 A run that is already paused is refused.
 
-Saving and device release continue after the command returns, and "training runs get" reports the pause lifecycle, acknowledged saved step and whether the devices have been released.
+Saving and device release continue after the command returns.
+Use "training runs get" to check the pause lifecycle, acknowledged saved step and whether the devices have been released.
 A save that timed out or failed records its reason and never reports as successful.
+If training finishes before the pause takes effect, your run does not pause.
+It proceeds to record its trained model, as any finished run does.
+Its pause is reported as overtaken.
+
+Use --at-step N to pause your run at the end of step N instead of at its next boundary.
+Your run saves at the end of that step and pauses there, as --checkpoint save does.
+The saved step is N.
+The command returns once the step is set.
+"training runs get" shows the step until your run pauses there or you clear the step.
+A step the run has already reached is refused.
+So is a step at or past the one its training ends at, where "maxSteps" or a branch's step budget sets one.
+If the run finishes before the step, its pause is reported as overtaken.
+A new step replaces your run's current step to pause at.
+
+A pause with --checkpoint does not wait for your run's step.
+If your run stops before the step, it keeps the step when you resume it.
+If your run stops at or past the step, the step is cleared.
+
+You can set a step for a paused run, and it applies once you resume.
+When your run pauses at its step, the step is cleared, and you can set a later one.
+"training runs wait" ends when your run pauses at its step.
+
+Use --clear-step to clear the step.
+If your run has already started saving at the step, it still pauses there.
 
 Backend support for save differs by training method and profile.
 An unsupported combination is refused rather than quietly downgraded to latest.
@@ -30,7 +55,7 @@ Resuming requires the same GPU device count as the run was allocated.
 
 [source,shell]
 ----
-akka optimize training runs pause RUN --checkpoint latest|save [flags]
+akka optimize training runs pause RUN --checkpoint latest|save | --at-step N | --clear-step [flags]
 ----
 
 == Examples
@@ -43,6 +68,12 @@ akka optimize training runs pause RUN --checkpoint latest|save [flags]
   # Save at the next optimizer boundary, then stop
   akka optimize training runs pause 7d496e82c3a15f04 --checkpoint save
 
+  # Save at the end of step 500, then stop
+  akka optimize training runs pause 7d496e82c3a15f04 --at-step 500
+
+  # Clear the step to pause at
+  akka optimize training runs pause 7d496e82c3a15f04 --clear-step
+
   # Resume the paused run
   akka optimize training runs resume 7d496e82c3a15f04
 ----
@@ -51,7 +82,9 @@ akka optimize training runs pause RUN --checkpoint latest|save [flags]
 
 [source,text]
 ----
+      --at-step int         Save at the end of this step and pause there
       --checkpoint string   Which checkpoint to stop against: latest or save
+      --clear-step          Clear the step your run pauses at
   -h, --help                help for pause
 ----
 

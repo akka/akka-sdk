@@ -6,9 +6,15 @@ List training runs
 
 List training runs, including runs executed by pipeline stages.
 
-Use --phase open to list active and incomplete runs.
+Use --phase active to list the runs that have not finished.
+--phase open is another word for it.
 You can also filter by specific phase names, such as --phase COMPLETED or --phase TRAINING.
 Use --project to list one training project's runs, named by its name or ID.
+
+--method takes a comma-separated list of methods, such as sft,grpo.
+--dataset takes NS/NAME, which matches every version of the dataset, or NS/NAME:vN.
+--base-model takes the base model's repository.
+The filters combine, so each one narrows the listing further.
 
 A row of an archived training project is left out unless --archived is given or --project names that project.
 Such a row is marked "(archived)".
@@ -25,11 +31,17 @@ akka optimize training runs list [flags]
   # List all training runs
   akka optimize training runs list
 
-  # List active and incomplete runs
-  akka optimize training runs list --phase open
+  # List the runs that have not finished
+  akka optimize training runs list --phase active
 
   # List one project's unfinished runs
-  akka optimize training runs list --project router --phase open
+  akka optimize training runs list --project router --phase active
+
+  # List the reinforcement runs on any version of one dataset
+  akka optimize training runs list --method grpo,gspo --dataset triage/train
+
+  # List the runs over one base model
+  akka optimize training runs list --base-model Qwen/Qwen3-0.6B
 
   # Output specific fields as JSON
   akka optimize training runs list --json runId,phase,projectId
@@ -42,10 +54,13 @@ akka optimize training runs list [flags]
 
 [source,text]
 ----
-      --archived         Include the runs of archived training projects
-  -h, --help             help for list
-      --phase string     Filter by phase. Pass 'open' to list unfinished entries
-      --project string   List only this training project's runs, by name or ID
+      --archived            Include the runs of archived training projects
+      --base-model string   List only the runs over this base model, by repository
+      --dataset string      List only the runs on this dataset, as NS/NAME for every version or NS/NAME:vN
+  -h, --help                help for list
+      --method strings      List only the runs trained with these methods, comma-separated, such as sft,grpo
+      --phase string        Filter by phase. Pass 'active' to list unfinished entries; 'open' is another word for it
+      --project string      List only this training project's runs, by name or ID
 ----
 
 == Options inherited from parent commands

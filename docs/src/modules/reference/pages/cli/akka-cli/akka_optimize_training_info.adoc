@@ -4,11 +4,25 @@ Report the trainer's configuration and build
 
 == Synopsis
 
-Reports how this trainer is configured, which build is answering, and what its start did.
+Reports the trainer's configuration, the build that answers, and startup for each instance.
 
-Exits non-zero when the service is not answering, and when its start did not complete, so a readiness loop can wait on it.
-A start that did not complete leaves work the service will not pick up again before a restart;
-`Startup` names which step and what it said.
+`Startup` combines reports from every process that has reported and is not stale.
+The Instances table has one row per process incarnation, grouped by instance name.
+Each row shows the incarnation, state, start time and last report time.
+If that process's startup is incomplete, the row also shows its last error.
+A process is stale if it has not reported within the service's stale period.
+It remains listed and does not count toward `Startup`.
+An old failure from a stopped process therefore does not keep the service failed.
+A row is fresh if the process reported within that period.
+During a restart, one instance has a row for each process.
+Several rows can be fresh at once for up to that period.
+A fresh row does not confirm that its process is still running.
+
+Exits non-zero if the service does not answer, startup is incomplete, or the instances' reports cannot be read.
+You can use the exit status in a readiness loop.
+A `failed` step does not run again before a restart.
+A `retrying` startup is still running, or its records were not read in full, and needs no restart.
+`Startup` names each step that is not complete and its last error.
 
 `--jq` reads one value out, as in `--jq .backend`.
 

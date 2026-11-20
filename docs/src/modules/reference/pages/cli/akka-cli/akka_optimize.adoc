@@ -48,6 +48,7 @@ The command tree is written to drop into `akka optimize` unchanged, so nouns are
 * link:akka_optimize_registry.html[akka optimize registry]	 - The artifact registry: named models, datasets and bundles
 * link:akka_optimize_routing-classifiers.html[akka optimize routing-classifiers]	 - Named pointers to model providers, immutable once registered
 * link:akka_optimize_routing-destinations.html[akka optimize routing-destinations]	 - Which registry model version each route header value reaches
+* link:akka_optimize_routing-pipeline.html[akka optimize routing-pipeline]	 - The stages of each gateway chain, and whether the gateway records spend
 * link:akka_optimize_rulesets.html[akka optimize rulesets]	 - Attribute-matching rules that choose a destination
 * link:akka_optimize_spend.html[akka optimize spend]	 - What a period consumed, what it cost, and what one conversation cost
 * link:akka_optimize_status.html[akka optimize status]	 - Which services are answering, and at what address

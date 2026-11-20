@@ -22,6 +22,7 @@ akka local start [flags]
       --allowed-origin strings   Another origin the console may be opened at, such as a tunnel's (repeatable).
   -h, --help                     help for start
   -p, --port uint16              HTTP port for the local console. (default 9889)
+      --trace-storage-mb uint    Disk space for the traces that local services send to the console, in megabytes. The oldest traces are removed beyond it. (default 256)
 ----
 
 == Options inherited from parent commands
