@@ -108,7 +108,7 @@ When the remote agent answers a request with status 401, the client discards the
 [#tls]
 == TLS and client certificates for remote agents
 
-A remote agent at an `https://` URL is reached over TLS. By default, the client verifies the certificate of the agent against the certificates that the Java runtime trusts, and checks that the host name of the URL matches the certificate. The settings below change this for one agent. They apply to the Agent Card, to the calls, and to the token endpoint of OAuth 2.0 client credentials.
+A remote agent at an `https://` URL is reached over TLS. By default, the client verifies the certificate of the agent against the certificates that the Java runtime trusts, and checks that the host name of the URL matches the certificate. The settings below change this for one agent. They apply to the Agent Card and to the calls.
 
 [source,hocon,indent=0]
 .{sample-base-url}/doc-snippets/src/main/resources/application.conf[application.conf]
@@ -121,6 +121,8 @@ include::example$doc-snippets/src/main/resources/application.conf[tag=a2a-remote
 `client-certificate` and `client-key`:: The certificate chain and the private key that the service presents when the agent requires mutual TLS. Put the certificate of the service first, followed by any intermediate certificates. Set both settings or neither.
 
 Each of the three settings holds either PEM text or the path of a file that holds PEM text. A value that contains `-----BEGIN` is read as PEM text. Any other value is read as a path. Passing the PEM text in an environment variable avoids a file in the container image.
+
+The token endpoint of OAuth 2.0 client credentials has its own TLS settings, because it is usually another server than the agent. By default, the client verifies the token endpoint against the certificates that the Java runtime trusts and presents no client certificate. For an identity provider with a certificate from a private authority, or one that requires mutual TLS, set `auth.token-ca-bundle`, `auth.token-client-certificate` and `auth.token-client-key`. They take the same values as the settings above.
 
 The private key must be an unencrypted PKCS#8 key, which starts with `-----BEGIN PRIVATE KEY-----`. The key can be an RSA, EC or Ed25519 key. `forAgent` throws `IllegalArgumentException` for a key in another format. The `openssl pkcs8 -topk8 -nocrypt` command converts a PKCS#1 or SEC1 key.
 

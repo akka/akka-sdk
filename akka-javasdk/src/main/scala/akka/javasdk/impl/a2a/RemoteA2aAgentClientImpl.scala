@@ -71,24 +71,37 @@ private[akka] final class RemoteA2aAgentState(val system: ActorSystem[_], val se
 
   // Built when the state is created, so that a bad certificate fails when the agent is first used
   val connectionContext: Option[HttpsConnectionContext] =
-    if (settings.caBundle.isEmpty && settings.clientCertificate.isEmpty) None
+    httpsContext(settings.caBundle, settings.clientCertificate, settings.clientKey, "")
+
+  def send(request: HttpRequest): Future[HttpResponse] = sendWith(connectionContext)(request)
+
+  // The token endpoint is usually another host than the agent, so it has its own TLS settings
+  val tokens: Option[A2aOAuth2TokenCache] = settings.auth match {
+    case oauth: A2aAuth.OAuth2ClientCredentials =>
+      val tokenContext =
+        httpsContext(oauth.tokenCaBundle, oauth.tokenClientCertificate, oauth.tokenClientKey, "auth.token-")
+      Some(new A2aOAuth2TokenCache(oauth, sendWith(tokenContext), mapper))
+    case _ => None
+  }
+
+  private def sendWith(context: Option[HttpsConnectionContext])(request: HttpRequest): Future[HttpResponse] =
+    context.fold(http.singleRequest(request))(ctx => http.singleRequest(request, ctx))
+
+  private def httpsContext(
+      caBundle: Option[String],
+      clientCertificate: Option[String],
+      clientKey: Option[String],
+      keyPrefix: String): Option[HttpsConnectionContext] =
+    if (caBundle.isEmpty && clientCertificate.isEmpty) None
     else
       Some(
         ConnectionContext.httpsClient(A2aTls.sslContext(
-          settings.caBundle.map(pemText(_, "ca-bundle")),
-          settings.clientCertificate.map(pemText(_, "client-certificate")),
-          settings.clientKey.map(pemText(_, "client-key")))))
+          caBundle.map(pemText(_, s"${keyPrefix}ca-bundle")),
+          clientCertificate.map(pemText(_, s"${keyPrefix}client-certificate")),
+          clientKey.map(pemText(_, s"${keyPrefix}client-key")))))
 
   private def pemText(value: String, key: String): String =
     A2aRemoteAgentSettings.pemText(value, s"akka.javasdk.a2a.remote-agents.${settings.name}.$key")
-
-  def send(request: HttpRequest): Future[HttpResponse] =
-    connectionContext.fold(http.singleRequest(request))(ctx => http.singleRequest(request, ctx))
-
-  val tokens: Option[A2aOAuth2TokenCache] = settings.auth match {
-    case oauth: A2aAuth.OAuth2ClientCredentials => Some(new A2aOAuth2TokenCache(oauth, send, mapper))
-    case _                                      => None
-  }
 
   private val card = new AtomicReference[Option[CachedCard]](None)
 

@@ -40,7 +40,13 @@ class A2aTlsSpec
   private val wrongHostBinding =
     Await.result(wrongHostServer.start(Some(pki.serverContext(pki.wrongHostCertificate, pki.wrongHostKey))), 10.seconds)
 
+  // TLS with a certificate of the test authority, and no client certificate required
+  private val tlsServer = new FakeA2aServer
+  private val tlsBinding =
+    Await.result(tlsServer.start(Some(pki.serverContext(pki.serverCertificate, pki.serverKey))), 10.seconds)
+
   override protected def afterAll(): Unit = {
+    tlsBinding.unbind()
     mutualTlsBinding.unbind()
     wrongHostBinding.unbind()
     super.afterAll()
@@ -55,6 +61,11 @@ class A2aTlsSpec
   }
 
   private def ca = "ca-bundle" -> pki.caCertificate
+  private def oauth(tokenUrl: String) = Seq(
+    "auth.type" -> "oauth2-client-credentials",
+    "auth.token-url" -> tokenUrl,
+    "auth.client-id" -> "id",
+    "auth.client-secret" -> "secret")
   private def clientCert = Seq("client-certificate" -> pki.clientCertificate, "client-key" -> pki.clientKey)
 
   "TLS to a remote agent" should {
@@ -123,6 +134,41 @@ class A2aTlsSpec
       e.getMessage should include("remote-agents.agent.client-key")
       (e.getMessage should not).include(body.take(40))
       e.getCause shouldBe null
+    }
+
+    "reach the token endpoint with the trust of the JVM, not the CA bundle of the agent" in {
+      val e = intercept[A2aClientException](client(tlsServer.cardUrl, ca +: oauth(tlsServer.tokenUrl): _*).card())
+      e.getMessage should include("PKIX path building failed")
+      tlsServer.tokenRequests.get() shouldBe 0
+    }
+
+    "reach the token endpoint with its own CA bundle" in {
+      client(tlsServer.cardUrl, ca +: ("auth.token-ca-bundle" -> pki.caCertificate) +: oauth(tlsServer.tokenUrl): _*)
+        .card()
+        .name() shouldBe "fake"
+    }
+
+    "not present the client certificate of the agent to the token endpoint" in {
+      val settings =
+        Seq(ca, "auth.token-ca-bundle" -> pki.caCertificate) ++ clientCert ++ oauth(mutualTlsServer.tokenUrl)
+      intercept[A2aClientException](client(tlsServer.cardUrl, settings: _*).card()).getMessage should include(
+        "certificate_required")
+    }
+
+    "present the token client certificate to the token endpoint" in {
+      val settings = Seq(
+        ca,
+        "auth.token-ca-bundle" -> pki.caCertificate,
+        "auth.token-client-certificate" -> pki.clientCertificate,
+        "auth.token-client-key" -> pki.clientKey) ++ oauth(mutualTlsServer.tokenUrl)
+      client(tlsServer.cardUrl, settings: _*).card().name() shouldBe "fake"
+    }
+
+    "reject a token client certificate with no key at configuration time" in {
+      intercept[IllegalArgumentException](client(
+        tlsServer.cardUrl,
+        oauth(tlsServer.tokenUrl) :+ ("auth.token-client-certificate" -> pki.clientCertificate): _*)).getMessage should
+      include("must be set together")
     }
 
     "reject a CA bundle that holds no certificate" in {

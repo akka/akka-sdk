@@ -42,9 +42,15 @@ private[akka] object A2aAuth {
       clientId: String,
       clientSecret: String,
       scope: Option[String],
-      authMethod: TokenEndpointAuthMethod = ClientSecretBasic)
+      authMethod: TokenEndpointAuthMethod = ClientSecretBasic,
+      tokenCaBundle: Option[String] = None,
+      tokenClientCertificate: Option[String] = None,
+      tokenClientKey: Option[String] = None)
       extends A2aAuth {
-    override def toString: String = s"OAuth2ClientCredentials($tokenUrl,$clientId,***,$scope,$authMethod)"
+    override def toString: String =
+      s"OAuth2ClientCredentials($tokenUrl,$clientId,***,$scope,$authMethod," +
+      s"tokenCaBundle=${tokenCaBundle.isDefined},tokenClientCertificate=${tokenClientCertificate.isDefined}," +
+      "tokenClientKey=***)"
   }
 
   /**
@@ -125,6 +131,13 @@ private[akka] object A2aRemoteAgentSettings {
       value
     }
     def duration(key: String): FiniteDuration = config.getDuration(key).toScala
+    def certificateAndKey(certificateKey: String, keyKey: String): (Option[String], Option[String]) = {
+      val certificate = optional(certificateKey)
+      val key = optional(keyKey)
+      if (certificate.isDefined != key.isDefined)
+        throw new IllegalArgumentException(s"${where(certificateKey)} and ${where(keyKey)} must be set together")
+      (certificate, key)
+    }
     def credentialUrl(key: String, value: String): String = {
       if (!safeForCredentials(value))
         throw new IllegalArgumentException(
@@ -138,6 +151,8 @@ private[akka] object A2aRemoteAgentSettings {
       case "header" =>
         A2aAuth.Header(required("auth.header-name"), required("auth.header-value"))
       case "oauth2-client-credentials" =>
+        val (tokenClientCertificate, tokenClientKey) =
+          certificateAndKey("auth.token-client-certificate", "auth.token-client-key")
         A2aAuth.OAuth2ClientCredentials(
           credentialUrl("auth.token-url", httpUrl("auth.token-url", required("auth.token-url"))),
           required("auth.client-id"),
@@ -149,17 +164,16 @@ private[akka] object A2aRemoteAgentSettings {
             case Some(other) =>
               throw new IllegalArgumentException(
                 s"${where("auth.token-endpoint-auth-method")} must be client_secret_basic or client_secret_post, got [$other]")
-          })
+          },
+          optional("auth.token-ca-bundle"),
+          tokenClientCertificate,
+          tokenClientKey)
       case other =>
         throw new IllegalArgumentException(
           s"${where("auth.type")} must be one of none, header, oauth2-client-credentials, got [$other]")
     }
 
-    val clientCertificate = optional("client-certificate")
-    val clientKey = optional("client-key")
-    if (clientCertificate.isDefined != clientKey.isDefined)
-      throw new IllegalArgumentException(
-        s"${where("client-certificate")} and ${where("client-key")} must be set together")
+    val (clientCertificate, clientKey) = certificateAndKey("client-certificate", "client-key")
 
     val cardUrl = httpUrl("card-url", required("card-url"))
     if (auth != A2aAuth.NoAuth) credentialUrl("card-url", cardUrl)
