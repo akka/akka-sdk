@@ -196,6 +196,64 @@ public class TaskClientIntegrationTest extends TestKitSupport {
         .satisfies(ex -> assertThat(((TaskException.TypeMismatch) ex).taskId()).isEqualTo(taskId));
   }
 
+  // --- cancel ---
+
+  @Test
+  public void cancelPendingTask() {
+    var taskId = newTaskId();
+    componentClient.forTask(taskId).create(TEST_TASK.instructions("do something"));
+    componentClient.forTask(taskId).cancel("no longer needed");
+
+    var snapshot = componentClient.forTask(taskId).get(TEST_TASK);
+    assertThat(snapshot.status()).isEqualTo(TaskStatus.CANCELLED);
+    assertThat(snapshot.failureReason()).contains("no longer needed");
+
+    assertThatThrownBy(() -> componentClient.forTask(taskId).result(TEST_TASK))
+        .isInstanceOf(TaskException.Cancelled.class)
+        .satisfies(
+            ex ->
+                assertThat(((TaskException.Cancelled) ex).reason()).isEqualTo("no longer needed"));
+  }
+
+  // --- delete ---
+
+  @Test
+  public void deleteCompletedTask() {
+    var taskId = newTaskId();
+    componentClient.forTask(taskId).create(TEST_TASK.instructions("do something"));
+    componentClient.forTask(taskId).assign("reviewer@example.com");
+    componentClient.forTask(taskId).complete(TEST_TASK, new TestResult("done", 100));
+
+    componentClient.forTask(taskId).delete();
+
+    assertThatThrownBy(() -> componentClient.forTask(taskId).get(TEST_TASK))
+        .isInstanceOf(TaskException.NotFound.class)
+        .satisfies(ex -> assertThat(((TaskException.NotFound) ex).taskId()).isEqualTo(taskId));
+
+    componentClient.forTask(taskId).delete();
+  }
+
+  @Test
+  public void deleteOfTaskThatHasNotEndedFails() {
+    var taskId = newTaskId();
+    componentClient.forTask(taskId).create(TEST_TASK.instructions("do something"));
+
+    assertThatThrownBy(() -> componentClient.forTask(taskId).delete())
+        .hasMessageContaining("Task can only be deleted when COMPLETED, FAILED or CANCELLED");
+
+    var snapshot = componentClient.forTask(taskId).get(TEST_TASK);
+    assertThat(snapshot.status()).isEqualTo(TaskStatus.PENDING);
+  }
+
+  @Test
+  public void getOfTaskThatDoesNotExistFailsWithNotFound() {
+    var taskId = newTaskId();
+
+    assertThatThrownBy(() -> componentClient.forTask(taskId).get(TEST_TASK))
+        .isInstanceOf(TaskException.NotFound.class)
+        .satisfies(ex -> assertThat(((TaskException.NotFound) ex).taskId()).isEqualTo(taskId));
+  }
+
   // --- notificationStream ---
 
   @Test

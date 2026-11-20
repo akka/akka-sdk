@@ -5,8 +5,9 @@
 package akka.javasdk.agent.task;
 
 /**
- * Base exception for task terminal states. Thrown by {@link
- * akka.javasdk.client.TaskClient#resultAsync} when a task reaches a non-successful terminal state.
+ * Base exception for the failures of a {@link akka.javasdk.client.TaskClient} operation that are
+ * specific to tasks. The subtype names the cause: the task failed or was cancelled, a rule rejected
+ * its result, the task was read with a mismatched definition, or the task does not exist.
  */
 public abstract sealed class TaskException extends RuntimeException {
 
@@ -19,12 +20,15 @@ public abstract sealed class TaskException extends RuntimeException {
     this.reason = reason;
   }
 
-  /** The ID of the task that failed or was cancelled. */
+  /** The ID of the task. */
   public String taskId() {
     return taskId;
   }
 
-  /** The reason the task failed or was cancelled. */
+  /**
+   * Why the operation failed. For {@link Failed} and {@link Cancelled}, the reason the task failed
+   * or was cancelled.
+   */
   public String reason() {
     return reason;
   }
@@ -89,6 +93,15 @@ public abstract sealed class TaskException extends RuntimeException {
               + "] but was requested as ["
               + requestedType
               + "]");
+    }
+  }
+
+  /**
+   * Thrown by an operation of {@link akka.javasdk.client.TaskClient} when the task does not exist.
+   */
+  public static final class NotFound extends TaskException {
+    public NotFound(String taskId) {
+      super(taskId, "Task [" + taskId + "] does not exist");
     }
   }
 }

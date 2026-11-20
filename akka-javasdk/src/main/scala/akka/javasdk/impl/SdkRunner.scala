@@ -93,6 +93,7 @@ import akka.javasdk.impl.agent.GuardrailProvider
 import akka.javasdk.impl.agent.GuardrailProvider.AgentGuardrails
 import akka.javasdk.impl.agent.OverrideModelProvider
 import akka.javasdk.impl.agent.PromptTemplateClient
+import akka.javasdk.impl.agent.TaskExpiry
 import akka.javasdk.impl.agent.autonomous.AgentDefinitionImpl
 import akka.javasdk.impl.agent.autonomous.CapabilityConverter
 import akka.javasdk.impl.agent.autonomous.capability.TaskAcceptanceImpl
@@ -663,6 +664,8 @@ private final class Sdk(
     new GuardedEvaluationClient(spiEvaluationClient, applicationConfig)
   private val sdkConfig = applicationConfig.getConfig("akka.javasdk")
   private val sdkSettings = Settings(sdkConfig, spiSettings)
+  // The clients read it again for each task. Reading it here fails the start on a wrong value.
+  TaskExpiry.defaultExpireAfter(applicationConfig)
 
   spiSettings.devMode.foreach { devMode =>
     if (devMode.backoffice.refreshToken.nonEmpty) {

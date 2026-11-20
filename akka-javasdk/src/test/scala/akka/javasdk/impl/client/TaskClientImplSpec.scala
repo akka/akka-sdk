@@ -16,6 +16,7 @@ import scala.jdk.FutureConverters._
 
 import akka.NotUsed
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
+import akka.javasdk.CommandException
 import akka.javasdk.agent.task.Task
 import akka.javasdk.agent.task.TaskAttachment
 import akka.javasdk.agent.task.TaskEntity
@@ -25,6 +26,7 @@ import akka.javasdk.agent.task.TaskRule
 import akka.javasdk.agent.task.TaskState
 import akka.javasdk.agent.task.TaskStatus
 import akka.javasdk.agent.task.TaskTemplate
+import akka.javasdk.impl.agent.task.TaskNotFoundCommandException
 import akka.javasdk.impl.serialization.Serializer
 import akka.runtime.sdk.spi._
 import akka.stream.SystemMaterializer
@@ -105,7 +107,8 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
       Optional.empty(),
       Seq.empty[TaskAttachment].asJava,
       Seq.empty[String].asJava,
-      ruleClassNames)
+      ruleClassNames,
+      Optional.empty())
 
   private def entityReplyFor(state: TaskState): EntityReply =
     new EntityReply(serializer.toBytes(state), SpiMetadata.empty, None)
@@ -143,6 +146,20 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
     def lastCommand: RecordedCommand = commands.last
   }
 
+  /** Mock EntityClient that records commands and replies to each with the given error. */
+  private class ErrorEntityClient(error: CommandException) extends EntityClient {
+
+    val commands: mutable.Buffer[RecordedCommand] = mutable.Buffer.empty
+
+    override def send(request: EntityRequest): Future[EntityReply] = {
+      commands += RecordedCommand(request.methodName, request.payload)
+      Future.successful(new EntityReply(BytesPayload.empty, SpiMetadata.empty, Some(serializer.toBytes(error))))
+    }
+
+    override def notificationStream(request: EntityRequest): Source[EntityReply, NotUsed] =
+      Source.never[EntityReply].mapMaterializedValue(_ => NotUsed)
+  }
+
   private def mockComponentClients(entityClient: EntityClient): ComponentClients =
     new ComponentClients {
       override def eventSourcedEntityClient: EntityClient = entityClient
@@ -158,8 +175,16 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
       override def decisionModelClient: SpiDecisionModelClient = null
     }
 
-  private def createClient(entityClient: EntityClient): TaskClientImpl =
-    new TaskClientImpl("test-task", mockComponentClients(entityClient), serializer, None, materializer)
+  private def createClient(
+      entityClient: EntityClient,
+      defaultExpireAfter: Option[java.time.Duration] = None): TaskClientImpl =
+    new TaskClientImpl(
+      "test-task",
+      mockComponentClients(entityClient),
+      serializer,
+      None,
+      materializer,
+      defaultExpireAfter)
 
   private def resultFuture(client: TaskClientImpl): Future[TestResult] =
     client.resultAsync(TEST_TASK).asScala
@@ -196,6 +221,21 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
       request.name() shouldBe "Test task"
       request.description() shouldBe "A test task"
       request.instructions() shouldBe "do something"
+    }
+
+    "send the expiry of the task, else the default, else none" in {
+      def sentExpireAfter(task: Task[TestResult], defaultExpireAfter: Option[java.time.Duration]) = {
+        val mock = mockEntityClient(taskState(TaskStatus.PENDING))
+        createClient(mock, defaultExpireAfter).createAsync(task).asScala.futureValue
+        mock.commands.find(_.methodName == "Create").get.payloadAs[TaskEntity.CreateRequest].expireAfter()
+      }
+      val tenMinutes = java.time.Duration.ofMinutes(10)
+      val oneHour = java.time.Duration.ofHours(1)
+
+      sentExpireAfter(TEST_TASK.expireAfter(tenMinutes), Some(oneHour)) shouldBe tenMinutes
+      sentExpireAfter(TEST_TASK.expireAfter(tenMinutes), None) shouldBe tenMinutes
+      sentExpireAfter(TEST_TASK, Some(oneHour)) shouldBe oneHour
+      sentExpireAfter(TEST_TASK, None) shouldBe null
     }
   }
 
@@ -250,6 +290,31 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
       val failCmd = mock.commands.find(_.methodName == "Fail").get
       val reason = failCmd.payloadAs[String]
       reason shouldBe "not good enough"
+    }
+  }
+
+  "TaskClientImpl cancelAsync" should {
+
+    "send Cancel command with reason" in {
+      val mock = mockEntityClient(taskState(TaskStatus.PENDING))
+      val client = createClient(mock)
+
+      client.cancelAsync("no longer needed").asScala.futureValue
+
+      val cancelCmd = mock.commands.find(_.methodName == "Cancel").get
+      cancelCmd.payloadAs[String] shouldBe "no longer needed"
+    }
+  }
+
+  "TaskClientImpl deleteAsync" should {
+
+    "send Delete command" in {
+      val mock = mockEntityClient(taskState(TaskStatus.COMPLETED))
+      val client = createClient(mock)
+
+      client.deleteAsync().asScala.futureValue
+
+      mock.commands.map(_.methodName) shouldBe Seq("Delete")
     }
   }
 
@@ -546,6 +611,58 @@ class TaskClientImplSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
       mock.commands.map(_.methodName) should contain("RejectResult")
       val request = mock.commands.find(_.methodName == "RejectResult").get.payloadAs[TaskEntity.RejectResultRequest]
       request.reason() shouldBe "value must not contain banned content"
+    }
+  }
+
+  "TaskClientImpl for a task that does not exist" should {
+
+    def notFoundClient(): TaskClientImpl =
+      createClient(new ErrorEntityClient(new TaskNotFoundCommandException()))
+
+    def notFound(future: Future[_]): TaskException.NotFound =
+      future.failed.futureValue match {
+        case e: TaskException.NotFound => e
+        case other                     => fail(s"Expected TaskException.NotFound but got ${other.getClass.getName}")
+      }
+
+    def assertNotFound(future: Future[_]): Unit = {
+      val ex = notFound(future)
+      ex.taskId() shouldBe "test-task"
+      ex.reason() shouldBe "Task [test-task] does not exist"
+    }
+
+    "fail getAsync with NotFound" in {
+      assertNotFound(notFoundClient().getAsync(TEST_TASK).asScala)
+    }
+
+    "fail assignAsync with NotFound" in {
+      assertNotFound(notFoundClient().assignAsync("reviewer@example.com").asScala)
+    }
+
+    "fail completeAsync with NotFound" in {
+      assertNotFound(notFoundClient().completeAsync(TEST_TASK, new TestResult("done", 42)).asScala)
+    }
+
+    "fail failAsync with NotFound" in {
+      assertNotFound(notFoundClient().failAsync("not good enough").asScala)
+    }
+
+    "fail resultAsync with NotFound" in {
+      assertNotFound(resultFuture(notFoundClient()))
+    }
+
+    "fail with another CommandException as it is" in {
+      val client = createClient(new ErrorEntityClient(new CommandException("Task can only be assigned when PENDING")))
+
+      val ex = client.assignAsync("reviewer@example.com").asScala.failed.futureValue
+      ex.getClass shouldBe classOf[CommandException]
+      ex.getMessage shouldBe "Task can only be assigned when PENDING"
+    }
+
+    "decode the not found error reply as TaskNotFoundCommandException" in {
+      val decoded = serializer.json.exceptionFromBytes(serializer.toBytes(new TaskNotFoundCommandException()))
+      decoded shouldBe a[TaskNotFoundCommandException]
+      decoded.getMessage shouldBe "Task does not exist"
     }
   }
 

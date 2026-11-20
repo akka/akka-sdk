@@ -4,11 +4,17 @@
 
 package akka.javasdk.agent.task;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/** State of a task entity. */
+/**
+ * State of a task entity.
+ *
+ * @param expireAfter how long after the task ends it is deleted, or empty to keep it until it is
+ *     deleted
+ */
 public record TaskState(
     String taskId,
     String name,
@@ -22,7 +28,50 @@ public record TaskState(
     Optional<String> assignee,
     List<TaskAttachment> attachments,
     List<String> reassignmentContext,
-    List<String> ruleClassNames) {
+    List<String> ruleClassNames,
+    Optional<Duration> expireAfter) {
+
+  public TaskState {
+    // A Java caller can pass null. Jackson already reads a missing property as Optional.empty().
+    if (expireAfter == null) {
+      expireAfter = Optional.empty();
+    }
+  }
+
+  /**
+   * @deprecated Use the constructor with {@code expireAfter}.
+   */
+  @Deprecated(since = "3.7.3", forRemoval = true)
+  public TaskState(
+      String taskId,
+      String name,
+      String description,
+      String instructions,
+      TaskStatus status,
+      String resultTypeName,
+      Optional<String> result,
+      Optional<String> failureReason,
+      List<String> dependencyTaskIds,
+      Optional<String> assignee,
+      List<TaskAttachment> attachments,
+      List<String> reassignmentContext,
+      List<String> ruleClassNames) {
+    this(
+        taskId,
+        name,
+        description,
+        instructions,
+        status,
+        resultTypeName,
+        result,
+        failureReason,
+        dependencyTaskIds,
+        assignee,
+        attachments,
+        reassignmentContext,
+        ruleClassNames,
+        Optional.empty());
+  }
 
   /** The state of a task that has not been created yet. */
   public static TaskState empty() {
@@ -39,7 +88,8 @@ public record TaskState(
         Optional.empty(),
         List.of(),
         List.of(),
-        List.of());
+        List.of(),
+        Optional.empty());
   }
 
   /** Copy with the given status. */
@@ -57,7 +107,8 @@ public record TaskState(
         assignee,
         attachments,
         reassignmentContext,
-        ruleClassNames);
+        ruleClassNames,
+        expireAfter);
   }
 
   /** Copy with the given assignee, moving to {@code ASSIGNED}. */
@@ -75,7 +126,8 @@ public record TaskState(
         Optional.of(assignee),
         attachments,
         reassignmentContext,
-        ruleClassNames);
+        ruleClassNames,
+        expireAfter);
   }
 
   /** Copy with the given result, moving to {@code COMPLETED}. */
@@ -93,7 +145,8 @@ public record TaskState(
         assignee,
         attachments,
         reassignmentContext,
-        ruleClassNames);
+        ruleClassNames,
+        expireAfter);
   }
 
   /** Copy with the rejection reason, moving to {@code RESULT_REJECTED}. */
@@ -111,7 +164,8 @@ public record TaskState(
         assignee,
         attachments,
         reassignmentContext,
-        ruleClassNames);
+        ruleClassNames,
+        expireAfter);
   }
 
   /** Copy with the failure reason, moving to {@code FAILED}. */
@@ -129,7 +183,8 @@ public record TaskState(
         assignee,
         attachments,
         reassignmentContext,
-        ruleClassNames);
+        ruleClassNames,
+        expireAfter);
   }
 
   /** Copy with the cancellation reason, moving to {@code CANCELLED}. */
@@ -147,7 +202,8 @@ public record TaskState(
         assignee,
         attachments,
         reassignmentContext,
-        ruleClassNames);
+        ruleClassNames,
+        expireAfter);
   }
 
   /** Copy with a new assignee, appending the handover context. */
@@ -167,6 +223,7 @@ public record TaskState(
         Optional.of(newAssignee),
         attachments,
         List.copyOf(updated),
-        ruleClassNames);
+        ruleClassNames,
+        expireAfter);
   }
 }

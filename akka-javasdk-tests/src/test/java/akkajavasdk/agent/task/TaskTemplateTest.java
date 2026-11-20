@@ -8,6 +8,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import akka.javasdk.agent.task.TaskTemplate;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
@@ -84,5 +86,49 @@ public class TaskTemplateTest {
 
     assertThat(original.description()).isEqualTo("original");
     assertThat(modified.description()).isEqualTo("modified");
+  }
+
+  @Test
+  public void shouldGiveExpiryToResolvedTasks() {
+    var tenMinutes = Duration.ofMinutes(10);
+    var template =
+        TaskTemplate.define("task")
+            .instructionTemplate("Implement: {feature}.")
+            .expireAfter(tenMinutes);
+
+    assertThat(template.expireAfter()).contains(tenMinutes);
+    assertThat(template.params(Map.of("feature", "auth")).expireAfter()).contains(tenMinutes);
+    assertThat(template.instructions("Just do everything").expireAfter()).contains(tenMinutes);
+    assertThat(TaskTemplate.define("task").params(Map.of()).expireAfter()).isEmpty();
+  }
+
+  @Test
+  public void shouldKeepExpiryThroughEveryBuilderMethod() {
+    var tenMinutes = Duration.ofMinutes(10);
+    var template = TaskTemplate.define("task").expireAfter(tenMinutes);
+
+    assertThat(template.description("d").expireAfter()).contains(tenMinutes);
+    assertThat(template.instructionTemplate("Do {x}.").expireAfter()).contains(tenMinutes);
+    assertThat(template.rules(TaskTest.TextRule.class).expireAfter()).contains(tenMinutes);
+    assertThat(template.resultConformsTo(CodeDeliverable.class).expireAfter()).contains(tenMinutes);
+  }
+
+  @Test
+  public void shouldRejectExpiryThatIsNotPositive() {
+    var template = TaskTemplate.define("task");
+    assertThatThrownBy(() -> template.expireAfter(null))
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> template.expireAfter(Duration.ZERO))
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> template.expireAfter(Duration.ofSeconds(-1)))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  public void shouldRejectExpiryThatEndsAfterTheYear9999() {
+    var template = TaskTemplate.define("task");
+    assertThatThrownBy(() -> template.expireAfter(ChronoUnit.FOREVER.getDuration()))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("before the year 10000");
   }
 }
