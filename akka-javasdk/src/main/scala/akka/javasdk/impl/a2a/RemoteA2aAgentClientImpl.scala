@@ -75,9 +75,12 @@ private[akka] final class RemoteA2aAgentState(val system: ActorSystem[_], val se
     else
       Some(
         ConnectionContext.httpsClient(A2aTls.sslContext(
-          settings.caBundle.map(A2aRemoteAgentSettings.pemText),
-          settings.clientCertificate.map(A2aRemoteAgentSettings.pemText),
-          settings.clientKey.map(A2aRemoteAgentSettings.pemText))))
+          settings.caBundle.map(pemText(_, "ca-bundle")),
+          settings.clientCertificate.map(pemText(_, "client-certificate")),
+          settings.clientKey.map(pemText(_, "client-key")))))
+
+  private def pemText(value: String, key: String): String =
+    A2aRemoteAgentSettings.pemText(value, s"akka.javasdk.a2a.remote-agents.${settings.name}.$key")
 
   def send(request: HttpRequest): Future[HttpResponse] =
     connectionContext.fold(http.singleRequest(request))(ctx => http.singleRequest(request, ctx))

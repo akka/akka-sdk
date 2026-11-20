@@ -116,6 +116,15 @@ class A2aTlsSpec
           "client-key" -> rsaKey)).getMessage should include("PKCS#8")
     }
 
+    "name the setting, and not print the key, when a client key has no PEM header" in {
+      val body = pki.clientKey.linesIterator.filterNot(_.startsWith("-----")).mkString
+      val e = intercept[IllegalArgumentException](
+        client(mutualTlsServer.cardUrl, ca, "client-certificate" -> pki.clientCertificate, "client-key" -> body))
+      e.getMessage should include("remote-agents.agent.client-key")
+      (e.getMessage should not).include(body.take(40))
+      e.getCause shouldBe null
+    }
+
     "reject a CA bundle that holds no certificate" in {
       intercept[IllegalArgumentException](client(mutualTlsServer.cardUrl, "ca-bundle" -> "-----BEGIN NOTHING-----\nx"))
     }

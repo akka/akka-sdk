@@ -173,15 +173,18 @@ private[akka] object A2aRemoteAgentSettings {
 
   /**
    * PEM text is used as it is. Anything else is the path of a file that holds the PEM text.
+   *
+   * @param setting
+   *   the setting that holds the value, named in the error
    */
-  def pemText(value: String): String =
+  def pemText(value: String, setting: String): String =
     if (value.contains("-----BEGIN")) value
     else
       try new String(Files.readAllBytes(Path.of(value)), StandardCharsets.UTF_8)
       catch {
-        case NonFatal(e) =>
+        // Neither the value nor the cause is in the error: a key without its PEM header would be printed
+        case NonFatal(_) =>
           throw new IllegalArgumentException(
-            s"Expected PEM text or the path of a readable PEM file, but could not read a file at [$value]",
-            e)
+            s"$setting must be PEM text or the path of a readable PEM file, and no file could be read at that path")
       }
 }

@@ -189,14 +189,24 @@ class A2aRemoteAgentSettingsSpec extends AnyWordSpec with Matchers {
     }
 
     "read PEM text as it is and a file by its path" in {
-      A2aRemoteAgentSettings.pemText("-----BEGIN CERTIFICATE-----\nabc") shouldBe "-----BEGIN CERTIFICATE-----\nabc"
+      A2aRemoteAgentSettings.pemText(
+        "-----BEGIN CERTIFICATE-----\nabc",
+        "ca") shouldBe "-----BEGIN CERTIFICATE-----\nabc"
       val file = Files.createTempFile("a2a-pem", ".pem")
       try {
         Files.writeString(file, "from file")
-        A2aRemoteAgentSettings.pemText(file.toString) shouldBe "from file"
+        A2aRemoteAgentSettings.pemText(file.toString, "ca") shouldBe "from file"
       } finally Files.delete(file)
       intercept[IllegalArgumentException](
-        A2aRemoteAgentSettings.pemText("/no/such/file.pem")).getMessage should include("PEM text or the path")
+        A2aRemoteAgentSettings.pemText("/no/such/file.pem", "ca")).getMessage should include("PEM text or the path")
+    }
+
+    "not print a value that is neither PEM text nor a readable file" in {
+      val headerlessKey = "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7"
+      val e = intercept[IllegalArgumentException](A2aRemoteAgentSettings.pemText(headerlessKey, "x.client-key"))
+      e.getMessage should include("x.client-key")
+      (e.getMessage should not).include(headerlessKey)
+      e.getCause shouldBe null
     }
   }
 }
