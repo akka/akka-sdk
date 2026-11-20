@@ -80,7 +80,13 @@ private[akka] final class RemoteA2aAgentState(val system: ActorSystem[_], val se
     case oauth: A2aAuth.OAuth2ClientCredentials =>
       val tokenContext =
         httpsContext(oauth.tokenCaBundle, oauth.tokenClientCertificate, oauth.tokenClientKey, "auth.token-")
-      Some(new A2aOAuth2TokenCache(oauth, sendWith(tokenContext), mapper))
+      Some(
+        new A2aOAuth2TokenCache(
+          oauth,
+          sendWith(tokenContext),
+          mapper,
+          settings.timeout,
+          system.classicSystem.scheduler))
     case _ => None
   }
 

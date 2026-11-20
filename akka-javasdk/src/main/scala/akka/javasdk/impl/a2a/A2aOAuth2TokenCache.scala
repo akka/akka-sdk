@@ -14,6 +14,7 @@ import scala.concurrent.Promise
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
+import akka.actor.Scheduler
 import akka.annotation.InternalApi
 import akka.http.scaladsl.model.FormData
 import akka.http.scaladsl.model.HttpMethods
@@ -43,6 +44,8 @@ private[akka] final class A2aOAuth2TokenCache(
     credentials: A2aAuth.OAuth2ClientCredentials,
     send: HttpRequest => Future[HttpResponse],
     mapper: ObjectMapper,
+    timeout: FiniteDuration,
+    scheduler: Scheduler,
     now: () => Instant = () => Instant.now())(implicit ec: ExecutionContext, materializer: Materializer) {
   import A2aOAuth2TokenCache.Token
 
@@ -65,7 +68,7 @@ private[akka] final class A2aOAuth2TokenCache(
           val promise = Promise[Token]()
           inFlight = Some(promise.future)
           val fetched =
-            try fetch()
+            try withTimeout(fetch())
             catch { case NonFatal(e) => Future.failed(e) }
           fetched.onComplete { result =>
             synchronized {
@@ -85,6 +88,15 @@ private[akka] final class A2aOAuth2TokenCache(
    */
   def invalidate(rejected: String): Unit = synchronized {
     if (cached.exists(_.value == rejected)) cached = None
+  }
+
+  private def withTimeout(fetched: Future[Token]): Future[Token] = {
+    val timedOut = Promise[Token]()
+    val timer = scheduler.scheduleOnce(timeout)(
+      timedOut.tryFailure(
+        new A2aClientException(s"The token endpoint [${credentials.tokenUrl}] did not answer within $timeout")))
+    fetched.onComplete(_ => timer.cancel())
+    Future.firstCompletedOf(Seq(fetched, timedOut.future))
   }
 
   private def fetch(): Future[Token] = {

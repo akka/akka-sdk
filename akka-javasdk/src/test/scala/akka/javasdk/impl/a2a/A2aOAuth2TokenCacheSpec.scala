@@ -92,6 +92,8 @@ class A2aOAuth2TokenCacheSpec
       A2aAuth.OAuth2ClientCredentials(tokenUrl, clientId, clientSecret, scope, authMethod),
       http.singleRequest(_),
       JsonSupport.getObjectMapper,
+      10.seconds,
+      system.classicSystem.scheduler,
       () => clock)
 
   private def reset(): Unit = {
@@ -245,9 +247,26 @@ class A2aOAuth2TokenCacheSpec
             case 2 => Future.failed(new IllegalStateException("failed"))
             case _ => Future.successful(okResponse)
           },
-        JsonSupport.getObjectMapper)(scala.concurrent.ExecutionContext.parasitic, materializer)
+        JsonSupport.getObjectMapper,
+        10.seconds,
+        system.classicSystem.scheduler)(scala.concurrent.ExecutionContext.parasitic, materializer)
       (the[IllegalStateException] thrownBy get(c) should have).message("thrown")
       (the[IllegalStateException] thrownBy get(c) should have).message("failed")
+      get(c) shouldBe "t"
+    }
+
+    "give up on a token endpoint that does not answer within the timeout, and ask again" in {
+      val answering = new java.util.concurrent.atomic.AtomicBoolean(false)
+      val okResponse =
+        HttpResponse(entity = HttpEntity(ContentTypes.`application/json`, """{"access_token":"t","expires_in":3600}"""))
+      val c = new A2aOAuth2TokenCache(
+        A2aAuth.OAuth2ClientCredentials("https://t.example.com/t", "id", "secret", None),
+        _ => if (answering.get()) Future.successful(okResponse) else Future.never,
+        JsonSupport.getObjectMapper,
+        200.millis,
+        system.classicSystem.scheduler)
+      intercept[A2aClientException](get(c)).getMessage should include("did not answer within 200 milliseconds")
+      answering.set(true)
       get(c) shouldBe "t"
     }
 
