@@ -109,7 +109,8 @@ private[javasdk] final case class ComponentClientImpl(
         runtimeComponentClients,
         agentCapabilityConverter,
         serializer,
-        callMetadata)
+        callMetadata,
+        telemetryContext)
 
   override def forTask(taskId: String): TaskClient =
     if (taskId eq null) throw new NullPointerException("Task ID is null")
