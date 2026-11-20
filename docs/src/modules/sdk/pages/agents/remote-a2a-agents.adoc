@@ -1,0 +1,125 @@
+= Remote A2A agents
+:page-component-type: agent
+:page-summary: A remote A2A agent is an agent in another system that your service calls over the Agent2Agent (A2A) protocol, with credentials and TLS settings that you configure by name.
+:page-when-to-use: Calling an agent that another team or vendor runs, and that publishes an Agent Card.
+:page-related: sdk:agents/extending.adoc, sdk:mcp-endpoints.adoc, sdk:setup-and-dependency-injection.adoc
+:page-prerequisites: An Akka project and the URL of the remote agent's Agent Card.
+:page-persona: builder-developer, builder-ai-ml
+
+include::ROOT:partial$include.adoc[]
+
+A remote A2A agent is an agent that runs outside your service and speaks the Agent2Agent (A2A) protocol. The remote agent publishes an Agent Card, which is a JSON document that names the agent, lists its skills, and says how to reach it. A skill is one task that the agent can do. Your service calls the agent with `A2aClient`, which reads the Agent Card, sends the requests, and applies the credentials and TLS settings that you configure for that agent.
+
+This page describes how to name a remote agent in configuration, how to give your service credentials for it, and how to set the certificates that TLS uses to reach it.
+
+[#naming-remote-agents]
+== Naming remote agents in configuration
+
+Declare each remote agent under `akka.javasdk.a2a.remote-agents` in `application.conf`. The key is the name that your code uses. The only required setting is `card-url`, the URL of the Agent Card.
+
+[source,hocon,indent=0]
+.{sample-base-url}/doc-snippets/src/main/resources/application.conf[application.conf]
+----
+include::example$doc-snippets/src/main/resources/application.conf[tag=a2a-remote-agent]
+----
+
+Inject `A2aClient` into a component or an endpoint, as you inject `HttpClientProvider`. Call `forAgent` with the name to get a `RemoteA2aAgentClient`.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/a2a/ClaimStatusEndpoint.java[ClaimStatusEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/a2a/ClaimStatusEndpoint.java[tag=for-agent]
+----
+<1> `A2aClient` is injected into the constructor.
+<2> `forAgent("claims")` reads the settings of `akka.javasdk.a2a.remote-agents.claims`. It throws `IllegalArgumentException` when the name is not configured or its settings are not valid.
+<3> `send` takes the id of a skill and a message. A2A has no field for the skill, so the client sends the id as `skillId` in the metadata of the request. Call `inContext` on the result to continue a conversation with a context id.
+
+For a one-off call, pass the URL of an Agent Card to `forAgent` instead of a name. An agent that you give by URL has no credentials and no custom TLS settings, and takes its timeouts from `akka.javasdk.a2a.defaults`.
+
+The settings of a remote agent are:
+
+[cols="2,1,4",options="header"]
+|===
+| Setting | Default | Meaning
+
+| `card-url`
+|
+| The URL of the Agent Card. It must start with `http://` or `https://`.
+
+| `timeout`
+| `60s`
+| The longest time to wait for the agent to answer a request. For a streamed response, the limit applies to the start of the response.
+
+| `card-refresh`
+| `10m`
+| How long the client uses a cached Agent Card before it fetches the card again.
+
+| `auth`
+| `type = none`
+| Credentials. See <<credentials>>.
+
+| `ca-bundle`, `client-certificate`, `client-key`
+|
+| TLS settings. See <<tls>>.
+|===
+
+The client reads the Agent Card on the first call and caches it. It then chooses a protocol binding from the interfaces that the card lists. The client uses the JSON-RPC binding when the card lists it, and the HTTP+JSON binding otherwise. When the card lists neither binding, every call fails with `A2aClientException`.
+
+Each request carries an `X-Akka-Caller` header that identifies the calling component, and the `A2A-Version` header. A call that runs inside a traced request also carries the trace headers.
+
+A call fails with one of two exceptions:
+
+* `A2aRemoteErrorException` means that the remote agent answered with a protocol error. Its `code()` is the JSON-RPC error code, for example `-32001` for a task that does not exist. Its `reason()` is the A2A reason, for example `TASK_NOT_FOUND`.
+* `A2aClientException` covers every other failure, such as an unreachable agent, a timeout, a rejected credential, a failed TLS handshake, or a reply that is not valid A2A. `A2aRemoteErrorException` is a subclass of `A2aClientException`.
+
+[#credentials]
+== Credentials for remote agents
+
+The `auth` setting of a remote agent chooses how the service proves its identity. The client sends the credentials on every request to the agent, including the request for the Agent Card.
+
+Take secret values from environment variables with an optional substitution, such as `${?POLICIES_API_KEY}`. Do not write secrets in `application.conf`. To supply the variables to a deployed service, see xref:operations:projects/secrets.adoc[]. An optional substitution for a variable that is not set leaves the setting out. When the setting is required, such as `client-secret`, `forAgent` throws `IllegalArgumentException` with a message that names the missing setting.
+
+=== A static header
+
+With `type = header`, the client adds one header with a fixed value to every request. Use it for an API key.
+
+[source,hocon,indent=0]
+.{sample-base-url}/doc-snippets/src/main/resources/application.conf[application.conf]
+----
+include::example$doc-snippets/src/main/resources/application.conf[tag=a2a-remote-agent-header]
+----
+
+=== OAuth 2.0 client credentials
+
+With `type = oauth2-client-credentials`, the client gets an access token from the token endpoint and sends it as a bearer token. The `scope` setting is optional.
+
+[source,hocon,indent=0]
+.{sample-base-url}/doc-snippets/src/main/resources/application.conf[application.conf]
+----
+include::example$doc-snippets/src/main/resources/application.conf[tag=a2a-remote-agent-oauth]
+----
+
+The client requests a token with a form post of `grant_type=client_credentials`, the `client_id`, the `client_secret` and, when you set it, the `scope`. It reuses the token until 30 seconds before the token expires. When the token lives for less than one minute, the client refreshes after half of its lifetime. When the token endpoint does not give a lifetime, the client assumes five minutes. Calls that start at the same time share one token request.
+
+When the remote agent answers a request with status 401, the client discards the token, requests a new one, and sends the request again once. A second 401 fails the call.
+
+[#tls]
+== TLS and client certificates for remote agents
+
+A remote agent at an `https://` URL is reached over TLS. By default, the client verifies the certificate of the agent against the certificates that the Java runtime trusts, and checks that the host name of the URL matches the certificate. The settings below change this for one agent. They apply to the Agent Card, to the calls, and to the token endpoint of OAuth 2.0 client credentials.
+
+[source,hocon,indent=0]
+.{sample-base-url}/doc-snippets/src/main/resources/application.conf[application.conf]
+----
+include::example$doc-snippets/src/main/resources/application.conf[tag=a2a-remote-agent-tls]
+----
+
+`ca-bundle`:: One or more PEM certificates of the authorities that signed the certificate of the agent. The bundle replaces the certificates that the Java runtime trusts for this agent. Use it when the agent has a certificate from a private authority.
+
+`client-certificate` and `client-key`:: The certificate chain and the private key that the service presents when the agent requires mutual TLS. Put the certificate of the service first, followed by any intermediate certificates. Set both settings or neither.
+
+Each of the three settings holds either PEM text or the path of a file that holds PEM text. A value that contains `-----BEGIN` is read as PEM text. Any other value is read as a path. Passing the PEM text in an environment variable avoids a file in the container image.
+
+The private key must be an unencrypted PKCS#8 key, which starts with `-----BEGIN PRIVATE KEY-----`. The key can be an RSA, EC or Ed25519 key. `forAgent` throws `IllegalArgumentException` for a key in another format. The `openssl pkcs8 -topk8 -nocrypt` command converts a PKCS#1 or SEC1 key.
+
+A TLS failure, such as an untrusted certificate, a certificate for another host name, or a missing client certificate, fails the call with `A2aClientException`. The message of the exception names the cause that the TLS layer reported.
