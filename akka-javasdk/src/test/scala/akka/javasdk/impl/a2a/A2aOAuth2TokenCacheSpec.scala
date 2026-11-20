@@ -42,7 +42,7 @@ class A2aOAuth2TokenCacheSpec
   private val fetches = new AtomicInteger()
   private val lastForm = new AtomicReference[Map[String, String]](Map.empty)
   private val lastAuthorization = new AtomicReference[Option[String]](None)
-  @volatile private var expiresIn: Option[Int] = Some(3600)
+  @volatile private var expiresIn: Option[String] = Some("3600")
   @volatile private var tokenDelay: FiniteDuration = Duration.Zero
   @volatile private var failWith: Option[String] = None
 
@@ -96,7 +96,7 @@ class A2aOAuth2TokenCacheSpec
 
   private def reset(): Unit = {
     fetches.set(0)
-    expiresIn = Some(3600)
+    expiresIn = Some("3600")
     tokenDelay = Duration.Zero
     failWith = None
     clock = Instant.parse("2026-01-01T00:00:00Z")
@@ -159,7 +159,7 @@ class A2aOAuth2TokenCacheSpec
 
     "refresh early, by half the lifetime at most, when the lifetime is short" in {
       reset()
-      expiresIn = Some(10)
+      expiresIn = Some("10")
       val c = cache()
       get(c) shouldBe "token-1"
       clock = clock.plusSeconds(6)
@@ -174,6 +174,28 @@ class A2aOAuth2TokenCacheSpec
       clock = clock.plusSeconds(260)
       get(c) shouldBe "token-1"
       clock = clock.plusSeconds(20)
+      get(c) shouldBe "token-2"
+    }
+
+    "read a lifetime that the endpoint sends as a string" in {
+      reset()
+      expiresIn = Some("\"120\"")
+      val c = cache()
+      get(c)
+      clock = clock.plusSeconds(85)
+      get(c) shouldBe "token-1"
+      clock = clock.plusSeconds(10)
+      get(c) shouldBe "token-2"
+    }
+
+    "cap a lifetime too long to represent at one day" in {
+      reset()
+      expiresIn = Some("99999999999999")
+      val c = cache()
+      get(c) shouldBe "token-1"
+      clock = clock.plusSeconds(24 * 3600 - 31)
+      get(c) shouldBe "token-1"
+      clock = clock.plusSeconds(2)
       get(c) shouldBe "token-2"
     }
 

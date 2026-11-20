@@ -47,6 +47,7 @@ private[akka] final class A2aOAuth2TokenCache(
   // Used when the token endpoint does not say how long the token lives
   private val DefaultLifetime = 5.minutes
   private val MaxRefreshMargin = 30.seconds
+  private val MaxLifetime = 24.hours
   private val MaxResponseBytes = 64L * 1024
 
   private var cached: Option[Token] = None
@@ -104,7 +105,11 @@ private[akka] final class A2aOAuth2TokenCache(
             field("error").filter(_.isTextual).fold("")(e => s" (${e.asText()})"))
         field("access_token").filter(_.isTextual).map(_.asText()).filter(_.nonEmpty) match {
           case Some(value) =>
-            val lifetime = field("expires_in").filter(_.isNumber).map(_.asLong().seconds).getOrElse(DefaultLifetime)
+            // Some endpoints send the lifetime as a string. A lifetime beyond the cap would overflow the duration.
+            val lifetime = field("expires_in")
+              .flatMap(n => if (n.isNumber) Some(n.asLong()) else n.asText().trim.toLongOption)
+              .map(seconds => math.min(seconds, MaxLifetime.toSeconds).seconds)
+              .getOrElse(DefaultLifetime)
             val margin = MaxRefreshMargin.min(lifetime / 2)
             Token(value, now().plusMillis((lifetime - margin).toMillis))
           case None =>
