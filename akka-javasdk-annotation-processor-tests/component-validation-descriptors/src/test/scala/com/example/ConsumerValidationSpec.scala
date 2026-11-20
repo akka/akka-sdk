@@ -240,10 +240,8 @@ abstract class AbstractConsumerValidationSpec(val validationMode: ValidationMode
         "You must select a source for @Produce.ToTopic")
     }
 
-    "reject Consumer with @Consume.StartFrom on a topic subscription" in {
-      assertInvalid(
-        "invalid/ConsumerStartFromTopic.java",
-        "@Consume.StartFrom is not supported for a Consumer with @Consume.FromTopic")
+    "accept Consumer with @Consume.StartFrom on a topic subscription" in {
+      assertValid("valid/ValidConsumerStartFromTopic.java")
     }
 
     "reject Consumer with @Consume.StartFrom on a service stream producer" in {

@@ -144,6 +144,21 @@ The following three values are valid:
 
 The service account must have permissions to perform the operations for the selected mode.
 
+[#start-from]
+== Starting a consumer from latest or a timestamp
+
+A consumer with xref:sdk:consuming-producing.adoc#_starting_from_the_latest_events_or_a_timestamp[`@Consume.StartFrom`] acknowledges the messages that Pub/Sub published before the start point. It does not deliver them to the consumer. Akka does not seek the subscription.
+
+* The time of a message is the publish time that Pub/Sub sets. A message without a publish time is delivered.
+* A subscription holds the messages from the time it was created. Messages published before that are never delivered, also when the start point is earlier.
+* When a start of the service creates the subscription and the start point is more than one minute earlier, the service logs a warning.
+* A subscription that you created yourself after the start point gives no warning, because Pub/Sub does not tell Akka when the subscription was created.
+* With `latest = true` there is a short gap between the first deployment and the creation of the subscription. Messages published in between are not delivered. The gap is normally seconds. It is longer when creating the subscription is retried, for example when the service account lacks the permission to create it.
+* A subscription that already exists keeps the messages it has not delivered. Akka acknowledges and drops the ones from before the start point, which takes time and traffic for a large backlog.
+* Pub/Sub keeps messages for the retention time of the topic and the subscription. Akka cannot recover older messages.
+
+When the consumer group is a full subscription path, the subscription path alone identifies the start point. Spelling the topic differently does not change it.
+
 == Delivery characteristics
 
 When your application consumes messages from Google Pub/Sub, it will try to deliver messages to your service in 'at-least-once' fashion while preserving order.
