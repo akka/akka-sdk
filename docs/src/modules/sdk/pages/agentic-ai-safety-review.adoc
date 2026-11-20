@@ -24,7 +24,7 @@ This inventory establishes which agents, tools, data paths, and callers are in s
 
 == Screen model inputs and tool results
 
-Use a `ModelCallGuardrail` when a requirement calls for checking user input or tool results before they reach a model. It runs before each model call, including later calls that contain tool results. A guardrail returns `Decision.Allow`, `Decision.Deny`, or `Decision.Fail`. `Decision.Fail` means the evaluation itself failed and reached no verdict. The built-in `ModelCallSimilarityGuard` can compare messages with configured examples; use a policy-specific guardrail or classifier when the requirement needs different checks.
+Use a `ModelCallGuardrail` when a requirement calls for checking user input or tool results before they reach a model. It runs before each model call, including later calls that contain tool results. A guardrail returns `Decision.Allow`, `Decision.Deny`, or `Decision.Fail`. `Decision.Fail` means the evaluation itself failed and reached no verdict. The built-in `ModelCallSimilarityGuard` can compare messages with configured examples. Use a policy-specific guardrail or classifier when the requirement needs different checks.
 
 Configure the guardrail for every in-scope agent or role. Set `report-only = false` when a denial must stop the interaction. Review `fail-mode` as well. The default is `fail-closed`, which aborts the interaction on `Decision.Fail`. `fail-open` lets the interaction continue. `fail-mode` applies only when `report-only` is false. A guardrail that does not complete has no timeout, so define and test how your implementation handles slow or unavailable dependencies.
 
