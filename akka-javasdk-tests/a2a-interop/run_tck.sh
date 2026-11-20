@@ -27,11 +27,13 @@ if [ -z "$kit_commit" ]; then
   exit 2
 fi
 
+# On Windows, python and python3 can be Microsoft Store stubs that open an install prompt when run, so the
+# launcher is tried first and python3 is never run there.
 if [ -z "${PYTHON:-}" ]; then
-  if command -v python3 >/dev/null 2>&1 && python3 -c 'import sys' >/dev/null 2>&1; then
-    PYTHON=python3
-  else
+  if command -v py >/dev/null 2>&1; then
     PYTHON="py -3"
+  else
+    PYTHON=python3
   fi
 fi
 
