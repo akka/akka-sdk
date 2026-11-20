@@ -1,0 +1,20 @@
+// Source: A2A v1.0.1 specification, section 9.5 Error Handling (error response structure)
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "error": {
+    "code": -32602,
+    "message": "Invalid parameters",
+    "data": [
+      {
+        "@type": "type.googleapis.com/google.rpc.BadRequest",
+        "fieldViolations": [
+          {
+            "field": "message.parts",
+            "description": "At least one part is required"
+          }
+        ]
+      }
+    ]
+  }
+}

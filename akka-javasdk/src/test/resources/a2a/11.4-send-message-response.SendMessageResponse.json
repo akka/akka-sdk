@@ -1,0 +1,10 @@
+// Source: A2A v1.0.1 specification, section 11.4 Request/Response Format (response body)
+{
+  "task": {
+    "id": "task-uuid",
+    "contextId": "context-uuid",
+    "status": {
+      "state": "TASK_STATE_COMPLETED"
+    }
+  }
+}

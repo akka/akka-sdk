@@ -1,0 +1,16 @@
+// Source: A2A v1.0.1 specification, section 6.5 Task Listing and Management (all tasks from a context, response)
+{
+  "tasks": [
+    {
+      "id": "3f36680c-7f37-4a5f-945e-d78981fafd36",
+      "contextId": "c295ea44-7543-4f78-b524-7a38915ad6e4",
+      "status": {
+        "state": "TASK_STATE_COMPLETED",
+        "timestamp": "2024-03-15T10:15:00Z"
+      }
+    }
+  ],
+  "totalSize": 5,
+  "pageSize": 10,
+  "nextPageToken": ""
+}

@@ -1,0 +1,10 @@
+// Source: A2A v1.0.1 specification, section 9.4.3 GetTask (request)
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "GetTask",
+  "params": {
+    "id": "task-uuid",
+    "historyLength": 10
+  }
+}

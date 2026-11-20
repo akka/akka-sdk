@@ -1,0 +1,21 @@
+// Source: A2A v1.0.1 specification, section 6.6 Push Notification Setup and Usage (request body)
+{
+  "message": {
+    "role": "ROLE_USER",
+    "parts": [
+      {
+        "text": "Generate the Q1 sales report. This usually takes a while. Notify me when it's ready."
+      }
+    ],
+    "messageId": "6dbc13b5-bd57-4c2b-b503-24e381b6c8d6"
+  },
+  "configuration": {
+    "taskPushNotificationConfig": {
+      "url": "https://client.example.com/webhook/a2a-notifications",
+      "authentication": {
+        "scheme": "Bearer",
+        "credentials": "secure-client-token-for-task-aaa"
+      }
+    }
+  }
+}

@@ -1,0 +1,13 @@
+// Source: A2A v1.0.1 specification, section 6.9 Fetching Authenticated Extended Agent Card (public card excerpt)
+{
+  "capabilities": {
+    "extendedAgentCard": true
+  },
+  "securitySchemes": {
+    "google": {
+      "openIdConnectSecurityScheme": {
+        "openIdConnectUrl": "https://accounts.google.com/.well-known/openid-configuration"
+      }
+    }
+  }
+}

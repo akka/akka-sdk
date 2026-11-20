@@ -1,0 +1,11 @@
+// Source: A2A v1.0.1 specification, section 11.4 Request/Response Format (request body)
+{
+  "message": {
+    "messageId": "uuid",
+    "role": "ROLE_USER",
+    "parts": [{"text": "Hello"}]
+  },
+  "configuration": {
+    "acceptedOutputModes": ["text/plain"]
+  }
+}

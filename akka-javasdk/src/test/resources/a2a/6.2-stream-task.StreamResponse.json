@@ -1,0 +1,2 @@
+// Source: A2A v1.0.1 specification, section 6.2 Streaming Task Execution (first SSE data line)
+{"task": {"id": "task-uuid", "status": {"state": "TASK_STATE_WORKING"}}}

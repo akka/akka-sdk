@@ -1,0 +1,9 @@
+// Source: A2A v1.0.1 specification, section 6.3 Multi-Turn Interaction (follow-up request body)
+{
+  "message": {
+    "taskId": "task-uuid",
+    "role": "ROLE_USER",
+    "parts": [{"text": "From San Francisco to New York"}],
+    "messageId": "msg-2"
+  }
+}

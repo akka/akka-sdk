@@ -1,0 +1,11 @@
+// Source: A2A v1.0.1 specification, section 6.6 Push Notification Setup and Usage (response body)
+{
+  "task": {
+    "id": "43667960-d455-4453-b0cf-1bae4955270d",
+    "contextId": "c295ea44-7543-4f78-b524-7a38915ad6e4",
+    "status": {
+      "state": "TASK_STATE_SUBMITTED",
+      "timestamp": "2024-03-15T11:00:00Z"
+    }
+  }
+}
