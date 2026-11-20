@@ -323,6 +323,35 @@ include::example$doc-snippets/src/main/java/com/example/evaluator/LedgerUsage.ja
 
 See link:{attachmentsdir}/api/akka/javasdk/ledger/FlowRecord.html[`FlowRecord`] for the kinds of records and what the transcript contains.
 
+[#_correlation_id]
+=== Reading the records of a correlation id
+
+A correlation id connects the ledger records of a run with an id of another system, such as the id of a phone call.
+Set it on the component client that starts the run:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/evaluator/LedgerUsage.java[LedgerUsage.java]
+----
+include::example$doc-snippets/src/main/java/com/example/evaluator/LedgerUsage.java[tag=correlation-call]
+----
+<1> `withCorrelationId` returns a client that makes its calls with the correlation id. The id has at most 256 characters.
+
+The runtime writes the correlation id on the records of the agents that run in the call, and on the records of the calls that those agents make.
+An autonomous agent keeps the correlation id of the call that starts its flow. The agents that it delegates to or hands off to write the same id.
+A correlation id that the incoming request already carries stays in place, so a nested call cannot replace it.
+
+`getCorrelationRecords` returns the records with the correlation id, newest first:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/evaluator/LedgerUsage.java[LedgerUsage.java]
+----
+include::example$doc-snippets/src/main/java/com/example/evaluator/LedgerUsage.java[tag=correlation-read]
+----
+<1> The list holds the interaction records, the activity records and the guardrail decision records, at most the 100 newest. It holds no evaluation records.
+
+The runtime also sets the correlation id as the `akka.correlation.id` attribute on the command span of each agent in the run.
+It sends the correlation id to an MCP server only when that server is an Akka service.
+
 [#_optional_ledger_records]
 === Optional ledger records
 
