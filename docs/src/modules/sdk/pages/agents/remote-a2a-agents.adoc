@@ -10,7 +10,45 @@ include::ROOT:partial$include.adoc[]
 
 A remote A2A agent is an agent that runs outside your service and speaks the Agent2Agent (A2A) protocol. The remote agent publishes an Agent Card, which is a JSON document that names the agent, lists its skills, and says how to reach it. A skill is one task that the agent can do. Your service calls the agent with `A2aClient`, which reads the Agent Card, sends the requests, and applies the credentials and TLS settings that you configure for that agent.
 
-This page describes how to name a remote agent in configuration, how to give your service credentials for it, and how to set the certificates that TLS uses to reach it.
+This page describes how an agent offers the skills of a remote agent to its model as tools, how to name a remote agent in configuration, how to give your service credentials for it, how to set the certificates that TLS uses to reach it, and how to choose the skills and the timeout of the tools.
+
+[#remote-agents-as-tools]
+== Remote A2A agents as tools
+
+An agent can offer the skills of a remote A2A agent to its model as tools. Pass one or more `RemoteA2aAgent` instances to `a2aAgents` in the effect of the agent, as you pass remote MCP servers to `mcpTools`.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/a2a/ClaimsAssistantAgent.java[ClaimsAssistantAgent.java]
+----
+include::example$doc-snippets/src/main/java/com/example/a2a/ClaimsAssistantAgent.java[tag=a2a-agents]
+----
+<1> `a2aAgents` takes one or more remote agents.
+<2> `RemoteA2aAgent.named` takes a name configured under `akka.javasdk.a2a.remote-agents`. The tool calls use the credentials and TLS settings of that configuration. See <<naming-remote-agents>>.
+<3> `RemoteA2aAgent.fromCard` takes the URL of an Agent Card. The tool calls use no credentials and no custom TLS settings.
+
+When the agent handles a request, it reads the Agent Card of each remote agent. The client caches the card, as <<naming-remote-agents>> describes. The agent offers each skill on the card to the model as one tool:
+
+* The name of the tool is the name of the remote agent and the id of the skill, joined by `_`, for example `claims_claim-status`. For a remote agent from `fromCard`, the name is the `name` on its Agent Card. Characters that model providers do not accept in tool names become `_`. A name longer than 64 characters is shortened and ends with a hash of the full name.
+* The description of the tool is the description of the skill, followed by the names of the skill and of the remote agent.
+* The tool takes a required `message` string and an optional `data` object. The agent sends the message as a text part and the data as a data part.
+
+When the model calls the tool, the agent sends the message to the skill with `SendMessage`. The agent uses its session id as the A2A context id, so the remote agent can keep one conversation for each session. The agent returns the reply to the model as text:
+
+* A message returns its text parts. A data part becomes its JSON text. A file part becomes a line with its file name and media type, and its URL when it has one.
+* A completed A2A task returns the parts of its artifacts and of its status message.
+* An A2A task that failed, was rejected or was canceled returns a text that starts with `Error:` and names the state.
+* An A2A task that has not finished, such as a submitted or working task, or a task that needs input, returns the id and the state of the task. The agent does not wait for the task to finish.
+
+The agent stores the tool call and its result in session memory and records them in the interaction log, as for any tool.
+
+A failed call does not fail the agent request. When the remote agent answers with an error, does not answer within the timeout, or cannot be reached, the model receives a text that starts with `Error:` and describes the failure. The model can then try again or answer without the remote agent. A tool call without a message gets the same kind of text. The result does not carry the error flag that an MCP tool error carries.
+
+The agent request fails before the model is called in two cases:
+
+* The Agent Card of a remote agent cannot be read.
+* The name of a tool is the same as the name of a function tool of the agent, or of another skill. The request fails with `IllegalArgumentException`. Use `withAllowedSkills` to leave out a skill whose name clashes. See <<skills-and-timeouts>>.
+
+A `ToolCallGuardrail` can allow or deny each call. See xref:sdk:agents/guardrails.adoc#_implementing_a_tool_call_guardrail[Implementing a tool call guardrail].
 
 [#naming-remote-agents]
 == Naming remote agents in configuration
@@ -127,3 +165,18 @@ The token endpoint of OAuth 2.0 client credentials has its own TLS settings, bec
 The private key must be an unencrypted PKCS#8 key, which starts with `-----BEGIN PRIVATE KEY-----`. The key can be an RSA, EC or Ed25519 key. `forAgent` throws `IllegalArgumentException` for a key in another format. The `openssl pkcs8 -topk8 -nocrypt` command converts a PKCS#1 or SEC1 key.
 
 A TLS failure, such as an untrusted certificate, a certificate for another host name, or a missing client certificate, fails the call with `A2aClientException`. The message of the exception names the cause that the TLS layer reported.
+
+[#skills-and-timeouts]
+== Choosing skills and timeouts
+
+By default, the agent offers every skill on the Agent Card to the model. Each tool adds to the request that the model reads, and a remote agent can have skills that your agent must not use. `withAllowedSkills` offers only the skills with the given ids. The model cannot call a skill that the agent does not offer. When the set names a skill that the Agent Card does not list, the agent logs a warning.
+
+`withTimeout` limits how long a tool call waits for the reply of the remote agent. It replaces the `timeout` of the configuration for the requests of this agent, including the request for the Agent Card. When the time passes, the model receives a text that starts with `Error:`.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/a2a/ClaimStatusAgent.java[ClaimStatusAgent.java]
+----
+include::example$doc-snippets/src/main/java/com/example/a2a/ClaimStatusAgent.java[tag=skills-and-timeouts]
+----
+<1> Only the `claim-status` skill becomes a tool.
+<2> A tool call waits at most 20 seconds for the reply.

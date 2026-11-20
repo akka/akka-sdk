@@ -116,7 +116,7 @@ include::example$doc-snippets/src/main/java/com/example/guardrail/ToolResultInje
 
 == Implementing a tool call guardrail
 
-A `ToolCallGuardrail` evaluates a function tool call or an MCP tool call before the runtime runs the tool.
+A `ToolCallGuardrail` evaluates a function tool call, an MCP tool call or a call to a remote A2A agent before the runtime runs the tool.
 `CallContext` exposes `agentId()`, `sessionId()`, `toolName()`, `toolCallId()`, `origin()`, and `arguments()`.
 `arguments()` returns the raw JSON of the tool call:
 
@@ -140,6 +140,19 @@ the credentials too.
 For an MCP tool, `toolName()` returns the name of the tool on the MCP server.
 If the `RemoteMcpTools` has a `ToolInterceptor`, the runtime evaluates the guardrail after `interceptRequest`.
 The guardrail then sees the arguments that the interceptor returns.
+
+For a skill of a remote A2A agent, it returns a `ToolOrigin.RemoteA2a`. Its `agent()` is the name given to
+`RemoteA2aAgent.named`, or the Agent Card URL given to `RemoteA2aAgent.fromCard`. Its `skill()` is the id of the skill,
+and its `caller()` is the component id of the agent that makes the call. `toolName()` returns the name of the tool that
+the model sees. See xref:sdk:agents/remote-a2a-agents.adoc[Remote A2A agents].
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/guardrail/RemoteAgentGuard.java[RemoteAgentGuard.java]
+----
+include::example$doc-snippets/src/main/java/com/example/guardrail/RemoteAgentGuard.java[tag=all]
+----
+<1> Match the `RemoteA2a` origin to guard only the calls to remote A2A agents.
+<2> `agent()` and `skill()` name the remote agent and its skill, whatever name the model uses for the tool.
 
 == Configuring guardrails
 
