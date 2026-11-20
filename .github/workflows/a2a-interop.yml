@@ -1,0 +1,68 @@
+name: A2A interoperability
+
+on:
+  pull_request:
+    paths:
+      - 'akka-javasdk-tests/a2a-interop/**'
+      - '.github/workflows/a2a-interop.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: a2a-interop-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  a2a-interop:
+    name: Run the A2A compatibility kit
+    runs-on: Akka-Default
+    defaults:
+      run:
+        working-directory: akka-javasdk-tests/a2a-interop
+
+    steps:
+      - name: Checkout
+        # https://github.com/actions/checkout/releases
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        # https://github.com/actions/setup-python/releases
+        uses: actions/setup-python@v6
+        with:
+          # The compatibility kit supports Python 3.11 to 3.14.
+          python-version: '3.12'
+
+      # PLACEHOLDER: the A2A test service of the Akka SDK does not exist yet. Until it does, this step starts
+      # the a2a-python echo server, which checks the harness itself. Replace this step with one that
+      # starts the SDK's A2A test service on port 9000 and waits for its Agent Card. The kit and the client
+      # check below stay as they are.
+      - name: Start the A2A service
+        run: |
+          python3 -m venv .venv
+          .venv/bin/python -m pip install --quiet -r requirements.txt
+          nohup .venv/bin/python adk_echo_server.py --port 9000 > service.log 2>&1 &
+          for i in $(seq 1 30); do
+            curl --silent --fail http://127.0.0.1:9000/.well-known/agent-card.json > /dev/null && exit 0
+            sleep 1
+          done
+          cat service.log
+          exit 1
+
+      - name: Run the compatibility kit
+        run: ./run_tck.sh http://127.0.0.1:9000/.well-known/agent-card.json
+
+      - name: Run the a2a-python client check on both bindings
+        run: |
+          .venv/bin/python adk_client_check.py http://127.0.0.1:9000/.well-known/agent-card.json --binding jsonrpc
+          .venv/bin/python adk_client_check.py http://127.0.0.1:9000/.well-known/agent-card.json --binding http_json
+
+      - name: Upload the kit reports
+        if: always()
+        # https://github.com/actions/upload-artifact/releases
+        uses: actions/upload-artifact@v7
+        with:
+          name: a2a-tck-reports
+          path: akka-javasdk-tests/a2a-interop/reports
+          if-no-files-found: ignore
