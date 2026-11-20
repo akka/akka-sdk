@@ -1,0 +1,252 @@
+= Designing A2A Endpoints
+:page-component-type: endpoint
+:page-summary: An A2A endpoint publishes the agents of a service to clients of the Agent2Agent (A2A) protocol, with an Agent Card and the JSON-RPC and HTTP+JSON bindings of A2A 1.0.
+:page-when-to-use: Agents on other platforms, or built with other frameworks, call the agents of your service.
+:page-related: sdk:agents.adoc, sdk:mcp-endpoints.adoc, sdk:http-endpoints.adoc, sdk:access-control.adoc, sdk:auth-with-jwts.adoc
+:page-persona: builder-developer, builder-ai-ml
+
+include::ROOT:partial$include.adoc[]
+
+An A2A endpoint is an endpoint that publishes agents of an Akka service to clients of the Agent2Agent (A2A) protocol.
+
+== Overview
+
+The link:{url-ext-a2a-spec}[Agent2Agent (A2A) protocol, window="new"] lets agents built on different platforms call each other. An A2A client reads the Agent Card of a remote agent to learn its skills and URLs, and then sends messages. Each message the agent works on becomes an A2A task, which has a status, a history of messages and artifacts that hold the results.
+
+An A2A endpoint serves these parts of A2A version 1.0 for the agents you choose:
+
+* the Agent Card at `/.well-known/agent-card.json`;
+* the `SendMessage` and `GetTask` methods, over the JSON-RPC binding and the HTTP+JSON binding.
+
+Each skill in the Agent Card is answered by an xref:sdk:agents.adoc[agent] of the service, in one call. Akka records each A2A task, so that a client can read it later with `GetTask`.
+
+Use an A2A endpoint when agents outside your service, written with any A2A implementation, need to call your agents. For tools that a model calls, use an xref:sdk:mcp-endpoints.adoc[MCP endpoint]. For calls between Akka services, use the xref:sdk:component-and-service-calls.adoc[component client] or an xref:sdk:http-endpoints.adoc[HTTP endpoint].
+
+== The A2A endpoint class
+
+To create an A2A endpoint, annotate a class with `@A2aEndpoint`, extend `AbstractA2aEndpoint`, and return the published agents from `agents()`.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleA2aEndpoint.java[ExampleA2aEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/api/ExampleA2aEndpoint.java[tag=endpoint-class]
+----
+<1> `@A2aEndpoint` sets the name, description and version that the Agent Card shows. The routes are served at `path`, which is `/a2a` by default.
+<2> `@Acl` controls which callers can use the endpoint, as for any endpoint. See xref:sdk:access-control.adoc[].
+<3> The class extends `AbstractA2aEndpoint`, which serves the A2A routes.
+<4> `agents()` returns the agents that answer the skills. Akka calls it for each request and for the Agent Card.
+
+A service has at most one A2A endpoint, because it has one Agent Card. The annotation processor reports an error when it finds a second class annotated with `@A2aEndpoint`.
+
+The constructor of the class can take the same parameters as an HTTP endpoint, such as a `ComponentClient` or a `Config`.
+
+== Describing skills with `@A2aSkill`
+
+A skill is one capability that an agent offers to A2A clients. Annotate an agent with `@A2aSkill` to describe its skills.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/ClaimCheckAgent.java[ClaimCheckAgent.java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/ClaimCheckAgent.java[tag=skill]
+----
+<1> Each `@A2aSkill` becomes one entry in the `skills` of the Agent Card.
+<2> An agent can have several skills. Every skill of the agent is answered by its command handler.
+<3> The command handler receives the text of the message.
+
+The fields of `@A2aSkill` are:
+
+`id`:: The id of the skill. It can contain letters, digits, `_`, `-` and `.`, up to 64 characters. Skill ids are unique within a service.
+`name`:: The name of the skill. The default is the id.
+`description`:: What the skill does. The default is the description of the agent from its `@Component` annotation.
+`tags`:: Keywords that describe the skill.
+`examples`:: Example requests for the skill.
+`inputModes` and `outputModes`:: The media types that the skill accepts and returns. The default is the modes of the Agent Card.
+
+An agent without `@A2aSkill` is published as one skill. Its id is the component id, and its name and description come from the `@Component` annotation.
+
+=== Selecting a skill in a message
+
+A client selects a skill with the `skillId` field in the metadata of its message:
+
+[source,json]
+----
+{
+  "message": {
+    "messageId": "a1b2c3",
+    "role": "ROLE_USER",
+    "parts": [{ "text": "Is water damage from a burst pipe covered?" }],
+    "metadata": { "skillId": "check-claim" }
+  }
+}
+----
+
+When the endpoint publishes one skill, a message without `skillId` goes to that skill. When it publishes several skills and the message names none, or names an unknown skill, Akka answers with an invalid parameters error that lists the skill ids.
+
+=== Input and output of the agent
+
+The agent receives the message as follows:
+
+* A command handler that takes a `String` receives the text parts of the message, joined by line breaks.
+* A command handler that takes another type receives the first data part, or the text read as JSON, converted to that type.
+
+Akka returns the reply of the agent in an artifact of the task. A `String` reply becomes a text part, and any other reply becomes a data part with the JSON of the reply.
+
+== The Agent Card that Akka serves
+
+Akka serves the Agent Card at `/.well-known/agent-card.json` on the service. It builds the card from `@A2aEndpoint`, the `@A2aSkill` annotations of the published agents, and the `@JWT` annotation of the endpoint:
+
+[source,json]
+----
+{
+  "name": "Claims",
+  "description": "Checks insurance claims",
+  "version": "1.0.0",
+  "supportedInterfaces": [
+    { "url": "https://claims.example.com/a2a", "protocolBinding": "JSONRPC", "protocolVersion": "1.0" },
+    { "url": "https://claims.example.com/a2a", "protocolBinding": "HTTP+JSON", "protocolVersion": "1.0" }
+  ],
+  "capabilities": { "streaming": false, "pushNotifications": false },
+  "securitySchemes": {
+    "oidc": {
+      "openIdConnectSecurityScheme": {
+        "openIdConnectUrl": "https://idp.example.com/.well-known/openid-configuration"
+      }
+    }
+  },
+  "securityRequirements": [{ "schemes": { "oidc": {} } }],
+  "defaultInputModes": ["text/plain", "application/json", "*/*"],
+  "defaultOutputModes": ["text/plain", "application/json"],
+  "skills": [
+    {
+      "id": "check-claim",
+      "name": "Check a claim",
+      "description": "Checks whether a claim is covered by the policy and explains why",
+      "tags": ["claims", "insurance"],
+      "examples": ["Is water damage from a burst pipe covered?"]
+    },
+    {
+      "id": "explain-policy",
+      "name": "Explain a policy",
+      "description": "Checks insurance claims against the policy"
+    }
+  ]
+}
+----
+
+The response has the header `Cache-Control: max-age=300`.
+
+=== Setting the public URL of the endpoint
+
+The URLs in `supportedInterfaces` are the public base URL of the service followed by the path of the endpoint. Akka takes the base URL from the first of these that is set:
+
+. The `publicUrl` of `@A2aEndpoint`.
+. The setting `akka.javasdk.a2a.endpoint.public-url`.
+. The scheme and host of the request for the Agent Card. The scheme comes from the `X-Forwarded-Proto` header, and is `http` without it.
+
+Set the public URL for a deployed service, so that the card does not depend on the host that a client used:
+
+[source,hocon]
+----
+akka.javasdk.a2a.endpoint.public-url = "https://claims.example.com"
+----
+
+=== Security schemes from `@JWT`
+
+When the endpoint has `@JWT` with `validate = JWT.JwtMethodMode.BEARER_TOKEN`, the card lists security schemes:
+
+* Each bearer token issuer that is a URL becomes an OpenID Connect scheme. Its discovery URL is the issuer followed by `/.well-known/openid-configuration`.
+* Issuers that are not URLs, or no issuers, give an HTTP bearer scheme with the bearer format `JWT`.
+
+Each scheme is listed as one alternative in `securityRequirements`.
+
+== Routes and protocol bindings of an A2A endpoint
+
+The endpoint serves both bindings at its path. With the default path `/a2a`, the routes are:
+
+[cols="1,2,2"]
+|===
+| Method | JSON-RPC | HTTP+JSON
+
+| `SendMessage`
+| `POST /a2a` with `"method": "SendMessage"`
+| `POST /a2a/message:send`
+
+| `GetTask`
+| `POST /a2a` with `"method": "GetTask"`
+| `GET /a2a/tasks/{id}?historyLength=n`
+|===
+
+A JSON-RPC request has the form `{"jsonrpc": "2.0", "id": 1, "method": "SendMessage", "params": {...}}`. Akka answers with HTTP status 200 and a JSON-RPC response that has either a `result` or an `error` member.
+
+The other A2A methods answer with an error. Streaming methods and the extended Agent Card answer with an unsupported operation error, and push notification methods with a push notification not supported error.
+
+=== Errors of an A2A endpoint
+
+Errors use the codes of A2A. On the JSON-RPC binding the `error` member has the code, a message, and for A2A errors a `data` array with a `google.rpc.ErrorInfo` detail. On the HTTP+JSON binding the HTTP status follows the error, for example 404 for a task that does not exist, and the body has the form `{"error": {"code": 404, "status": "NOT_FOUND", "message": "...", "details": [...]}}`.
+
+=== A2A protocol version
+
+A client sends the protocol version in the `A2A-Version` header. Akka serves version 1.0. It answers a request without the header as version 1.0, ignores a patch version such as `1.0.2`, and answers any other version with a version not supported error.
+
+=== Tasks that `SendMessage` returns
+
+`SendMessage` returns the task after the agent has answered, in the state `TASK_STATE_COMPLETED`, or `TASK_STATE_FAILED` when the agent failed. The history of the task holds the message and the reply of the agent. The `historyLength` setting of the request limits the history in the response.
+
+When the request sets `returnImmediately` in its configuration, Akka returns the task in the state `TASK_STATE_WORKING` and records the outcome when the agent answers. The client reads the outcome with `GetTask`.
+
+A message that names the id of an existing task is refused with an unsupported operation error, because a task of a skill answered by an agent ends with the reply.
+
+== Conversations: context id and session memory
+
+A2A groups the messages of one conversation with a context id. Akka uses the context id as the session id of the agent, so all messages in one context share the xref:sdk:agents/memory.adoc[session memory] of the agent.
+
+* When a message has a `contextId`, the agent continues that session.
+* When a message has no `contextId`, Akka generates one and returns it in the task. The client sends it with the next message to continue the conversation.
+
+Each message creates a new task in the context.
+
+== Short skills answered by an agent
+
+A skill published with `A2aAgents.agent(...)` is answered by one call to the agent. When a message arrives, Akka:
+
+. selects the skill, as described in <<_selecting_a_skill_in_a_message>>;
+. records the task in the state `TASK_STATE_SUBMITTED`, then `TASK_STATE_WORKING`;
+. calls the agent, with the context id as the session id;
+. records the reply as an artifact and the state `TASK_STATE_COMPLETED`, or the state `TASK_STATE_FAILED` with a message when the agent fails;
+. returns the task.
+
+Use this for skills that finish within the time of one request. The message of a failed task does not contain the cause of the failure. Akka logs the cause.
+
+== Authentication and authorization of A2A endpoints
+
+`@Acl` and `@JWT` on the endpoint class apply to every A2A route. The runtime checks them before the request reaches the endpoint, as for any HTTP endpoint. See xref:sdk:access-control.adoc[] and xref:sdk:auth-with-jwts.adoc[].
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleA2aEndpoint.java[ExampleA2aEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/api/ExampleA2aEndpoint.java[tag=jwt]
+----
+
+The Agent Card route applies the `@Acl` of the endpoint and does not require a token, so a client can read the card before it obtains one.
+
+When the endpoint requires a token, Akka stores the subject of the token with each task. `GetTask` and `SendMessage` answer a task not found error to a caller with another subject.
+
+=== Reading claims from `A2aRequestContext`
+
+`requestContext()` gives the `A2aRequestContext` of the request while the endpoint handles it. It has the principals and the JWT claims of the caller, and the context id and task id once Akka has read or assigned them.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleA2aEndpoint.java[ExampleA2aEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/api/ExampleA2aEndpoint.java[tag=request-context]
+----
+<1> The context id is set for A2A methods. It is empty when Akka builds the Agent Card.
+<2> The JWT claims are available on the A2A routes of an endpoint with `@JWT`. The Agent Card route has no token, so read the claims only when a context id is present.
+
+== See also
+
+* xref:sdk:agents.adoc[Agents]
+* xref:sdk:agents/memory.adoc[Session memory]
+* xref:sdk:mcp-endpoints.adoc[MCP Endpoints]
+* xref:sdk:access-control.adoc[Access control]
+* xref:sdk:auth-with-jwts.adoc[JSON Web Tokens (JWT)]

@@ -5,13 +5,19 @@ include::ROOT:partial$include.adoc[]
 
 [glossary]
 
-[[a2a]]A2A (Agent-to-Agent):: Google's protocol for agent-to-agent communication, enabling interoperability between autonomous agents across different platforms and frameworks.
+[[a2a]]A2A (Agent2Agent protocol):: An open protocol for communication between agents built on different platforms and frameworks, stewarded by the Agentic AI Foundation of the Linux Foundation. An A2A client reads the <<agent_card>> of a remote agent and sends it messages, and the agent tracks its work in <<a2a_task>>s. Akka publishes agents to A2A clients with an A2A endpoint. See xref:sdk:a2a-endpoints.adoc[].
+
+[[a2a_skill]]A2A skill:: One capability that an agent offers to <<a2a>> clients, listed in the <<agent_card>>. In Akka, an agent describes its skills with the `@A2aSkill` annotation. See xref:sdk:a2a-endpoints.adoc[].
+
+[[a2a_task]]A2A task:: The unit of work of the <<a2a>> protocol. It has a status, a history of messages and artifacts with the results. An A2A task is not the task of an autonomous agent. See xref:sdk:a2a-endpoints.adoc[].
 
 [[agent]]Agent:: A component that interacts with an AI model to perform a specific task. It is typically backed by a large language model (LLM). It maintains contextual history in a session memory, which may be shared between multiple agents that are collaborating on the same goal. It may provide function tools and call them as requested by the model.
 
 [[akka_specify_plugin]]Akka Specify Plugin:: The plugin, installed in your <<harness>>, that runs <<sdd,Spec-Driven Development>>. It drives commands such as `/akka:specify`, `/akka:plan`, `/akka:tasks`, `/akka:implement`, `/akka:converge`, `/akka:status`, `/akka:conform` and `/akka:ship`. See xref:concepts:spec-driven-development.adoc[].
 
 [[blueprint]]Blueprint:: A recipe that the <<akka_specify_plugin>> turns into runnable AI systems. See xref:concepts:spec-driven-development.adoc[].
+
+[[agent_card]]Agent Card:: A JSON document that describes an <<a2a>> agent: its name, its <<a2a_skill>>s, the URLs and protocol bindings it serves, and the security schemes it requires. Akka serves the Agent Card of a service at `/.well-known/agent-card.json`. See xref:sdk:a2a-endpoints.adoc[].
 
 [[agentic_ai]]Agentic AI:: AI systems capable of autonomous decision-making, tool use, and multi-step reasoning. Unlike traditional AI that responds to single prompts, agentic AI can plan, execute, and adapt across complex workflows while interacting with external systems.
 

@@ -1,5 +1,5 @@
 = APIs & protocols
-:page-summary: Built-in REST, OpenAPI, WebSocket, gRPC, and MCP support, plus web application assets served to a browser. A2A and MCP clients built into the Agent component.
+:page-summary: Built-in REST, OpenAPI, WebSocket, gRPC, MCP and A2A support, plus web application assets served to a browser.
 :page-persona: builder-developer, builder-ai-ml
 
 include::ROOT:partial$include.adoc[]
@@ -24,17 +24,15 @@ High-performance APIs with protocol buffer definitions. See xref:sdk:grpc-endpoi
 
 == Agent protocol support
 
-A2A and MCP clients are built into Akka's Agent component. Agents consume tools and communicate with other agents through both protocols, with no external libraries.
+Akka supports MCP in both directions. An MCP endpoint publishes tools, resources and prompts to MCP clients, and an agent uses the tools of remote MCP servers. See xref:sdk:mcp-endpoints.adoc[MCP Endpoints] and xref:sdk:agents/extending.adoc#_using_tools_from_remote_mcp_servers[Using tools from remote MCP servers].
 
-* **A2A (Agent-to-Agent)** — Google's protocol for agent-to-agent communication
-* **MCP (Model Context Protocol)** — Anthropic's protocol for connecting AI models to external tools
-
-link:{url-blog-mcp-a2a-acp}[MCP, A2A, ACP: What does it all mean?, window="new"]
+Akka publishes agents to clients of the Agent2Agent (A2A) protocol with an A2A endpoint. See xref:sdk:a2a-endpoints.adoc[A2A Endpoints].
 
 == See also
 
 * xref:sdk:http-endpoints.adoc[HTTP Endpoints]
 * xref:sdk:grpc-endpoints.adoc[gRPC Endpoints]
 * xref:sdk:mcp-endpoints.adoc[MCP Endpoints]
+* xref:sdk:a2a-endpoints.adoc[A2A Endpoints]
 * xref:sdk:web-applications.adoc[Web applications]
 * xref:sdk:agents.adoc[Agents]

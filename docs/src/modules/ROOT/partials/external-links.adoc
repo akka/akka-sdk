@@ -125,6 +125,7 @@
 
 // -- external / foundational --
 :url-ext-spiffe: https://spiffe.io
+:url-ext-a2a-spec: https://a2a-protocol.org/latest/specification/
 :url-ext-reactive-manifesto: https://www.reactivemanifesto.org
 :url-ext-reactive-principles: https://www.reactiveprinciples.org
 
