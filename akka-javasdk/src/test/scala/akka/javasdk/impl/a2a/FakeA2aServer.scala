@@ -51,6 +51,15 @@ final class FakeA2aServer(implicit system: ActorSystem[_]) {
   /** The bindings the card lists. */
   @volatile var bindings: Seq[String] = Seq("JSONRPC", "HTTP+JSON")
 
+  /** The skills the card lists. */
+  @volatile var skills: Seq[A2aAgentSkill] = Seq.empty
+
+  /**
+   * The reply to SendMessage on the JSON-RPC binding, given the request's params: a JSON-RPC error or a result. By
+   * default a completed task that carries the skill id in its metadata.
+   */
+  @volatile var sendReply: Option[JsonNode => Either[JsonRpcError, A2aSendMessageResponse]] = None
+
   /** Requests that fail this check get a 401. */
   @volatile var authorized: HttpRequest => Boolean = _ => true
 
@@ -105,7 +114,7 @@ final class FakeA2aServer(implicit system: ActorSystem[_]) {
       null,
       null,
       null,
-      null,
+      skills.asJava,
       null,
       null)
 
@@ -139,8 +148,13 @@ final class FakeA2aServer(implicit system: ActorSystem[_]) {
       def result(value: Any) = complete(jsonEntity(JsonRpcResponse.success(id, mapper.valueToTree(value))))
       request.get("method").asText() match {
         case A2aMethods.SEND_MESSAGE =>
-          val reply = task("task-1", contextOf(params), A2aTaskState.COMPLETED, skillOf(params))
-          result(A2aSendMessageResponse.of(reply))
+          sendReply.fold[Either[JsonRpcError, A2aSendMessageResponse]](
+            Right(
+              A2aSendMessageResponse.of(task("task-1", contextOf(params), A2aTaskState.COMPLETED, skillOf(params)))))(
+            _(params)) match {
+            case Right(reply) => result(reply)
+            case Left(error)  => complete(jsonEntity(JsonRpcResponse.failure(id, error)))
+          }
         case A2aMethods.SEND_STREAMING_MESSAGE =>
           complete(Source(streamResponses(params)).map { r =>
             ServerSentEvent(mapper.writeValueAsString(JsonRpcResponse.success(id, mapper.valueToTree(r))))
