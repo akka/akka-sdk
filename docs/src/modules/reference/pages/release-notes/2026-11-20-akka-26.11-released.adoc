@@ -9,13 +9,13 @@ Akka 26.11 consists of the following module versions:
 * Akka core 2.11.0
 * Akka HTTP 10.8.0
 * Akka Management 1.7.0
-* Akka Projections 1.7.0
+* Akka Projections 1.7.1
 * Akka gRPC 2.6.0
 * Akka Persistence Cassandra 1.4.1
 * Akka Persistence DynamoDB 2.1.1
 * Akka Persistence JDBC 5.6.0
-* Akka Persistence R2DBC 1.4.0
-* Alpakka 11.0.1
+* Akka Persistence R2DBC 1.4.1
+* Alpakka 11.0.2
 * Alpakka Kafka 9.0.0
 * Akka Diagnostics 2.3.0
 * Akka Insights 2.23.0
@@ -23,6 +23,8 @@ Akka 26.11 consists of the following module versions:
 These versions also consistently upgrade to *Jackson 2.21.8*, of the Jackson 2.21 long-term-support line.
 
 As reference of versions that go together for Akka 26.11, please see https://doc.akka.io/libraries/akka-dependencies/26.11/[Akka library versions 26.11].
+
+The `akka-dependencies` BOM 26.11.1 contains these versions. Use it rather than 26.11.0. Akka Persistence R2DBC 1.4.1 and Alpakka 11.0.2 fix dependencies that Maven resolved to older versions. With 26.11.0, Maven users of Akka Persistence R2DBC on Linux x86_64 could not connect to the database.
 
 == Removal of deprecated APIs
 
@@ -85,8 +87,8 @@ Akka HTTP also has several fixes that harden HTTP/2 and request parsing.
 
 == Compatibility
 
-* Akka Persistence R2DBC 1.4.0 no longer supports SQL Server. Users of SQL Server must stay on Akka Persistence R2DBC 1.3.x.
-* Akka Persistence R2DBC 1.4.0 uses Netty 4.2, which changes the default buffer allocator. To keep the old allocator, start the JVM with `-Dio.netty.allocator.type=pooled`.
+* Akka Persistence R2DBC 1.4 no longer supports SQL Server. Users of SQL Server must stay on Akka Persistence R2DBC 1.3.x.
+* Akka Persistence R2DBC 1.4 uses Netty 4.2, which changes the default buffer allocator. To keep the old allocator, start the JVM with `-Dio.netty.allocator.type=pooled`.
 * Alpakka 11.0.0 removes the Pravega, IronMQ, Spring Web and Huawei Push Kit connectors.
 * Akka Insights 2.23.0 only supports Akka 26.11. Stay on Akka Insights 2.22.x with Akka 25.10.
 * Apart from the removed APIs and connectors, the modules of Akka 26.11 are backwards compatible with Akka 25.10.
