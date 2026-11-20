@@ -202,7 +202,8 @@ include::example$doc-snippets/src/main/java/com/example/application/CompactionAg
 <1> Instructions to create the summary of user and AI messages and result as JSON.
 <2> The full history from the `SessionMemoryEntity`.
 <3> Format and concatenate the messages.
-<4> The `CompactionAgent` itself does not need any session memory.
+<4> Mark tool results with `isError` as `TOOL_CALL_ERROR`, so the summary does not present a failed tool call as normal tool data.
+<5> The `CompactionAgent` itself does not need any session memory.
 
 One way to trigger compaction is to use a consumer of the session memory events and call the `CompactionAgent` from that consumer when a threshold is exceeded.
 
