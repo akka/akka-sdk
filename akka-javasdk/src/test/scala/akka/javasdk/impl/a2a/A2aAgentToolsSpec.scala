@@ -12,8 +12,8 @@ import scala.jdk.CollectionConverters._
 
 import akka.actor.testkit.typed.scaladsl.LogCapturing
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
-import akka.javasdk.a2a._
 import akka.http.scaladsl.model.headers.RawHeader
+import akka.javasdk.a2a._
 import akka.javasdk.agent.RemoteA2aAgent
 import akka.javasdk.agent.ToolCallGuardrail
 import com.typesafe.config.Config

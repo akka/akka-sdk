@@ -5,8 +5,8 @@
 package akka.javasdk.impl.a2a
 
 import java.net.URLEncoder
-import java.security.PublicKey
 import java.nio.charset.StandardCharsets
+import java.security.PublicKey
 import java.util.Optional
 import java.util.UUID
 import java.util.concurrent.CompletionStage

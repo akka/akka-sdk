@@ -30,8 +30,8 @@ import akka.javasdk.agent.evaluator.ToxicityEvaluator
 import akka.javasdk.agent.task.TaskEntity
 import akka.javasdk.annotations.Component
 import akka.javasdk.annotations.GrpcEndpoint
-import akka.javasdk.annotations.http.HttpEndpoint
 import akka.javasdk.annotations.a2a.A2aEndpoint
+import akka.javasdk.annotations.http.HttpEndpoint
 import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.evaluation.DurableEvaluator
@@ -40,10 +40,10 @@ import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.impl.a2a.A2aPushDeliveryWorkflow
 import akka.javasdk.impl.a2a.A2aRemoteTaskPollWorkflow
 import akka.javasdk.impl.a2a.A2aRemoteTaskSubscriptionEntity
-import akka.javasdk.impl.a2a.RemoteA2aTaskWorkflow
 import akka.javasdk.impl.a2a.A2aTaskEntity
 import akka.javasdk.impl.a2a.A2aTaskExtrasEntity
 import akka.javasdk.impl.a2a.A2aTasksView
+import akka.javasdk.impl.a2a.RemoteA2aTaskWorkflow
 import akka.javasdk.impl.agent.task.BacklogEntity
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.timedaction.TimedAction

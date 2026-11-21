@@ -24,8 +24,8 @@ import akka.Done
 import akka.annotation.InternalApi
 import akka.javasdk.a2a.A2aArtifact
 import akka.javasdk.a2a.A2aMessage
-import akka.javasdk.a2a.A2aRole
 import akka.javasdk.a2a.A2aPart
+import akka.javasdk.a2a.A2aRole
 import akka.javasdk.a2a.A2aSendMessageResponse
 import akka.javasdk.a2a.A2aStreamResponse
 import akka.javasdk.a2a.A2aTask
