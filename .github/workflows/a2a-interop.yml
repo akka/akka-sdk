@@ -5,6 +5,8 @@ on:
     paths:
       - 'akka-javasdk-tests/a2a-interop/**'
       - 'akka-javasdk-tests/src/test/java/akkajavasdk/A2aInteropServiceTest.java'
+      - 'akka-javasdk-tests/src/test/java/akkajavasdk/A2aAdkEchoWorkflowTest.java'
+      - 'akka-javasdk/src/main/scala/akka/javasdk/impl/a2a/**'
       - 'akka-javasdk-tests/src/test/java/akkajavasdk/components/a2a/**'
       - 'akka-javasdk/src/main/java/akka/javasdk/a2a/**'
       - 'akka-javasdk/src/main/java/akka/javasdk/impl/a2a/**'
@@ -75,6 +77,27 @@ jobs:
           # The compatibility kit supports Python 3.11 to 3.14.
           python-version: '3.12'
 
+      # The SDK client follows tasks of the a2a-python echo server, once by push notifications and once by
+      # polling. It runs before the test service starts, so that only one sbt runs at a time.
+      - name: Run the SDK client against the a2a-python echo server
+        working-directory: akka-javasdk-tests/a2a-interop
+        env:
+          A2A_ADK_ECHO_PUSH_CARD: http://127.0.0.1:9101/.well-known/agent-card.json
+          A2A_ADK_ECHO_POLL_CARD: http://127.0.0.1:9102/.well-known/agent-card.json
+        run: |
+          python3 -m venv .venv
+          .venv/bin/python -m pip install --quiet -r requirements.txt
+          nohup .venv/bin/python adk_echo_server.py --port 9101 --push > echo-push.log 2>&1 &
+          nohup .venv/bin/python adk_echo_server.py --port 9102 > echo-poll.log 2>&1 &
+          for port in 9101 9102; do
+            for i in $(seq 1 30); do
+              curl --silent --fail http://127.0.0.1:$port/.well-known/agent-card.json > /dev/null && break
+              if [ "$i" = 30 ]; then cat echo-push.log echo-poll.log; exit 1; fi
+              sleep 1
+            done
+          done
+          cd ../.. && sbt "akka-javasdk-tests/testOnly akkajavasdk.A2aAdkEchoWorkflowTest"
+
       # The test service publishes the kit task workflow first, then the echo skill, on port 19391. Its A2A routes
       # require a bearer token, so the kit and the client check reach it through bearer_proxy.py on port 9000.
       - name: Start the A2A test service of the SDK
@@ -118,6 +141,11 @@ jobs:
       - name: Show the service log
         if: failure()
         run: tail -n 300 a2a-service.log
+
+      - name: Show the echo server logs
+        if: failure()
+        working-directory: akka-javasdk-tests/a2a-interop
+        run: tail -n 100 echo-push.log echo-poll.log || true
 
       - name: Upload the kit reports
         if: always()
