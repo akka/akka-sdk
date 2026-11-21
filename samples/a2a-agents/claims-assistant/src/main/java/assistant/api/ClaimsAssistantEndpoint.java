@@ -22,6 +22,8 @@ public class ClaimsAssistantEndpoint {
 
   public record ReviewRequest(String policyNumber) {}
 
+  public record Answer(String text) {}
+
   private final ComponentClient componentClient;
 
   public ClaimsAssistantEndpoint(ComponentClient componentClient) {
@@ -44,6 +46,15 @@ public class ClaimsAssistantEndpoint {
       .method(ClaimReviewRequestWorkflow::start)
       .invoke(new ClaimReviewRequestWorkflow.Request(claimId, request.policyNumber()));
     return HttpResponses.created("/reviews/" + claimId);
+  }
+
+  @Post("/reviews/{claimId}/answer")
+  public HttpResponse answerReview(String claimId, Answer answer) {
+    componentClient
+      .forWorkflow(claimId)
+      .method(ClaimReviewRequestWorkflow::answer)
+      .invoke(answer.text());
+    return HttpResponses.accepted();
   }
 
   @Get("/reviews/{claimId}")

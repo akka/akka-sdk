@@ -18,8 +18,8 @@ The two services are separate Maven projects. Each runs on its own.
 `claims-assistant`:
 
 - **Agent (`ClaimsAssistantAgent`)**: Passes the skills of the remote agent `claims` to its model as tools with `a2aAgents`.
-- **Workflow (`ClaimReviewRequestWorkflow`)**: Sends a message to the `review-claim` skill with `A2aClient` and waits for the updates of the remote task.
-- **HTTP endpoint (`ClaimsAssistantEndpoint`)**: Exposes `/assistant` and `/reviews`.
+- **Workflow (`ClaimReviewRequestWorkflow`)**: Sends a message to the `review-claim` skill with `A2aClient` and waits for the updates of the remote task. When the remote task asks for input, the workflow keeps the question in its state as `awaitingInput` and sends the answer as a follow-up message on the same task.
+- **HTTP endpoint (`ClaimsAssistantEndpoint`)**: Exposes `/assistant` and `/reviews`, including `/reviews/{claimId}/answer`.
 
 The remote agent `claims` is configured in `claims-assistant/src/main/resources/application.conf` under `akka.javasdk.a2a.remote-agents`.
 
@@ -67,6 +67,16 @@ curl -i -X POST http://localhost:9001/reviews/42 \
   --data '{"policyNumber": "P-1234"}'
 
 curl http://localhost:9001/reviews/42
+```
+
+The policy number is optional. Request a review without it, and the remote task asks for it. The question is in the `awaitingInput` field of the review. Send the answer, and the workflow follows the same remote task to its end:
+
+```shell
+curl -i -X POST http://localhost:9001/reviews/43 \n  --header "Content-Type: application/json" \n  --data '{}'
+
+curl http://localhost:9001/reviews/43
+
+curl -i -X POST http://localhost:9001/reviews/43/answer \n  --header "Content-Type: application/json" \n  --data '{"text": "P-1234"}'
 ```
 
 ## Tests

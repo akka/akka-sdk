@@ -7,6 +7,7 @@ import akka.javasdk.a2a.A2aPart;
 import akka.javasdk.a2a.A2aSendMessageResponse;
 import akka.javasdk.a2a.A2aTaskArtifactUpdate;
 import akka.javasdk.a2a.A2aTaskState;
+import akka.javasdk.a2a.A2aTaskStatus;
 import akka.javasdk.a2a.A2aTaskStatusUpdate;
 import akka.javasdk.a2a.A2aTaskUpdate;
 import akka.javasdk.annotations.Component;
@@ -15,6 +16,7 @@ import akka.javasdk.client.ComponentMethodRef1;
 import akka.javasdk.workflow.Workflow;
 import akka.javasdk.workflow.WorkflowContext;
 import java.time.Duration;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Component(id = "claim-review-request")
@@ -24,19 +26,57 @@ public class ClaimReviewRequestWorkflow extends Workflow<ClaimReviewRequestWorkf
     String claimId,
     String policyNumber,
     String remoteTaskId,
+    String remoteContextId,
+    String awaitingInput,
     String review,
     String outcome
   ) {
-    State withRemoteTask(String taskId) {
-      return new State(claimId, policyNumber, taskId, review, outcome);
+    State withRemoteTask(String taskId, String contextId) {
+      return new State(
+        claimId,
+        policyNumber,
+        taskId,
+        contextId,
+        awaitingInput,
+        review,
+        outcome
+      );
+    }
+
+    State withAwaitingInput(String question) {
+      return new State(
+        claimId,
+        policyNumber,
+        remoteTaskId,
+        remoteContextId,
+        question,
+        review,
+        outcome
+      );
     }
 
     State withReview(String text) {
-      return new State(claimId, policyNumber, remoteTaskId, text, outcome);
+      return new State(
+        claimId,
+        policyNumber,
+        remoteTaskId,
+        remoteContextId,
+        awaitingInput,
+        text,
+        outcome
+      );
     }
 
     State withOutcome(String text) {
-      return new State(claimId, policyNumber, remoteTaskId, review, text);
+      return new State(
+        claimId,
+        policyNumber,
+        remoteTaskId,
+        remoteContextId,
+        awaitingInput,
+        review,
+        text
+      );
     }
   }
 
@@ -58,7 +98,9 @@ public class ClaimReviewRequestWorkflow extends Workflow<ClaimReviewRequestWorkf
 
   public Effect<Done> start(Request request) {
     return effects()
-      .updateState(new State(request.claimId(), request.policyNumber(), null, null, null))
+      .updateState(
+        new State(request.claimId(), request.policyNumber(), null, null, null, null, null)
+      )
       .transitionTo(ClaimReviewRequestWorkflow::requestReview)
       .thenReply(Done.getInstance());
   }
@@ -68,26 +110,62 @@ public class ClaimReviewRequestWorkflow extends Workflow<ClaimReviewRequestWorkf
   }
 
   private StepEffect requestReview() {
-    var reply = a2aClient
-      .forAgent("claims")
-      .send(
-        "review-claim",
-        A2aMessage.user(
-          "Review claim " +
-          currentState().claimId() +
-          " under policy " +
-          currentState().policyNumber()
+    var state = currentState();
+    var text = "Review claim " + state.claimId();
+    if (state.policyNumber() != null) {
+      text += " under policy " + state.policyNumber();
+    }
+    return follow(sendToReviewSkill(A2aMessage.user(text)));
+  }
+
+  public Effect<Done> answer(String answer) { // <3>
+    if (currentState().awaitingInput() == null) {
+      return effects().error("The remote agent asked no question");
+    }
+    return effects()
+      .updateState(currentState().withAwaitingInput(null))
+      .transitionTo(ClaimReviewRequestWorkflow::sendAnswer)
+      .withInput(answer)
+      .thenReply(Done.getInstance());
+  }
+
+  private StepEffect sendAnswer(String answer) {
+    var message = A2aMessage.user(answer)
+      .withTaskId(currentState().remoteTaskId())
+      .withContextId(currentState().remoteContextId());
+    return follow(sendToReviewSkill(message));
+  }
+
+  private StepEffect awaitAnswer() {
+    return stepEffects()
+      .thenPause(
+        pauseSetting(Duration.ofHours(1)).timeoutHandler(
+          ClaimReviewRequestWorkflow::onReviewTimeout
         )
-      )
+      );
+  }
+
+  private A2aSendMessageResponse sendToReviewSkill(A2aMessage message) {
+    return a2aClient
+      .forAgent("claims")
+      .send("review-claim", message)
       .notifyWorkflow(onReviewUpdateReference()) // <1>
       .invoke();
+  }
 
+  private StepEffect follow(A2aSendMessageResponse reply) {
     if (
       reply instanceof A2aSendMessageResponse.Task task &&
       !task.task().status().state().terminal()
     ) {
+      var state = currentState().withRemoteTask(task.task().id(), task.task().contextId());
+      if (task.task().status().state() == A2aTaskState.INPUT_REQUIRED) { // <5>
+        return stepEffects()
+          .updateState(state.withAwaitingInput(question(task.task().status())))
+          .thenTransitionTo(ClaimReviewRequestWorkflow::awaitAnswer);
+      }
       return stepEffects()
-        .updateState(currentState().withRemoteTask(task.task().id()))
+        .updateState(state)
         .thenPause(
           pauseSetting(Duration.ofHours(1)).timeoutHandler(
             ClaimReviewRequestWorkflow::onReviewTimeout
@@ -104,6 +182,12 @@ public class ClaimReviewRequestWorkflow extends Workflow<ClaimReviewRequestWorkf
       case A2aTaskArtifactUpdate artifact -> effects()
         .updateState(currentState().withReview(text(artifact)))
         .pause()
+        .thenReply(Done.getInstance());
+      case A2aTaskStatusUpdate status when (
+        status.status().state() == A2aTaskState.INPUT_REQUIRED
+      ) -> effects() // <4>
+        .updateState(currentState().withAwaitingInput(question(status.status())))
+        .transitionTo(ClaimReviewRequestWorkflow::awaitAnswer)
         .thenReply(Done.getInstance());
       case A2aTaskStatusUpdate status when (
         status.status().state() == A2aTaskState.COMPLETED
@@ -132,10 +216,17 @@ public class ClaimReviewRequestWorkflow extends Workflow<ClaimReviewRequestWorkf
       .method(ClaimReviewRequestWorkflow::onReviewUpdate);
   }
 
+  private static String question(A2aTaskStatus status) {
+    var message = status.message();
+    return message == null ? "The remote agent needs more input" : text(message.parts());
+  }
+
   private static String text(A2aTaskArtifactUpdate artifact) {
-    return artifact
-      .artifact()
-      .parts()
+    return text(artifact.artifact().parts());
+  }
+
+  private static String text(List<A2aPart> parts) {
+    return parts
       .stream()
       .map(part ->
         switch (part) {
