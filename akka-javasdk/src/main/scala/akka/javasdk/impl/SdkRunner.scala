@@ -242,6 +242,14 @@ import org.slf4j.event.Level
 object SdkRunner {
   val userServiceLog: Logger = LoggerFactory.getLogger("akka.javasdk.ServiceLog")
 
+  // Internal A2A classes that only the SDK's own workflows may take in their constructors
+  private[impl] val sdkOnlyWorkflowDependencies: Set[Class[_]] =
+    Set(classOf[A2aPushUrlPolicy], classOf[A2aRemoteTasks], classOf[A2aEndpointSettings])
+
+  /** True when the SDK injects an internal A2A dependency into the workflow class. */
+  private[impl] def injectsSdkOnlyDependency(workflowClass: Class[_], dependency: Class[_]): Boolean =
+    sdkOnlyWorkflowDependencies(dependency) && ComponentLocator.providedComponents.contains(workflowClass)
+
   val FutureDone: Future[Done] = Future.successful(Done)
 
   def logReportedError(err: UserFunctionError): Unit = {
@@ -611,7 +619,7 @@ private[javasdk] object Sdk {
     classOf[AgentRegistry],
     classOf[ObjectStorageProvider],
     classOf[LedgerClient],
-    classOf[DecisionModelClient])
+    classOf[DecisionModelClient]) ++ SdkRunner.sdkOnlyWorkflowDependencies
 
   // Run a user-supplied callback, logging any failure on the user component's own logger so it reaches the user.
   // Rethrows by default; pass rethrow = false where a failing callback must not abort the surrounding flow.
@@ -913,10 +921,13 @@ private final class Sdk(
             Some(componentId))
             .orElse {
               // remember to update component type API doc and docs if changing the set of injectables
-              case p if p == classOf[WorkflowContext]     => context
-              case p if p == classOf[A2aPushUrlPolicy]    => a2aEndpointSettings.pushUrls()
-              case p if p == classOf[A2aEndpointSettings] => a2aEndpointSettings
-              case p if p == classOf[A2aRemoteTasks]      => a2aRemoteTasks
+              case p if p == classOf[WorkflowContext] => context
+              case p if p == classOf[A2aPushUrlPolicy] && SdkRunner.injectsSdkOnlyDependency(clz, p) =>
+                a2aEndpointSettings.pushUrls()
+              case p if p == classOf[A2aEndpointSettings] && SdkRunner.injectsSdkOnlyDependency(clz, p) =>
+                a2aEndpointSettings
+              case p if p == classOf[A2aRemoteTasks] && SdkRunner.injectsSdkOnlyDependency(clz, p) =>
+                a2aRemoteTasks
               case p if p == classOf[A2aTaskContext] =>
                 new A2aTaskContextImpl(
                   context.workflowId(),
