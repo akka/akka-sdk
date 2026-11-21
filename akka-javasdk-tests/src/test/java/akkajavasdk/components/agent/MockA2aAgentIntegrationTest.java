@@ -6,6 +6,7 @@ package akkajavasdk.components.agent;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import akka.javasdk.impl.a2a.A2aAgentTools;
 import akka.javasdk.testkit.MockA2aAgent;
 import akka.javasdk.testkit.MockA2aAgent.Reply;
 import akka.javasdk.testkit.TestKit;
@@ -72,7 +73,8 @@ public class MockA2aAgentIntegrationTest extends TestKitSupport {
             received -> {
               assertThat(received.skillId()).isEqualTo("check-claim");
               assertThat(received.text()).isEqualTo("check claim 42");
-              assertThat(received.contextId()).isEqualTo(sessionId);
+              assertThat(received.contextId())
+                  .isEqualTo(A2aAgentTools.remoteContextId(sessionId, "claims"));
             });
   }
 }

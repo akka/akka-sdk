@@ -18,6 +18,7 @@ import akka.javasdk.agent.SessionMemoryEntity;
 import akka.javasdk.agent.SessionMessage;
 import akka.javasdk.agent.SessionMessage.ToolCallResponse;
 import akka.javasdk.agent.ToolCallGuardrail;
+import akka.javasdk.impl.a2a.A2aAgentTools;
 import akka.javasdk.impl.a2a.A2aErrorCode;
 import akka.javasdk.impl.a2a.JsonRpcError;
 import akka.javasdk.impl.a2a.JsonRpcResponse;
@@ -110,7 +111,9 @@ public class RemoteA2aToolIntegrationTest extends TestKitSupport {
     var params = remote.requests.peek();
     assertThat(params).isNotNull();
     assertThat(params.path("metadata").path("skillId").asText()).isEqualTo("check-claim");
-    assertThat(params.path("message").path("contextId").asText()).isEqualTo(sessionId);
+    assertThat(params.path("message").path("contextId").asText())
+        .isEqualTo(A2aAgentTools.remoteContextId(sessionId, "claims"))
+        .isNotEqualTo(sessionId);
     assertThat(params.path("message").path("parts").get(0).path("text").asText())
         .isEqualTo("check claim 42");
     assertThat(params.path("message").path("parts").get(1).path("data").path("claim").asInt())

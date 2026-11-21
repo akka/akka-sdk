@@ -15,8 +15,9 @@ import java.util.Set;
  * <p>Pass it to {@link Agent.Effect.Builder#a2aAgents}. The agent reads the remote agent's Agent
  * Card and offers each skill on the card to the model as one tool. The tool takes a required {@code
  * message} text and an optional {@code data} object. When the model calls the tool, the agent sends
- * the message to the skill with the session id as the A2A context id, and returns the reply to the
- * model.
+ * the message to the skill and returns the reply to the model. The A2A context id of the message is
+ * derived from the session id and the agent name, so every call of a session to the agent has the
+ * same context id and the session id does not leave the service.
  *
  * <p>The names of the tools are {@code <agent name>_<skill id>}. The agent name is the configured
  * name for {@link #named(String)}. For {@link #fromCardUrl(String)} and {@link

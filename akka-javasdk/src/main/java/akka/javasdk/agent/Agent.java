@@ -293,8 +293,8 @@ public abstract class Agent implements AgentDelegationWorker {
        * Offers the skills of one or more remote Agent2Agent (A2A) agents to the model as tools.
        *
        * <p>Each allowed skill on a remote agent's Agent Card becomes one tool. A tool call sends
-       * the model's message to the skill with the session id as the A2A context id, and returns the
-       * reply to the model.
+       * the model's message to the skill, with an A2A context id derived from the session id, and
+       * returns the reply to the model.
        *
        * <p>Construct instances using {@link RemoteA2aAgent#named(String)}, {@link
        * RemoteA2aAgent#fromCardUrl(String)} or {@link RemoteA2aAgent#fromService(String)}.
@@ -676,8 +676,8 @@ public abstract class Agent implements AgentDelegationWorker {
        * Offers the skills of one or more remote Agent2Agent (A2A) agents to the model as tools.
        *
        * <p>Each allowed skill on a remote agent's Agent Card becomes one tool. A tool call sends
-       * the model's message to the skill with the session id as the A2A context id, and returns the
-       * reply to the model.
+       * the model's message to the skill, with an A2A context id derived from the session id, and
+       * returns the reply to the model.
        *
        * <p>Construct instances using {@link RemoteA2aAgent#named(String)}, {@link
        * RemoteA2aAgent#fromCardUrl(String)} or {@link RemoteA2aAgent#fromService(String)}.

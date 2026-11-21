@@ -875,7 +875,8 @@ private[impl] final class AgentImpl(
             val callToolFunction = (request: SpiAgent.ToolCallCommand) =>
               a2aToolsByName.get(request.name) match {
                 case Some(tool) =>
-                  // The session id is the A2A context id, so the remote agent keeps one conversation per session
+                  // The A2A context id is derived from the session id, so the remote agent keeps one conversation
+                  // per session
                   A2aAgentTools
                     .call(
                       tool,

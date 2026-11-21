@@ -159,8 +159,8 @@ private[akka] object A2aAgentTools {
    * Sends the model's tool call to the skill and returns the reply as text. A failure of the call, or tool arguments
    * that cannot be sent, are returned as text that starts with `Error:`, so that the model sees them.
    *
-   * @param contextId
-   *   the session id of the agent, sent as the A2A context id
+   * @param sessionId
+   *   the session id of the agent, from which the A2A context id is derived
    * @param agentComponentId
    *   the component id of the calling agent, whose session memory receives the outcome of a handed off task
    * @param writesSessionMemory
@@ -170,7 +170,7 @@ private[akka] object A2aAgentTools {
   def call(
       tool: A2aTool,
       arguments: String,
-      contextId: String,
+      sessionId: String,
       agentComponentId: String,
       writesSessionMemory: Boolean,
       client: A2aClientImpl)(implicit ec: ExecutionContext, scheduler: akka.actor.Scheduler): Future[String] = {
@@ -180,6 +180,7 @@ private[akka] object A2aAgentTools {
     message match {
       case Left(error) => Future.successful(error)
       case Right(msg) =>
+        val contextId = remoteContextId(sessionId, tool.agentName)
         val sent =
           try {
             val remote = client.forTarget(tool.agent.target, tool.agent.timeout)
@@ -207,7 +208,7 @@ private[akka] object A2aAgentTools {
                           Future.successful(notFollowedText(task, handOffAfter))
                         } else
                           remote
-                            .handOff(task, contextId, agentComponentId, tool.name)
+                            .handOff(task, sessionId, agentComponentId, tool.name)
                             .map(_ => handedOffText(task, handOffAfter))
                       }
                     case other => Future.successful(replyText(other))
@@ -233,6 +234,24 @@ private[akka] object A2aAgentTools {
         "so the tasks are not handed off. Set akka.javasdk.a2a.remote-tasks.enabled = on, or configure the agent " +
         "under akka.javasdk.a2a.remote-agents.",
         toolName)
+
+  /**
+   * The A2A context id that the tools of a session send to a remote agent. It is the same for every call of the session
+   * to the agent, so the remote agent keeps one conversation, and it does not reveal the session id.
+   */
+  def remoteContextId(sessionId: String, agentName: String): String = {
+    val digest = java.security.MessageDigest.getInstance("SHA-256")
+    Seq("akka-a2a-remote-context", agentName, sessionId).foreach { value =>
+      val bytes = value.getBytes(java.nio.charset.StandardCharsets.UTF_8)
+      digest.update(java.nio.ByteBuffer.allocate(4).putInt(bytes.length).array())
+      digest.update(bytes)
+    }
+    val hash = java.nio.ByteBuffer.wrap(digest.digest())
+    // A UUID of version 8, the version for custom content
+    val most = (hash.getLong & ~0xf000L) | 0x8000L
+    val least = (hash.getLong & 0x3fffffffffffffffL) | Long.MinValue
+    new java.util.UUID(most, least).toString
+  }
 
   // How often a task is read while the tool waits for it, before it is handed off
   private val FollowInterval = 500.millis

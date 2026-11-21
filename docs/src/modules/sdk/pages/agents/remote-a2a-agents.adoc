@@ -36,7 +36,7 @@ When the agent handles a request, it reads the Agent Card of each remote agent. 
 * The description of the tool is the description of the skill, followed by the names of the skill and of the remote agent.
 * The tool takes a required `message` string and an optional `data` object. The agent sends the message as a text part and the data as a data part.
 
-When the model calls the tool, the agent sends the message to the skill with `SendMessage`. The agent uses its session id as the A2A context id, so the remote agent can keep one conversation for each session. The agent returns the reply to the model as text:
+When the model calls the tool, the agent sends the message to the skill with `SendMessage`. The A2A context id of the message is derived from the session id and the name of the remote agent: every call of one session to the agent has the same context id, so the remote agent can keep one conversation for each session, and the session id does not leave your service. The agent returns the reply to the model as text:
 
 * A message returns its text parts. A data part becomes its JSON text. A file part becomes a line with its file name and media type, and its URL when it has one.
 * A completed A2A task returns the parts of its artifacts and of its status message.

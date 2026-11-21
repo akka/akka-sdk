@@ -200,7 +200,7 @@ class A2aAgentToolsSpec
       call(tool, """{"message":"check claim 42","data":{"claim":42}}""") shouldBe "claim 42 is valid\n{\"valid\":true}"
 
       params.path("metadata").path("skillId").asText() shouldBe "check-claim"
-      params.path("message").path("contextId").asText() shouldBe "session-1"
+      params.path("message").path("contextId").asText() shouldBe A2aAgentTools.remoteContextId("session-1", "claims")
       val parts = params.path("message").path("parts")
       parts.get(0).path("text").asText() shouldBe "check claim 42"
       parts.get(1).path("data").path("claim").asInt() shouldBe 42
@@ -300,6 +300,21 @@ class A2aAgentToolsSpec
       val tool = A2aAgentTools.toolsFor(Seq(RemoteA2aAgent.named("claims")), client).head
       call(tool, """{"data":{}}""") should (startWith("Error: ") and include("message"))
       server.requests.filter(_.path == "/a2a") shouldBe empty
+    }
+  }
+
+  "The context id sent to a remote agent" should {
+
+    "be the same for each call of a session to the agent" in {
+      A2aAgentTools.remoteContextId("session-1", "claims") shouldBe A2aAgentTools.remoteContextId("session-1", "claims")
+    }
+
+    "not reveal the session id, and differ between sessions and agents" in {
+      val contextId = A2aAgentTools.remoteContextId("session-1", "claims")
+      (contextId should not).include("session-1")
+      java.util.UUID.fromString(contextId).version() shouldBe 8
+      A2aAgentTools.remoteContextId("session-2", "claims") should not be contextId
+      A2aAgentTools.remoteContextId("session-1", "payments") should not be contextId
     }
   }
 
