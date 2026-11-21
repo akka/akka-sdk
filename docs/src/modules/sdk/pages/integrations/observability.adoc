@@ -17,6 +17,31 @@ Any OTEL-compatible backend works with Akka, including:
 * **Dynatrace**
 * **Elastic Observability**
 
+== Trace attributes of A2A calls
+
+When tracing is enabled, Akka adds a span for each call of the Agent2Agent (A2A) protocol, in both directions. The spans carry these attributes, in addition to the attributes that the runtime sets on every span:
+
+[cols="1,2"]
+|===
+| Attribute | Value
+
+| `akka.a2a.method` | The A2A method, such as `SendMessage`, `GetTask` or `SendStreamingMessage`.
+| `akka.a2a.skill.id` | The id of the skill that the message selects.
+| `akka.a2a.task.id` | The id of the task.
+| `akka.a2a.context.id` | The context id of the task or the message.
+| `akka.a2a.task.state` | The state of the task when the call ended, such as `TASK_STATE_COMPLETED`. For a stream, the state in its last event.
+| `akka.a2a.caller.subject` | On a call to your A2A endpoint, the subject of the caller's JWT, when the request carries one.
+| `akka.a2a.remote.agent.name` | On a call to a remote agent, its name. This is the configured name, or the name on its Agent Card.
+| `akka.a2a.remote.card.url` | On a call to a remote agent, the URL of its Agent Card, without user info, query and fragment.
+| `akka.a2a.caller.component.id` | On a call to a remote agent with `A2aClient`, the calling component.
+|===
+
+A call to your A2A endpoint has a span named `A2A <method>`, a child of the span of the HTTP request. It ends with the response, or with the stream for a streaming method.
+
+A call to a remote agent has a span named `A2A <method>` of kind client, a child of the span of the calling component or of the agent's tool call. The duration of the span is the duration of the call. The request carries the trace context of this span, so the spans of the remote agent are its children. A guardrail that runs before a call from application code has a span with the attributes `akka.agent.guardrail.name`, `akka.agent.guardrail.category` and `akka.agent.guardrail.result`.
+
+When a workflow follows a remote task with `notifyWorkflow`, the span of the call ends with the reply. The later updates reach the workflow's command, whose spans the runtime records.
+
 == See also
 
 * xref:operations:observability-and-monitoring/index.adoc[Observability and monitoring]

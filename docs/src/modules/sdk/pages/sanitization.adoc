@@ -25,7 +25,7 @@ A sanitizer masks at one or more application points:
 
 * `logs`: text written to logs
 * `model-call`: text passed to the model in each model call of an agent, tool results included
-* `tool-result`: only the output of local tools and MCP tools, which a `model-call` entry masks as well
+* `tool-result`: only the output of local tools, MCP tools and remote A2A agents, which a `model-call` entry masks as well. The replies of remote A2A agents are masked both when an agent calls them as tools and when application code calls them with `A2aClient`, see xref:sdk:agents/remote-a2a-agents.adoc#guardrails-and-sanitizers[Guardrails and sanitizers on remote calls]
 
 Each sanitizer can name the points it masks at, and the agents it masks for. See <<Configuring sanitizers>>.
 

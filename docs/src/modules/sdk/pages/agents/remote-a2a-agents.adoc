@@ -10,7 +10,7 @@ include::ROOT:partial$include.adoc[]
 
 A remote A2A agent is an agent that runs outside your service and speaks the Agent2Agent (A2A) protocol. The remote agent publishes an Agent Card, which is a JSON document that names the agent, lists its skills, and says how to reach it. A skill is one task that the agent can do. Your service calls the agent with `A2aClient`, which reads the Agent Card, sends the requests, and applies the credentials and TLS settings that you configure for that agent.
 
-This page describes how an agent offers the skills of a remote agent to its model as tools, how to name a remote agent in configuration, how to give your service credentials for it, how to set the certificates that TLS uses to reach it, how to require a signed Agent Card, how to choose the skills and the timeout of the tools, how a tool hands a long remote task to a workflow, and how a workflow step calls a remote agent and waits for its task.
+This page describes how an agent offers the skills of a remote agent to its model as tools, how to name a remote agent in configuration, how to give your service credentials for it, how to set the certificates that TLS uses to reach it, how to require a signed Agent Card, how to choose the skills and the timeout of the tools, how a tool hands a long remote task to a workflow, how a workflow step calls a remote agent and waits for its task, and how guardrails and sanitizers apply to the calls.
 
 Autonomous agents take no part in A2A. An xref:sdk:autonomous-agents.adoc[autonomous agent] does not call remote A2A agents. A request-based agent that offers remote A2A agents as tools can still be a worker of an autonomous agent.
 
@@ -234,6 +234,10 @@ With this setting, the tool call works as follows:
 
 The outcome goes to the session memory that Akka provides for the agent, keyed by the session id. Akka writes it even when the agent's current request is still running, so it can appear in the history before the end of that request.
 
+The agent hands off a task only when it writes that session memory, because the outcome has nowhere else to go. When the agent turns its session memory off, makes it read only, for example with `MemoryProvider.limitedWindow().readOnly(...)`, or uses a custom or intercepted memory provider, the model receives a text that says the task continues in the background and that its outcome will not be added. Akka logs this and does not follow the task.
+
+The outcome is masked with the `tool-result` sanitizers of the agent, as the reply of the tool call is. See <<guardrails-and-sanitizers>>.
+
 The workflow is a built-in component, like the session memory, and Akka registers it in each service that has an agent.
 
 [#workflow-step]
@@ -283,9 +287,57 @@ include::example$doc-snippets/src/main/resources/application.conf[tag=a2a-push]
 
 Delivery is at least once. An update that a command already received for the same task is not delivered again: a status is known by its state, its timestamp and the id of its message, and an artifact by its id and its content. A command can still receive an update twice when the service fails between the delivery and recording it, so make the command safe to repeat. When a delivery of a push notification fails, the endpoint answers with an error and the remote agent retries, as its push notification policy allows. A failed delivery while polling is retried at the next poll.
 
+Akka follows a task for at most the `follow-timeout` of the remote agent, 24 hours by default. When the task has not ended or asked for input by then, the following ends and the command receives one last `A2aTaskStatusUpdate`. Akka creates that update, and the remote agent does not send it. Its `followTimedOut()` method returns true, and its state is `TASK_STATE_UNSPECIFIED`, because the remote task may still be running. No later update of the task is delivered. Set `follow-timeout` under `akka.javasdk.a2a.remote-agents.<name>`, or for every remote agent under `akka.javasdk.a2a.defaults`.
+
+An update can arrive while the step that sent the message is still running, for example when the remote agent answers quickly. The workflow handles a command only after its running step has ended, so the command receives the update after the step has paused the workflow, and it sees the state that the step set. When the step runs for longer than the delivery waits, the delivery fails and is retried as described above.
+
 When a task needs input, the remote agent waits for the next message on the task. Send it from a step with `withTaskId` on the message, and call `notifyWorkflow` again to follow the task further. Akka does not register a second push notification configuration for the same workflow and task.
 
 The workflows and the entity that follow remote tasks are built-in components. Akka registers them in a service that has an agent, or a component that takes `A2aClient` in its constructor. It registers the push notification endpoint only when the service also has a public URL.
+
+[#guardrails-and-sanitizers]
+== Guardrails and sanitizers on remote calls
+
+The guardrails and sanitizers that you configure for tool calls also apply to calls to remote A2A agents, on both calling paths.
+
+A xref:sdk:agents/guardrails.adoc#_implementing_a_tool_call_guardrail[`ToolCallGuardrail`] sees the origin `ToolOrigin.RemoteA2a`, which names the remote agent, the URL of its Agent Card, and the skill. The guardrail runs before the message is sent, so a call that it denies never reaches the remote agent.
+
+* For a tool call of an agent, the agent runs the guardrail before the tool call, once, as for any tool. A denial aborts the agent request, and the agent's `onFailure` receives a `Guardrail.GuardrailException`.
+* For a call that application code makes with `A2aClient`, such as a workflow step or an endpoint, `send` and `stream` run the guardrail. `CallContext.agentId()` returns the component id of the calling component, or the class name of an endpoint. `sessionId()` returns the context id given with `inContext`, or an empty string. `toolName()` returns the name that a tool for the skill would have, `<agent>_<skill>`, and `arguments()` returns the message as JSON. A denial fails the call with a `Guardrail.GuardrailException`, and no message is sent.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/a2a/ClaimPaymentWorkflow.java[ClaimPaymentWorkflow.java]
+----
+include::example$doc-snippets/src/main/java/com/example/a2a/ClaimPaymentWorkflow.java[tag=guardrail]
+----
+<1> The guardrails of the workflow run before the message is sent.
+<2> A denial fails `invoke` with a `Guardrail.GuardrailException`, whose message names the guardrail and the reason.
+
+You select the guardrail for a calling component in the same way as for an agent, with `agents`. Two settings scope a `ToolCallGuardrail` to calls to remote agents:
+
+[source,hocon,indent=0]
+.{sample-base-url}/doc-snippets/src/main/resources/application.conf[application.conf]
+----
+include::example$doc-snippets/src/main/resources/application.conf[tag=a2a-guardrail]
+----
+<1> The guardrail applies to the agent `claims-assistant` and to the workflow `claim-payment`.
+<2> `tool-origins` limits the guardrail to calls to remote A2A agents.
+<3> `remote-agents` limits it to the named remote agents. A value is the name of a remote agent under `akka.javasdk.a2a.remote-agents`, or the URL of an Agent Card. A URL matches whichever way the call names the agent.
+
+`report-only` and `fail-mode` work as for any guardrail. On the workflow path, a guardrail that denies with `report-only = true` lets the call continue and logs a warning. Akka records the evaluation in a trace span, and does not record it in the ledger, which holds the interactions of agents.
+
+A sanitizer with `apply-at = ["tool-result"]` masks the replies of remote agents:
+
+[source,hocon,indent=0]
+.{sample-base-url}/doc-snippets/src/main/resources/application.conf[application.conf]
+----
+include::example$doc-snippets/src/main/resources/application.conf[tag=a2a-sanitizer]
+----
+
+* For a tool call, the runtime masks the text that the model receives, as for any tool.
+* For a call with `A2aClient`, the client masks the reply before it returns it, and each update that `notifyWorkflow` delivers. It masks the text parts and the strings in the data parts of messages, task statuses, artifacts and the task history. File parts are not masked.
+
+The sanitizers of the calling component apply, selected by `agents` and `agent-roles` as for an agent. A sanitizer that names neither applies to every component. See xref:sdk:sanitization.adoc[].
 
 [#testing]
 == Testing agents that call remote A2A agents

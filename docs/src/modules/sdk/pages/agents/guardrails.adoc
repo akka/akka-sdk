@@ -198,6 +198,15 @@ akka.javasdk.agent.guardrails {
 <8> An application-specific property, read by the guardrail from its `GuardrailContext`.
 <9> Optional, for a `ToolCallGuardrail` only. Restricts the guardrail to the named tools. Without it, the guardrail sees every tool call on the selected agents. For a function tool, use `ClassName_methodName`, or the `name` set in `@FunctionTool`. For an MCP tool, use the name on the MCP server. The filter matches by name only, so it also matches a tool with the same name from another origin. Use `origin()` to tell them apart.
 
+Two more settings scope a `ToolCallGuardrail` by where the tool runs:
+
+* `tool-origins`: the origins of the tool calls that the guardrail sees, any of `function-tool`, `remote-mcp` and `remote-a2a`. Without it, the guardrail sees calls from every origin.
+* `remote-agents`: the remote A2A agents that the guardrail sees calls to, by their name under `akka.javasdk.a2a.remote-agents` or by the URL of their Agent Card. With it, the guardrail sees no other calls. A URL matches the agent whichever way the call names it.
+
+The service fails to start when `tool-origins` has an unknown value, when `remote-agents` names an agent that is not configured and is not a URL, when `remote-agents` is combined with `tool-origins` that leave out `remote-a2a`, or when a guardrail that is not a `ToolCallGuardrail` sets either key. `tools`, `tool-origins` and `remote-agents` all have to match for the guardrail to see a call.
+
+A `ToolCallGuardrail` also runs before the calls to remote A2A agents that a workflow, an endpoint or another component makes with `A2aClient`. `agents` then selects the guardrail by the component id of the calling component, or the class name of an endpoint. See xref:sdk:agents/remote-a2a-agents.adoc#guardrails-and-sanitizers[Guardrails and sanitizers on remote calls].
+
 The `class` property sets the implementation class. The class must implement `ModelCallGuardrail`, `AgentResponseGuardrail`, or `ToolCallGuardrail`, be public, and have a public constructor. The constructor may take a link:{attachmentsdir}/api/akka/javasdk/agent/GuardrailContext.html[`GuardrailContext`] parameter, which holds the name and the config section of the guardrail. The `ProfanityResponseGuard` example reads its `search-for` property this way.
 
 The runtime shares one guardrail instance across concurrent calls from different sessions and agents. The implementation must be thread safe.
