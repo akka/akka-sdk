@@ -424,6 +424,18 @@ private[javasdk] object ComponentLocator {
   val providedComponents: Seq[Class[_]] =
     agentProvidedComponents ++ autonomousAgentProvidedComponents ++ a2aProvidedComponents ++ a2aRemoteTaskComponents
 
+  /**
+   * True when the service needs the components that follow remote A2A tasks: it configures a remote agent, a component
+   * injects [[A2aClient]], or `akka.javasdk.a2a.remote-tasks.enabled` is on. An agent that hands off a tool call to an
+   * agent given by URL or service needs the setting.
+   */
+  def followsRemoteTasks(config: com.typesafe.config.Config, classes: Seq[Class[_]]): Boolean = {
+    def has(path: String) = config.hasPath(path)
+    (has("akka.javasdk.a2a.remote-tasks.enabled") && config.getBoolean("akka.javasdk.a2a.remote-tasks.enabled")) ||
+    (has("akka.javasdk.a2a.remote-agents") && !config.getConfig("akka.javasdk.a2a.remote-agents").root().isEmpty) ||
+    classes.exists(injectsA2aClient)
+  }
+
   /** True when a constructor of the class takes an [[A2aClient]]. */
   def injectsA2aClient(clz: Class[_]): Boolean =
     clz.getDeclaredConstructors.exists(_.getParameterTypes.contains(classOf[A2aClient]))
@@ -638,9 +650,8 @@ private[javasdk] object ComponentLocator {
       if (descriptorConfig.hasPath(DescriptorServiceSetupEntryPath))
         Some(dynamicAccess.getClassFor[AnyRef](descriptorConfig.getString(DescriptorServiceSetupEntryPath)).get)
       else None
-    // An agent can hand off a remote task, and a component with an A2aClient can follow one for a workflow
     val followsRemoteA2aTasks =
-      hasAgentComponents || (components ++ serviceSetupClass).exists(injectsA2aClient)
+      followsRemoteTasks(applicationConfig, components ++ serviceSetupClass)
 
     val withBuildInComponents =
       (if (hasA2aEndpoint) a2aProvidedComponents else Seq.empty) ++

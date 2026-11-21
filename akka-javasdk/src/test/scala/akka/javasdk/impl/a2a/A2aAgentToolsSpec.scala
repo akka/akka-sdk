@@ -241,6 +241,22 @@ class A2aAgentToolsSpec
       call(tool, """{"message":"check"}""") shouldBe "The remote task [t-2] is in state TASK_STATE_WORKING: checking"
     }
 
+    "return the state of a task still working after the hand-off time, with a warning, when the service cannot follow it" in {
+      reset()
+      server.sendReply = Some { _ =>
+        Right(
+          A2aSendMessageResponse.of(
+            new A2aTask("t-3", "session-1", new A2aTaskStatus(A2aTaskState.WORKING, null, null), null, null, null)))
+      }
+      // The client has no remote task components, as in a service that does not follow remote tasks
+      val agent = RemoteA2aAgent.named("claims").handOffTasksStillWorkingAfter(Duration.ofMillis(300))
+      val tool = A2aAgentTools.toolsFor(Seq(agent), client).head
+      val reply = akka.actor.testkit.typed.scaladsl.LoggingTestKit
+        .warn("remote-tasks.enabled")
+        .expect(call(tool, """{"message":"check"}"""))
+      reply shouldBe "The remote task [t-3] is in state TASK_STATE_WORKING"
+    }
+
     "return a failed task as an error" in {
       reset()
       server.sendReply = Some { _ =>

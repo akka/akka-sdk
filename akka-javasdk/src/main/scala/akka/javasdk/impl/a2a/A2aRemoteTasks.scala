@@ -86,7 +86,8 @@ private[akka] final class A2aRemoteTasks(
       return Future.failed(
         new IllegalStateException(
           "Following a remote A2A task needs the SDK's remote task components, which a service has when a " +
-          "component injects A2aClient or the service has an agent"))
+          "component injects A2aClient, akka.javasdk.a2a.remote-agents names an agent, or " +
+          "akka.javasdk.a2a.remote-tasks.enabled is on"))
     val subscriptionId = subscriptionIdFor(target, client.cardUrl, task.id())
     val initialKeys = updatesOf(task).map(_._1)
     client.card().invokeAsync().asScala.flatMap { card =>

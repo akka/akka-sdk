@@ -104,6 +104,12 @@ public interface RemoteA2aAgent {
    * outcome to the session memory of the calling agent as a user message when the task ends or
    * needs input. The model reads it with the next request in the session.
    *
+   * <p>The SDK follows the task only in a service that configures a remote agent under {@code
+   * akka.javasdk.a2a.remote-agents}, has a component that injects {@link
+   * akka.javasdk.a2a.A2aClient}, or sets {@code akka.javasdk.a2a.remote-tasks.enabled = on}. In
+   * another service the tool returns the state of the task without a hand-off, and the SDK logs a
+   * warning once.
+   *
    * <p>By default, the tool waits for the reply up to the timeout and returns the state of a task
    * that has not ended.
    */

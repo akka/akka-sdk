@@ -242,7 +242,7 @@ The agent hands off a task only when it writes that session memory, because the 
 
 The outcome is masked with the `tool-result` sanitizers of the agent, as the reply of the tool call is. See <<guardrails-and-sanitizers>>.
 
-The workflow is a built-in component, like the session memory, and Akka registers it in each service that has an agent.
+The workflow is a built-in component, as are the components that follow the task. Akka registers them in a service that configures a remote agent under `akka.javasdk.a2a.remote-agents`, has a component that takes `A2aClient` in its constructor, or sets `akka.javasdk.a2a.remote-tasks.enabled = on`. An agent that hands off tool calls to an agent given only by card URL or service name needs the setting. Without these components, Akka logs a warning once and does not hand off the task: the model receives the id and state of the task, as without a hand-off time.
 
 [#workflow-step]
 == Calling a remote agent from a workflow step
@@ -297,7 +297,7 @@ An update can arrive while the step that sent the message is still running, for 
 
 When a task needs input, the remote agent waits for the next message on the task. Send it from a step with `withTaskId` on the message, and call `notifyWorkflow` again to follow the task further. Akka does not register a second push notification configuration for the same workflow and task.
 
-The workflows and the entity that follow remote tasks are built-in components. Akka registers them in a service that has an agent, or a component that takes `A2aClient` in its constructor. It registers the push notification endpoint only when the service also has a public URL.
+The workflows and the entity that follow remote tasks are built-in components. Akka registers them in a service that configures a remote agent under `akka.javasdk.a2a.remote-agents`, has a component that takes `A2aClient` in its constructor, or sets `akka.javasdk.a2a.remote-tasks.enabled = on`. It registers the push notification endpoint only when the service also has a public URL.
 
 [#guardrails-and-sanitizers]
 == Guardrails and sanitizers on remote calls

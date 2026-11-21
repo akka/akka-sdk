@@ -194,7 +194,10 @@ private[akka] object A2aAgentTools {
                       val deadline = System.nanoTime() + handOffAfter.toNanos
                       followUntil(remote, t.task(), deadline).flatMap { task =>
                         if (A2aRemoteTasks.settles(task)) Future.successful(replyText(A2aSendMessageResponse.of(task)))
-                        else if (!writesSessionMemory) {
+                        else if (!remote.canFollowTasks) {
+                          warnNoRemoteTaskComponents(tool.name)
+                          Future.successful(replyText(A2aSendMessageResponse.of(task)))
+                        } else if (!writesSessionMemory) {
                           log.info(
                             "Remote A2A task [{}] of tool [{}] is still working after the hand-off time, and agent [{}] " +
                             "does not write the built-in session memory, so the task is not followed",
@@ -220,6 +223,16 @@ private[akka] object A2aAgentTools {
         }
     }
   }
+
+  private val warnedNoRemoteTaskComponents = new java.util.concurrent.atomic.AtomicBoolean(false)
+
+  private def warnNoRemoteTaskComponents(toolName: String): Unit =
+    if (warnedNoRemoteTaskComponents.compareAndSet(false, true))
+      log.warn(
+        "Tool [{}] asks to hand off remote A2A tasks, but the service has no components that follow remote tasks, " +
+        "so the tasks are not handed off. Set akka.javasdk.a2a.remote-tasks.enabled = on, or configure the agent " +
+        "under akka.javasdk.a2a.remote-agents.",
+        toolName)
 
   // How often a task is read while the tool waits for it, before it is handed off
   private val FollowInterval = 500.millis

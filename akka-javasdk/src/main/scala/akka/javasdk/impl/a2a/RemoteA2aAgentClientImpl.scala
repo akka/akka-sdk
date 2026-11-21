@@ -416,6 +416,9 @@ private[akka] final class RemoteA2aAgentClientImpl(
   private def follow(task: A2aTask, workflow: A2aRemoteTaskSubscriptionEntity.Target): Future[Done] =
     tasks.follow(this, remoteRef, workflow, task, settings.pollInterval, settings.followTimeout)
 
+  /** True when the service has the components that follow remote tasks. */
+  def canFollowTasks: Boolean = remoteTasks.exists(_.enabled)
+
   /** Hands a task that is still working to a workflow that writes its outcome into the agent's session memory. */
   def handOff(task: A2aTask, sessionId: String, agentComponentId: String, toolName: String): Future[Done] =
     tasks.handOff(
