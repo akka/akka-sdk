@@ -10,7 +10,7 @@ include::ROOT:partial$include.adoc[]
 
 A remote A2A agent is an agent that runs outside your service and speaks the Agent2Agent (A2A) protocol. The remote agent publishes an Agent Card, which is a JSON document that names the agent, lists its skills, and says how to reach it. A skill is one task that the agent can do. Your service calls the agent with `A2aClient`, which reads the Agent Card, sends the requests, and applies the credentials and TLS settings that you configure for that agent.
 
-This page describes how an agent offers the skills of a remote agent to its model as tools, how to name a remote agent in configuration, how to give your service credentials for it, how to set the certificates that TLS uses to reach it, how to require a signed Agent Card, and how to choose the skills and the timeout of the tools.
+This page describes how an agent offers the skills of a remote agent to its model as tools, how to name a remote agent in configuration, how to give your service credentials for it, how to set the certificates that TLS uses to reach it, how to require a signed Agent Card, how to choose the skills and the timeout of the tools, how a tool hands a long remote task to a workflow, and how a workflow step calls a remote agent and waits for its task.
 
 [#remote-agents-as-tools]
 == Remote A2A agents as tools
@@ -39,15 +39,17 @@ When the model calls the tool, the agent sends the message to the skill with `Se
 * A message returns its text parts. A data part becomes its JSON text. A file part becomes a line with its file name and media type, and its URL when it has one.
 * A completed A2A task returns the parts of its artifacts and of its status message.
 * An A2A task that failed, was rejected or was canceled returns a text that starts with `Error:` and names the state.
-* An A2A task that has not finished, such as a submitted or working task, or a task that needs input, returns the id and the state of the task. The agent does not wait for the task to finish.
+* An A2A task that has not finished, such as a submitted or working task, or a task that needs input, returns the id and the state of the task. The agent does not wait for the task to finish. To receive the outcome of such a task later, see <<hand-off>>.
 
 The agent stores the tool call and its result in session memory and records them in the interaction log, as for any tool.
 
 A failed call does not fail the agent request. When the remote agent answers with an error, does not answer within the timeout, or cannot be reached, the model receives a text that starts with `Error:` and describes the failure. The model can then try again or answer without the remote agent. A tool call without a message gets the same kind of text. The result does not carry the error flag that an MCP tool error carries.
 
+When the Agent Card of a remote agent cannot be read, for example because the agent is unreachable or its card is not signed as <<signed-cards>> requires, the agent logs a warning and offers no tools of that remote agent for this request. The model is called with the other tools, and the next request reads the card again.
+
 The agent request fails before the model is called in two cases:
 
-* The Agent Card of a remote agent cannot be read.
+* The settings of a remote agent are not valid, or `named` gives a name that is not configured. The request fails with `IllegalArgumentException`.
 * The name of a tool is the same as the name of a function tool of the agent, or of another skill. The request fails with `IllegalArgumentException`. Use `withAllowedSkills` to leave out a skill whose name clashes. See <<skills-and-timeouts>>.
 
 A `ToolCallGuardrail` can allow or deny each call. The origin of a call to a remote A2A agent is `ToolCallGuardrail.ToolOrigin.RemoteA2a`, which carries the name of the remote agent as the tool names use it, the URL of its Agent Card, and the id of the skill. A guardrail can match the agent by its name or by its card URL. See xref:sdk:agents/guardrails.adoc#_implementing_a_tool_call_guardrail[Implementing a tool call guardrail].
@@ -97,6 +99,10 @@ The settings of a remote agent are:
 | `card-refresh`
 | `10m`
 | How long the client uses a cached Agent Card before it fetches the card again.
+
+| `poll-interval`
+| `30s`
+| How often the service asks for the state of a remote task that it follows without push notifications. See <<workflow-step>>.
 
 | `auth`
 | `type = none`
@@ -185,7 +191,9 @@ An Agent Card can carry JSON Web Signatures of its content. To use a remote agen
 
 `card-jwks-url`:: The URL of a JSON Web Key Set. The client fetches the key set without the credentials of the agent, and accepts a signature whose key id names a key in the set. The client never follows a `jku` that the card itself names.
 
-The client checks the card each time it fetches it. A card that has no valid signature fails every call with `A2aClientException`, and no request reaches the agent. The settings apply to agents named in configuration only.
+The client checks the card each time it fetches it. A card that has no valid signature fails every call with `A2aClientException`, and no request reaches the agent.
+
+To require signed cards from every remote agent, including the agents that your code gives by URL or by service, set `require-signed-card = true` under `akka.javasdk.a2a.defaults`. Those agents are checked against the `card-signing-key`, `card-signing-key-file` or `card-jwks-url` that you set in `defaults`. When `defaults` sets none of them, no key is trusted for those agents, and every call to them fails with `A2aClientException`. A named agent takes the setting from `defaults` too, and must then have a key of its own or one in `defaults`.
 
 [#skills-and-timeouts]
 == Choosing skills and timeouts
@@ -201,3 +209,78 @@ include::example$doc-snippets/src/main/java/com/example/a2a/ClaimStatusAgent.jav
 ----
 <1> Only the `claim-status` skill becomes a tool.
 <2> A tool call waits at most 20 seconds for the reply.
+
+[#hand-off]
+== Handing long remote tasks to a workflow
+
+A remote skill can take minutes or hours, which is longer than a tool call should wait. `handOffTasksStillWorkingAfter` limits how long a tool call follows the remote task before it hands the task to a workflow.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/a2a/ClaimReviewAgent.java[ClaimReviewAgent.java]
+----
+include::example$doc-snippets/src/main/java/com/example/a2a/ClaimReviewAgent.java[tag=hand-off]
+----
+<1> A tool call follows the remote task for at most 30 seconds.
+
+With this setting, the tool call works as follows:
+
+. The agent sends the message to the skill with `returnImmediately`, so the remote agent answers as soon as it has accepted the task.
+. The agent reads the task until it ends or needs input, for at most the hand-off time. When the task ends or needs input in that time, the model receives the reply as <<remote-agents-as-tools>> describes.
+. When the task is still working after the hand-off time, the model receives a text with the id of the task, which says that the task continues in the background. The agent request then continues without the remote agent.
+. A workflow that Akka adds to your service follows the remote task, in the way that <<workflow-step>> describes for your own workflows.
+. When the remote task ends or needs input, the workflow reads the task and adds its outcome to the session memory of the agent. The outcome is a user message that names the task id and the tool. The model reads it with the next request in the same session.
+
+The outcome goes to the session memory that Akka provides for the agent, keyed by the session id. Akka writes it even when the agent's current request is still running, so it can appear in the history before the end of that request.
+
+The workflow is a built-in component, like the session memory, and Akka registers it in each service that has an agent.
+
+[#workflow-step]
+== Calling a remote agent from a workflow step
+
+A xref:sdk:workflows.adoc[workflow] calls a remote agent when the exchange is fixed in code, runs for minutes or hours, or must stop for a person. A step sends the message with `A2aClient` and pauses. `notifyWorkflow` delivers the later updates of the remote task to a command of the workflow, which resumes it.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/a2a/ClaimAssessmentWorkflow.java[ClaimAssessmentWorkflow.java]
+----
+include::example$doc-snippets/src/main/java/com/example/a2a/ClaimAssessmentWorkflow.java[tag=send]
+----
+<1> `notifyWorkflow` takes a method reference of the component client. The reference names the workflow by its id and the command that receives the updates. The command takes an `A2aTaskUpdate`.
+<2> The client sends the message with `returnImmediately`, so `invoke` returns as soon as the remote agent has accepted the task. The reply carries the task as it is then.
+<3> The step pauses with a timeout. The timeout handler runs when no update resumes the workflow in time.
+
+The reply is not delivered to the command. When the reply is a message, or a task that has already ended, no updates follow, so the step handles the reply itself.
+
+When the task in the reply has not ended, each later change of the task is delivered to the command:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/a2a/ClaimAssessmentWorkflow.java[ClaimAssessmentWorkflow.java]
+----
+include::example$doc-snippets/src/main/java/com/example/a2a/ClaimAssessmentWorkflow.java[tag=update]
+----
+<4> The command receives each update. `A2aTaskUpdate` is a sealed interface, so a `switch` covers both kinds.
+<5> `A2aTaskArtifactUpdate` carries an artifact of the task. The workflow keeps it in its state and stays paused.
+<6> `A2aTaskStatusUpdate` carries a new status. A completed task ends the workflow.
+<7> A status that does not end the task, such as working, leaves the workflow paused.
+<8> The timeout handler of the pause.
+
+Akka follows the remote task in one of two ways:
+
+Push notifications:: When the Agent Card of the remote agent says that it sends push notifications, and your service has a public URL, the client registers a push notification configuration on the task. Its URL points at an endpoint that Akka adds to your service, and it carries a token that is bound to the workflow and the task. The endpoint refuses a notification whose token does not match, and accepts notifications from any caller otherwise, because the remote agent runs outside your project. Right after it registers the configuration, Akka reads the task once, to catch a change that happened before the registration.
+
+Polling:: When the remote agent does not send push notifications, or your service has no public URL, a workflow that Akka adds to your service asks for the task with `GetTask` every `poll-interval` of the remote agent, until the task ends or needs input. The workflow pauses between two requests, so the polling continues when the service restarts.
+
+Set the public URL of your service, and the poll interval of a remote agent, in `application.conf`:
+
+[source,hocon,indent=0]
+.{sample-base-url}/doc-snippets/src/main/resources/application.conf[application.conf]
+----
+include::example$doc-snippets/src/main/resources/application.conf[tag=a2a-push]
+----
+
+`akka.javasdk.a2a.push.public-url` is the base URL at which remote agents reach your service. When it is empty, Akka uses `akka.javasdk.a2a.endpoint.public-url`. When both are empty, the service polls. The notification URLs are under `/a2a-push/` on that base URL, so the route of your service must reach that path from the remote agents.
+
+Delivery is at least once. An update that a command already received for the same task is not delivered again: a status is known by its state, its timestamp and the id of its message, and an artifact by its id and its content. A command can still receive an update twice when the service fails between the delivery and recording it, so make the command safe to repeat. When a delivery of a push notification fails, the endpoint answers with an error and the remote agent retries, as its push notification policy allows. A failed delivery while polling is retried at the next poll.
+
+When a task needs input, the remote agent waits for the next message on the task. Send it from a step with `withTaskId` on the message, and call `notifyWorkflow` again to follow the task further. Akka does not register a second push notification configuration for the same workflow and task.
+
+The workflows and the entity that follow remote tasks are built-in components. Akka registers them in a service that has an agent, or a component that takes `A2aClient` in its constructor. It registers the push notification endpoint only when the service also has a public URL.

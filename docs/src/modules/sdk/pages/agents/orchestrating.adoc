@@ -29,6 +29,8 @@ In image:concepts:steps-4.svg[width=20] we explicitly include the forecast in th
 
 The workflow runs these steps durably: a failed call is retried by the step's recovery strategy, and a restarted workflow continues from its current step. See xref:sdk:agents/calling.adoc#_drive_the_agent_from_a_workflow[Drive the agent from a workflow].
 
+An orchestrating workflow can also include agents that run on other platforms and speak the Agent2Agent (A2A) protocol. A step sends a message to the remote A2A agent with `A2aClient` and pauses, and the updates of the remote task resume the workflow, whether the remote agent answers in seconds or in hours. See xref:sdk:agents/remote-a2a-agents.adoc#workflow-step[Calling a remote agent from a workflow step].
+
 == Model-driven orchestration
 
 When the orchestration sequence itself is a model judgment, the supervisor is an xref:sdk:autonomous-agents.adoc[Autonomous Agent] coordinator. The coordinator declares a xref:sdk:autonomous-agents/capabilities.adoc#delegation[`Delegation`] capability listing the worker agents it may call. The runtime exposes each worker to the coordinator's model as a tool. The model picks which worker to invoke based on the workers' `@Component` descriptions and what previous calls returned. The runtime persists task state, retries failed steps, and bounds the loop by an iteration limit.
