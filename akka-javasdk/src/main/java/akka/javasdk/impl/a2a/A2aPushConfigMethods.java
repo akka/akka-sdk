@@ -149,7 +149,10 @@ public final class A2aPushConfigMethods {
 
   private <T> T read(JsonNode node, Class<T> type) {
     try {
-      return mapper.treeToValue(node, type);
+      if (node.get("authentication") != null) {
+        A2aJsonNames.withJsonNames(node.get("authentication"));
+      }
+      return mapper.treeToValue(A2aJsonNames.withJsonNames(node), type);
     } catch (JsonProcessingException | IllegalArgumentException e) {
       var detail = e instanceof JsonProcessingException j ? j.getOriginalMessage() : e.getMessage();
       throw new A2aException(A2aErrorCode.INVALID_PARAMS, "Invalid parameters: " + detail);

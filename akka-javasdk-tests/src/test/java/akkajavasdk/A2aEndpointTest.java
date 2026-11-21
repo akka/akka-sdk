@@ -78,7 +78,7 @@ public class A2aEndpointTest extends TestKitSupport {
     assertThat(card.get("defaultInputModes").toString()).contains("*/*");
 
     var skills = card.get("skills");
-    assertThat(skills).hasSize(3);
+    assertThat(skills).hasSize(5);
     var echo = skills.get(0);
     assertThat(echo.get("id").asText()).isEqualTo("echo");
     assertThat(echo.get("name").asText()).isEqualTo("Echo");
@@ -217,14 +217,15 @@ public class A2aEndpointTest extends TestKitSupport {
   }
 
   @Test
-  public void rejectsUnknownOrMissingSkill() throws Exception {
+  public void rejectsUnknownSkillAndDefaultsToTheFirstSkill() throws Exception {
     var unknown = jsonRpc("SendMessage", sendParams("nope", "hi", null), token("a")).get("error");
     assertThat(unknown.get("code").asInt()).isEqualTo(-32602);
     assertThat(unknown.get("message").asText()).contains("nope").contains("echo, a2a-assistant");
 
-    var missing = jsonRpc("SendMessage", sendParams(null, "hi", null), token("a")).get("error");
-    assertThat(missing.get("code").asInt()).isEqualTo(-32602);
-    assertThat(missing.get("message").asText()).contains("skillId");
+    var missing =
+        jsonRpc("SendMessage", sendParams(null, "hi", null), token("a")).get("result").get("task");
+    assertThat(missing.get("artifacts").get(0).get("parts").get(0).get("text").asText())
+        .isEqualTo("echo: hi");
   }
 
   @Test

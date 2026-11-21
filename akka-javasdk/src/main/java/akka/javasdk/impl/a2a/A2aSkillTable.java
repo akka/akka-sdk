@@ -151,9 +151,9 @@ public final class A2aSkillTable {
     return Optional.ofNullable(entries.get(skillId));
   }
 
-  /** The only skill, when the endpoint publishes exactly one. */
-  public Optional<Entry> single() {
-    return entries.size() == 1 ? entries.values().stream().findFirst() : Optional.empty();
+  /** The first skill, which answers messages that select no skill. */
+  public Optional<Entry> first() {
+    return entries.values().stream().findFirst();
   }
 
   public List<String> ids() {

@@ -491,13 +491,7 @@ public final class A2aRequestHandler {
                           + "]. The skills are: "
                           + String.join(", ", table.ids())));
     }
-    return table
-        .single()
-        .orElseThrow(
-            () ->
-                invalidParams(
-                    "Select a skill with the message metadata field skillId. The skills are: "
-                        + String.join(", ", table.ids())));
+    return table.first().orElseThrow(() -> invalidParams("This agent publishes no skills"));
   }
 
   Object agentInput(A2aSkillTable.Entry skill, A2aMessage message) {
@@ -725,7 +719,7 @@ public final class A2aRequestHandler {
 
   <T> T read(JsonNode node, Class<T> type, A2aErrorCode code) {
     try {
-      return mapper.treeToValue(node, type);
+      return mapper.treeToValue(A2aJsonNames.withJsonNames(node), type);
     } catch (JsonProcessingException | IllegalArgumentException e) {
       var detail = e instanceof JsonProcessingException j ? j.getOriginalMessage() : e.getMessage();
       throw new A2aException(code, "Invalid parameters: " + detail);
