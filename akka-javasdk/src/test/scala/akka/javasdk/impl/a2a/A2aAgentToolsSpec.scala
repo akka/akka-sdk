@@ -71,7 +71,11 @@ class A2aAgentToolsSpec
       arguments: String,
       contextId: String = "session-1",
       client: A2aClientImpl = client): String =
-    Await.result(A2aAgentTools.call(tool, arguments, contextId, client)(system.executionContext), 10.seconds)
+    Await.result(
+      A2aAgentTools.call(tool, arguments, contextId, "agent", client)(
+        system.executionContext,
+        system.classicSystem.scheduler),
+      10.seconds)
 
   "The tool name of a skill" should {
 
@@ -98,6 +102,15 @@ class A2aAgentToolsSpec
   }
 
   "The tools of a remote agent" should {
+
+    "be none, with a warning, for an agent whose Agent Card cannot be read" in {
+      reset()
+      val agents = Seq(RemoteA2aAgent.fromCard(s"${server.baseUrl}/missing/card.json"), RemoteA2aAgent.named("claims"))
+      val tools = akka.actor.testkit.typed.scaladsl.LoggingTestKit
+        .warn("could not be read, so its skills are not offered as tools")
+        .expect(A2aAgentTools.toolsFor(agents, client))
+      tools.map(_.name) shouldBe Seq("claims_check-claim", "claims_pay")
+    }
 
     "be one for each skill on the Agent Card" in {
       reset()

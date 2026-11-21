@@ -347,6 +347,19 @@ class RemoteA2aAgentClientSpec
       intercept[A2aClientException](withKey.card().invoke()).getMessage should include("no signatures")
     }
 
+    "refuse the card of an agent given by URL when the defaults require a signed card and trust no key" in {
+      reset()
+      server.cardTransform = signed
+      try {
+        val config = ConfigFactory
+          .parseString("defaults.require-signed-card = true")
+          .withFallback(system.settings.config.getConfig("akka.javasdk.a2a"))
+        val c = A2aClientImpl(new A2aRemoteAgents(system, config), None, None).forCardUrl(server.cardUrl)
+        intercept[A2aClientException](c.send("s", hello).invoke()).getMessage should include("no key is trusted")
+        server.requests.map(_.path) shouldBe Seq("/.well-known/agent-card.json")
+      } finally server.cardTransform = identity
+    }
+
     "accept a card signed by a key in the configured key set" in {
       reset()
       val point = keys.getPublic.asInstanceOf[java.security.interfaces.ECPublicKey].getW

@@ -292,6 +292,26 @@ class A2aRemoteAgentSettingsSpec extends AnyWordSpec with Matchers {
       settings.cardVerification shouldBe Some(A2aCardVerification(None, Some("https://x.example.com/jwks.json")))
     }
 
+    "apply require-signed-card of the defaults to agents given by URL or service, with the key of the defaults" in {
+      val withKey =
+        a2a("""defaults { require-signed-card = true, card-jwks-url = "https://keys.example.com/jwks.json" }""")
+      A2aRemoteAgentSettings
+        .resolve(withKey, A2aRemoteTarget.CardUrl("https://x.example.com/c.json"))
+        .cardVerification shouldBe Some(A2aCardVerification(None, Some("https://keys.example.com/jwks.json")))
+      A2aRemoteAgentSettings
+        .resolve(withKey, A2aRemoteTarget.Service("claims-service"))
+        .cardVerification shouldBe Some(A2aCardVerification(None, Some("https://keys.example.com/jwks.json")))
+    }
+
+    "refuse every card of an agent given by URL when the defaults require a signed card and trust no key" in {
+      A2aRemoteAgentSettings
+        .resolve(a2a("defaults.require-signed-card = true"), A2aRemoteTarget.CardUrl("https://x.example.com/c.json"))
+        .cardVerification shouldBe Some(A2aCardVerification(None, None))
+      A2aRemoteAgentSettings
+        .resolve(a2a(""), A2aRemoteTarget.CardUrl("https://x.example.com/c.json"))
+        .cardVerification shouldBe None
+    }
+
     "give an agent reached as a service the defaults and no credentials" in {
       val settings =
         A2aRemoteAgentSettings.resolve(a2a("""defaults { timeout = 7s }"""), A2aRemoteTarget.Service("claims-service"))
