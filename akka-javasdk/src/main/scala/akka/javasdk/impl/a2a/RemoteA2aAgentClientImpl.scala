@@ -22,6 +22,7 @@ import scala.concurrent.duration.FiniteDuration
 import scala.jdk.FutureConverters._
 import scala.util.control.NonFatal
 
+import akka.Done
 import akka.NotUsed
 import akka.actor.Scheduler
 import akka.actor.typed.ActorSystem
@@ -47,6 +48,7 @@ import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.unmarshalling.sse.EventStreamParser
 import akka.javasdk.JsonSupport
 import akka.javasdk.a2a._
+import akka.javasdk.client.ComponentDeferredMethodRef1
 import akka.stream.Materializer
 import akka.stream.SystemMaterializer
 import akka.stream.javadsl.{ Source => JavaSource }
@@ -183,7 +185,9 @@ private[akka] final class RemoteA2aAgentClientImpl(
     state: RemoteA2aAgentState,
     extraHeaders: Seq[HttpHeader],
     selectBinding: A2aAgentCard => A2aBinding = A2aBinding.select,
-    timeoutOverride: Option[FiniteDuration] = None)
+    timeoutOverride: Option[FiniteDuration] = None,
+    target: Option[A2aRemoteTarget] = None,
+    remoteTasks: Option[A2aRemoteTasks] = None)
     extends RemoteA2aAgentClient {
 
   import RemoteA2aAgentState.mapper
@@ -248,10 +252,14 @@ private[akka] final class RemoteA2aAgentClientImpl(
     }
 
   private def keyResolver(verification: A2aCardVerification): Future[AgentCardSigning.KeyResolver] =
-    state.cardSigningKey match {
-      case Some(key) => Future.successful(AgentCardSigning.KeyResolver.forAnyKeyId(key))
-      case None =>
-        val jwksUrl = verification.jwksUrl.get
+    (state.cardSigningKey, verification.jwksUrl) match {
+      case (Some(key), _) => Future.successful(AgentCardSigning.KeyResolver.forAnyKeyId(key))
+      case (None, None) =>
+        Future.failed(
+          new A2aClientException(
+            s"The Agent Card of remote agent [${settings.name}] must be signed, but no key is trusted for it. Set " +
+            "card-signing-key, card-signing-key-file or card-jwks-url under akka.javasdk.a2a.defaults"))
+      case (None, Some(jwksUrl)) =>
         // The key set is fetched without the agent's credentials, which belong to the agent alone
         RemoteA2aAgentClientImpl
           .within(
@@ -270,37 +278,108 @@ private[akka] final class RemoteA2aAgentClientImpl(
           }
     }
 
+  /** The URL of the Agent Card. */
+  def cardUrl: String = settings.cardUrl
+
+  /** The poll interval of the agent's configuration. */
+  def pollInterval: FiniteDuration = settings.pollInterval
+
   override def send(message: A2aMessage): RemoteA2aAgentClient.SendRequest =
-    new SendRequestImpl(None, message, None)
+    new SendRequestImpl(None, message, None, None)
 
   override def send(skill: String, message: A2aMessage): RemoteA2aAgentClient.SendRequest =
-    new SendRequestImpl(Some(requireSkill(skill)), message, None)
+    new SendRequestImpl(Some(requireSkill(skill)), message, None, None)
 
   private def requireSkill(skill: String): String = {
     if (skill == null || skill.isBlank) throw new IllegalArgumentException("The skill id must not be blank")
     skill
   }
 
-  private final class SendRequestImpl(skill: Option[String], message: A2aMessage, contextId: Option[String])
+  private final class SendRequestImpl(
+      skill: Option[String],
+      message: A2aMessage,
+      contextId: Option[String],
+      notify: Option[A2aRemoteTaskSubscriptionEntity.Target])
       extends RemoteA2aAgentClient.SendRequest {
 
     override def inContext(contextId: String): RemoteA2aAgentClient.SendRequest =
-      new SendRequestImpl(skill, message, Some(contextId))
+      new SendRequestImpl(skill, message, Some(contextId), notify)
+
+    override def notifyWorkflow(
+        workflowCommand: ComponentDeferredMethodRef1[A2aTaskUpdate, _]): RemoteA2aAgentClient.SendRequest =
+      new SendRequestImpl(skill, message, contextId, Some(A2aRemoteTasks.workflowTarget(workflowCommand)))
 
     override def invokeAsync(): CompletionStage[A2aSendMessageResponse] =
-      cardFuture().flatMap { card =>
-        val body = sendMessageRequest(skill, message, contextId)
-        selectBinding(card) match {
-          case b: A2aBinding.JsonRpc =>
-            jsonRpc(b, A2aMethods.SEND_MESSAGE, body).map(mapper.treeToValue(_, classOf[A2aSendMessageResponse]))
-          case b: A2aBinding.HttpJson =>
-            httpJson(HttpMethods.POST, path(b, "message:send"), Some(body)).map(
-              mapper.treeToValue(_, classOf[A2aSendMessageResponse]))
-        }
-      }.asJava
+      (notify match {
+        case None => sendFuture(skill, message, contextId, returnImmediately = false)
+        case Some(workflow) =>
+          sendFuture(skill, message, contextId, returnImmediately = true).flatMap {
+            case t: A2aSendMessageResponse.Task if !taskState(t.task()).terminal() =>
+              follow(t.task(), workflow).map(_ => t: A2aSendMessageResponse)
+            case other => Future.successful(other)
+          }
+      }).asJava
 
     override def invoke(): A2aSendMessageResponse = await(invokeAsync())
   }
+
+  private def taskState(task: A2aTask): A2aTaskState =
+    Option(task.status()).flatMap(s => Option(s.state())).getOrElse(A2aTaskState.UNSPECIFIED)
+
+  private def remoteRef: A2aRemoteRef =
+    A2aRemoteTasks.refOf(
+      target.getOrElse(throw new IllegalStateException("The remote agent of this client has no reference")))
+
+  private def tasks: A2aRemoteTasks =
+    remoteTasks.getOrElse(throw new IllegalStateException("This client cannot follow remote tasks"))
+
+  private def follow(task: A2aTask, workflow: A2aRemoteTaskSubscriptionEntity.Target): Future[Done] =
+    tasks.follow(this, remoteRef, workflow, task, settings.pollInterval)
+
+  /** Hands a task that is still working to a workflow that writes its outcome into the agent's session memory. */
+  def handOff(task: A2aTask, sessionId: String, agentComponentId: String, toolName: String): Future[Done] =
+    tasks.handOff(this, remoteRef, task, sessionId, agentComponentId, toolName, settings.pollInterval)
+
+  /**
+   * Sends a message.
+   *
+   * @param returnImmediately
+   *   true to ask the agent to return the task at once rather than when it ends
+   */
+  def sendFuture(
+      skill: Option[String],
+      message: A2aMessage,
+      contextId: Option[String],
+      returnImmediately: Boolean): Future[A2aSendMessageResponse] =
+    cardFuture().flatMap { card =>
+      val body = sendMessageRequest(skill, message, contextId, returnImmediately)
+      selectBinding(card) match {
+        case b: A2aBinding.JsonRpc =>
+          jsonRpc(b, A2aMethods.SEND_MESSAGE, body).map(mapper.treeToValue(_, classOf[A2aSendMessageResponse]))
+        case b: A2aBinding.HttpJson =>
+          httpJson(HttpMethods.POST, path(b, "message:send"), Some(body)).map(
+            mapper.treeToValue(_, classOf[A2aSendMessageResponse]))
+      }
+    }
+
+  /** Reads a task. */
+  def getTaskAsync(taskId: String): Future[A2aTask] = getTaskFuture(taskId)
+
+  /** Registers a push notification configuration on a task, with a token and without authentication. */
+  def createPushConfig(taskId: String, url: String, token: String): Future[Done] =
+    cardFuture().flatMap { card =>
+      selectBinding(card) match {
+        case b: A2aBinding.JsonRpc =>
+          val config = new A2aTaskPushNotificationConfig(b.tenant.orNull, null, taskId, url, token, null)
+          jsonRpc(b, A2aMethods.CREATE_TASK_PUSH_NOTIFICATION_CONFIG, mapper.valueToTree(config)).map(_ => Done)
+        case b: A2aBinding.HttpJson =>
+          val config = new A2aTaskPushNotificationConfig(null, null, taskId, url, token, null)
+          httpJson(
+            HttpMethods.POST,
+            path(b, s"tasks/${encode(taskId)}/pushNotificationConfigs"),
+            Some(mapper.valueToTree(config))).map(_ => Done)
+      }
+    }
 
   override def stream(message: A2aMessage): JavaSource[A2aStreamResponse, NotUsed] =
     streamFor(None, message)
@@ -311,7 +390,7 @@ private[akka] final class RemoteA2aAgentClientImpl(
   private def streamFor(skill: Option[String], message: A2aMessage): JavaSource[A2aStreamResponse, NotUsed] =
     Source
       .futureSource(cardFuture().map { card =>
-        val body = sendMessageRequest(skill, message, None)
+        val body = sendMessageRequest(skill, message, None, returnImmediately = false)
         selectBinding(card) match {
           case b: A2aBinding.JsonRpc =>
             events(
@@ -370,7 +449,11 @@ private[akka] final class RemoteA2aAgentClientImpl(
 
   // Requests
 
-  private def sendMessageRequest(skill: Option[String], message: A2aMessage, contextId: Option[String]): ObjectNode = {
+  private def sendMessageRequest(
+      skill: Option[String],
+      message: A2aMessage,
+      contextId: Option[String],
+      returnImmediately: Boolean): ObjectNode = {
     val withDefaults = new A2aMessage(
       Option(message.messageId()).getOrElse(UUID.randomUUID().toString),
       contextId.getOrElse(message.contextId()),
@@ -381,7 +464,9 @@ private[akka] final class RemoteA2aAgentClientImpl(
       message.extensions(),
       message.referenceTaskIds())
     val metadata = skill.map(s => java.util.Map.of[String, Object]("skillId", s)).orNull
-    mapper.valueToTree(new A2aSendMessageRequest(null, withDefaults, null, metadata))
+    val configuration =
+      if (returnImmediately) new A2aSendMessageRequest.Configuration(null, null, null, true) else null
+    mapper.valueToTree(new A2aSendMessageRequest(null, withDefaults, configuration, metadata))
   }
 
   private def path(binding: A2aBinding, suffix: String): String = {

@@ -876,8 +876,9 @@ private[impl] final class AgentImpl(
                 case Some(tool) =>
                   // The session id is the A2A context id, so the remote agent keeps one conversation per session
                   A2aAgentTools
-                    .call(tool, request.arguments, sessionId, a2aClient(Option(request.telemetryContext)))(
-                      sdkExecutionContext)
+                    .call(tool, request.arguments, sessionId, componentId, a2aClient(Option(request.telemetryContext)))(
+                      sdkExecutionContext,
+                      system.classicSystem.scheduler)
                     .map(text => Seq(new SpiAgent.TextMessageContent(text)): Seq[SpiAgent.MessageContent])(
                       sdkExecutionContext)
                 case None =>

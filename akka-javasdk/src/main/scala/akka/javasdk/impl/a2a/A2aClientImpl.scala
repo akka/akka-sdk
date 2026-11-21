@@ -139,11 +139,16 @@ private[akka] object A2aClientImpl {
     builder.result()
   }
 
-  def apply(agents: A2aRemoteAgents, telemetryContext: Option[OtelContext], caller: Option[String]): A2aClientImpl =
+  def apply(
+      agents: A2aRemoteAgents,
+      telemetryContext: Option[OtelContext],
+      caller: Option[String],
+      remoteTasks: Option[A2aRemoteTasks] = None): A2aClientImpl =
     new A2aClientImpl(
       agents,
       traceHeaders(telemetryContext) ++ caller.map(RawHeader(CallerHeaderName, _)),
-      caller.map(RawHeader(SpiSpiffeContext.CallerSpiffeHeaderName, _)).toSeq)
+      caller.map(RawHeader(SpiSpiffeContext.CallerSpiffeHeaderName, _)).toSeq,
+      remoteTasks)
 }
 
 /**
@@ -158,7 +163,8 @@ private[akka] object A2aClientImpl {
 private[akka] final class A2aClientImpl(
     agents: A2aRemoteAgents,
     headers: Seq[HttpHeader],
-    serviceHeaders: Seq[HttpHeader] = Nil)
+    serviceHeaders: Seq[HttpHeader] = Nil,
+    remoteTasks: Option[A2aRemoteTasks] = None)
     extends A2aClient {
 
   override def forAgent(name: String): RemoteA2aAgentClient = forTarget(A2aRemoteTarget.named(name), None)
@@ -171,9 +177,14 @@ private[akka] final class A2aClientImpl(
   def remoteAgents: A2aRemoteAgents = agents
 
   /** A client whose calls use the given timeout instead of the one configured for the agent. */
-  def forTarget(target: A2aRemoteTarget, timeout: Option[FiniteDuration]): RemoteA2aAgentClient = {
+  def forTarget(target: A2aRemoteTarget, timeout: Option[FiniteDuration]): RemoteA2aAgentClientImpl = {
     val state = agents.stateFor(target)
     val extra = if (state.route.isDefined) state.serviceHeaders ++ serviceHeaders else Nil
-    new RemoteA2aAgentClientImpl(state, headers ++ extra, timeoutOverride = timeout)
+    new RemoteA2aAgentClientImpl(
+      state,
+      headers ++ extra,
+      timeoutOverride = timeout,
+      target = Some(target),
+      remoteTasks = remoteTasks)
   }
 }

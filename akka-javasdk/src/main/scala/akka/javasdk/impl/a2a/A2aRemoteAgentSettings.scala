@@ -91,8 +91,8 @@ private[akka] final case class A2aRemoteAgentSettings(
 /**
  * INTERNAL API
  *
- * How the client checks the signature of a remote Agent Card, when the agent requires a signed card. One of the two is
- * set.
+ * How the client checks the signature of a remote Agent Card, when the agent requires a signed card. At most one of the
+ * two is set. When neither is set, no key is trusted and every card is refused.
  *
  * @param publicKey
  *   the PEM text of the public key that signs the card
@@ -135,8 +135,9 @@ private[akka] object A2aRemoteAgentSettings {
   /** The path of the Agent Card of an Akka service. */
   val CardPath = "/.well-known/agent-card.json"
 
-  // An agent that is not configured gets no credentials, no custom TLS and no card verification: its URL can come from
-  // anywhere, and the defaults are shared by every such agent.
+  // An agent that is not configured gets no credentials and no custom TLS: its URL can come from anywhere, and the
+  // defaults are shared by every such agent. It takes require-signed-card from the defaults, with the trusted key of
+  // the defaults, and without one every card is refused.
   private def unconfigured(a2a: Config, name: String, cardUrl: String): A2aRemoteAgentSettings =
     fromConfig(
       name,
@@ -146,11 +147,11 @@ private[akka] object A2aRemoteAgentSettings {
         "client-certificate",
         "client-certificate-file",
         "client-key",
-        "client-key-file",
-        "require-signed-card")
+        "client-key-file")
         .foldLeft(a2a.getConfig("defaults"))(_.withoutPath(_))
         .withValue("card-url", ConfigValueFactory.fromAnyRef(cardUrl))
-        .withValue("auth.type", ConfigValueFactory.fromAnyRef("none")))
+        .withValue("auth.type", ConfigValueFactory.fromAnyRef("none")),
+      refuseCardsWithoutKey = true)
 
   def isCardUrl(value: String): Boolean =
     value.startsWith("http://") || value.startsWith("https://")
@@ -188,7 +189,11 @@ private[akka] object A2aRemoteAgentSettings {
 
   private def quoted(name: String): String = com.typesafe.config.ConfigUtil.quoteString(name)
 
-  def fromConfig(name: String, config: Config): A2aRemoteAgentSettings = {
+  /**
+   * @param refuseCardsWithoutKey
+   *   when a signed card is required and no key is set: true to refuse every card, false to fail as invalid settings
+   */
+  def fromConfig(name: String, config: Config, refuseCardsWithoutKey: Boolean = false): A2aRemoteAgentSettings = {
     def where(key: String) = s"akka.javasdk.a2a.remote-agents.$name.$key"
     def optional(key: String): Option[String] =
       if (config.hasPath(key)) Some(config.getString(key).trim).filter(_.nonEmpty) else None
@@ -265,11 +270,13 @@ private[akka] object A2aRemoteAgentSettings {
       if (config.hasPath("require-signed-card") && config.getBoolean("require-signed-card")) {
         val publicKey = pem("card-signing-key")
         val jwksUrl = optional("card-jwks-url").map(httpUrl("card-jwks-url", _))
-        if (publicKey.isDefined == jwksUrl.isDefined)
+        if (publicKey.isEmpty && jwksUrl.isEmpty && refuseCardsWithoutKey)
+          Some(A2aCardVerification(None, None))
+        else if (publicKey.isDefined == jwksUrl.isDefined)
           throw new IllegalArgumentException(
             s"${where("require-signed-card")} needs exactly one of ${where("card-signing-key")}, " +
             s"${where("card-signing-key-file")} and ${where("card-jwks-url")}")
-        Some(A2aCardVerification(publicKey, jwksUrl))
+        else Some(A2aCardVerification(publicKey, jwksUrl))
       } else None
 
     A2aRemoteAgentSettings(

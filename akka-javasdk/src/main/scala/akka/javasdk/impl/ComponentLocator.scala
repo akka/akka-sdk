@@ -18,6 +18,7 @@ import scala.util.Success
 import akka.actor.DynamicAccess
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
+import akka.javasdk.a2a.A2aClient
 import akka.javasdk.a2a.AbstractA2aEndpoint
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.PromptTemplate
@@ -37,6 +38,9 @@ import akka.javasdk.evaluation.DurableEvaluator
 import akka.javasdk.evaluation.Evaluator
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.impl.a2a.A2aPushDeliveryWorkflow
+import akka.javasdk.impl.a2a.A2aRemoteTaskPollWorkflow
+import akka.javasdk.impl.a2a.A2aRemoteTaskSubscriptionEntity
+import akka.javasdk.impl.a2a.RemoteA2aTaskWorkflow
 import akka.javasdk.impl.a2a.A2aTaskEntity
 import akka.javasdk.impl.a2a.A2aTaskExtrasEntity
 import akka.javasdk.impl.a2a.A2aTasksView
@@ -406,9 +410,17 @@ private[javasdk] object ComponentLocator {
   val a2aProvidedComponents: Seq[Class[_]] =
     Seq(classOf[A2aTaskEntity], classOf[A2aTasksView], classOf[A2aTaskExtrasEntity], classOf[A2aPushDeliveryWorkflow])
 
+  // Follow remote A2A tasks for workflows (notifyWorkflow) and for the tool calls that agents hand off
+  val a2aRemoteTaskComponents: Seq[Class[_]] =
+    Seq(classOf[A2aRemoteTaskSubscriptionEntity], classOf[A2aRemoteTaskPollWorkflow], classOf[RemoteA2aTaskWorkflow])
+
   // all components that the SDK adds when the service needs them
   val providedComponents: Seq[Class[_]] =
-    agentProvidedComponents ++ autonomousAgentProvidedComponents ++ a2aProvidedComponents
+    agentProvidedComponents ++ autonomousAgentProvidedComponents ++ a2aProvidedComponents ++ a2aRemoteTaskComponents
+
+  /** True when a constructor of the class takes an [[A2aClient]]. */
+  def injectsA2aClient(clz: Class[_]): Boolean =
+    clz.getDeclaredConstructors.exists(_.getParameterTypes.contains(classOf[A2aClient]))
 
   case class LocatedClasses(components: Seq[Class[_]], service: Option[Class[_]])
 
@@ -616,20 +628,28 @@ private[javasdk] object ComponentLocator {
 
     val hasA2aEndpoint = components.exists(c => classOf[AbstractA2aEndpoint].isAssignableFrom(c))
 
+    val serviceSetupClass: Option[Class[_]] =
+      if (descriptorConfig.hasPath(DescriptorServiceSetupEntryPath))
+        Some(dynamicAccess.getClassFor[AnyRef](descriptorConfig.getString(DescriptorServiceSetupEntryPath)).get)
+      else None
+    // An agent can hand off a remote task, and a component with an A2aClient can follow one for a workflow
+    val followsRemoteA2aTasks =
+      hasAgentComponents || (components ++ serviceSetupClass).exists(injectsA2aClient)
+
     val withBuildInComponents =
       (if (hasA2aEndpoint) a2aProvidedComponents else Seq.empty) ++
+      (if (followsRemoteA2aTasks) a2aRemoteTaskComponents else Seq.empty) ++
       (if (hasAgentComponents || hasAutonomousAgentComponents) agentProvidedComponents else Seq.empty) ++
       (if (hasAutonomousAgentComponents) autonomousAgentProvidedComponents else Seq.empty) ++
       components
 
-    if (descriptorConfig.hasPath(DescriptorServiceSetupEntryPath)) {
-      // central config/lifecycle class
-      val serviceSetupClassName = descriptorConfig.getString(DescriptorServiceSetupEntryPath)
-      val serviceSetup = dynamicAccess.getClassFor[AnyRef](serviceSetupClassName).get
-      logger.debug("Found and loaded service class setup: [{}]", serviceSetup)
-      LocatedClasses(withBuildInComponents, Some(serviceSetup))
-    } else {
-      LocatedClasses(withBuildInComponents, None)
+    serviceSetupClass match {
+      case Some(serviceSetup) =>
+        // central config/lifecycle class
+        logger.debug("Found and loaded service class setup: [{}]", serviceSetup)
+        LocatedClasses(withBuildInComponents, Some(serviceSetup))
+      case None =>
+        LocatedClasses(withBuildInComponents, None)
     }
   }
 }

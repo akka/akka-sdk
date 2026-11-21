@@ -21,13 +21,13 @@ import akka.javasdk.agent.RemoteA2aAgent
 private[akka] object RemoteA2aAgentImpl {
 
   def named(name: String): RemoteA2aAgentImpl =
-    RemoteA2aAgentImpl(A2aRemoteTarget.named(name), None, None)
+    RemoteA2aAgentImpl(A2aRemoteTarget.named(name), None, None, None)
 
   def fromCard(url: String): RemoteA2aAgentImpl =
-    RemoteA2aAgentImpl(A2aRemoteTarget.cardUrl(url), None, None)
+    RemoteA2aAgentImpl(A2aRemoteTarget.cardUrl(url), None, None, None)
 
   def fromService(serviceName: String): RemoteA2aAgentImpl =
-    RemoteA2aAgentImpl(A2aRemoteTarget.service(serviceName), None, None)
+    RemoteA2aAgentImpl(A2aRemoteTarget.service(serviceName), None, None, None)
 }
 
 /**
@@ -37,7 +37,8 @@ private[akka] object RemoteA2aAgentImpl {
 private[akka] final case class RemoteA2aAgentImpl(
     target: A2aRemoteTarget,
     allowedSkills: Option[Set[String]],
-    timeout: Option[FiniteDuration])
+    timeout: Option[FiniteDuration],
+    handOffAfter: Option[FiniteDuration])
     extends RemoteA2aAgent {
 
   override def withAllowedSkills(skillIds: util.Set[String]): RemoteA2aAgent =
@@ -50,5 +51,11 @@ private[akka] final case class RemoteA2aAgentImpl(
     if (timeout.isNegative || timeout.isZero)
       throw new IllegalArgumentException(s"The timeout of a remote A2A agent must be positive, got [$timeout]")
     copy(timeout = Some(timeout.toScala))
+  }
+
+  override def handOffTasksStillWorkingAfter(time: JDuration): RemoteA2aAgent = {
+    if (time.isNegative || time.isZero)
+      throw new IllegalArgumentException(s"The hand-off time of a remote A2A agent must be positive, got [$time]")
+    copy(handOffAfter = Some(time.toScala))
   }
 }

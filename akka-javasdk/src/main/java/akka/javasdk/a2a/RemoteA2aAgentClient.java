@@ -6,6 +6,7 @@ package akka.javasdk.a2a;
 
 import akka.NotUsed;
 import akka.annotation.DoNotInherit;
+import akka.javasdk.client.ComponentDeferredMethodRef1;
 import akka.stream.javadsl.Source;
 import java.util.concurrent.CompletionStage;
 
@@ -97,5 +98,45 @@ public interface RemoteA2aAgentClient {
      * Continues the conversation with this context id, overriding the context id of the message.
      */
     SendRequest inContext(String contextId);
+
+    /**
+     * Delivers the later updates of the task that this message starts, or continues, to a command
+     * of a workflow.
+     *
+     * <p>Pass a method reference of the component client, which names the workflow by its id:
+     *
+     * <pre>{@code
+     * a2aClient
+     *     .forAgent("claims")
+     *     .send("assess-claim", message)
+     *     .notifyWorkflow(componentClient.forWorkflow(workflowId).method(ClaimFlow::onUpdate))
+     *     .invoke();
+     * }</pre>
+     *
+     * <p>The message is sent with {@code returnImmediately}, so the reply carries the task as the
+     * remote agent accepted it. The reply itself is not delivered to the command. When the task in
+     * the reply has not ended, each later status change and each new artifact is delivered to the
+     * command until the task ends:
+     *
+     * <ul>
+     *   <li>When the Agent Card of the remote agent says that it sends push notifications and
+     *       {@code akka.javasdk.a2a.push.public-url} (or {@code
+     *       akka.javasdk.a2a.endpoint.public-url}) is set, the client registers a push notification
+     *       configuration on the task. Its URL points at an endpoint of this service, and its token
+     *       is bound to the workflow and the task.
+     *   <li>Otherwise, a workflow of the SDK asks for the task with {@code GetTask} every {@code
+     *       poll-interval} of the remote agent's configuration, until the task ends or needs input.
+     *       The polling continues across restarts of the service.
+     * </ul>
+     *
+     * <p>Delivery is at least once. An update that was already delivered for this workflow and
+     * task, identified by its state and timestamp or by the artifact's content, is not delivered
+     * again. A reply that is a message, or a task that has ended, starts no delivery.
+     *
+     * @param workflowCommand a component client method reference to a workflow command that takes
+     *     an {@link A2aTaskUpdate}
+     * @throws IllegalArgumentException if the method reference is not one of a workflow
+     */
+    SendRequest notifyWorkflow(ComponentDeferredMethodRef1<A2aTaskUpdate, ?> workflowCommand);
   }
 }

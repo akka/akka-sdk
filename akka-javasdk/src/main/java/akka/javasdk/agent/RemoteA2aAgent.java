@@ -89,4 +89,22 @@ public interface RemoteA2aAgent {
    * <p>By default, the {@code timeout} of the remote agent's configuration applies.
    */
   RemoteA2aAgent withTimeout(Duration timeout);
+
+  /**
+   * Hands a remote task that is still working after this time to a workflow of the SDK, so that the
+   * tool call does not wait for it.
+   *
+   * <p>With this setting, the tool sends the message with {@code returnImmediately} and follows the
+   * task for at most this time. When the task ends or needs input in that time, the tool returns
+   * the reply as usual. Otherwise the tool returns the id of the task to the model, with a note
+   * that the outcome follows later. A workflow of the SDK then follows the task, by push
+   * notifications or by polling as {@link
+   * akka.javasdk.a2a.RemoteA2aAgentClient.SendRequest#notifyWorkflow} describes, and adds the
+   * outcome to the session memory of the calling agent as a user message when the task ends or
+   * needs input. The model reads it with the next request in the session.
+   *
+   * <p>By default, the tool waits for the reply up to the timeout and returns the state of a task
+   * that has not ended.
+   */
+  RemoteA2aAgent handOffTasksStillWorkingAfter(Duration time);
 }

@@ -6,6 +6,7 @@ package akka.javasdk.impl.a2a
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
 import scala.jdk.FutureConverters._
 import scala.util.control.NonFatal
@@ -70,36 +71,56 @@ private[akka] object A2aAgentTools {
 
   /**
    * One tool for each allowed skill of each remote agent. Reads the Agent Cards, which the client caches, and blocks
-   * while a card is fetched.
+   * while a card is fetched. A remote agent whose card cannot be read offers no tools for this request, and a warning
+   * is logged, so that one unavailable agent does not fail the agent request.
    */
   def toolsFor(agents: Seq[RemoteA2aAgent], client: A2aClientImpl): Seq[A2aTool] =
     agents.flatMap {
       case agent: RemoteA2aAgentImpl =>
-        val card = client.forTarget(agent.target, agent.timeout).card().invoke()
-        val cardUrl = client.remoteAgents.stateFor(agent.target).settings.cardUrl
-        val agentName = agent.target match {
-          case A2aRemoteTarget.Named(name) => name
-          case _ =>
-            client.remoteAgents
-              .configuredName(cardUrl)
-              .getOrElse(Option(card.name()).filterNot(_.isBlank).getOrElse("remote_agent"))
+        readCard(agent, client) match {
+          case Some(card) => toolsFor(agent, card, client)
+          case None       => Seq.empty
         }
-        val skills = Option(card.skills()).map(_.asScala.toSeq).getOrElse(Seq.empty).filter { skill =>
-          skill.id() != null && !skill.id().isBlank && agent.allowedSkills.forall(_.contains(skill.id()))
-        }
-        agent.allowedSkills.foreach { allowed =>
-          val missing = allowed -- skills.map(_.id())
-          if (missing.nonEmpty)
-            log.warn(
-              "The Agent Card of remote A2A agent [{}] has no skills [{}]",
-              agentName,
-              missing.toSeq.sorted.mkString(", "))
-        }
-        skills.map(skill =>
-          A2aTool(descriptor(toolName(agentName, skill.id()), card, skill), agent, agentName, cardUrl, skill.id()))
       case other =>
         throw new IllegalArgumentException(s"Unsupported RemoteA2aAgent implementation [${other.getClass.getName}]")
     }
+
+  private def readCard(agent: RemoteA2aAgentImpl, client: A2aClientImpl): Option[A2aAgentCard] =
+    try Some(client.forTarget(agent.target, agent.timeout).card().invoke())
+    catch {
+      // Settings that are not valid are a mistake in the service, not an unavailable agent
+      case e: IllegalArgumentException => throw e
+      case NonFatal(e) =>
+        log.warn(
+          "The Agent Card of remote A2A agent [{}] could not be read, so its skills are not offered as tools: {}",
+          agent.target.name,
+          e.getMessage)
+        None
+    }
+
+  private def toolsFor(agent: RemoteA2aAgentImpl, card: A2aAgentCard, client: A2aClientImpl): Seq[A2aTool] = {
+    val cardUrl = client.remoteAgents.stateFor(agent.target).settings.cardUrl
+    val agentName = agent.target match {
+      case A2aRemoteTarget.Named(name) => name
+      case _ =>
+        client.remoteAgents
+          .configuredName(cardUrl)
+          .getOrElse(Option(card.name()).filterNot(_.isBlank).getOrElse("remote_agent"))
+    }
+    val skills = Option(card.skills()).map(_.asScala.toSeq).getOrElse(Seq.empty).filter { skill =>
+      skill.id() != null && !skill.id().isBlank && agent.allowedSkills.forall(_.contains(skill.id()))
+    }
+    agent.allowedSkills.foreach { allowed =>
+      val missing = allowed -- skills.map(_.id())
+      if (missing.nonEmpty)
+        log.warn(
+          "The Agent Card of remote A2A agent [{}] has no skills [{}]",
+          agentName,
+          missing.toSeq.sorted.mkString(", "))
+    }
+    skills.map(skill =>
+      A2aTool(descriptor(toolName(agentName, skill.id()), card, skill), agent, agentName, cardUrl, skill.id()))
+  }
 
   /** Rejects tools that share a name with each other or with the agent's other tools. */
   def validateNames(tools: Seq[A2aTool], otherToolNames: Seq[String]): Unit = {
@@ -140,9 +161,16 @@ private[akka] object A2aAgentTools {
   /**
    * Sends the model's tool call to the skill and returns the reply as text. A failure of the call, or tool arguments
    * that cannot be sent, are returned as text that starts with `Error:`, so that the model sees them.
+   *
+   * @param contextId
+   *   the session id of the agent, sent as the A2A context id
+   * @param agentComponentId
+   *   the component id of the calling agent, whose session memory receives the outcome of a handed off task
    */
-  def call(tool: A2aTool, arguments: String, contextId: String, client: A2aClientImpl)(implicit
-      ec: ExecutionContext): Future[String] = {
+  def call(tool: A2aTool, arguments: String, contextId: String, agentComponentId: String, client: A2aClientImpl)(
+      implicit
+      ec: ExecutionContext,
+      scheduler: akka.actor.Scheduler): Future[String] = {
     val message =
       try Right(toMessage(arguments))
       catch { case NonFatal(e) => Left(s"Error: the tool call could not be sent: ${e.getMessage}") }
@@ -150,14 +178,29 @@ private[akka] object A2aAgentTools {
       case Left(error) => Future.successful(error)
       case Right(msg) =>
         val sent =
-          try client
-            .forTarget(tool.agent.target, tool.agent.timeout)
-            .send(tool.skillId, msg)
-            .inContext(contextId)
-            .invokeAsync()
-            .asScala
-          catch { case NonFatal(e) => Future.failed(e) }
-        sent.map(replyText).recover { case NonFatal(e) =>
+          try {
+            val remote = client.forTarget(tool.agent.target, tool.agent.timeout)
+            tool.agent.handOffAfter match {
+              case None =>
+                remote.send(tool.skillId, msg).inContext(contextId).invokeAsync().asScala.map(replyText)
+              case Some(handOffAfter) =>
+                remote
+                  .sendFuture(Some(tool.skillId), msg, Some(contextId), returnImmediately = true)
+                  .flatMap {
+                    case t: A2aSendMessageResponse.Task =>
+                      val deadline = System.nanoTime() + handOffAfter.toNanos
+                      followUntil(remote, t.task(), deadline).flatMap { task =>
+                        if (A2aRemoteTasks.settles(task)) Future.successful(replyText(A2aSendMessageResponse.of(task)))
+                        else
+                          remote
+                            .handOff(task, contextId, agentComponentId, tool.name)
+                            .map(_ => handedOffText(task, handOffAfter))
+                      }
+                    case other => Future.successful(replyText(other))
+                  }
+            }
+          } catch { case NonFatal(e) => Future.failed(e) }
+        sent.recover { case NonFatal(e) =>
           log.debug("The call of tool [{}] to remote A2A agent [{}] failed", tool.name, tool.agentName, e)
           e match {
             case clientError: A2aClientException => s"Error: ${clientError.getMessage}"
@@ -166,6 +209,27 @@ private[akka] object A2aAgentTools {
         }
     }
   }
+
+  // How often a task is read while the tool waits for it, before it is handed off
+  private val FollowInterval = 500.millis
+
+  // Reads the task until it ends or needs input, or until the deadline passes
+  private def followUntil(remote: RemoteA2aAgentClientImpl, task: A2aTask, deadlineNanos: Long)(implicit
+      ec: ExecutionContext,
+      scheduler: akka.actor.Scheduler): Future[A2aTask] = {
+    val remaining = deadlineNanos - System.nanoTime()
+    if (A2aRemoteTasks.settles(task) || remaining <= 0) Future.successful(task)
+    else {
+      val delay = FollowInterval.min(remaining.nanos)
+      akka.pattern
+        .after(delay, scheduler)(remote.getTaskAsync(task.id()))
+        .flatMap(followUntil(remote, _, deadlineNanos))
+    }
+  }
+
+  private def handedOffText(task: A2aTask, handOffAfter: FiniteDuration): String =
+    s"The remote task [${task.id()}] was still working after ${handOffAfter.toCoarsest}, so it continues in the " +
+    "background. Its outcome will be added to this conversation when it is known."
 
   private def toMessage(arguments: String): A2aMessage = {
     val json = mapper.readTree(arguments)

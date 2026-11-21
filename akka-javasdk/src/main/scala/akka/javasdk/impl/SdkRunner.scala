@@ -118,7 +118,10 @@ import akka.javasdk.impl.a2a.A2aClientImpl
 import akka.javasdk.impl.a2a.A2aRemoteAgents
 import akka.javasdk.impl.a2a.A2aServiceRoute
 import akka.javasdk.impl.a2a.A2aEndpointSettings
+import akka.javasdk.impl.a2a.A2aPushReceiverEndpoint
 import akka.javasdk.impl.a2a.A2aPushUrlPolicy
+import akka.javasdk.impl.a2a.A2aRemoteTaskSubscriptionEntity
+import akka.javasdk.impl.a2a.A2aRemoteTasks
 import akka.javasdk.impl.a2a.A2aRequestContextImpl
 import akka.javasdk.impl.a2a.A2aRequestHandler
 import akka.javasdk.impl.a2a.A2aRoutesEndpoint
@@ -906,6 +909,7 @@ private final class Sdk(
               // remember to update component type API doc and docs if changing the set of injectables
               case p if p == classOf[WorkflowContext]  => context
               case p if p == classOf[A2aPushUrlPolicy] => a2aEndpointSettings.pushUrls()
+              case p if p == classOf[A2aRemoteTasks]   => a2aRemoteTasks
               case p if p == classOf[A2aTaskContext] =>
                 new A2aTaskContextImpl(
                   context.workflowId(),
@@ -966,6 +970,38 @@ private final class Sdk(
           provided = true))
     }
   }
+
+  private val followsRemoteA2aTasks = componentClasses.contains(classOf[A2aRemoteTaskSubscriptionEntity])
+
+  // Where remote agents send the push notifications of the tasks that this service follows
+  private val a2aPushPublicUrl: Option[String] =
+    Seq("a2a.push.public-url", "a2a.endpoint.public-url")
+      .map(key => sdkConfig.getString(key).trim.stripSuffix("/"))
+      .find(_.nonEmpty)
+      .filter(_ => followsRemoteA2aTasks)
+
+  private lazy val a2aRemoteTasks = new A2aRemoteTasks(
+    runtimeComponentClients.workflowClient,
+    serializer,
+    () => componentClient(None),
+    a2aRemoteAgents,
+    a2aPushPublicUrl,
+    followsRemoteA2aTasks)(sdkExecutionContext)
+
+  // The push notification receiver is served only when the service follows remote tasks and has a public URL, without
+  // which no remote agent can reach it
+  private val a2aPushReceiverDescriptors =
+    a2aPushPublicUrl.toSeq.map { _ =>
+      HttpEndpointDescriptorFactory.create(
+        classOf[A2aPushReceiverEndpoint],
+        Some(A2aPushReceiverEndpoint.PATH),
+        context =>
+          new A2aPushReceiverEndpoint(
+            a2aRemoteTasks,
+            context.requestHeaders.header(A2aPushReceiverEndpoint.TOKEN_HEADER).map(_.value()).toJava),
+        HttpEndpointDescriptorFactory.classOptions(classOf[A2aPushReceiverEndpoint]),
+        provided = true)
+    }
 
   private val mcpEndpoints = componentClasses
     .filter(Reflect.isMcpEndpoint)
@@ -1424,7 +1460,7 @@ private final class Sdk(
             applicationConfig,
             eventLogClient,
             agentRegistry,
-            telemetryContext => A2aClientImpl(a2aRemoteAgents, telemetryContext, callerSpiffe),
+            telemetryContext => A2aClientImpl(a2aRemoteAgents, telemetryContext, callerSpiffe, Some(a2aRemoteTasks)),
             system)
         }
 
@@ -1592,6 +1628,7 @@ private final class Sdk(
         keyValueEntityDescriptors ++
         httpEndpointDescriptors ++
         a2aEndpointDescriptors ++
+        a2aPushReceiverDescriptors ++
         grpcEndpointDescriptors ++
         timedActionDescriptors ++
         consumerDescriptors ++
@@ -1961,7 +1998,7 @@ private final class Sdk(
   }
 
   private def a2aClient(telemetryContext: Option[OtelContext], callerSpiffe: Option[String]): A2aClient =
-    A2aClientImpl(a2aRemoteAgents, telemetryContext, callerSpiffe)
+    A2aClientImpl(a2aRemoteAgents, telemetryContext, callerSpiffe, Some(a2aRemoteTasks))
 
   private def objectStorageProvider(telemetryContext: Option[OtelContext]): ObjectStorageProvider =
     telemetryContext match {
