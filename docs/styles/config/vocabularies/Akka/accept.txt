@@ -45,6 +45,7 @@ Autoscaler
 [Aa]utoscales?
 [Aa]utoscaling
 Avro
+Awaitility
 aws
 AZs?
 azureMonitor
@@ -274,6 +275,7 @@ Llaama
 LLM
 LLMs
 llmstxt
+loopback
 lmdbjava
 lockfile
 lockfiles

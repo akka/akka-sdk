@@ -164,7 +164,7 @@ The URLs in `supportedInterfaces` are the public base URL of the service followe
 . The setting `akka.javasdk.a2a.endpoint.public-url`.
 . The scheme and host of the request for the Agent Card. The scheme comes from the `X-Forwarded-Proto` header, and is `http` without it.
 
-Set the public URL for a deployed service, so that the card does not depend on the host that a client used:
+Set the public URL of a deployed service, so that the card does not depend on the host that a client used:
 
 [source,hocon]
 ----
@@ -235,7 +235,7 @@ When the request sets `returnImmediately` in its configuration, Akka returns the
 
 A message that names the id of an existing task of a skill answered by an agent is refused with an unsupported operation error, because such a task ends with the reply. A task of a long skill accepts more messages until it ends, as described in <<_long_skills_backed_by_a_workflow>>.
 
-== Conversations: context id and session memory
+== Conversations, context ids and session memory
 
 A2A groups the messages of one conversation with a context id. All messages of one caller in one context share the xref:sdk:agents/memory.adoc[session memory] of the agent.
 
