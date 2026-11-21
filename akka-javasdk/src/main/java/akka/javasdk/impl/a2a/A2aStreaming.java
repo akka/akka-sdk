@@ -116,6 +116,11 @@ final class A2aStreaming {
                 + message.taskId()
                 + "]");
       }
+      var continued =
+          new A2aTaskWorkflows(handler.componentClient)
+              .continueWithoutWaiting(handler.skillTable(), existing, message);
+      if (continued.isPresent())
+        return followTaskWorkflow(continued.get(), historyLength, envelope);
       throw new A2aException(
           A2aErrorCode.UNSUPPORTED_OPERATION,
           existing.status().state().terminal()
@@ -143,6 +148,12 @@ final class A2aStreaming {
             message.metadata(),
             message.extensions(),
             message.referenceTaskIds());
+    if (skill.taskWorkflow() != null) {
+      var started =
+          new A2aTaskWorkflows(handler.componentClient)
+              .startWithoutWaiting(skill, userMessage, handler.owner(), configuration);
+      return followTaskWorkflow(started, historyLength, envelope);
+    }
     var submitted =
         new A2aTask(
             taskId,
@@ -179,6 +190,20 @@ final class A2aStreaming {
                 })
             .map(envelope::apply);
     return HttpResponses.serverSentEvents(events);
+  }
+
+  // A task answered by a task workflow: the task, then its changes until it ends or asks for input
+  private HttpResponse followTaskWorkflow(
+      A2aTaskEntity.State delivered,
+      Integer historyLength,
+      Function<A2aStreamResponse, Object> envelope) {
+    var first =
+        A2aStreamResponse.of(A2aRequestHandler.trimHistory(delivered.task(), historyLength));
+    var events =
+        delivered.task().status().state().terminal()
+            ? Source.single(first)
+            : Source.single(first).concat(updates(delivered, true));
+    return HttpResponses.serverSentEvents(events.map(envelope::apply));
   }
 
   // The state of one streamed answer: the artifact id that every chunk uses, and whether the
@@ -372,7 +397,7 @@ final class A2aStreaming {
           A2aErrorCode.UNSUPPORTED_OPERATION,
           "Task [" + taskId + "] has ended and cannot be subscribed to");
     }
-    var events = Source.single(A2aStreamResponse.of(current)).concat(updates(state));
+    var events = Source.single(A2aStreamResponse.of(current)).concat(updates(state, false));
     return HttpResponses.serverSentEvents(events.map(envelope::apply));
   }
 
@@ -389,8 +414,10 @@ final class A2aStreaming {
   }
 
   // The changes of a task after the given version: entity notifications, merged with a periodic
-  // read of the entity, and de-duplicated by version. Ends after the first terminal state.
-  private Source<A2aStreamResponse, NotUsed> updates(A2aTaskEntity.State start) {
+  // read of the entity, and de-duplicated by version. Ends after the first terminal state, and
+  // after the first interrupted state (input-required, auth-required) when endWhenInterrupted.
+  private Source<A2aStreamResponse, NotUsed> updates(
+      A2aTaskEntity.State start, boolean endWhenInterrupted) {
     var entity = handler.componentClient.forKeyValueEntity(start.task().id());
     var notifications =
         entity
@@ -418,8 +445,13 @@ final class A2aStreaming {
             last -> Optional.empty())
         .mapConcat(events -> events)
         .takeWhile(
-            event ->
-                !(event.statusUpdate() != null && event.statusUpdate().status().state().terminal()),
+            event -> {
+              if (event.statusUpdate() == null) return true;
+              var state = event.statusUpdate().status().state();
+              boolean interrupted =
+                  state == A2aTaskState.INPUT_REQUIRED || state == A2aTaskState.AUTH_REQUIRED;
+              return !(state.terminal() || (endWhenInterrupted && interrupted));
+            },
             true);
   }
 

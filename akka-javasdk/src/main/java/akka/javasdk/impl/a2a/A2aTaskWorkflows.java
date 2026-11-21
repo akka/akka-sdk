@@ -80,6 +80,18 @@ public final class A2aTaskWorkflows {
       A2aMessage userMessage,
       String owner,
       A2aSendMessageRequest.Configuration configuration) {
+    return respond(startWithoutWaiting(skill, userMessage, owner, configuration), configuration);
+  }
+
+  /**
+   * Starts the workflow of a new task and returns the task once the workflow has the message, for
+   * {@code SendStreamingMessage}, which follows the task from there.
+   */
+  public A2aTaskEntity.State startWithoutWaiting(
+      A2aSkillTable.Entry skill,
+      A2aMessage userMessage,
+      String owner,
+      A2aSendMessageRequest.Configuration configuration) {
     var taskId = userMessage.taskId();
     var submitted =
         new A2aTask(
@@ -100,7 +112,7 @@ public final class A2aTaskWorkflows {
         store
             .modify(taskId, t -> A2aTaskStore.withStatus(t, A2aTaskState.WORKING, null))
             .orElseThrow();
-    return deliver(skill.taskWorkflow(), working, userMessage, configuration);
+    return deliver(skill.taskWorkflow(), working, userMessage);
   }
 
   /**
@@ -114,6 +126,18 @@ public final class A2aTaskWorkflows {
       A2aTask existing,
       A2aMessage message,
       A2aSendMessageRequest.Configuration configuration) {
+    return continueWithoutWaiting(table, existing, message)
+        .map(delivered -> respond(delivered, configuration));
+  }
+
+  /**
+   * Passes a later message of a task to its workflow and returns the task once the workflow has the
+   * message, for {@code SendStreamingMessage}.
+   *
+   * @return empty when the task is not answered by a task workflow, or has ended
+   */
+  public Optional<A2aTaskEntity.State> continueWithoutWaiting(
+      A2aSkillTable table, A2aTask existing, A2aMessage message) {
     if (existing.status().state().terminal()) return Optional.empty();
     var state = store.get(existing.id()).orElseThrow();
     var skill = table.find(state.skillId()).filter(e -> e.taskWorkflow() != null);
@@ -138,8 +162,7 @@ public final class A2aTaskWorkflows {
                   : withMessage;
             });
     if (changed.isEmpty()) return Optional.empty();
-    return Optional.of(
-        deliver(skill.get().taskWorkflow(), changed.get(), userMessage, configuration));
+    return Optional.of(deliver(skill.get().taskWorkflow(), changed.get(), userMessage));
   }
 
   /**
@@ -174,14 +197,15 @@ public final class A2aTaskWorkflows {
 
   // ---------------------------------------------------------------------------------------------
 
-  private A2aSendMessageResponse deliver(
+  // Passes the message to onMessage. A message that the workflow refuses fails the task.
+  private A2aTaskEntity.State deliver(
       Class<? extends Workflow<?>> workflowClass,
       A2aTaskEntity.State delivered,
-      A2aMessage userMessage,
-      A2aSendMessageRequest.Configuration configuration) {
+      A2aMessage userMessage) {
     var taskId = delivered.task().id();
     try {
       callOnMessage(workflowClass, taskId, userMessage);
+      return delivered;
     } catch (RuntimeException e) {
       log.warn("The workflow of A2A task [{}] refused the message", taskId, e);
       var reason =
@@ -189,12 +213,17 @@ public final class A2aTaskWorkflows {
               taskId,
               delivered.task().contextId(),
               List.of(akka.javasdk.a2a.A2aPart.text("The agent could not accept the message.")));
-      var failed =
-          store.modify(taskId, t -> A2aTaskStore.withStatus(t, A2aTaskState.FAILED, reason));
-      return A2aSendMessageResponse.of(
-          trim(failed.map(A2aTaskEntity.State::task).orElse(delivered.task()), configuration));
+      return store
+          .modify(taskId, t -> A2aTaskStore.withStatus(t, A2aTaskState.FAILED, reason))
+          .orElse(delivered);
     }
-    if (configuration != null && configuration.returnImmediately()) {
+  }
+
+  private A2aSendMessageResponse respond(
+      A2aTaskEntity.State delivered, A2aSendMessageRequest.Configuration configuration) {
+    var taskId = delivered.task().id();
+    if (delivered.task().status().state().terminal()
+        || (configuration != null && configuration.returnImmediately())) {
       return A2aSendMessageResponse.of(trim(delivered.task(), configuration));
     }
     var reported = awaitInterruptedOrEnded(taskId, delivered.version());

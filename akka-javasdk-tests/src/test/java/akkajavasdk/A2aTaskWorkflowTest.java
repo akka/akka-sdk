@@ -48,8 +48,9 @@ public class A2aTaskWorkflowTest extends TestKitSupport {
     var card = json(httpClient.GET("/.well-known/agent-card.json").invoke().body());
     assertThat(card.get("capabilities").get("pushNotifications").asBoolean()).isTrue();
     var ids = card.get("skills").findValuesAsText("id");
-    assertThat(ids).containsExactly("echo", "a2a-assistant", "kit-tasks", "ask");
-    var ask = card.get("skills").get(3);
+    assertThat(ids)
+        .containsExactly("echo", "a2a-assistant", "a2a-streaming-agent", "kit-tasks", "ask");
+    var ask = card.get("skills").get(4);
     assertThat(ask.get("tags").get(0).asText()).isEqualTo("input-required");
   }
 
@@ -70,6 +71,22 @@ public class A2aTaskWorkflowTest extends TestKitSupport {
 
     var ended = rpc("SendMessage", Map.of("message", message("ask", "again", id(second), null)));
     assertThat(ended.get("error").get("code").asInt()).isEqualTo(-32004);
+  }
+
+  @Test
+  public void streamsTheUpdatesOfATaskWorkflow() throws Exception {
+    var first = stream(message("ask", "start", null, null));
+    var task = first.get(0).get("result").get("task");
+    assertThat(state(task)).isEqualTo("TASK_STATE_WORKING");
+    var last = first.getLast().get("result").get("statusUpdate");
+    assertThat(last.get("taskId").asText()).isEqualTo(id(task));
+    assertThat(last.get("status").get("state").asText()).isEqualTo("TASK_STATE_INPUT_REQUIRED");
+
+    var second = stream(message("ask", "Ada", id(task), null));
+    var end = second.getLast().get("result").get("statusUpdate");
+    assertThat(end.get("status").get("state").asText()).isEqualTo("TASK_STATE_COMPLETED");
+    assertThat(end.get("status").get("message").get("parts").get(0).get("text").asText())
+        .isEqualTo("Hello, Ada");
   }
 
   @Test
@@ -227,6 +244,36 @@ public class A2aTaskWorkflowTest extends TestKitSupport {
     var response = rpc("SendMessage", params);
     assertThat(response.has("error")).as(response.toString()).isFalse();
     return response.get("result");
+  }
+
+  // The JSON-RPC responses of a SendStreamingMessage, one per server-sent event
+  private List<JsonNode> stream(Map<String, Object> message) throws Exception {
+    var body =
+        httpClient
+            .POST("/a2a")
+            .addHeader("Authorization", token("a"))
+            .withRequestBody(
+                ContentTypes.APPLICATION_JSON,
+                bytes(
+                    Map.of(
+                        "jsonrpc",
+                        "2.0",
+                        "id",
+                        1,
+                        "method",
+                        "SendStreamingMessage",
+                        "params",
+                        Map.of("message", message))))
+            .withTimeout(Duration.ofSeconds(30))
+            .invoke()
+            .body()
+            .utf8String();
+    var events = new java.util.ArrayList<JsonNode>();
+    for (var line : body.split("\n")) {
+      if (line.startsWith("data:")) events.add(mapper.readTree(line.substring(5).trim()));
+    }
+    assertThat(events).as(body).isNotEmpty();
+    return events;
   }
 
   private JsonNode getTask(String taskId) throws Exception {
