@@ -16,8 +16,8 @@ The link:{url-ext-a2a-spec}[Agent2Agent (A2A) protocol, window="new"] lets agent
 An A2A endpoint serves these parts of A2A version 1.0 for the agents you choose:
 
 * the Agent Card at `/.well-known/agent-card.json`;
-* the `SendMessage` and `GetTask` methods, over the JSON-RPC binding and the HTTP+JSON binding;
-* for long skills, `CancelTask` and the four push notification configuration methods.
+* the task methods `SendMessage`, `SendStreamingMessage`, `GetTask`, `ListTasks`, `CancelTask` and `SubscribeToTask`, over the JSON-RPC binding and the HTTP+JSON binding;
+* the four push notification configuration methods, when the endpoint publishes a long skill.
 
 Each skill in the Agent Card is answered either by an xref:sdk:agents.adoc[agent] of the service, in one call, or by a xref:sdk:workflows.adoc[workflow], for a long skill that can ask the client for more input. Akka records each A2A task, so that a client can read it later with `GetTask`.
 
