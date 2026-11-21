@@ -40,8 +40,7 @@ public class ExampleA2aEndpoint extends AbstractA2aEndpoint { // <3>
           "Message in context {} from {}",
           contextId,
           requestContext().getJwtClaims().subject().orElse("unknown") // <2>
-        )
-      );
+        ));
     // end::request-context[]
     // tag::endpoint-class[]
     // end::endpoint-class[]

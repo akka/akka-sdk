@@ -11,12 +11,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import org.junit.jupiter.api.Test;
 
 public class ExampleA2aEndpointIntegrationTest extends TestKitSupport {
 
   // tag::test[]
-  @Test
   public void asksForThePolicyNumberAndCompletes() throws Exception {
     var first = send(message("Water damage in the kitchen", null)); // <1>
     assertThat(first.get("status").get("state").asText()).isEqualTo(
@@ -24,9 +22,7 @@ public class ExampleA2aEndpointIntegrationTest extends TestKitSupport {
     ); // <2>
 
     var second = send(message("P-1234", first.get("id").asText())); // <3>
-    assertThat(second.get("status").get("state").asText()).isEqualTo(
-      "TASK_STATE_COMPLETED"
-    );
+    assertThat(second.get("status").get("state").asText()).isEqualTo("TASK_STATE_COMPLETED");
   }
 
   private JsonNode send(Map<String, Object> message) throws Exception {
