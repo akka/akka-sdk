@@ -11,11 +11,14 @@ import akka.http.javadsl.ClientTransport;
 import akka.http.javadsl.Http;
 import akka.http.javadsl.model.ContentTypes;
 import akka.http.javadsl.model.HttpRequest;
+import akka.http.javadsl.model.Uri;
 import akka.http.javadsl.model.headers.RawHeader;
-import akka.http.javadsl.settings.ConnectionPoolSettings;
+import akka.http.javadsl.settings.ClientConnectionSettings;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.workflow.Workflow;
 import akka.stream.Materializer;
+import akka.stream.javadsl.Sink;
+import akka.stream.javadsl.Source;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -118,9 +121,10 @@ public final class A2aPushDeliveryWorkflow extends Workflow<A2aPushDeliveryWorkf
   }
 
   /**
-   * Posts the notification, and connects to one of the checked addresses when there are any. The
-   * request keeps the host name of the URL, so the {@code Host} header, TLS server name indication
-   * and certificate verification use the name and not the address.
+   * Posts the notification over a connection of its own, which is closed after the response, and
+   * connects to one of the checked addresses when there are any. The connection keeps the host name
+   * of the URL, so the {@code Host} header, TLS server name indication and certificate verification
+   * use the name and not the address.
    *
    * @param addresses the addresses that the URL policy checked, or empty to resolve the host when
    *     connecting
@@ -128,8 +132,12 @@ public final class A2aPushDeliveryWorkflow extends Workflow<A2aPushDeliveryWorkf
    */
   static boolean post(ActorSystem system, State delivery, List<InetAddress> addresses) {
     try {
+      var uri = Uri.create(delivery.url());
+      var https = "https".equalsIgnoreCase(uri.scheme());
+      var host = uri.host().address();
+      var port = uri.port() > 0 ? uri.port() : https ? 443 : 80;
       var request =
-          HttpRequest.POST(delivery.url())
+          HttpRequest.POST(uri.toRelative().toString())
               .withEntity(
                   ContentTypes.APPLICATION_JSON, delivery.body().getBytes(StandardCharsets.UTF_8));
       if (delivery.token() != null && !delivery.token().isBlank()) {
@@ -140,24 +148,43 @@ public final class A2aPushDeliveryWorkflow extends Workflow<A2aPushDeliveryWorkf
         request = request.addHeader(RawHeader.create("Authorization", delivery.authorization()));
       }
       var http = Http.get(system);
-      var pool = ConnectionPoolSettings.create(system);
+      var settings = ClientConnectionSettings.create(system);
       if (!addresses.isEmpty()) {
         var pinned = addresses.getFirst();
-        pool =
-            pool.withTransport(
+        settings =
+            settings.withTransport(
                 ClientTransport.withCustomResolver(
-                    (host, port) ->
+                    (name, p) ->
                         CompletableFuture.completedFuture(
-                            new InetSocketAddress(pinned, (Integer) port))));
+                            new InetSocketAddress(pinned, (Integer) p))));
       }
-      var response =
-          http.singleRequest(request, http.defaultClientHttpsContext(), pool, system.log())
+      var connection =
+          http.connectionTo(host)
+              .toPort(port)
+              .withClientConnectionSettings(settings)
+              .logTo(system.log());
+      var flow =
+          https
+              ? connection
+                  .withCustomHttpsConnectionContext(http.defaultClientHttpsContext())
+                  .https()
+              : connection.http();
+      // One request on the connection: the stream ends after the response, which closes it
+      var status =
+          Source.single(request)
+              .via(flow)
+              .mapAsync(
+                  1,
+                  response ->
+                      response
+                          .discardEntityBytes(system)
+                          .completionStage()
+                          .thenApply(done -> response.status()))
+              .runWith(Sink.head(), Materializer.matFromSystem(system))
               .toCompletableFuture()
               .get(REQUEST_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
-      response.discardEntityBytes(system);
-      if (response.status().isSuccess()) return true;
-      log.debug(
-          "Push notification to [{}] answered {}", delivery.url(), response.status().intValue());
+      if (status.isSuccess()) return true;
+      log.debug("Push notification to [{}] answered {}", delivery.url(), status.intValue());
       return false;
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();

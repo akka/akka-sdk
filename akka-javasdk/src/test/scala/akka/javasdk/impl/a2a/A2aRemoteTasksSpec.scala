@@ -120,5 +120,43 @@ class A2aRemoteTasksSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike 
         A2aPushDeliveryWorkflow.post(system.classicSystem, delivery, java.util.List.of()) shouldBe false
       } finally binding.unbind()
     }
+
+    "close its connection after the response" in {
+      val server = new java.net.ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))
+      val closedByClient = scala.concurrent.Promise[Boolean]()
+      val serverThread = new Thread(() =>
+        try {
+          val socket = server.accept()
+          try {
+            val in = new java.io.BufferedReader(new java.io.InputStreamReader(socket.getInputStream))
+            var contentLength = 0
+            var line = in.readLine()
+            while (line != null && line.nonEmpty) {
+              if (line.toLowerCase.startsWith("content-length:")) contentLength = line.substring(15).trim.toInt
+              line = in.readLine()
+            }
+            (1 to contentLength).foreach(_ => in.read())
+            val out = socket.getOutputStream
+            out.write("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n".getBytes("US-ASCII"))
+            out.flush()
+            // A pooled connection would stay open here until its idle timeout
+            socket.setSoTimeout(5000)
+            closedByClient.trySuccess(in.read() == -1)
+          } finally socket.close()
+        } catch {
+          case e: java.net.SocketTimeoutException => closedByClient.trySuccess(false)
+          case e: Throwable                       => closedByClient.tryFailure(e)
+        })
+      serverThread.start()
+      try {
+        val delivery =
+          new A2aPushDeliveryWorkflow.State(s"http://webhook.invalid:${server.getLocalPort}/hook", "tok", null, "{}", 0)
+        A2aPushDeliveryWorkflow.post(
+          system.classicSystem,
+          delivery,
+          java.util.List.of(InetAddress.getByName("127.0.0.1"))) shouldBe true
+        Await.result(closedByClient.future, 10.seconds) shouldBe true
+      } finally server.close()
+    }
   }
 }
