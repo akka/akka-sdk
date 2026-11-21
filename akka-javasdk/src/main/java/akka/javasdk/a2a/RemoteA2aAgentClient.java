@@ -133,6 +133,11 @@ public interface RemoteA2aAgentClient {
      * task, identified by its state and timestamp or by the artifact's content, is not delivered
      * again. A reply that is a message, or a task that has ended, starts no delivery.
      *
+     * <p>When the task has not ended or asked for input after the {@code follow-timeout} of the
+     * remote agent's configuration, or when polling fails 20 times in a row, the following ends:
+     * the command receives a last {@link A2aTaskStatusUpdate} whose {@link
+     * A2aTaskStatusUpdate#followTimedOut()} is true, and no later update.
+     *
      * @param workflowCommand a component client method reference to a workflow command that takes
      *     an {@link A2aTaskUpdate}
      * @throws IllegalArgumentException if the method reference is not one of a workflow

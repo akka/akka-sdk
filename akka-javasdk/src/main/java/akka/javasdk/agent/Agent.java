@@ -296,16 +296,16 @@ public abstract class Agent implements AgentDelegationWorker {
        * the model's message to the skill with the session id as the A2A context id, and returns the
        * reply to the model.
        *
-       * <p>Construct instances using {@link RemoteA2aAgent#named(String)} or {@link
-       * RemoteA2aAgent#fromCard(String)}.
+       * <p>Construct instances using {@link RemoteA2aAgent#named(String)}, {@link
+       * RemoteA2aAgent#fromCard(String)} or {@link RemoteA2aAgent#fromService(String)}.
        */
       Builder a2aAgents(RemoteA2aAgent agent, RemoteA2aAgent... moreAgents);
 
       /**
        * Offers the skills of one or more remote Agent2Agent (A2A) agents to the model as tools.
        *
-       * <p>Construct instances using {@link RemoteA2aAgent#named(String)} or {@link
-       * RemoteA2aAgent#fromCard(String)}.
+       * <p>Construct instances using {@link RemoteA2aAgent#named(String)}, {@link
+       * RemoteA2aAgent#fromCard(String)} or {@link RemoteA2aAgent#fromService(String)}.
        */
       Builder a2aAgents(List<RemoteA2aAgent> agents);
 
@@ -679,16 +679,16 @@ public abstract class Agent implements AgentDelegationWorker {
        * the model's message to the skill with the session id as the A2A context id, and returns the
        * reply to the model.
        *
-       * <p>Construct instances using {@link RemoteA2aAgent#named(String)} or {@link
-       * RemoteA2aAgent#fromCard(String)}.
+       * <p>Construct instances using {@link RemoteA2aAgent#named(String)}, {@link
+       * RemoteA2aAgent#fromCard(String)} or {@link RemoteA2aAgent#fromService(String)}.
        */
       Builder a2aAgents(RemoteA2aAgent agent, RemoteA2aAgent... moreAgents);
 
       /**
        * Offers the skills of one or more remote Agent2Agent (A2A) agents to the model as tools.
        *
-       * <p>Construct instances using {@link RemoteA2aAgent#named(String)} or {@link
-       * RemoteA2aAgent#fromCard(String)}.
+       * <p>Construct instances using {@link RemoteA2aAgent#named(String)}, {@link
+       * RemoteA2aAgent#fromCard(String)} or {@link RemoteA2aAgent#fromService(String)}.
        */
       Builder a2aAgents(List<RemoteA2aAgent> agents);
 

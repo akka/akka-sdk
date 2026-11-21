@@ -106,6 +106,10 @@ The settings of a remote agent are:
 | `30s`
 | How often the service asks for the state of a remote task that it follows without push notifications. See <<workflow-step>>.
 
+| `follow-timeout`
+| `24h`
+| How long the service follows a remote task before it stops. See <<workflow-step>>.
+
 | `auth`
 | `type = none`
 | Credentials. See <<credentials>>.
