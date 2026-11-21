@@ -10,6 +10,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.FutureConverters.FutureOps
 
+import akka.NotUsed
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.japi.function
@@ -184,6 +185,32 @@ private[javasdk] final case class AgentClientImpl(
         }
         .asJava
 
+  }
+
+  /**
+   * The tokens of the agent with the given id, which must have a command handler that returns a [[Agent.StreamEffect]].
+   * The argument is null for a handler without parameter.
+   */
+  def dynamicTokenStream(agentId: String, arg: AnyRef): akka.stream.javadsl.Source[String, NotUsed] = {
+    val agentClass = agentClassById.getOrElse(
+      agentId,
+      throw new IllegalArgumentException(
+        s"No agent with id [$agentId]. " +
+        "The agent id is defined with the @Component annotation."))
+    val streamMethod = agentClass.getMethods
+      .find(method => isCommandHandlerCandidate[Agent.StreamEffect](method))
+      .getOrElse(throw new IllegalArgumentException(s"Agent [$agentId] has no command handler that streams tokens"))
+    val payload = if (arg eq null) BytesPayload.empty else serializer.toBytesAsJson(arg)
+    agentClient
+      .sendStream(
+        new AgentRequest(
+          agentId,
+          sessionId,
+          streamMethod.getName.capitalize,
+          payload,
+          MetadataImpl.toSpi(callMetadata)))
+      .map(agentResult => serializer.fromBytes(classOf[String], agentResult.payload))
+      .asJava
   }
 
   override def dynamicCall[A1, R](agentId: String): DynamicMethodRef[A1, R] = {

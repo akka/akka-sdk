@@ -37,6 +37,7 @@ import akka.javasdk.evaluation.DurableEvaluator
 import akka.javasdk.evaluation.Evaluator
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.impl.a2a.A2aTaskEntity
+import akka.javasdk.impl.a2a.A2aTasksView
 import akka.javasdk.impl.agent.task.BacklogEntity
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.timedaction.TimedAction
@@ -400,7 +401,7 @@ private[javasdk] object ComponentLocator {
   val autonomousAgentProvidedComponents: Seq[Class[_]] =
     Seq(classOf[TaskEntity], classOf[BacklogEntity])
 
-  val a2aProvidedComponents: Seq[Class[_]] = Seq(classOf[A2aTaskEntity])
+  val a2aProvidedComponents: Seq[Class[_]] = Seq(classOf[A2aTaskEntity], classOf[A2aTasksView])
 
   // all components that the SDK adds when the service needs them
   val providedComponents: Seq[Class[_]] =

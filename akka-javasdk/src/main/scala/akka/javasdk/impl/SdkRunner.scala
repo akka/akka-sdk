@@ -1468,7 +1468,12 @@ private final class Sdk(
             provided = false)
 
       case clz if Reflect.isView(clz) =>
-        viewDescriptors :+= ViewDescriptorFactory(clz, serializer, regionInfo, sdkExecutionContext)
+        viewDescriptors :+= ViewDescriptorFactory(
+          clz,
+          serializer,
+          regionInfo,
+          sdkExecutionContext,
+          provided = isProvided(clz))
 
       case clz if Reflect.isRestEndpoint(clz) =>
       // handled separately because Component is not mandatory

@@ -63,7 +63,8 @@ private[impl] object ViewDescriptorFactory {
       viewClass: Class[_],
       serializer: Serializer,
       regionInfo: RegionInfo,
-      userEc: ExecutionContext): ViewDescriptor = {
+      userEc: ExecutionContext,
+      provided: Boolean = false): ViewDescriptor = {
     val componentId = ComponentDescriptorFactory.readComponentIdValue(viewClass)
 
     val tableUpdaters =
@@ -137,7 +138,7 @@ private[impl] object ViewDescriptorFactory {
       componentOptions = new ComponentOptions(None, None),
       name = readComponentName(viewClass),
       description = readComponentDescription(viewClass),
-      provided = false,
+      provided = provided,
       protobufDescriptors = protobufDescriptors)
   }
 

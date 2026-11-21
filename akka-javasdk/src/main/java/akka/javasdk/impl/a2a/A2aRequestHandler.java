@@ -16,7 +16,9 @@ import akka.javasdk.JwtClaims;
 import akka.javasdk.Principals;
 import akka.javasdk.a2a.A2aAgentCard;
 import akka.javasdk.a2a.A2aArtifact;
+import akka.javasdk.a2a.A2aCancelTaskRequest;
 import akka.javasdk.a2a.A2aGetTaskRequest;
+import akka.javasdk.a2a.A2aListTasksRequest;
 import akka.javasdk.a2a.A2aMessage;
 import akka.javasdk.a2a.A2aPart;
 import akka.javasdk.a2a.A2aRequestContext;
@@ -68,22 +70,26 @@ public final class A2aRequestHandler {
   public static final String PROTOCOL_VERSION = "1.0";
   static final String VERSION_HEADER = "A2A-Version";
   static final String SKILL_ID = "skillId";
+  private static final String CANCEL_SUFFIX = ":cancel";
+  private static final String SUBSCRIBE_SUFFIX = ":subscribe";
   static final String CARD_CACHE_CONTROL = "max-age=300";
   static final String ERROR_INFO_TYPE = "type.googleapis.com/google.rpc.ErrorInfo";
   static final List<String> DEFAULT_INPUT_MODES = List.of("text/plain", "application/json", "*/*");
   static final List<String> DEFAULT_OUTPUT_MODES = List.of("text/plain", "application/json");
 
-  private final ObjectMapper mapper = JsonSupport.getObjectMapper();
+  final ObjectMapper mapper = JsonSupport.getObjectMapper();
 
   private final AbstractA2aEndpoint endpoint;
   private final A2aEndpoint annotation;
   private final JWT jwt;
-  private final ComponentClient componentClient;
+  final ComponentClient componentClient;
   private final RequestContext httpContext;
   private final AgentRegistry agentRegistry;
   private final String configuredPublicUrl;
   private final Optional<String> requestHost;
   private final RequestContextImpl requestContext = new RequestContextImpl();
+  private final A2aStreaming streaming = new A2aStreaming(this);
+  private final A2aTaskOperations operations = new A2aTaskOperations(this);
 
   /**
    * @param configuredPublicUrl the setting {@code akka.javasdk.a2a.endpoint.public-url}, empty when
@@ -115,6 +121,42 @@ public final class A2aRequestHandler {
     return requestContext;
   }
 
+  /** Makes the context and task id of the request available to the endpoint. */
+  void bind(String contextId, String taskId) {
+    requestContext.contextId = contextId;
+    requestContext.taskId = taskId;
+  }
+
+  <T> T readBody(HttpEntity.Strict body, Class<T> type) {
+    JsonNode tree;
+    try {
+      tree = mapper.readTree(body.getData().utf8String());
+    } catch (JsonProcessingException e) {
+      throw new A2aException(A2aErrorCode.JSON_PARSE_ERROR, "The request is not valid JSON");
+    }
+    if (tree == null || !tree.isObject()) {
+      throw new A2aException(A2aErrorCode.INVALID_PARAMS, "The request body is not a JSON object");
+    }
+    return read(tree, type, A2aErrorCode.INVALID_PARAMS);
+  }
+
+  /** The query parameter of the HTTP request, if present. */
+  Optional<String> queryParam(String name) {
+    return httpContext.queryParams().getString(name);
+  }
+
+  // A stream that fails before it starts is answered as an ordinary HTTP+JSON error.
+  private HttpResponse httpStream(java.util.function.Supplier<HttpResponse> call) {
+    try {
+      return call.get();
+    } catch (A2aException e) {
+      return httpError(e);
+    } catch (RuntimeException e) {
+      log.error("A2A request failed", e);
+      return httpError(new A2aException(A2aErrorCode.INTERNAL_ERROR, "Internal error"));
+    }
+  }
+
   // ---------------------------------------------------------------------------------------------
   // Routes
 
@@ -140,8 +182,18 @@ public final class A2aRequestHandler {
       }
       checkVersion();
       JsonNode params = request.params() == null ? mapper.createObjectNode() : request.params();
+      var streamed = streaming.jsonRpc(request.method(), id, params);
+      if (streamed.isPresent()) return streamed.get();
       JsonNode result =
           switch (request.method()) {
+            case A2aMethods.LIST_TASKS ->
+                mapper.valueToTree(
+                    operations.list(
+                        read(params, A2aListTasksRequest.class, A2aErrorCode.INVALID_PARAMS)));
+            case A2aMethods.CANCEL_TASK ->
+                mapper.valueToTree(
+                    operations.cancel(
+                        read(params, A2aCancelTaskRequest.class, A2aErrorCode.INVALID_PARAMS)));
             case A2aMethods.SEND_MESSAGE ->
                 mapper.valueToTree(
                     send(read(params, A2aSendMessageRequest.class, A2aErrorCode.INVALID_PARAMS)));
@@ -181,6 +233,7 @@ public final class A2aRequestHandler {
   }
 
   public HttpResponse getTask(String taskId) {
+    if (taskId.endsWith(SUBSCRIBE_SUFFIX)) return subscribeToTask(withoutSuffix(taskId));
     return httpJson(
         () -> {
           checkVersion();
@@ -198,6 +251,57 @@ public final class A2aRequestHandler {
                       })
                   .orElse(null);
           return getTask(new A2aGetTaskRequest(null, taskId, historyLength));
+        });
+  }
+
+  public HttpResponse sendStreamingMessage(HttpEntity.Strict body) {
+    return httpStream(
+        () -> {
+          checkVersion();
+          return streaming.sendStreamingMessage(
+              readBody(body, A2aSendMessageRequest.class), r -> r);
+        });
+  }
+
+  /** The routes {@code POST /tasks/{id}:cancel} and {@code POST /tasks/{id}:subscribe}. */
+  public HttpResponse taskAction(String taskIdAndAction) {
+    if (taskIdAndAction.endsWith(CANCEL_SUFFIX)) {
+      return cancelTask(
+          taskIdAndAction.substring(0, taskIdAndAction.length() - CANCEL_SUFFIX.length()));
+    }
+    if (taskIdAndAction.endsWith(SUBSCRIBE_SUFFIX))
+      return subscribeToTask(withoutSuffix(taskIdAndAction));
+    return httpJson(
+        () -> {
+          throw new A2aException(A2aErrorCode.METHOD_NOT_FOUND, "Method not found");
+        });
+  }
+
+  private static String withoutSuffix(String taskIdAndAction) {
+    return taskIdAndAction.substring(0, taskIdAndAction.lastIndexOf(':'));
+  }
+
+  private HttpResponse subscribeToTask(String taskId) {
+    return httpStream(
+        () -> {
+          checkVersion();
+          return streaming.subscribeToTask(taskId, r -> r);
+        });
+  }
+
+  public HttpResponse listTasks() {
+    return httpJson(
+        () -> {
+          checkVersion();
+          return operations.list(operations.listRequestFromQuery());
+        });
+  }
+
+  public HttpResponse cancelTask(String taskId) {
+    return httpJson(
+        () -> {
+          checkVersion();
+          return operations.cancel(new A2aCancelTaskRequest(null, taskId, null));
         });
   }
 
@@ -297,8 +401,8 @@ public final class A2aRequestHandler {
             .handle((result, error) -> finish(working, result, error))
             .toCompletableFuture()
             .join();
-    store(finished);
-    return A2aSendMessageResponse.of(trimHistory(finished, historyLength));
+    var stored = store(finished);
+    return A2aSendMessageResponse.of(trimHistory(stored, historyLength));
   }
 
   private A2aTask getTask(A2aGetTaskRequest request) {
@@ -314,7 +418,7 @@ public final class A2aRequestHandler {
   // Tasks and agents
 
   /** A task the caller may see, or TASK_NOT_FOUND. A task of another subject is not revealed. */
-  private A2aTask lookup(String taskId) {
+  A2aTask lookup(String taskId) {
     var state =
         componentClient.forKeyValueEntity(taskId).method(A2aTaskEntity::get).invoke().state();
     if (state == null || (state.owner() != null && !state.owner().equals(owner()))) {
@@ -323,12 +427,16 @@ public final class A2aRequestHandler {
     return state.task();
   }
 
-  private void store(A2aTask task) {
-    componentClient.forKeyValueEntity(task.id()).method(A2aTaskEntity::update).invoke(task);
+  A2aTask store(A2aTask task) {
+    return componentClient
+        .forKeyValueEntity(task.id())
+        .method(A2aTaskEntity::update)
+        .invoke(task)
+        .task();
   }
 
   // Tasks are scoped to the JWT subject when the endpoint requires a token.
-  private String owner() {
+  String owner() {
     if (jwt == null) return null;
     try {
       return httpContext.getJwtClaims().subject().orElse(null);
@@ -337,7 +445,7 @@ public final class A2aRequestHandler {
     }
   }
 
-  private A2aSkillTable.Entry selectSkill(A2aMessage message, Map<String, Object> metadata) {
+  A2aSkillTable.Entry selectSkill(A2aMessage message, Map<String, Object> metadata) {
     var table = A2aSkillTable.of(endpoint._internalAgents(), agentRegistry);
     var requested =
         stringValue(message.metadata(), SKILL_ID).or(() -> stringValue(metadata, SKILL_ID));
@@ -361,7 +469,7 @@ public final class A2aRequestHandler {
                         + String.join(", ", table.ids())));
   }
 
-  private Object agentInput(A2aSkillTable.Entry skill, A2aMessage message) {
+  Object agentInput(A2aSkillTable.Entry skill, A2aMessage message) {
     if (skill.inputType() == null) return null;
     var text =
         message.parts().stream()
@@ -393,8 +501,7 @@ public final class A2aRequestHandler {
     }
   }
 
-  private CompletionStage<Object> callAgent(
-      A2aSkillTable.Entry skill, String contextId, Object input) {
+  CompletionStage<Object> callAgent(A2aSkillTable.Entry skill, String contextId, Object input) {
     DynamicMethodRef<Object, Object> call =
         componentClient.forAgent().inSession(contextId).dynamicCall(skill.agentId());
     try {
@@ -404,7 +511,7 @@ public final class A2aRequestHandler {
     }
   }
 
-  private A2aTask finish(A2aTask working, Object result, Throwable error) {
+  A2aTask finish(A2aTask working, Object result, Throwable error) {
     if (error != null) {
       log.warn("The agent failed to answer A2A task [{}]", working.id(), error);
       var reply =
@@ -431,7 +538,7 @@ public final class A2aRequestHandler {
         working.metadata());
   }
 
-  private static A2aMessage agentMessage(A2aTask task, List<A2aPart> parts) {
+  static A2aMessage agentMessage(A2aTask task, List<A2aPart> parts) {
     return new A2aMessage(
         UUID.randomUUID().toString(),
         task.contextId(),
@@ -443,16 +550,16 @@ public final class A2aRequestHandler {
         null);
   }
 
-  private static A2aTaskStatus status(A2aTaskState state) {
+  static A2aTaskStatus status(A2aTaskState state) {
     return new A2aTaskStatus(state, null, Instant.now());
   }
 
-  private static A2aTask withStatus(A2aTask task, A2aTaskStatus status) {
+  static A2aTask withStatus(A2aTask task, A2aTaskStatus status) {
     return new A2aTask(
         task.id(), task.contextId(), status, task.artifacts(), task.history(), task.metadata());
   }
 
-  private static A2aTask trimHistory(A2aTask task, Integer historyLength) {
+  static A2aTask trimHistory(A2aTask task, Integer historyLength) {
     if (historyLength == null || task.history().size() <= historyLength) return task;
     var history = task.history();
     return new A2aTask(
@@ -489,7 +596,7 @@ public final class A2aRequestHandler {
         null,
         annotation.version(),
         null,
-        new A2aAgentCard.Capabilities(false, false, null, null),
+        new A2aAgentCard.Capabilities(true, false, null, null),
         schemes,
         requirements,
         DEFAULT_INPUT_MODES,
@@ -562,7 +669,7 @@ public final class A2aRequestHandler {
     }
   }
 
-  private static void checkHistoryLength(Integer historyLength) {
+  static void checkHistoryLength(Integer historyLength) {
     if (historyLength != null && historyLength < 0) {
       throw invalidParams("historyLength must not be negative");
     }
@@ -570,9 +677,6 @@ public final class A2aRequestHandler {
 
   private static A2aException unsupported(String method) {
     return switch (method) {
-      case A2aMethods.SEND_STREAMING_MESSAGE, A2aMethods.SUBSCRIBE_TO_TASK ->
-          new A2aException(
-              A2aErrorCode.UNSUPPORTED_OPERATION, "This agent does not support streaming");
       case A2aMethods.CREATE_TASK_PUSH_NOTIFICATION_CONFIG,
           A2aMethods.GET_TASK_PUSH_NOTIFICATION_CONFIG,
           A2aMethods.LIST_TASK_PUSH_NOTIFICATION_CONFIGS,
@@ -583,14 +687,11 @@ public final class A2aRequestHandler {
       case A2aMethods.GET_EXTENDED_AGENT_CARD ->
           new A2aException(
               A2aErrorCode.UNSUPPORTED_OPERATION, "This agent has no extended Agent Card");
-      case A2aMethods.LIST_TASKS, A2aMethods.CANCEL_TASK ->
-          new A2aException(
-              A2aErrorCode.UNSUPPORTED_OPERATION, "This agent does not support " + method);
       default -> new A2aException(A2aErrorCode.METHOD_NOT_FOUND, "Method not found: " + method);
     };
   }
 
-  private <T> T read(JsonNode node, Class<T> type, A2aErrorCode code) {
+  <T> T read(JsonNode node, Class<T> type, A2aErrorCode code) {
     try {
       return mapper.treeToValue(node, type);
     } catch (JsonProcessingException | IllegalArgumentException e) {
@@ -604,11 +705,11 @@ public final class A2aRequestHandler {
     return map.get(key) instanceof String s && !s.isBlank() ? Optional.of(s) : Optional.empty();
   }
 
-  private static A2aException invalidParams(String message) {
+  static A2aException invalidParams(String message) {
     return new A2aException(A2aErrorCode.INVALID_PARAMS, message);
   }
 
-  private static boolean isBlank(String value) {
+  static boolean isBlank(String value) {
     return value == null || value.isBlank();
   }
 
@@ -641,7 +742,7 @@ public final class A2aRequestHandler {
   }
 
   // The google.rpc.Status form of the HTTP+JSON binding.
-  private HttpResponse httpError(A2aException e) {
+  HttpResponse httpError(A2aException e) {
     int status = httpStatus(e.code());
     ObjectNode error = mapper.createObjectNode();
     error.put("code", status);

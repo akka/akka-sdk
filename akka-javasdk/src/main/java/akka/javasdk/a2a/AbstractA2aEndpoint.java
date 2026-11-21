@@ -92,7 +92,7 @@ public abstract class AbstractA2aEndpoint {
     return handler().sendMessage(body);
   }
 
-  /** The HTTP+JSON binding of {@code GetTask}. */
+  /** The HTTP+JSON bindings of {@code GetTask} and of {@code GET /tasks/{id}:subscribe}. */
   @Get("/tasks/{taskId}")
   public final HttpResponse getTask(String taskId) {
     return handler().getTask(taskId);
@@ -101,7 +101,23 @@ public abstract class AbstractA2aEndpoint {
   /** The HTTP+JSON binding of {@code SendStreamingMessage}. */
   @Post("/message:stream")
   public final HttpResponse sendStreamingMessage(HttpEntity.Strict body) {
-    return handler().unsupportedMethod(A2aMethods.SEND_STREAMING_MESSAGE);
+    return handler().sendStreamingMessage(body);
+  }
+
+  /** The HTTP+JSON binding of {@code ListTasks}. */
+  @Get("/tasks")
+  public final HttpResponse listTasks() {
+    return handler().listTasks();
+  }
+
+  /**
+   * The HTTP+JSON bindings {@code POST /tasks/{id}:cancel} and {@code POST /tasks/{id}:subscribe}.
+   * The route has one path variable that holds the task id and the action, because the path matcher
+   * takes a variable as a whole segment.
+   */
+  @Post("/tasks/{taskIdAndAction}")
+  public final HttpResponse taskAction(String taskIdAndAction) {
+    return handler().taskAction(taskIdAndAction);
   }
 
   /** The HTTP+JSON binding of {@code CreateTaskPushNotificationConfig}. */
