@@ -913,9 +913,10 @@ private final class Sdk(
             Some(componentId))
             .orElse {
               // remember to update component type API doc and docs if changing the set of injectables
-              case p if p == classOf[WorkflowContext]  => context
-              case p if p == classOf[A2aPushUrlPolicy] => a2aEndpointSettings.pushUrls()
-              case p if p == classOf[A2aRemoteTasks]   => a2aRemoteTasks
+              case p if p == classOf[WorkflowContext]     => context
+              case p if p == classOf[A2aPushUrlPolicy]    => a2aEndpointSettings.pushUrls()
+              case p if p == classOf[A2aEndpointSettings] => a2aEndpointSettings
+              case p if p == classOf[A2aRemoteTasks]      => a2aRemoteTasks
               case p if p == classOf[A2aTaskContext] =>
                 new A2aTaskContextImpl(
                   context.workflowId(),

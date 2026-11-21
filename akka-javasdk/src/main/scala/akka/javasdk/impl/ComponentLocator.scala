@@ -40,6 +40,7 @@ import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.impl.a2a.A2aPushDeliveryWorkflow
 import akka.javasdk.impl.a2a.A2aRemoteTaskPollWorkflow
 import akka.javasdk.impl.a2a.A2aRemoteTaskSubscriptionEntity
+import akka.javasdk.impl.a2a.A2aShortTaskWorkflow
 import akka.javasdk.impl.a2a.A2aTaskEntity
 import akka.javasdk.impl.a2a.A2aTaskExtrasEntity
 import akka.javasdk.impl.a2a.A2aTasksView
@@ -408,7 +409,12 @@ private[javasdk] object ComponentLocator {
     Seq(classOf[TaskEntity], classOf[BacklogEntity])
 
   val a2aProvidedComponents: Seq[Class[_]] =
-    Seq(classOf[A2aTaskEntity], classOf[A2aTasksView], classOf[A2aTaskExtrasEntity], classOf[A2aPushDeliveryWorkflow])
+    Seq(
+      classOf[A2aTaskEntity],
+      classOf[A2aTasksView],
+      classOf[A2aTaskExtrasEntity],
+      classOf[A2aPushDeliveryWorkflow],
+      classOf[A2aShortTaskWorkflow])
 
   // Follow remote A2A tasks for workflows (notifyWorkflow) and for the tool calls that agents hand off
   val a2aRemoteTaskComponents: Seq[Class[_]] =

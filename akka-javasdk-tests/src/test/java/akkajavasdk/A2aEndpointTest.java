@@ -30,9 +30,11 @@ import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.spec.ECGenParameterSpec;
+import java.time.Duration;
 import java.util.Base64;
 import java.util.Map;
 import java.util.UUID;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -52,6 +54,13 @@ public class A2aEndpointTest extends TestKitSupport {
         input -> {
           var text = input.content();
           if (text.equals("fail")) throw new RuntimeException("model unavailable");
+          if (text.equals("hang")) {
+            try {
+              Thread.sleep(8000);
+            } catch (InterruptedException e) {
+              Thread.currentThread().interrupt();
+            }
+          }
           return new AiResponse("echo: " + text);
         });
     assistantModel.fixedResponse("Noted.");
@@ -69,7 +78,10 @@ public class A2aEndpointTest extends TestKitSupport {
                     ConfigValueFactory.fromAnyRef(signingKey))
                 .withValue(
                     "akka.javasdk.a2a.endpoint.signing.key-id",
-                    ConfigValueFactory.fromAnyRef("card-key")));
+                    ConfigValueFactory.fromAnyRef("card-key"))
+                .withValue(
+                    "akka.javasdk.a2a.endpoint.short-task-timeout",
+                    ConfigValueFactory.fromAnyRef("2s")));
   }
 
   // The key that signs the Agent Card of the test service
@@ -216,6 +228,48 @@ public class A2aEndpointTest extends TestKitSupport {
     assertThat(task.get("status").get("state").asText()).isEqualTo("TASK_STATE_COMPLETED");
     assertThat(task.get("artifacts").get(0).get("parts").get(0).get("text").asText())
         .isEqualTo("echo: over rest");
+  }
+
+  @Test
+  public void recordsTheAnswerOfAShortSkillSentWithReturnImmediately() throws Exception {
+    var params = sendParams("echo", "later", null);
+    params.put("configuration", Map.of("returnImmediately", true));
+    var task = jsonRpc("SendMessage", params, token("a")).get("result").get("task");
+    assertThat(task.get("status").get("state").asText()).isEqualTo("TASK_STATE_WORKING");
+
+    var taskId = task.get("id").asText();
+    Awaitility.await()
+        .atMost(Duration.ofSeconds(10))
+        .untilAsserted(
+            () -> {
+              var stored = jsonRpc("GetTask", Map.of("id", taskId), token("a")).get("result");
+              assertThat(stored.get("status").get("state").asText())
+                  .isEqualTo("TASK_STATE_COMPLETED");
+              assertThat(stored.get("artifacts").get(0).get("parts").get(0).get("text").asText())
+                  .isEqualTo("echo: later");
+            });
+  }
+
+  @Test
+  public void failsAShortTaskWhoseAgentDoesNotAnswerInTime() throws Exception {
+    var params = sendParams("echo", "hang", null);
+    params.put("configuration", Map.of("returnImmediately", true));
+    var task = jsonRpc("SendMessage", params, token("a")).get("result").get("task");
+    assertThat(task.get("status").get("state").asText()).isEqualTo("TASK_STATE_WORKING");
+
+    // The agent answers after 8 seconds; short-task-timeout is 2 seconds
+    var taskId = task.get("id").asText();
+    Awaitility.await()
+        .atMost(Duration.ofSeconds(7))
+        .untilAsserted(
+            () ->
+                assertThat(
+                        jsonRpc("GetTask", Map.of("id", taskId), token("a"))
+                            .get("result")
+                            .get("status")
+                            .get("state")
+                            .asText())
+                    .isEqualTo("TASK_STATE_FAILED"));
   }
 
   @Test

@@ -20,6 +20,8 @@ import java.util.Optional;
  * @param blockingWait how long a blocking {@code SendMessage} on a long skill waits for the task to
  *     end or ask for input
  * @param streamIdleTimeout how long a streaming agent may send no token before its task fails
+ * @param shortTaskTimeout how long the agent of a short skill may take to answer a message sent
+ *     with {@code returnImmediately}, before its task fails
  * @param signer the key that signs the Agent Card, empty when the card is not signed
  * @param pushUrls which push notification URLs the endpoint calls
  */
@@ -28,6 +30,7 @@ public record A2aEndpointSettings(
     String publicUrl,
     Duration blockingWait,
     Duration streamIdleTimeout,
+    Duration shortTaskTimeout,
     Optional<AgentCardSigning.Signer> signer,
     A2aPushUrlPolicy pushUrls) {
 
@@ -47,10 +50,16 @@ public record A2aEndpointSettings(
       throw new IllegalArgumentException(
           "akka.javasdk.a2a.endpoint.stream-idle-timeout must be positive");
     }
+    var shortTaskTimeout = endpoint.getDuration("short-task-timeout");
+    if (shortTaskTimeout.isNegative() || shortTaskTimeout.isZero()) {
+      throw new IllegalArgumentException(
+          "akka.javasdk.a2a.endpoint.short-task-timeout must be positive");
+    }
     return new A2aEndpointSettings(
         endpoint.getString("public-url"),
         blockingWait,
         streamIdleTimeout,
+        shortTaskTimeout,
         AgentCardSigning.Signer.fromConfig(endpoint.getConfig("signing")),
         new A2aPushUrlPolicy(
             devMode, new HashSet<>(endpoint.getStringList("push-delivery.allowed-hosts"))));

@@ -584,20 +584,12 @@ public final class A2aRequestHandler {
       case NewTask newTask -> {
         var working = startShortTask(newTask);
         var artifactId = UUID.randomUUID().toString();
-        var answer = callAgent(newTask.skill(), working.contextId(), newTask.input());
         if (configuration != null && configuration.returnImmediately()) {
-          // Composed without blocking: the stage completes on the thread that completes the agent
-          answer
-              .handle((result, error) -> outcome(working, result, error, artifactId))
-              .thenCompose(change -> store.changeAsync(working.id(), change))
-              .whenComplete(
-                  (stored, e) -> {
-                    if (e != null) {
-                      log.error("Failed to record the outcome of A2A task [{}]", working.id(), e);
-                    }
-                  });
+          // The client does not wait, so a workflow answers, which survives a restart of the node
+          startShortTaskWorkflow(newTask, working, artifactId);
           yield A2aSendMessageResponse.of(trimHistory(working, historyLength));
         }
+        var answer = callAgent(newTask.skill(), working.contextId(), newTask.input());
         var change =
             answer
                 .handle((result, error) -> outcome(working, result, error, artifactId))
@@ -606,6 +598,27 @@ public final class A2aRequestHandler {
         yield A2aSendMessageResponse.of(trimHistory(record(working, change), historyLength));
       }
     };
+  }
+
+  private void startShortTaskWorkflow(NewTask newTask, A2aTask working, String artifactId) {
+    var skill = newTask.skill();
+    var inputType =
+        skill.inputType() == null
+            ? null
+            : mapper.getTypeFactory().constructType(skill.inputType()).toCanonical();
+    JsonNode input = skill.inputType() == null ? null : mapper.valueToTree(newTask.input());
+    componentClient
+        .forWorkflow(working.id())
+        .method(A2aShortTaskWorkflow::start)
+        .invoke(
+            new A2aShortTaskWorkflow.State(
+                working.id(),
+                working.contextId(),
+                sessionId(working.contextId()),
+                skill.agentId(),
+                inputType,
+                input,
+                artifactId));
   }
 
   private A2aTask getTask(A2aGetTaskRequest request) {
@@ -758,10 +771,17 @@ public final class A2aRequestHandler {
 
   /** The change that records the answer of an agent, or its failure, in the working task. */
   A2aTaskEntity.Change outcome(A2aTask working, Object result, Throwable error, String artifactId) {
+    return outcome(working.id(), working.contextId(), result, error, artifactId);
+  }
+
+  /** The change that records the answer of an agent, or its failure, in a working task. */
+  static A2aTaskEntity.Change outcome(
+      String taskId, String contextId, Object result, Throwable error, String artifactId) {
     if (error != null) {
-      log.warn("The agent failed to answer A2A task [{}]", working.id(), error);
+      log.warn("The agent failed to answer A2A task [{}]", taskId, error);
       var reply =
-          agentMessage(working, List.of(A2aPart.text("The agent could not answer the message.")));
+          A2aTaskStore.agentMessage(
+              taskId, contextId, List.of(A2aPart.text("The agent could not answer the message.")));
       return A2aTaskEntity.Change.status(A2aTaskState.FAILED, reply);
     }
     var parts =
@@ -770,10 +790,15 @@ public final class A2aRequestHandler {
                 ? A2aPart.text(text)
                 : result == null
                     ? A2aPart.text("")
-                    : A2aPart.data(mapper.convertValue(result, Object.class)));
+                    : A2aPart.data(
+                        JsonSupport.getObjectMapper().convertValue(result, Object.class)));
     var artifact = new A2aArtifact(artifactId, "response", null, parts, null, null);
     return new A2aTaskEntity.Change(
-        agentMessage(working, parts), artifact, A2aTaskState.COMPLETED, null, false);
+        A2aTaskStore.agentMessage(taskId, contextId, parts),
+        artifact,
+        A2aTaskState.COMPLETED,
+        null,
+        false);
   }
 
   static A2aMessage agentMessage(A2aTask task, List<A2aPart> parts) {

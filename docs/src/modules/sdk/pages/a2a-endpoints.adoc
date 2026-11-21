@@ -231,7 +231,7 @@ A client sends the protocol version in the `A2A-Version` header. Akka serves ver
 
 `SendMessage` returns the task after the agent has answered, in the state `TASK_STATE_COMPLETED`, or `TASK_STATE_FAILED` when the agent failed. The history of the task holds the message and the reply of the agent. The `historyLength` setting of the request limits the history in the response.
 
-When the request sets `returnImmediately` in its configuration, Akka returns the task in the state `TASK_STATE_WORKING` and records the outcome when the agent answers. The client reads the outcome with `GetTask`.
+When the request sets `returnImmediately` in its configuration, Akka returns the task in the state `TASK_STATE_WORKING` and records the outcome when the agent answers. The client reads the outcome with `GetTask`. A built-in workflow calls the agent and records its answer, so the call continues when the node that received the message stops. The agent can then be called again for the same message. When the agent does not answer within `akka.javasdk.a2a.endpoint.short-task-timeout`, 5 minutes by default, the task fails.
 
 A message that names the id of an existing task of a skill answered by an agent is refused with an unsupported operation error, because such a task ends with the reply. A task of a long skill accepts more messages until it ends, as described in <<_long_skills_backed_by_a_workflow>>.
 
