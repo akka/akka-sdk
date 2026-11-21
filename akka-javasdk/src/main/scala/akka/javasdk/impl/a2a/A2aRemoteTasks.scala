@@ -156,10 +156,19 @@ private[akka] final class A2aRemoteTasks(
       taskId: String,
       contextId: String,
       followTimeout: java.time.Duration): CompletionStage[Done] =
+    endFollowing(subscriptionId, followTimedOutUpdate(taskId, contextId, followTimeout))
+
+  /**
+   * Ends the following of a task after polls failed in a row, with the same final update as [[followTimedOut]] and a
+   * message that names the failed polls.
+   */
+  def pollingFailed(subscriptionId: String, taskId: String, contextId: String, failures: Int): CompletionStage[Done] =
+    endFollowing(subscriptionId, pollingFailedUpdate(taskId, contextId, failures))
+
+  private def endFollowing(subscriptionId: String, update: A2aTaskStatusUpdate): CompletionStage[Done] =
     getSubscription(subscriptionId).flatMap { state =>
       if (state.target() == null || state.ended()) Future.successful(Done)
       else {
-        val update = followTimedOutUpdate(taskId, contextId, followTimeout)
         callWorkflow(state.target(), update).flatMap { _ =>
           A2aRemoteTaskCalls
             .delivered(
@@ -368,17 +377,27 @@ private[akka] object A2aRemoteTasks {
 
   private[a2a] val NoSanitizers: A2aReplySanitizer = new A2aReplySanitizer(Nil, null)(ExecutionContext.parasitic)
 
-  /** The status update that tells a workflow that the following of a remote task ended before the task did. */
+  /** The status update that tells a workflow that the following of a remote task ended at its deadline. */
   def followTimedOutUpdate(taskId: String, contextId: String, followTimeout: java.time.Duration): A2aTaskStatusUpdate =
+    followEndedUpdate(
+      taskId,
+      contextId,
+      s"The remote task was followed for ${scala.concurrent.duration.FiniteDuration(followTimeout.toMillis, "ms").toCoarsest} without ending or asking for input. No more updates are delivered.")
+
+  /** The status update that tells a workflow that the following of a remote task ended because polls kept failing. */
+  def pollingFailedUpdate(taskId: String, contextId: String, failures: Int): A2aTaskStatusUpdate =
+    followEndedUpdate(
+      taskId,
+      contextId,
+      s"Reading the state of the remote task failed $failures times in a row, so the task is no longer followed. No more updates are delivered.")
+
+  private def followEndedUpdate(taskId: String, contextId: String, text: String): A2aTaskStatusUpdate =
     new A2aTaskStatusUpdate(
       taskId,
       contextId,
       new A2aTaskStatus(
         A2aTaskState.UNSPECIFIED,
-        A2aMessage
-          .user(A2aPart.text(
-            s"The remote task was followed for ${scala.concurrent.duration.FiniteDuration(followTimeout.toMillis, "ms").toCoarsest} without ending or asking for input. No more updates are delivered."))
-          .withRole(A2aRole.AGENT),
+        A2aMessage.user(A2aPart.text(text)).withRole(A2aRole.AGENT),
         java.time.Instant.now()),
       java.util.Map.of(A2aTaskStatusUpdate.FOLLOW_TIMED_OUT, java.lang.Boolean.TRUE))
 

@@ -22,7 +22,9 @@ import akka.javasdk.a2a.A2aTaskStatus;
 import akka.javasdk.a2a.A2aTaskStatusUpdate;
 import akka.javasdk.agent.SessionMemoryEntity;
 import akka.javasdk.agent.SessionMessage;
+import akka.javasdk.impl.a2a.A2aErrorCode;
 import akka.javasdk.impl.a2a.A2aTaskPushNotificationConfig;
+import akka.javasdk.impl.a2a.JsonRpcError;
 import akka.javasdk.impl.a2a.JsonRpcResponse;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
@@ -83,6 +85,8 @@ public class RemoteA2aWorkflowTest extends TestKitSupport {
             akka.javasdk.a2a.remote-agents.stalled.card-url = "%s"
             akka.javasdk.a2a.remote-agents.stalled.follow-timeout = 1500ms
             akka.javasdk.a2a.remote-agents.instant.card-url = "%s"
+            akka.javasdk.a2a.remote-agents.failing.card-url = "%s"
+            akka.javasdk.a2a.remote-agents.failing.poll-interval = 50ms
             akka.javasdk.a2a.remote-agents.unreachable.card-url = "http://127.0.0.1:9/.well-known/agent-card.json"
             akka.javasdk.a2a.remote-agents.unreachable.timeout = 2s
             """
@@ -91,7 +95,8 @@ public class RemoteA2aWorkflowTest extends TestKitSupport {
                     remote.cardUrl("poll"),
                     remote.cardUrl("poll"),
                     remote.cardUrl("poll"),
-                    remote.cardUrl("instant")));
+                    remote.cardUrl("instant"),
+                    remote.cardUrl("failing")));
   }
 
   @AfterAll
@@ -239,6 +244,18 @@ public class RemoteA2aWorkflowTest extends TestKitSupport {
 
     assertThat(state.outcome()).isEqualTo("follow timed out");
     assertThat(state.updates()).containsExactly("status TASK_STATE_UNSPECIFIED");
+  }
+
+  @Test
+  public void shouldEndFollowingWhenPollingKeepsFailing() {
+    var workflowId = startWorkflow("failing", "assess claim 9", 60_000);
+    var taskId = awaitTaskId(workflowId);
+
+    var state = awaitOutcome(workflowId);
+
+    assertThat(state.outcome()).isEqualTo("follow timed out");
+    assertThat(state.updates()).containsExactly("status TASK_STATE_UNSPECIFIED");
+    assertThat(remote.reads.get(taskId)).isEqualTo(20);
   }
 
   @Test
@@ -393,10 +410,10 @@ public class RemoteA2aWorkflowTest extends TestKitSupport {
 
   /**
    * An A2A agent with one skill, {@code assess}, served under {@code /push} with a card that offers
-   * push notifications, and under {@code /poll} and {@code /instant} with a card that does not.
-   * Each message starts a task that stays working until the test completes it. The agent records
-   * the push notification configurations and does not send push notifications itself: the test
-   * sends them.
+   * push notifications, and under {@code /poll}, {@code /instant} and {@code /failing} with a card
+   * that does not. Each message starts a task that stays working until the test completes it. The
+   * agent records the push notification configurations and does not send push notifications itself:
+   * the test sends them.
    */
   private record FakeTaskAgent(
       HttpServer server,
@@ -418,7 +435,7 @@ public class RemoteA2aWorkflowTest extends TestKitSupport {
                 new ConcurrentHashMap<>(),
                 new ConcurrentLinkedQueue<>(),
                 new ConcurrentHashMap<>());
-        for (var mode : List.of("push", "poll", "instant")) {
+        for (var mode : List.of("push", "poll", "instant", "failing")) {
           server.createContext(
               "/" + mode + "/.well-known/agent-card.json", e -> agent.card(e, mode));
           server.createContext("/" + mode + "/a2a", e -> agent.jsonRpc(e, mode));
@@ -484,10 +501,17 @@ public class RemoteA2aWorkflowTest extends TestKitSupport {
       respond(exchange, mapper.writeValueAsBytes(card));
     }
 
-    // Under /instant, a task is completed when it is first read
+    // Under /instant, a task is completed when it is first read. Under /failing, every read fails.
     private void jsonRpc(HttpExchange exchange, String mode) throws IOException {
       var request = mapper.readTree(exchange.getRequestBody().readAllBytes());
       var params = request.get("params");
+      if (mode.equals("failing") && request.get("method").asText().equals("GetTask")) {
+        reads.merge(params.get("id").asText(), 1, Integer::sum);
+        var error = JsonRpcError.of(A2aErrorCode.INTERNAL_ERROR);
+        respond(
+            exchange, mapper.writeValueAsBytes(JsonRpcResponse.failure(request.get("id"), error)));
+        return;
+      }
       JsonNode result =
           switch (request.get("method").asText()) {
             case "SendMessage" -> {

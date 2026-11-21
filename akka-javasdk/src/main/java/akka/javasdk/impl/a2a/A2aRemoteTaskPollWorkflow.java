@@ -28,7 +28,8 @@ import org.slf4j.LoggerFactory;
  *
  * <p>At the deadline, {@code follow-timeout} after the task was first followed, the following ends:
  * unless the subscription has received an update that ends the task, the workflow command receives
- * a status update whose {@code followTimedOut()} is true.
+ * a status update whose {@code followTimedOut()} is true. The following also ends, with the same
+ * final update, after {@link #MAX_FAILURES} polls in a row fail.
  */
 @InternalApi
 @Component(id = "akka-a2a-remote-task-poll")
@@ -112,13 +113,13 @@ public final class A2aRemoteTaskPollWorkflow extends Workflow<A2aRemoteTaskPollW
   public Effect<Done> deadlineReached() {
     if (currentState() == null) return effects().error("No remote task to follow");
     return effects()
-        .transitionTo(A2aRemoteTaskPollWorkflow::endFollowing)
+        .transitionTo(A2aRemoteTaskPollWorkflow::endFollowingAtDeadline)
         .thenReply(Done.getInstance());
   }
 
   private StepEffect poll() {
     var poll = currentState();
-    if (System.currentTimeMillis() >= poll.deadlineMillis()) return endFollowing();
+    if (System.currentTimeMillis() >= poll.deadlineMillis()) return endFollowingAtDeadline();
     boolean continuePolling;
     try {
       continuePolling =
@@ -136,6 +137,10 @@ public final class A2aRemoteTaskPollWorkflow extends Workflow<A2aRemoteTaskPollW
             poll.taskId(),
             failures,
             cause);
+        awaitFinalUpdate(
+            poll,
+            remoteTasks.pollingFailed(
+                poll.subscriptionId(), poll.taskId(), poll.contextId(), failures));
         return stepEffects().thenDelete();
       }
       log.debug("Polling remote A2A task [{}] failed", poll.taskId(), cause);
@@ -148,23 +153,28 @@ public final class A2aRemoteTaskPollWorkflow extends Workflow<A2aRemoteTaskPollW
     return stepEffects().updateState(updated).thenPause(pauseUntilNextPoll(updated));
   }
 
-  private StepEffect endFollowing() {
+  private StepEffect endFollowingAtDeadline() {
     var poll = currentState();
+    awaitFinalUpdate(
+        poll,
+        remoteTasks.followTimedOut(
+            poll.subscriptionId(),
+            poll.taskId(),
+            poll.contextId(),
+            Duration.ofMillis(poll.followTimeoutMillis())));
+    return stepEffects().thenDelete();
+  }
+
+  private static void awaitFinalUpdate(State poll, CompletionStage<Done> finalUpdate) {
     try {
-      await(
-          remoteTasks.followTimedOut(
-              poll.subscriptionId(),
-              poll.taskId(),
-              poll.contextId(),
-              Duration.ofMillis(poll.followTimeoutMillis())));
+      await(finalUpdate);
     } catch (ExecutionException | TimeoutException e) {
       var cause = e instanceof ExecutionException && e.getCause() != null ? e.getCause() : e;
       log.warn(
-          "Following remote A2A task [{}] timed out, and the workflow could not be told",
+          "Following remote A2A task [{}] ended, and the workflow could not be told",
           poll.taskId(),
           cause);
     }
-    return stepEffects().thenDelete();
   }
 
   private static <T> T await(CompletionStage<T> stage) throws ExecutionException, TimeoutException {

@@ -87,5 +87,13 @@ class A2aGovernanceSpec extends AnyWordSpec with Matchers {
       read.asInstanceOf[A2aTaskStatusUpdate].followTimedOut() shouldBe true
       new A2aTaskStatusUpdate("t1", "c1", update.status(), null).followTimedOut() shouldBe false
     }
+
+    "be sent, with a message that names the failed polls, when polling gives up" in {
+      val update = A2aRemoteTasks.pollingFailedUpdate("t1", "c1", 20)
+      update.followTimedOut() shouldBe true
+      update.status().state() shouldBe A2aTaskState.UNSPECIFIED
+      update.status().message().parts().get(0).asInstanceOf[A2aPart.Text].text() should include(
+        "failed 20 times in a row")
+    }
   }
 }
