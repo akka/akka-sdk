@@ -53,6 +53,8 @@ private[akka] final class A2aOAuth2TokenCache(
   private val DefaultLifetime = 5.minutes
   private val MaxRefreshMargin = 30.seconds
   private val MaxLifetime = 24.hours
+  // The lifetime taken for a token whose expires_in is zero or negative
+  private val ShortLifetime = 60.seconds
   private val MaxResponseBytes = 64L * 1024
 
   private var cached: Option[Token] = None
@@ -128,7 +130,7 @@ private[akka] final class A2aOAuth2TokenCache(
             // Some endpoints send the lifetime as a string. A lifetime beyond the cap would overflow the duration.
             val lifetime = field("expires_in")
               .flatMap(n => if (n.isNumber) Some(n.asLong()) else n.asText().trim.toLongOption)
-              .map(seconds => math.min(seconds, MaxLifetime.toSeconds).seconds)
+              .map(seconds => if (seconds <= 0) ShortLifetime else math.min(seconds, MaxLifetime.toSeconds).seconds)
               .getOrElse(DefaultLifetime)
             val margin = MaxRefreshMargin.min(lifetime / 2)
             Token(value, now().plusMillis((lifetime - margin).toMillis))

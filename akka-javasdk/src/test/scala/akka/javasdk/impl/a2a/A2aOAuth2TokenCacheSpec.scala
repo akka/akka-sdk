@@ -179,6 +179,20 @@ class A2aOAuth2TokenCacheSpec
       get(c) shouldBe "token-2"
     }
 
+    "take a lifetime of zero or less as a short lifetime, not as an expired token" in {
+      Seq("0", "-5").foreach { lifetime =>
+        reset()
+        expiresIn = Some(lifetime)
+        val c = cache()
+        get(c) shouldBe "token-1"
+        get(c) shouldBe "token-1"
+        clock = clock.plusSeconds(25)
+        get(c) shouldBe "token-1"
+        clock = clock.plusSeconds(10)
+        get(c) shouldBe "token-2"
+      }
+    }
+
     "read a lifetime that the endpoint sends as a string" in {
       reset()
       expiresIn = Some("\"120\"")
