@@ -73,6 +73,31 @@ class A2aPushUrlPolicyTest {
   }
 
   @Test
+  void refusesBenchmarkingAddresses() {
+    for (String host : new String[] {"198.18.0.1", "198.19.255.254"}) {
+      assertNotNull(refusal(production, "https://" + host + "/hook"), host);
+    }
+    assertNull(refusal(production, "https://198.20.0.1/hook"));
+    assertNull(refusal(production, "https://198.17.255.255/hook"));
+  }
+
+  @Test
+  void refusesNat64AddressesOfPrivateIpv4Addresses() {
+    for (String host :
+        new String[] {
+          "[64:ff9b::a01:203]", // 10.1.2.3
+          "[64:ff9b::7f00:1]", // 127.0.0.1
+          "[64:ff9b::a9fe:a9fe]", // 169.254.169.254
+          "[64:ff9b::c0a8:101]", // 192.168.1.1
+          "[64:ff9b::c612:1]" // 198.18.0.1
+        }) {
+      assertNotNull(refusal(production, "https://" + host + "/hook"), host);
+    }
+    // 93.184.216.34, a public address
+    assertNull(refusal(production, "https://[64:ff9b::5db8:d822]/hook"));
+  }
+
+  @Test
   void acceptsALocalHostThatTheAllowListNames() {
     var policy = new A2aPushUrlPolicy(true, Set.of("Rebound.example.com", "127.0.0.1"));
     assertNull(refusal(policy, "http://rebound.example.com:8080/hook"));

@@ -8,6 +8,7 @@ import akka.annotation.InternalApi;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -122,10 +123,29 @@ public record A2aPushUrlPolicy(boolean devMode, Set<String> allowedHosts) {
     if (bytes.length == 4) {
       int first = bytes[0] & 0xff;
       int second = bytes[1] & 0xff;
-      // 100.64.0.0/10, the shared address space of carrier-grade NAT
-      return (first == 100 && second >= 64 && second <= 127) || first == 0;
+      // 100.64.0.0/10, the shared address space of carrier-grade NAT, and 198.18.0.0/15, the
+      // benchmarking range
+      return (first == 100 && second >= 64 && second <= 127)
+          || (first == 198 && (second == 18 || second == 19))
+          || first == 0;
+    }
+    // 64:ff9b::/96, the NAT64 prefix, reaches the IPv4 address in its last four bytes
+    if (isNat64(bytes)) {
+      try {
+        return isLocal(InetAddress.getByAddress(Arrays.copyOfRange(bytes, 12, 16)));
+      } catch (UnknownHostException e) {
+        return true;
+      }
     }
     // fc00::/7, unique local IPv6 addresses
     return (bytes[0] & 0xfe) == 0xfc;
+  }
+
+  private static final byte[] NAT64_PREFIX = {
+    0, 0x64, (byte) 0xff, (byte) 0x9b, 0, 0, 0, 0, 0, 0, 0, 0
+  };
+
+  private static boolean isNat64(byte[] bytes) {
+    return bytes.length == 16 && Arrays.equals(bytes, 0, 12, NAT64_PREFIX, 0, 12);
   }
 }

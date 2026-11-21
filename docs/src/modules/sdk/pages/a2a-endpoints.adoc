@@ -427,7 +427,7 @@ A client registers a webhook in two ways:
 A configuration has a `url`, an optional `token` and an optional `authentication` with a `scheme` and `credentials`. A client chooses the URL, so Akka checks it before it stores the configuration, and again before each delivery:
 
 * The URL must be an absolute `https` URL. In local development, `http` is accepted too.
-* Akka resolves the host of the URL. A host with a private, loopback, link-local or otherwise local address is refused, unless `akka.javasdk.a2a.endpoint.push-delivery.allowed-hosts` names it. This keeps a client from making your service call its own network.
+* Akka resolves the host of the URL. A host with a private, loopback, link-local, shared (100.64.0.0/10), benchmarking (198.18.0.0/15) or otherwise local address is refused, as is a NAT64 address (64:ff9b::/96) of such an IPv4 address, unless `akka.javasdk.a2a.endpoint.push-delivery.allowed-hosts` names it. This keeps a client from making your service call its own network.
 
 [source,hocon]
 ----
