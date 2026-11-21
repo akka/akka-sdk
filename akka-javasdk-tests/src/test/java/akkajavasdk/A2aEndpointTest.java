@@ -12,6 +12,7 @@ import akka.javasdk.JsonSupport;
 import akka.javasdk.agent.SessionMemoryEntity;
 import akka.javasdk.agent.SessionMessage;
 import akka.javasdk.http.StrictResponse;
+import akka.javasdk.impl.a2a.A2aSessions;
 import akka.javasdk.impl.a2a.AgentCardSigning;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
@@ -236,17 +237,40 @@ public class A2aEndpointTest extends TestKitSupport {
     assertThat(second.get("contextId").asText()).isEqualTo(contextId);
     assertThat(second.get("id").asText()).isNotEqualTo(first.get("id").asText());
 
-    var userMessages =
-        componentClient
-            .forEventSourcedEntity(contextId)
-            .method(SessionMemoryEntity::getHistory)
-            .invoke(new SessionMemoryEntity.GetHistoryCmd())
-            .messages()
-            .stream()
-            .filter(m -> m instanceof SessionMessage.UserMessage)
-            .map(m -> ((SessionMessage.UserMessage) m).text())
-            .toList();
-    assertThat(userMessages).containsExactly("My name is Ada", "What is my name?");
+    assertThat(userMessages(A2aSessions.sessionId("a2a-test-issuer", "a", contextId)))
+        .containsExactly("My name is Ada", "What is my name?");
+  }
+
+  @Test
+  public void anotherCallerWithTheSameContextIdGetsAnotherSession() throws Exception {
+    var contextId = UUID.randomUUID().toString();
+    jsonRpc("SendMessage", sendParams("a2a-assistant", "My name is Ada", contextId), token("a"));
+    var other =
+        jsonRpc(
+                "SendMessage",
+                sendParams("a2a-assistant", "What is my name?", contextId),
+                token("b"))
+            .get("result")
+            .get("task");
+
+    assertThat(other.get("contextId").asText()).isEqualTo(contextId);
+    assertThat(userMessages(A2aSessions.sessionId("a2a-test-issuer", "a", contextId)))
+        .containsExactly("My name is Ada");
+    assertThat(userMessages(A2aSessions.sessionId("a2a-test-issuer", "b", contextId)))
+        .containsExactly("What is my name?");
+    assertThat(userMessages(contextId)).isEmpty();
+  }
+
+  private java.util.List<String> userMessages(String sessionId) {
+    return componentClient
+        .forEventSourcedEntity(sessionId)
+        .method(SessionMemoryEntity::getHistory)
+        .invoke(new SessionMemoryEntity.GetHistoryCmd())
+        .messages()
+        .stream()
+        .filter(m -> m instanceof SessionMessage.UserMessage)
+        .map(m -> ((SessionMessage.UserMessage) m).text())
+        .toList();
   }
 
   @Test

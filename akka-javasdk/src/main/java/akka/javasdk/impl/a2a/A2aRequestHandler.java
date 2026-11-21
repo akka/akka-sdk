@@ -61,8 +61,8 @@ import org.slf4j.LoggerFactory;
  *
  * <p>Serves the A2A routes of one request to an {@link AbstractA2aEndpoint}: the JSON-RPC
  * dispatcher, the HTTP+JSON routes and the Agent Card. A short skill is answered by one call to its
- * agent, with the A2A context id as the session id, and its task is recorded in {@link
- * A2aTaskEntity}.
+ * agent, in a session derived from the caller and the A2A context id ({@link A2aSessions}), and its
+ * task is recorded in {@link A2aTaskEntity}.
  */
 @InternalApi
 public final class A2aRequestHandler {
@@ -673,6 +673,23 @@ public final class A2aRequestHandler {
     }
   }
 
+  /**
+   * The agent session id of a context of this caller: the context id is chosen by the client, so
+   * the session id also depends on the issuer and subject of the caller's token.
+   */
+  String sessionId(String contextId) {
+    var subject = owner();
+    String issuer = null;
+    if (subject != null) {
+      try {
+        issuer = httpContext.getJwtClaims().issuer().orElse(null);
+      } catch (RuntimeException e) {
+        issuer = null;
+      }
+    }
+    return A2aSessions.sessionId(issuer, subject, contextId);
+  }
+
   A2aSkillTable.Entry selectSkill(A2aMessage message, Map<String, Object> metadata) {
     var table = skillTable();
     var requested =
@@ -729,7 +746,7 @@ public final class A2aRequestHandler {
 
   CompletionStage<Object> callAgent(A2aSkillTable.Entry skill, String contextId, Object input) {
     DynamicMethodRef<Object, Object> call =
-        componentClient.forAgent().inSession(contextId).dynamicCall(skill.agentId());
+        componentClient.forAgent().inSession(sessionId(contextId)).dynamicCall(skill.agentId());
     try {
       return skill.inputType() == null ? call.invokeAsync() : call.invokeAsync(input);
     } catch (RuntimeException e) {

@@ -39,8 +39,11 @@ public final class A2aAgents {
   }
 
   /**
-   * Publishes an agent whose skills are answered by one call to the agent. The A2A context id
-   * becomes the session id of the agent, so that messages in one context share session memory.
+   * Publishes an agent whose skills are answered by one call to the agent. Messages in one A2A
+   * context from one caller share the session memory of the agent. The session id is derived from
+   * the context id and the issuer and subject of the caller's token, so another caller that sends
+   * the same context id gets another session. Callers of an endpoint without {@code @JWT} have no
+   * subject, so callers that send the same context id share one session.
    *
    * @param agentClass the agent, which must be a component of this service
    */

@@ -237,10 +237,14 @@ A message that names the id of an existing task of a skill answered by an agent 
 
 == Conversations: context id and session memory
 
-A2A groups the messages of one conversation with a context id. Akka uses the context id as the session id of the agent, so all messages in one context share the xref:sdk:agents/memory.adoc[session memory] of the agent.
+A2A groups the messages of one conversation with a context id. All messages of one caller in one context share the xref:sdk:agents/memory.adoc[session memory] of the agent.
 
-* When a message has a `contextId`, the agent continues that session.
-* When a message has no `contextId`, Akka generates one and returns it in the task. The client sends it with the next message to continue the conversation.
+* When a message has a `contextId`, the agent continues the session of that context and caller.
+* When a message has no `contextId`, Akka generates a random one and returns it in the task. The client sends it with the next message to continue the conversation.
+
+The client chooses the context id, so Akka does not use it as the session id. Akka derives the session id from the context id and the issuer and subject of the caller's token. A caller with another subject that sends the same context id gets another session and does not see the conversation. The task keeps the context id that the client sent.
+
+IMPORTANT: An endpoint without `@JWT` has no subject for its callers. All its callers that send the same context id share one session, and each of them sees the conversation of the others. Add `@JWT` to an endpoint that more than one client can reach.
 
 Each message creates a new task in the context.
 
@@ -250,7 +254,7 @@ A skill published with `A2aAgents.agent(...)` is answered by one call to the age
 
 . selects the skill, as described in <<_selecting_a_skill_in_a_message>>;
 . records the task in the state `TASK_STATE_SUBMITTED`, then `TASK_STATE_WORKING`;
-. calls the agent, with the context id as the session id;
+. calls the agent, in the session of the context and the caller;
 . records the reply as an artifact and the state `TASK_STATE_COMPLETED`, or the state `TASK_STATE_FAILED` with a message when the agent fails;
 . returns the task.
 

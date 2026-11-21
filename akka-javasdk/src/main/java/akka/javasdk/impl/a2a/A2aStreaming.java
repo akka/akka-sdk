@@ -310,7 +310,8 @@ final class A2aStreaming {
   }
 
   private AgentClientImpl agentClient(String contextId) {
-    return (AgentClientImpl) handler.componentClient.forAgent().inSession(contextId);
+    return (AgentClientImpl)
+        handler.componentClient.forAgent().inSession(handler.sessionId(contextId));
   }
 
   // Whether the agent of the skill answers with a token stream.
