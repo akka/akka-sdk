@@ -75,8 +75,8 @@ jobs:
           # The compatibility kit supports Python 3.11 to 3.14.
           python-version: '3.12'
 
-      # The test service publishes the echo skill on port 19391. Its A2A routes require a bearer token, so the
-      # kit and the client check reach it through bearer_proxy.py on port 9000.
+      # The test service publishes the kit task workflow first, then the echo skill, on port 19391. Its A2A routes
+      # require a bearer token, so the kit and the client check reach it through bearer_proxy.py on port 9000.
       - name: Start the A2A test service of the SDK
         run: |
           nohup sbt "akka-javasdk-tests/testOnly akkajavasdk.A2aInteropServiceTest" > a2a-service.log 2>&1 &
