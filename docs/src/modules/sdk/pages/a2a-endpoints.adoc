@@ -19,7 +19,7 @@ An A2A endpoint serves these parts of A2A version 1.0 for the agents you choose:
 * the task methods `SendMessage`, `SendStreamingMessage`, `GetTask`, `ListTasks`, `CancelTask` and `SubscribeToTask`, over the JSON-RPC binding and the HTTP+JSON binding;
 * the four push notification configuration methods, when the endpoint publishes a long skill.
 
-Each skill in the Agent Card is answered either by an xref:sdk:agents.adoc[agent] of the service, in one call, or by a xref:sdk:workflows.adoc[workflow], for a long skill that can ask the client for more input. Akka records each A2A task, so that a client can read it later with `GetTask`.
+Each skill in the Agent Card is answered either by an xref:sdk:agents.adoc[agent] of the service, in one call, or by a xref:sdk:workflows.adoc[workflow], for a long skill that can ask the client for more input. Akka records each A2A task, so that a client can read it later with `GetTask`. An endpoint publishes agents and workflows only. It cannot publish an xref:sdk:autonomous-agents.adoc[autonomous agent], which takes no part in A2A.
 
 Use an A2A endpoint when agents outside your service, written with any A2A implementation, need to call your agents. For tools that a model calls, use an xref:sdk:mcp-endpoints.adoc[MCP endpoint]. For calls between Akka services, use the xref:sdk:component-and-service-calls.adoc[component client] or an xref:sdk:http-endpoints.adoc[HTTP endpoint].
 
@@ -198,7 +198,7 @@ The endpoint serves both bindings at its path. With the default path `/a2a`, the
 
 | `GetTask`
 | `POST /a2a` with `"method": "GetTask"`
-| `GET /a2a/tasks/{id}?historyLength=n`
+| `+GET /a2a/tasks/{id}?historyLength=n+`
 
 | `ListTasks`
 | `POST /a2a` with `"method": "ListTasks"`
@@ -206,14 +206,14 @@ The endpoint serves both bindings at its path. With the default path `/a2a`, the
 
 | `CancelTask`
 | `POST /a2a` with `"method": "CancelTask"`
-| `POST /a2a/tasks/{id}:cancel`
+| `+POST /a2a/tasks/{id}:cancel+`
 
 | `SubscribeToTask`
 | `POST /a2a` with `"method": "SubscribeToTask"`, answered as server-sent events
-| `GET /a2a/tasks/{id}:subscribe` or `POST /a2a/tasks/{id}:subscribe`, answered as server-sent events
+| `+GET /a2a/tasks/{id}:subscribe+` or `+POST /a2a/tasks/{id}:subscribe+`, answered as server-sent events
 |===
 
-A JSON-RPC request has the form `{"jsonrpc": "2.0", "id": 1, "method": "SendMessage", "params": {...}}`. Akka answers with HTTP status 200 and a JSON-RPC response that has either a `result` or an `error` member.
+A JSON-RPC request has the form `+{"jsonrpc": "2.0", "id": 1, "method": "SendMessage", "params": {...}}+`. Akka answers with HTTP status 200 and a JSON-RPC response that has either a `result` or an `error` member.
 
 The push notification configuration methods are described in <<_push_notifications_to_a2a_clients>>. An endpoint that publishes no task workflow answers them with a push notification not supported error.
 
@@ -221,7 +221,7 @@ The other A2A methods answer with an error. The extended Agent Card answers with
 
 === Errors of an A2A endpoint
 
-Errors use the codes of A2A. On the JSON-RPC binding the `error` member has the code, a message, and for A2A errors a `data` array with a `google.rpc.ErrorInfo` detail. On the HTTP+JSON binding the HTTP status follows the error, for example 404 for a task that does not exist, and the body has the form `{"error": {"code": 404, "status": "NOT_FOUND", "message": "...", "details": [...]}}`.
+Errors use the codes of A2A. On the JSON-RPC binding the `error` member has the code, a message, and for A2A errors a `data` array with a `google.rpc.ErrorInfo` detail. On the HTTP+JSON binding the HTTP status follows the error, for example 404 for a task that does not exist, and the body has the form `+{"error": {"code": 404, "status": "NOT_FOUND", "message": "...", "details": [...]}}+`.
 
 === A2A protocol version
 
@@ -403,19 +403,19 @@ A client registers a webhook in two ways:
 
 | `CreateTaskPushNotificationConfig`
 | `POST /a2a` with `"method": "CreateTaskPushNotificationConfig"`
-| `POST /a2a/tasks/{id}/pushNotificationConfigs`
+| `+POST /a2a/tasks/{id}/pushNotificationConfigs+`
 
 | `GetTaskPushNotificationConfig`
 | `POST /a2a` with `"method": "GetTaskPushNotificationConfig"`
-| `GET /a2a/tasks/{id}/pushNotificationConfigs/{configId}`
+| `+GET /a2a/tasks/{id}/pushNotificationConfigs/{configId}+`
 
 | `ListTaskPushNotificationConfigs`
 | `POST /a2a` with `"method": "ListTaskPushNotificationConfigs"`
-| `GET /a2a/tasks/{id}/pushNotificationConfigs?pageSize=n&pageToken=t`
+| `+GET /a2a/tasks/{id}/pushNotificationConfigs?pageSize=n&pageToken=t+`
 
 | `DeleteTaskPushNotificationConfig`
 | `POST /a2a` with `"method": "DeleteTaskPushNotificationConfig"`
-| `DELETE /a2a/tasks/{id}/pushNotificationConfigs/{configId}`
+| `+DELETE /a2a/tasks/{id}/pushNotificationConfigs/{configId}+`
 |===
 
 A configuration has a `url`, an optional `token` and an optional `authentication` with a `scheme` and `credentials`. A client chooses the URL, so Akka checks it before it stores the configuration, and again before each delivery:
@@ -432,7 +432,7 @@ A refused URL is answered with an invalid parameters error. A delivery to a URL 
 
 For each change of the task, Akka posts to each webhook:
 
-* a JSON body of the form `{"task": {...}}`, with the task, its status and its artifacts, without its history;
+* a JSON body of the form `+{"task": {...}}+`, with the task, its status and its artifacts, without its history;
 * the header `X-A2A-Notification-Token` with the token of the configuration, when it has one;
 * the header `Authorization` with the scheme and credentials of the configuration, when it has them. The scheme defaults to `Bearer`.
 
@@ -483,11 +483,14 @@ include::example$doc-snippets/src/test/java/com/example/api/ExampleA2aEndpointIn
 
 To check push notifications, register a webhook on an HTTP endpoint of the test service, with the port from `testKit.getPort()`, and wait for the notification with Awaitility.
 
+The link:{sample-base-url}/a2a-agents/README.md[a2a-agents sample] has an A2A endpoint with a short skill and a long skill, and integration tests for both. To test a service that calls an A2A endpoint, see xref:sdk:agents/remote-a2a-agents.adoc#testing[Testing agents that call remote A2A agents].
+
 == See also
 
 * xref:sdk:agents.adoc[Agents]
 * xref:sdk:workflows.adoc[Workflows]
 * xref:sdk:agents/memory.adoc[Session memory]
 * xref:sdk:mcp-endpoints.adoc[MCP Endpoints]
+* xref:sdk:agents/remote-a2a-agents.adoc[Remote A2A agents]
 * xref:sdk:access-control.adoc[Access control]
 * xref:sdk:auth-with-jwts.adoc[JSON Web Tokens (JWT)]

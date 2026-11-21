@@ -67,6 +67,12 @@ Publish messages, drive consumers, and assert on downstream state.
 For a service the target calls over HTTP or gRPC, add a small in-process endpoint that stands in for the real service.
 Wire it in `TestKitSettings.withRemoteService(...)`.
 
+=== A2A endpoints and remote A2A agents
+
+An xref:sdk:a2a-endpoints.adoc[A2A endpoint] is an HTTP endpoint, so a test calls it with the `httpClient` of the TestKit. Give the agents that it publishes a `TestModelProvider`, so that the test calls no model. See xref:sdk:a2a-endpoints.adoc#_testing_a2a_endpoints[Testing A2A endpoints].
+
+For an agent or a workflow that calls a xref:sdk:agents/remote-a2a-agents.adoc[remote A2A agent], start a `MockA2aAgent` and name it in the settings with `withMockedA2aAgent`. The mock serves an Agent Card and answers each skill with the reply that the test chooses. See xref:sdk:agents/remote-a2a-agents.adoc#testing[Testing agents that call remote A2A agents].
+
 === Time control
 
 The virtual clock advances on demand.
@@ -112,3 +118,5 @@ Do not sleep in tests.
 
 * xref:testing:unit.adoc[]
 * xref:testing:evaluation/index.adoc[]
+* xref:sdk:a2a-endpoints.adoc[]
+* xref:sdk:agents/remote-a2a-agents.adoc[]

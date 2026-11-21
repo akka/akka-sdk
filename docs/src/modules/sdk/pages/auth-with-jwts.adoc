@@ -38,6 +38,12 @@ For `@WebSocket` methods, see xref:sdk:http-endpoints.adoc#websocket-jwt[Authent
 
 The above examples show how to configure a JWT token on a class or method level. When the annotation is present on both endpoint class and a method, the configuration on the method overrides the class configuration for that method.
 
+=== Validating tokens on an A2A endpoint
+
+`@JWT` on an xref:sdk:a2a-endpoints.adoc[A2A endpoint] class applies to every A2A route of the endpoint. The Agent Card route at `/.well-known/agent-card.json` needs no token. Akka lists the settings of `@JWT` in the Agent Card as security schemes, so that an A2A client knows which token to send. Each bearer token issuer that is a URL becomes an OpenID Connect scheme, and issuers that are not URLs give an HTTP bearer scheme. See xref:sdk:a2a-endpoints.adoc#_security_schemes_from_jwt[Security schemes from `@JWT`].
+
+Akka stores the subject of the token with each A2A task, and a caller with another subject cannot read the task. The endpoint reads the claims of a request from `A2aRequestContext`. See xref:sdk:a2a-endpoints.adoc#_reading_claims_from_a2arequestcontext[Reading claims from `A2aRequestContext`].
+
 === Using more claims
 
 Akka can be configured to automatically require and validate other claims than the issuer. Multiple `StaticClaim` can be declared and environment variables are supported on the `values` field. A `StaticClaim` can be defined both at class and method level. The provided claims will be used when validating against the bearer token.

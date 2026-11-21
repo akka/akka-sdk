@@ -12,6 +12,8 @@ A remote A2A agent is an agent that runs outside your service and speaks the Age
 
 This page describes how an agent offers the skills of a remote agent to its model as tools, how to name a remote agent in configuration, how to give your service credentials for it, how to set the certificates that TLS uses to reach it, how to require a signed Agent Card, how to choose the skills and the timeout of the tools, how a tool hands a long remote task to a workflow, and how a workflow step calls a remote agent and waits for its task.
 
+Autonomous agents take no part in A2A. An xref:sdk:autonomous-agents.adoc[autonomous agent] does not call remote A2A agents. A request-based agent that offers remote A2A agents as tools can still be a worker of an autonomous agent.
+
 [#remote-agents-as-tools]
 == Remote A2A agents as tools
 
@@ -257,11 +259,11 @@ When the task in the reply has not ended, each later change of the task is deliv
 ----
 include::example$doc-snippets/src/main/java/com/example/a2a/ClaimAssessmentWorkflow.java[tag=update]
 ----
-<4> The command receives each update. `A2aTaskUpdate` is a sealed interface, so a `switch` covers both kinds.
-<5> `A2aTaskArtifactUpdate` carries an artifact of the task. The workflow keeps it in its state and stays paused.
-<6> `A2aTaskStatusUpdate` carries a new status. A completed task ends the workflow.
-<7> A status that does not end the task, such as working, leaves the workflow paused.
-<8> The timeout handler of the pause.
+<1> The command receives each update. `A2aTaskUpdate` is a sealed interface, so a `switch` covers both kinds.
+<2> `A2aTaskArtifactUpdate` carries an artifact of the task. The workflow keeps it in its state and stays paused.
+<3> `A2aTaskStatusUpdate` carries a new status. A completed task ends the workflow.
+<4> A status that does not end the task, such as working, leaves the workflow paused.
+<5> The timeout handler of the pause.
 
 Akka follows the remote task in one of two ways:
 
@@ -284,3 +286,50 @@ Delivery is at least once. An update that a command already received for the sam
 When a task needs input, the remote agent waits for the next message on the task. Send it from a step with `withTaskId` on the message, and call `notifyWorkflow` again to follow the task further. Akka does not register a second push notification configuration for the same workflow and task.
 
 The workflows and the entity that follow remote tasks are built-in components. Akka registers them in a service that has an agent, or a component that takes `A2aClient` in its constructor. It registers the push notification endpoint only when the service also has a public URL.
+
+[#testing]
+== Testing agents that call remote A2A agents
+
+`MockA2aAgent` is a remote A2A agent for tests. It runs a server on a free local port, serves an Agent Card, and answers each skill with a reply that you choose. Start it before the TestKit and name it in the settings with `withMockedA2aAgent`, so that `RemoteA2aAgent.named` and `A2aClient.forAgent` reach it. Give the agent a `TestModelProvider` as xref:testing:integration.adoc[] describes, so that the test calls no model.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/a2a/ClaimStatusAgentIntegrationTest.java[ClaimStatusAgentIntegrationTest.java]
+----
+include::example$doc-snippets/src/test/java/com/example/a2a/ClaimStatusAgentIntegrationTest.java[tag=mock]
+----
+<1> `withSkill` adds a skill to the Agent Card, and the reply that the mock gives to messages for that skill.
+<2> `start` binds the server. Add all skills before it.
+<3> The model of the agent under test is mocked.
+<4> `withMockedA2aAgent` sets `akka.javasdk.a2a.remote-agents.claims.card-url` to the card of the mock. It adds to the additional config that the settings hold, and a later `withAdditionalConfig` call replaces it, so call `withMockedA2aAgent` last.
+
+The test makes the mocked model call the remote skill as a tool, and checks the messages that the mock received:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/a2a/ClaimStatusAgentIntegrationTest.java[ClaimStatusAgentIntegrationTest.java]
+----
+include::example$doc-snippets/src/test/java/com/example/a2a/ClaimStatusAgentIntegrationTest.java[tag=test]
+----
+<1> The name of the tool is the name of the remote agent and the id of the skill, joined by `_`.
+<2> `received` lists the messages that the mock has received, with the skill id, the text, the first data part, the context id and the task id. Call `reset` after each test to clear them.
+
+A reply is one of these:
+
+`Reply.text(text)`:: A message with one text part.
+`Reply.data(map)`:: A message with one data part.
+`Reply.workingThenCompleted(duration, text)`:: A task that is working when the mock accepts it. After the duration, `GetTask` finds it completed, with an artifact that has one text part. Use it to test <<hand-off>> and <<workflow-step>>.
+`Reply.failed(message)`:: A task that has failed, with the message as the text of its status.
+`Reply.error(message)`:: A JSON-RPC error. The agent under test receives `A2aRemoteErrorException`, or a tool result that starts with `Error:`.
+
+A message that names no skill goes to the first skill. A message that names a skill that the mock does not have gets an invalid parameters error.
+
+The mock does not send push notifications, and its Agent Card says so. A workflow that follows a task of the mock therefore polls for it. Set a short `poll-interval` for the remote agent in the test, as the tests of the a2a-agents sample do, and wait for the outcome with Awaitility. The mock does not check credentials and serves plain HTTP on `localhost`, so it tests the calls of an agent but not its credentials or TLS settings.
+
+The link:{sample-base-url}/a2a-agents/README.md[a2a-agents sample] has two services. Its `claims-assistant` service calls the other service once as a tool and once from a workflow step, and its tests use `MockA2aAgent` as the remote agent.
+
+== See also
+
+* xref:sdk:a2a-endpoints.adoc[A2A Endpoints]
+* xref:sdk:agents/extending.adoc[Function tools]
+* xref:sdk:workflows.adoc[Workflows]
+* xref:sdk:mcp-endpoints.adoc[MCP Endpoints]
+* xref:testing:integration.adoc[Integration testing]

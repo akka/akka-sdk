@@ -40,6 +40,8 @@ include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[ta
 
 The above ACL only allows incoming traffic from `service-a`. Meaning that only a service named `service-a` deployed on that same project will be able to make calls to this endpoint. This rule is applied to all methods in this HTTP Endpoint.
 
+An ACL on an xref:sdk:a2a-endpoints.adoc[A2A endpoint] class applies to every route of the endpoint, as it does for an MCP endpoint. It also applies to the route of the Agent Card, `/.well-known/agent-card.json`. A client does not need a token to read the Agent Card, but the ACL still decides which principals can read it. See xref:sdk:a2a-endpoints.adoc#_authentication_and_authorization_of_a2a_endpoints[Authentication and authorization of A2A endpoints].
+
 This rule can be overridden by an ACL on a method level. Here is an example ACL on a method that overrides the class level ACL:
 
 [source,java,indent=0]
@@ -133,9 +135,9 @@ honestly.
 
 === Inspecting the caller's identity
 
-Beyond matching in an `@Acl`, an HTTP, gRPC, or MCP endpoint can read the SPIFFE identity of its caller
+Beyond matching in an `@Acl`, an HTTP, gRPC, MCP, or A2A endpoint can read the SPIFFE identity of its caller
 programmatically. The request context (`akka.javasdk.http.RequestContext`, `akka.javasdk.grpc.GrpcRequestContext`,
-or `akka.javasdk.mcp.McpRequestContext`) exposes `getSpiffeContext()`, which returns an
+`akka.javasdk.mcp.McpRequestContext`, or `akka.javasdk.a2a.A2aRequestContext`) exposes `getSpiffeContext()`, which returns an
 `akka.javasdk.SpiffeContext` when SPIFFE is enabled:
 
 [source,java,indent=0]

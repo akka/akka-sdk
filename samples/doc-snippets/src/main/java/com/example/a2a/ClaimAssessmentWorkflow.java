@@ -91,15 +91,15 @@ public class ClaimAssessmentWorkflow extends Workflow<ClaimAssessmentWorkflow.St
   // end::send[]
 
   // tag::update[]
-  public Effect<Done> onAssessmentUpdate(A2aTaskUpdate update) { // <4>
+  public Effect<Done> onAssessmentUpdate(A2aTaskUpdate update) { // <1>
     return switch (update) {
-      case A2aTaskArtifactUpdate artifact -> effects() // <5>
+      case A2aTaskArtifactUpdate artifact -> effects() // <2>
         .updateState(currentState().withAssessment(text(artifact)))
         .pause()
         .thenReply(Done.getInstance());
       case A2aTaskStatusUpdate status when (
         status.status().state() == A2aTaskState.COMPLETED
-      ) -> effects() // <6>
+      ) -> effects() // <3>
         .updateState(currentState().withOutcome("assessed"))
         .end()
         .thenReply(Done.getInstance());
@@ -107,11 +107,11 @@ public class ClaimAssessmentWorkflow extends Workflow<ClaimAssessmentWorkflow.St
         .updateState(currentState().withOutcome("assessment failed"))
         .end()
         .thenReply(Done.getInstance());
-      case A2aTaskStatusUpdate status -> effects().reply(Done.getInstance()); // <7>
+      case A2aTaskStatusUpdate status -> effects().reply(Done.getInstance()); // <4>
     };
   }
 
-  public Effect<Done> onAssessmentTimeout() { // <8>
+  public Effect<Done> onAssessmentTimeout() { // <5>
     return effects()
       .updateState(currentState().withOutcome("no assessment in time"))
       .end()

@@ -5,7 +5,7 @@ include::ROOT:partial$include.adoc[]
 
 [glossary]
 
-[[a2a]]A2A (Agent2Agent protocol):: An open protocol for communication between agents built on different platforms and frameworks, stewarded by the Agentic AI Foundation of the Linux Foundation. An A2A client reads the <<agent_card>> of a remote agent and sends it messages, and the agent tracks its work in <<a2a_task>>s. Akka publishes agents to A2A clients with an A2A endpoint. See xref:sdk:a2a-endpoints.adoc[].
+[[a2a]]A2A (Agent2Agent protocol):: An open protocol for communication between agents built on different platforms and frameworks, stewarded by the Agentic AI Foundation of the Linux Foundation. An A2A client reads the <<agent_card>> of a remote agent and sends it messages, and the agent tracks its work in <<a2a_task>>s. Akka publishes agents and workflows to A2A clients with an A2A endpoint, and calls remote A2A agents with `A2aClient`. See xref:sdk:a2a-endpoints.adoc[] and xref:sdk:agents/remote-a2a-agents.adoc[].
 
 [[a2a_skill]]A2A skill:: One capability that an agent offers to <<a2a>> clients, listed in the <<agent_card>>. In Akka, an agent describes its skills with the `@A2aSkill` annotation. See xref:sdk:a2a-endpoints.adoc[].
 

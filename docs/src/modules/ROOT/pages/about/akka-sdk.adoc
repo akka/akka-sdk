@@ -39,9 +39,9 @@ See xref:sdk:consuming-producing.adoc[Consumers], xref:sdk:streaming.adoc[], xre
 
 == Endpoints and protocols
 
-HTTP, gRPC and MCP endpoints expose components to clients and to other agents. An agent can use tools from MCP servers, and any component can be exposed as an MCP tool. Agents also communicate with agents on other platforms over A2A. Timers schedule durable calls that run at least once.
+HTTP, gRPC and MCP endpoints expose components to clients and to other agents. An agent can use tools from MCP servers, and any component can be exposed as an MCP tool. An A2A endpoint publishes agents and workflows to clients of the Agent2Agent (A2A) protocol, and agents and workflows call agents on other platforms over A2A. Timers schedule durable calls that run at least once.
 
-See xref:sdk:http-endpoints.adoc[HTTP Endpoints], xref:sdk:grpc-endpoints.adoc[gRPC Endpoints], xref:sdk:mcp-endpoints.adoc[MCP Endpoints], xref:sdk:timed-actions.adoc[Timers], xref:sdk:integrations/apis-and-protocols.adoc[] and xref:concepts:tools-and-protocols.adoc[].
+See xref:sdk:http-endpoints.adoc[HTTP Endpoints], xref:sdk:grpc-endpoints.adoc[gRPC Endpoints], xref:sdk:mcp-endpoints.adoc[MCP Endpoints], xref:sdk:a2a-endpoints.adoc[A2A Endpoints], xref:sdk:timed-actions.adoc[Timers], xref:sdk:integrations/apis-and-protocols.adoc[] and xref:concepts:tools-and-protocols.adoc[].
 
 == Models
 

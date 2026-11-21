@@ -22,11 +22,17 @@ High-performance APIs with protocol buffer definitions. See xref:sdk:grpc-endpoi
 * **MCP Endpoints** — Expose Agent functions to remote LLMs via `@FunctionTool` annotations. See xref:sdk:mcp-endpoints.adoc[MCP Endpoints].
 * **MCP CLI server** — `akka mcp serve` exposes CLI operations as MCP tools for Claude Desktop, VS Code, and Cursor.
 
+== A2A (Agent2Agent)
+
+* **A2A endpoints**: Publish agents and workflows as skills to clients of the Agent2Agent (A2A) protocol. Akka serves the Agent Card and the A2A routes. See xref:sdk:a2a-endpoints.adoc[A2A Endpoints].
+* **Remote A2A agents**: Offer the skills of an agent on another platform to the model of an agent as tools, or call the agent from a workflow step. See xref:sdk:agents/remote-a2a-agents.adoc[Remote A2A agents].
+
 == Agent protocol support
 
-Akka supports MCP in both directions. An MCP endpoint publishes tools, resources and prompts to MCP clients, and an agent uses the tools of remote MCP servers. See xref:sdk:mcp-endpoints.adoc[MCP Endpoints] and xref:sdk:agents/extending.adoc#_using_tools_from_remote_mcp_servers[Using tools from remote MCP servers].
+Akka supports MCP and A2A in both directions.
 
-Akka publishes agents to clients of the Agent2Agent (A2A) protocol with an A2A endpoint. See xref:sdk:a2a-endpoints.adoc[A2A Endpoints].
+* An MCP endpoint publishes tools, resources and prompts to MCP clients, and an agent uses the tools of remote MCP servers. See xref:sdk:mcp-endpoints.adoc[MCP Endpoints] and xref:sdk:agents/extending.adoc#_using_tools_from_remote_mcp_servers[Using tools from remote MCP servers].
+* An A2A endpoint publishes agents and workflows as skills to A2A clients, and an agent or a workflow calls remote A2A agents. See xref:sdk:a2a-endpoints.adoc[A2A Endpoints] and xref:sdk:agents/remote-a2a-agents.adoc[Remote A2A agents].
 
 == See also
 
@@ -34,5 +40,6 @@ Akka publishes agents to clients of the Agent2Agent (A2A) protocol with an A2A e
 * xref:sdk:grpc-endpoints.adoc[gRPC Endpoints]
 * xref:sdk:mcp-endpoints.adoc[MCP Endpoints]
 * xref:sdk:a2a-endpoints.adoc[A2A Endpoints]
+* xref:sdk:agents/remote-a2a-agents.adoc[Remote A2A agents]
 * xref:sdk:web-applications.adoc[Web applications]
 * xref:sdk:agents.adoc[Agents]

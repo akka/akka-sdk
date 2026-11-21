@@ -50,11 +50,12 @@ Akka provides built-in support for exposing your services:
 * xref:sdk:http-endpoints.adoc#websocket[WebSockets] — real-time bidirectional communication (built-in)
 * xref:sdk:grpc-endpoints.adoc[gRPC Endpoints] — high-performance APIs
 * xref:sdk:mcp-endpoints.adoc[MCP Endpoints] — expose Agent functions to remote LLMs via `@FunctionTool` annotations
-* xref:sdk:a2a-endpoints.adoc[A2A Endpoints] — publish agents to clients of the Agent2Agent (A2A) protocol
+* xref:sdk:a2a-endpoints.adoc[A2A Endpoints]: publish agents and workflows to clients of the Agent2Agent (A2A) protocol
+* xref:sdk:agents/remote-a2a-agents.adoc[Remote A2A agents]: call agents on other platforms from an agent or a workflow
 
 === Agent protocol support
 
-Akka supports MCP in both directions: xref:sdk:mcp-endpoints.adoc[MCP endpoints] publish tools, and agents use the tools of xref:sdk:agents/extending.adoc#_using_tools_from_remote_mcp_servers[remote MCP servers]. xref:sdk:a2a-endpoints.adoc[A2A endpoints] publish agents to A2A clients.
+Akka supports MCP and A2A in both directions. xref:sdk:mcp-endpoints.adoc[MCP endpoints] and xref:sdk:a2a-endpoints.adoc[A2A endpoints] publish tools and agents, and agents use the tools of xref:sdk:agents/extending.adoc#_using_tools_from_remote_mcp_servers[remote MCP servers] and the skills of xref:sdk:agents/remote-a2a-agents.adoc[remote A2A agents].
 
 The Akka CLI also provides a built-in MCP server (`akka mcp serve`) that exposes CLI operations as MCP tools for Claude Desktop, VS Code, and Cursor.
 
