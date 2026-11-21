@@ -459,7 +459,7 @@ include::example$doc-snippets/src/main/java/com/example/api/ExampleA2aEndpoint.j
 
 The Agent Card route applies the `@Acl` of the endpoint and does not require a token, so a client can read the card before it obtains one.
 
-When the endpoint requires a token, Akka stores the subject of the token with each task. `GetTask` and `SendMessage` answer a task not found error to a caller with another subject. The session of an agent also depends on the subject, as described in <<_conversations_context_id_and_session_memory>>.
+When the endpoint requires a token, Akka stores the subject of the token with each task. `GetTask` and `SendMessage` answer a task not found error to a caller with another subject. The session of an agent also depends on the subject, as described in <<_conversations_context_ids_and_session_memory>>.
 
 An endpoint without `@JWT` cannot tell its callers apart. Its callers share the conversations of a context id, `ListTasks` is refused, and any caller that knows the id of a task can read it. Use an endpoint without `@JWT` only when every caller is trusted, for example a service in the same project that `@Acl` admits.
 
