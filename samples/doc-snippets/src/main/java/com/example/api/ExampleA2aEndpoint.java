@@ -6,6 +6,7 @@ import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.JWT;
 import akka.javasdk.annotations.a2a.A2aEndpoint;
 import com.example.application.ClaimCheckAgent;
+import com.example.application.ExampleA2aTaskWorkflow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +44,13 @@ public class ExampleA2aEndpoint extends AbstractA2aEndpoint { // <3>
       );
     // end::request-context[]
     // tag::endpoint-class[]
-    return A2aAgents.create().agent(ClaimCheckAgent.class);
+    // end::endpoint-class[]
+    // tag::task-workflow[]
+    return A2aAgents.create()
+      .agent(ClaimCheckAgent.class)
+      .taskWorkflow(ExampleA2aTaskWorkflow.class); // <1>
+    // end::task-workflow[]
+    // tag::endpoint-class[]
   }
 }
 // end::endpoint-class[]

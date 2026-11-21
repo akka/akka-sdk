@@ -16,9 +16,10 @@ The link:{url-ext-a2a-spec}[Agent2Agent (A2A) protocol, window="new"] lets agent
 An A2A endpoint serves these parts of A2A version 1.0 for the agents you choose:
 
 * the Agent Card at `/.well-known/agent-card.json`;
-* the `SendMessage` and `GetTask` methods, over the JSON-RPC binding and the HTTP+JSON binding.
+* the `SendMessage` and `GetTask` methods, over the JSON-RPC binding and the HTTP+JSON binding;
+* for long skills, `CancelTask` and the four push notification configuration methods.
 
-Each skill in the Agent Card is answered by an xref:sdk:agents.adoc[agent] of the service, in one call. Akka records each A2A task, so that a client can read it later with `GetTask`.
+Each skill in the Agent Card is answered either by an xref:sdk:agents.adoc[agent] of the service, in one call, or by a xref:sdk:workflows.adoc[workflow], for a long skill that can ask the client for more input. Akka records each A2A task, so that a client can read it later with `GetTask`.
 
 Use an A2A endpoint when agents outside your service, written with any A2A implementation, need to call your agents. For tools that a model calls, use an xref:sdk:mcp-endpoints.adoc[MCP endpoint]. For calls between Akka services, use the xref:sdk:component-and-service-calls.adoc[component client] or an xref:sdk:http-endpoints.adoc[HTTP endpoint].
 
@@ -80,7 +81,7 @@ A client selects a skill with the `skillId` field in the metadata of its message
 }
 ----
 
-When the endpoint publishes one skill, a message without `skillId` goes to that skill. When it publishes several skills and the message names none, or names an unknown skill, Akka answers with an invalid parameters error that lists the skill ids.
+A message without `skillId` goes to the first skill of the Agent Card, because generic A2A clients do not send `skillId`. A message that names an unknown skill is answered with an invalid parameters error that lists the skill ids.
 
 === Input and output of the agent
 
@@ -194,7 +195,9 @@ The endpoint serves both bindings at its path. With the default path `/a2a`, the
 
 A JSON-RPC request has the form `{"jsonrpc": "2.0", "id": 1, "method": "SendMessage", "params": {...}}`. Akka answers with HTTP status 200 and a JSON-RPC response that has either a `result` or an `error` member.
 
-The other A2A methods answer with an error. The extended Agent Card answers with an unsupported operation error, and push notification methods with a push notification not supported error.
+The push notification configuration methods are described in <<_push_notifications_to_a2a_clients>>. An endpoint that publishes no task workflow answers them with a push notification not supported error.
+
+The other A2A methods answer with an error. The extended Agent Card answers with an unsupported operation error.
 
 === Errors of an A2A endpoint
 
@@ -210,7 +213,7 @@ A client sends the protocol version in the `A2A-Version` header. Akka serves ver
 
 When the request sets `returnImmediately` in its configuration, Akka returns the task in the state `TASK_STATE_WORKING` and records the outcome when the agent answers. The client reads the outcome with `GetTask`.
 
-A message that names the id of an existing task is refused with an unsupported operation error, because a task of a skill answered by an agent ends with the reply.
+A message that names the id of an existing task of a skill answered by an agent is refused with an unsupported operation error, because such a task ends with the reply. A task of a long skill accepts more messages until it ends, as described in <<_long_skills_backed_by_a_workflow>>.
 
 == Conversations: context id and session memory
 
@@ -293,6 +296,118 @@ The response has `nextPageToken`, which is empty on the last page, and `totalSiz
 
 `CancelTask` cancels a task that has not ended and returns it in the state `TASK_STATE_CANCELED`. A task that has already ended answers with a task not cancelable error. When the task is a short skill that is still waiting for its agent, the answer of the agent is discarded.
 
+[#_long_skills_backed_by_a_workflow]
+== Long skills backed by a workflow
+
+A skill that runs for minutes or hours, or that asks the client for more input, is answered by a xref:sdk:workflows.adoc[workflow]. Annotate the workflow with `@A2aSkill`, give it a command handler `onMessage`, and inject an `A2aTaskContext` to report progress.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/ExampleA2aTaskWorkflow.java[ExampleA2aTaskWorkflow.java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/ExampleA2aTaskWorkflow.java[tag=task-workflow]
+----
+<1> `@A2aSkill` describes the skill, as on an agent. A workflow without it is published as one skill named after its `@Component`.
+<2> The constructor takes an `A2aTaskContext`. It belongs to the task whose id is the workflow id.
+<3> `public Effect<Done> onMessage(A2aMessage message)` receives the first message of the task and every later one. The annotation processor reports an error for a workflow with `@A2aSkill` that does not have it.
+<4> `working` shows the client that the agent is working, with a short description.
+<5> `inputRequired` asks the client a question. Pause the workflow in the same step. The next message on the task reaches `onMessage`.
+<6> `artifact` adds an output to the task. An artifact with the same id replaces the earlier one.
+<7> `completed` ends the task with a final message.
+
+Publish the workflow with `taskWorkflow` in `agents()`:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleA2aEndpoint.java[ExampleA2aEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/api/ExampleA2aEndpoint.java[tag=task-workflow]
+----
+<1> The skills appear on the Agent Card in the order the agents and task workflows are added. The first skill answers messages that select no skill.
+
+=== Reporting progress with `A2aTaskContext`
+
+The methods of `A2aTaskContext` change the task that clients read with `GetTask`:
+
+[cols="1,3"]
+|===
+| Method | Effect on the task
+
+| `working(text)`
+| The state `TASK_STATE_WORKING`, with the text as the status message.
+
+| `artifact(artifact)`
+| Adds the artifact. An artifact without an id gets one.
+
+| `inputRequired(question)`
+| The state `TASK_STATE_INPUT_REQUIRED`, with the question as the status message and in the history.
+
+| `completed(message)` or `completed(text)`
+| The state `TASK_STATE_COMPLETED`. The message is added to the history.
+
+| `failed(reason)`
+| The state `TASK_STATE_FAILED`, with the reason as the status message.
+
+| `respondWithMessage(message)`
+| `SendMessage` answers the first message with this message instead of a task. The task is recorded as completed.
+|===
+
+Each method returns when the task is stored, and sends the change to the push notification configurations of the task. Call the methods from a step, where calls to other components belong. A step can be retried, so the methods are safe to repeat: an artifact or message with the same id replaces the earlier one, and an agent message equal to the latest message in the history is not added again. A task that has ended ignores further reports.
+
+`inputRequired` changes only what the client sees. The workflow pauses because its step returns `stepEffects().thenPause()`. The workflow can also pause with a timeout and a timeout handler, as described in xref:sdk:workflows.adoc#_pausing_workflow[Pausing workflow].
+
+=== Messages and task states that a client sees
+
+* The first `SendMessage` of a skill records the task in the state `TASK_STATE_SUBMITTED`, then `TASK_STATE_WORKING`, and starts the workflow with the task id as the workflow id. Akka calls `onMessage` with the message.
+* Without `returnImmediately`, `SendMessage` waits until the task ends or asks for input, for at most 10 seconds, and returns the task as it is then. With `returnImmediately`, it returns the task in the state `TASK_STATE_WORKING` at once. The client follows the task with `GetTask` or with push notifications.
+* A message that names the task id of a task that has not ended is added to the history and passed to `onMessage`. A task in the state `TASK_STATE_INPUT_REQUIRED` returns to `TASK_STATE_WORKING`. A message to a task that has ended is refused with an unsupported operation error.
+* When `onMessage` returns an error, the task fails.
+
+=== Canceling a long task
+
+`CancelTask` on a task of a long skill terminates the workflow, as terminating it from the component client does (see xref:sdk:workflows.adoc[]), and records the state `TASK_STATE_CANCELED`. A task that has ended answers with a task not cancelable error. A step that runs when the task is canceled can still report, and the task ignores the report.
+
+[#_push_notifications_to_a2a_clients]
+== Push notifications to A2A clients
+
+A client that does not keep a connection open registers a webhook for a task, and Akka posts each change of the task to it. The Agent Card declares `pushNotifications` in its `capabilities` when the endpoint publishes a task workflow.
+
+A client registers a webhook in two ways:
+
+* in the `taskPushNotificationConfig` of the configuration of `SendMessage`, which registers it before the workflow starts;
+* with `CreateTaskPushNotificationConfig` for an existing task.
+
+[cols="1,2,2"]
+|===
+| Method | JSON-RPC | HTTP+JSON
+
+| `CreateTaskPushNotificationConfig`
+| `POST /a2a` with `"method": "CreateTaskPushNotificationConfig"`
+| `POST /a2a/tasks/{id}/pushNotificationConfigs`
+
+| `GetTaskPushNotificationConfig`
+| `POST /a2a` with `"method": "GetTaskPushNotificationConfig"`
+| `GET /a2a/tasks/{id}/pushNotificationConfigs/{configId}`
+
+| `ListTaskPushNotificationConfigs`
+| `POST /a2a` with `"method": "ListTaskPushNotificationConfigs"`
+| `GET /a2a/tasks/{id}/pushNotificationConfigs?pageSize=n&pageToken=t`
+
+| `DeleteTaskPushNotificationConfig`
+| `POST /a2a` with `"method": "DeleteTaskPushNotificationConfig"`
+| `DELETE /a2a/tasks/{id}/pushNotificationConfigs/{configId}`
+|===
+
+A configuration has a `url`, which must be an absolute `http` or `https` URL, an optional `token` and an optional `authentication` with a `scheme` and `credentials`. A configuration without an `id` gets one, and a configuration with the `id` of an existing one replaces it. A task has at most 10 configurations. The configurations are stored with the task, and a caller with another subject than the task gets a task not found error.
+
+For each change of the task, Akka posts to each webhook:
+
+* a JSON body of the form `{"task": {...}}`, with the task, its status and its artifacts, without its history;
+* the header `X-A2A-Notification-Token` with the token of the configuration, when it has one;
+* the header `Authorization` with the scheme and credentials of the configuration, when it has them. The scheme defaults to `Bearer`.
+
+Akka treats any 2xx status as delivered. Each notification is delivered by its own built-in workflow, so a webhook that fails does not delay the notifications of other tasks. After a failed attempt the workflow pauses and tries again: the first pause is 1 second, each pause doubles, and no pause is longer than 5 minutes. After 8 failed attempts Akka logs a warning and drops the notification. Notifications of one task can arrive out of order when a webhook fails, so a client orders them by the timestamp of the task status, or reads the task with `GetTask`.
+
+Changes of tasks of short skills are also posted when the task has a configuration. A short task usually ends before a client registers one, unless the client sets `returnImmediately`.
+
 == Authentication and authorization of A2A endpoints
 
 `@Acl` and `@JWT` on the endpoint class apply to every A2A route. The runtime checks them before the request reaches the endpoint, as for any HTTP endpoint. See xref:sdk:access-control.adoc[] and xref:sdk:auth-with-jwts.adoc[].
@@ -319,9 +434,26 @@ include::example$doc-snippets/src/main/java/com/example/api/ExampleA2aEndpoint.j
 <1> The context id is set for A2A methods. It is empty when Akka builds the Agent Card.
 <2> The JWT claims are available on the A2A routes of an endpoint with `@JWT`. The Agent Card route has no token, so read the claims only when a context id is present.
 
+== Testing A2A endpoints
+
+An A2A endpoint is an HTTP endpoint, so an integration test calls it with the `httpClient` of the TestKit. The test service runs the endpoint, its agents and its task workflows in process. Give the agents a model mock, as described in xref:testing:integration.adoc[], so that the test calls no model.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/api/ExampleA2aEndpointIntegrationTest.java[ExampleA2aEndpointIntegrationTest.java]
+----
+include::example$doc-snippets/src/test/java/com/example/api/ExampleA2aEndpointIntegrationTest.java[tag=test]
+----
+<1> A JSON-RPC `SendMessage` that selects the skill with `skillId` in the message metadata.
+<2> The workflow asks for the policy number, so the task waits for input.
+<3> The next message names the task id, and the workflow completes the task.
+<4> The endpoint requires a token. The TestKit accepts a token without a signature.
+
+To check push notifications, register a webhook on an HTTP endpoint of the test service, with the port from `testKit.getPort()`, and wait for the notification with Awaitility.
+
 == See also
 
 * xref:sdk:agents.adoc[Agents]
+* xref:sdk:workflows.adoc[Workflows]
 * xref:sdk:agents/memory.adoc[Session memory]
 * xref:sdk:mcp-endpoints.adoc[MCP Endpoints]
 * xref:sdk:access-control.adoc[Access control]
