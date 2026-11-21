@@ -7,6 +7,7 @@ import akka.javasdk.a2a.A2aPart;
 import akka.javasdk.a2a.A2aTaskContext;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.a2a.A2aSkill;
+import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,9 +24,11 @@ public class ExampleA2aTaskWorkflow extends Workflow<ExampleA2aTaskWorkflow.Stat
   public record State(String claim, String policyNumber) {}
 
   private final A2aTaskContext task;
+  private final ComponentClient componentClient;
 
-  public ExampleA2aTaskWorkflow(A2aTaskContext task) { // <2>
+  public ExampleA2aTaskWorkflow(A2aTaskContext task, ComponentClient componentClient) { // <2>
     this.task = task;
+    this.componentClient = componentClient;
   }
 
   public Effect<Done> onMessage(A2aMessage message) { // <3>
@@ -52,17 +55,22 @@ public class ExampleA2aTaskWorkflow extends Workflow<ExampleA2aTaskWorkflow.Stat
   }
 
   private StepEffect review() {
-    task.artifact( // <6>
+    var check = componentClient
+      .forAgent()
+      .inSession(task.sessionId()) // <6>
+      .method(ClaimCheckAgent::ask)
+      .invoke("Check this claim: " + currentState().claim());
+    task.artifact( // <7>
       new A2aArtifact(
         "review",
         "Review",
         null,
-        List.of(A2aPart.data(new Review(currentState().claim(), "approved"))),
+        List.of(A2aPart.data(new Review(currentState().claim(), check))),
         null,
         null
       )
     );
-    task.completed("The claim is approved."); // <7>
+    task.completed("The claim is reviewed."); // <8>
     return stepEffects().thenEnd();
   }
 

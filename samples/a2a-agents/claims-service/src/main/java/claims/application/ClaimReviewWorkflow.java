@@ -7,6 +7,7 @@ import akka.javasdk.a2a.A2aPart;
 import akka.javasdk.a2a.A2aTaskContext;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.a2a.A2aSkill;
+import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -22,12 +23,14 @@ public class ClaimReviewWorkflow extends Workflow<ClaimReviewWorkflow.State> {
 
   public record State(String claim, String policyNumber) {}
 
-  public record Review(String claim, String policyNumber, String decision) {}
+  public record Review(String claim, String policyNumber, String status, String decision) {}
 
   private final A2aTaskContext task;
+  private final ComponentClient componentClient;
 
-  public ClaimReviewWorkflow(A2aTaskContext task) { // <2>
+  public ClaimReviewWorkflow(A2aTaskContext task, ComponentClient componentClient) { // <2>
     this.task = task;
+    this.componentClient = componentClient;
   }
 
   public Effect<Done> onMessage(A2aMessage message) { // <3>
@@ -56,12 +59,21 @@ public class ClaimReviewWorkflow extends Workflow<ClaimReviewWorkflow.State> {
   private StepEffect review() {
     task.working("Reviewing the claim");
     var state = currentState();
+    // The session of this caller's conversation. The context id comes from the client, so another
+    // caller can send the same one.
+    var status = componentClient
+      .forAgent()
+      .inSession(task.sessionId())
+      .method(ClaimStatusAgent::ask)
+      .invoke("What is the status of the claim in: " + state.claim());
     task.artifact( // <6>
       new A2aArtifact(
         "review",
         "Review",
         null,
-        List.of(A2aPart.data(new Review(state.claim(), state.policyNumber(), "approved"))),
+        List.of(
+          A2aPart.data(new Review(state.claim(), state.policyNumber(), status, "approved"))
+        ),
         null,
         null
       )

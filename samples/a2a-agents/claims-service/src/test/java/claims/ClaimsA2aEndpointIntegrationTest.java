@@ -60,6 +60,9 @@ public class ClaimsA2aEndpointIntegrationTest extends TestKitSupport {
 
   @Test
   public void asksTheLongSkillForThePolicyNumberAndCompletes() throws Exception {
+    model
+      .whenMessage(message -> message.startsWith("What is the status of the claim in"))
+      .reply(new AiResponse("The claim is approved."));
     var first = send("review-claim", "Review claim 42, water damage in the kitchen", null);
     assertThat(first.at("/status/state").asText()).isEqualTo("TASK_STATE_INPUT_REQUIRED");
 
@@ -69,10 +72,14 @@ public class ClaimsA2aEndpointIntegrationTest extends TestKitSupport {
     assertThat(last.at("/artifacts/0/parts/0/data/policyNumber").asText()).isEqualTo(
       "P-1234"
     );
+    assertThat(last.at("/artifacts/0/parts/0/data/status").asText()).isNotBlank();
   }
 
   @Test
   public void completesTheLongSkillAtOnceWhenTheMessageHasThePolicyNumber() throws Exception {
+    model
+      .whenMessage(message -> message.startsWith("What is the status of the claim in"))
+      .reply(new AiResponse("The claim is waiting for photos."));
     var task = send("review-claim", "Review claim 43 under policy P-77", null);
 
     assertThat(task.at("/status/state").asText()).isEqualTo("TASK_STATE_COMPLETED");

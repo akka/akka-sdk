@@ -23,7 +23,8 @@ import java.util.stream.Collectors;
  * A task workflow with the behaviours that the A2A compatibility kit selects by the prefix of the
  * message id (see {@code a2a-interop/adk_echo_server.py}), and an {@code ask} skill that asks for a
  * name and greets it. Without a known prefix, a message is echoed as an artifact. The text {@code
- * wait} keeps the task working until it is canceled.
+ * wait} keeps the task working until it is canceled, and the text {@code session} answers with the
+ * session id of the task.
  */
 @Component(id = "a2a-kit-task-workflow", name = "Kit tasks", description = "Long tasks for tests")
 @A2aSkill(id = "kit-tasks", name = "Kit tasks", description = "Behaviours of the A2A kit")
@@ -126,6 +127,9 @@ public class A2aKitTaskWorkflow extends Workflow<A2aKitTaskWorkflow.State> {
       task.failed("Rejected");
       return stepEffects().thenEnd();
     } else if (id.startsWith("tck-stream-002")) {
+      return complete();
+    } else if (text.equals("session")) {
+      task.artifact(artifact("session", A2aPart.text(task.sessionId())));
       return complete();
     } else if (text.equals("wait")) {
       task.working("Waiting until canceled");

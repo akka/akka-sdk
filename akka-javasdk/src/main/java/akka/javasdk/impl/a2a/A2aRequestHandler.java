@@ -563,7 +563,12 @@ public final class A2aRequestHandler {
     componentClient
         .forKeyValueEntity(submitted.id())
         .method(A2aTaskEntity::create)
-        .invoke(new A2aTaskEntity.Create(submitted, newTask.skill().skill().id(), owner()));
+        .invoke(
+            new A2aTaskEntity.Create(
+                submitted,
+                newTask.skill().skill().id(),
+                owner(),
+                sessionId(submitted.contextId())));
     return store
         .change(submitted.id(), A2aTaskEntity.Change.status(A2aTaskState.WORKING, null))
         .orElseThrow()
@@ -580,7 +585,13 @@ public final class A2aRequestHandler {
                   skillTable(), continuation.task(), continuation.message(), configuration)
               .orElseThrow(() -> notAccepting(continuation.task()));
       case NewTask newTask when newTask.skill().taskWorkflow() != null ->
-          taskWorkflows().start(newTask.skill(), newTask.userMessage(), owner(), configuration);
+          taskWorkflows()
+              .start(
+                  newTask.skill(),
+                  newTask.userMessage(),
+                  owner(),
+                  sessionId(newTask.userMessage().contextId()),
+                  configuration);
       case NewTask newTask -> {
         var working = startShortTask(newTask);
         var artifactId = UUID.randomUUID().toString();

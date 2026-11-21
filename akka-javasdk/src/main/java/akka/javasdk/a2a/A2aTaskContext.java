@@ -26,8 +26,20 @@ public interface A2aTaskContext {
   /** The id of the task, which is also the workflow id. */
   String taskId();
 
-  /** The id of the conversation the task belongs to. */
+  /**
+   * The id of the conversation the task belongs to, as the client sent it. The client chooses it,
+   * so another caller can send the same context id. To call an agent in the conversation, use
+   * {@link #sessionId()}.
+   */
   String contextId();
+
+  /**
+   * The agent session of the conversation for this caller. The SDK derives it from the context id
+   * and the issuer and subject of the caller's token, so another caller that sends the same context
+   * id has another session. Pass it to {@code componentClient.forAgent().inSession(...)}. Callers
+   * of an endpoint without {@code @JWT} have no subject and share the session of a context id.
+   */
+  String sessionId();
 
   /**
    * Reports that the agent is working on the task.

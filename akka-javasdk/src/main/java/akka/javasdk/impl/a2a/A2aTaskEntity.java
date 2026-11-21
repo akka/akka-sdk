@@ -36,11 +36,12 @@ public final class A2aTaskEntity extends KeyValueEntity<A2aTaskEntity.State> {
    * @param skillId the skill that answers the task
    * @param owner the JWT subject of the caller that created the task, or null without a token
    * @param version increases by one with each change, starting at 1
+   * @param sessionId the agent session of the caller and the context ({@link A2aSessions})
    */
-  public record State(A2aTask task, String skillId, String owner, long version) {}
+  public record State(A2aTask task, String skillId, String owner, long version, String sessionId) {}
 
   /** The command that stores a new task. */
-  public record Create(A2aTask task, String skillId, String owner) {}
+  public record Create(A2aTask task, String skillId, String owner, String sessionId) {}
 
   /**
    * A change of a task that has not ended. A null member leaves that part of the task as it is.
@@ -91,7 +92,8 @@ public final class A2aTaskEntity extends KeyValueEntity<A2aTaskEntity.State> {
     if (currentState() != null) {
       return effects().error("Task [" + commandContext().entityId() + "] already exists");
     }
-    var state = new State(command.task(), command.skillId(), command.owner(), 1);
+    var state =
+        new State(command.task(), command.skillId(), command.owner(), 1, command.sessionId());
     return effects().updateState(state).thenReply(() -> published(state));
   }
 
@@ -116,7 +118,9 @@ public final class A2aTaskEntity extends KeyValueEntity<A2aTaskEntity.State> {
     if (change.artifact() != null) task = withArtifact(task, change.artifact());
     if (change.state() != null) task = withStatus(task, change.state(), change.statusMessage());
     else if (resume) task = withStatus(task, A2aTaskState.WORKING, null);
-    var changed = new State(task, current.skillId(), current.owner(), current.version() + 1);
+    var changed =
+        new State(
+            task, current.skillId(), current.owner(), current.version() + 1, current.sessionId());
     return effects().updateState(changed).thenReply(() -> new Changed(published(changed), true));
   }
 
@@ -137,7 +141,8 @@ public final class A2aTaskEntity extends KeyValueEntity<A2aTaskEntity.State> {
             withStatus(current.task(), A2aTaskState.CANCELED, null),
             current.skillId(),
             current.owner(),
-            current.version() + 1);
+            current.version() + 1,
+            current.sessionId());
     return effects()
         .updateState(canceled)
         .thenReply(() -> new CancelResult(published(canceled), true));

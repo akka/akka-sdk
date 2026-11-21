@@ -113,6 +113,7 @@ final class A2aStreaming {
                       newTask.skill(),
                       newTask.userMessage(),
                       handler.owner(),
+                      handler.sessionId(newTask.userMessage().contextId()),
                       request.configuration()),
               historyLength,
               envelope);

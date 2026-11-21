@@ -10,6 +10,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import akka.http.javadsl.model.ContentTypes;
 import akka.http.javadsl.model.StatusCodes;
 import akka.javasdk.JsonSupport;
+import akka.javasdk.impl.a2a.A2aSessions;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
@@ -52,6 +53,24 @@ public class A2aTaskWorkflowTest extends TestKitSupport {
         .containsExactly("echo", "a2a-assistant", "a2a-streaming-agent", "kit-tasks", "ask");
     var ask = card.get("skills").get(4);
     assertThat(ask.get("tags").get(0).asText()).isEqualTo("input-required");
+  }
+
+  @Test
+  public void givesEachCallerItsOwnSessionInAContext() throws Exception {
+    var contextId = UUID.randomUUID().toString();
+    var sessions = new java.util.ArrayList<String>();
+    for (var subject : List.of("a", "b")) {
+      var params =
+          Map.<String, Object>of("message", message("kit-tasks", "session", null, contextId));
+      var task = rpcAs(token(subject), "SendMessage", params).get("result").get("task");
+      assertThat(task.get("contextId").asText()).isEqualTo(contextId);
+      var sessionId = task.get("artifacts").get(0).get("parts").get(0).get("text").asText();
+      assertThat(sessionId)
+          .isEqualTo(A2aSessions.sessionId("a2a-test-issuer", subject, contextId))
+          .isNotEqualTo(contextId);
+      sessions.add(sessionId);
+    }
+    assertThat(sessions.get(0)).isNotEqualTo(sessions.get(1));
   }
 
   @Test

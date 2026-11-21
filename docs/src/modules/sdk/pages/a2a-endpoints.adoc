@@ -258,7 +258,7 @@ A skill published with `A2aAgents.agent(...)` is answered by one call to the age
 . records the reply as an artifact and the state `TASK_STATE_COMPLETED`, or the state `TASK_STATE_FAILED` with a message when the agent fails;
 . returns the task.
 
-Use this for skills that finish within the time of one request. The message of a failed task does not contain the cause of the failure. Akka logs the cause.
+Use this for skills that finish within the time of one request. Without `returnImmediately`, the call is not durable: when the node stops during the call, the client receives an error and the task stays in the state `TASK_STATE_WORKING`. The message of a failed task does not contain the cause of the failure. Akka logs the cause.
 
 === Streaming the answer of an agent
 
@@ -333,12 +333,13 @@ A skill that runs for minutes or hours, or that asks the client for more input, 
 include::example$doc-snippets/src/main/java/com/example/application/ExampleA2aTaskWorkflow.java[tag=task-workflow]
 ----
 <1> `@A2aSkill` describes the skill, as on an agent. A workflow without it is published as one skill named after its `@Component`.
-<2> The constructor takes an `A2aTaskContext`. It belongs to the task whose id is the workflow id.
+<2> The constructor takes an `A2aTaskContext`. It belongs to the task whose id is the workflow id. The workflow can take other parameters as well, such as a `ComponentClient`.
 <3> `public Effect<Done> onMessage(A2aMessage message)` receives the first message of the task and every later one. The annotation processor reports an error for a workflow with `@A2aSkill` that does not have it.
 <4> `working` shows the client that the agent is working, with a short description.
 <5> `inputRequired` asks the client a question. Pause the workflow in the same step. The next message on the task reaches `onMessage`.
-<6> `artifact` adds an output to the task. An artifact with the same id replaces the earlier one.
-<7> `completed` ends the task with a final message.
+<6> `sessionId` is the agent session of the conversation for the caller of the task. Call agents in this session, not in the session of `contextId`: the client chooses the context id, so another caller can send the same one. The session id is derived from the context id and the issuer and subject of the caller's token, as for a skill answered by an agent.
+<7> `artifact` adds an output to the task. An artifact with the same id replaces the earlier one.
+<8> `completed` ends the task with a final message.
 
 Publish the workflow with `taskWorkflow` in `agents()`:
 

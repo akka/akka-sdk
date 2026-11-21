@@ -27,6 +27,7 @@ public final class A2aTaskContextImpl implements A2aTaskContext {
   private final ComponentClient componentClient;
   private final A2aTaskStore store;
   private volatile String contextId;
+  private volatile String sessionId;
 
   public A2aTaskContextImpl(String taskId, ComponentClient componentClient) {
     this.taskId = taskId;
@@ -41,20 +42,34 @@ public final class A2aTaskContextImpl implements A2aTaskContext {
 
   @Override
   public String contextId() {
-    if (contextId == null) {
-      contextId =
-          store
-              .get(taskId)
-              .map(s -> s.task().contextId())
-              .orElseThrow(
-                  () ->
-                      new IllegalStateException(
-                          "Workflow ["
-                              + taskId
-                              + "] does not answer an A2A task. A2aTaskContext is for workflows"
-                              + " that an A2A endpoint starts."));
-    }
+    if (contextId == null) contextId = storedTask().task().contextId();
     return contextId;
+  }
+
+  @Override
+  public String sessionId() {
+    if (sessionId == null) {
+      var state = storedTask();
+      contextId = state.task().contextId();
+      sessionId =
+          state.sessionId() != null
+              ? state.sessionId()
+              // A task stored without a session id, before the field existed, has no issuer
+              : A2aSessions.sessionId(null, state.owner(), contextId);
+    }
+    return sessionId;
+  }
+
+  private A2aTaskEntity.State storedTask() {
+    return store
+        .get(taskId)
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Workflow ["
+                        + taskId
+                        + "] does not answer an A2A task. A2aTaskContext is for workflows"
+                        + " that an A2A endpoint starts."));
   }
 
   @Override

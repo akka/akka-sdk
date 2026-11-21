@@ -74,7 +74,8 @@ class A2aTaskStoreTest {
             } else if (arg instanceof A2aTaskEntity.Change) {
               calls.add("change");
               reply =
-                  new A2aTaskEntity.Changed(new A2aTaskEntity.State(TASK, "echo", null, 2), true);
+                  new A2aTaskEntity.Changed(
+                      new A2aTaskEntity.State(TASK, "echo", null, 2, "session"), true);
             } else {
               calls.add("start delivery");
               reply = Done.getInstance();
@@ -120,7 +121,8 @@ class A2aTaskStoreTest {
   void startsThePushDeliveriesOfAChangedTaskWithoutBlocking() throws Exception {
     var fake = new AsyncOnlyClient();
 
-    A2aPushNotifier.taskChanged(fake.client(), new A2aTaskEntity.State(TASK, "echo", null, 3))
+    A2aPushNotifier.taskChanged(
+            fake.client(), new A2aTaskEntity.State(TASK, "echo", null, 3, "session"))
         .toCompletableFuture()
         .get(5, TimeUnit.SECONDS);
 

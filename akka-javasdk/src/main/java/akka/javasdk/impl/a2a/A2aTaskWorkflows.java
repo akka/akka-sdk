@@ -96,13 +96,16 @@ public final class A2aTaskWorkflows {
    *
    * @param userMessage the first message, with the task id and context id of the new task
    * @param owner the JWT subject of the caller, or null
+   * @param sessionId the agent session of the caller and the context
    */
   public A2aSendMessageResponse start(
       A2aSkillTable.Entry skill,
       A2aMessage userMessage,
       String owner,
+      String sessionId,
       A2aSendMessageRequest.Configuration configuration) {
-    return respond(startWithoutWaiting(skill, userMessage, owner, configuration), configuration);
+    return respond(
+        startWithoutWaiting(skill, userMessage, owner, sessionId, configuration), configuration);
   }
 
   /**
@@ -113,6 +116,7 @@ public final class A2aTaskWorkflows {
       A2aSkillTable.Entry skill,
       A2aMessage userMessage,
       String owner,
+      String sessionId,
       A2aSendMessageRequest.Configuration configuration) {
     var taskId = userMessage.taskId();
     var submitted =
@@ -126,7 +130,7 @@ public final class A2aTaskWorkflows {
     componentClient
         .forKeyValueEntity(taskId)
         .method(A2aTaskEntity::create)
-        .invoke(new A2aTaskEntity.Create(submitted, skill.skill().id(), owner));
+        .invoke(new A2aTaskEntity.Create(submitted, skill.skill().id(), owner, sessionId));
     if (configuration != null && configuration.taskPushNotificationConfig() != null) {
       new A2aPushConfigs(componentClient, settings.pushUrls())
           .store(taskId, configuration.taskPushNotificationConfig());
