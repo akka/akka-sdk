@@ -131,6 +131,7 @@ Personas: Builders (Application Developers, AI/ML Engineers, Product Managers), 
 - [ask-akka-agent](https://raw.githubusercontent.com/akka-samples/ask-akka-agent/refs/heads/main/README.md): RAG agent with vector search and streaming
 - [shopping-cart](https://raw.githubusercontent.com/akka-samples/shopping-cart-quickstart/refs/heads/main/README.md): Event-sourced shopping cart
 - [transfer-workflow](https://raw.githubusercontent.com/akka-samples/transfer-workflow-compensation/refs/heads/main/README.md): Funds transfer with compensation
+- [a2a-agents](https://raw.githubusercontent.com/akka/akka-sdk/refs/heads/main/samples/a2a-agents/README.md): Two services over A2A, an agent and a workflow published as skills and called as a tool and from a workflow step
 
 ## Integrations
 
