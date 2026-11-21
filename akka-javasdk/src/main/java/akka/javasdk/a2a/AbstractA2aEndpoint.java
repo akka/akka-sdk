@@ -29,7 +29,8 @@ public abstract class AbstractA2aEndpoint {
 
   /**
    * The agents and task workflows that this endpoint publishes. The SDK calls it for each request
-   * and for the Agent Card.
+   * and for the Agent Card, and once at startup, without a request, when a workflow takes an {@link
+   * A2aTaskContext}. Request values are not available then.
    */
   protected abstract A2aAgents agents();
 

@@ -104,7 +104,7 @@ public record A2aPushUrlPolicy(boolean devMode, Set<String> allowedHosts) {
             "The host of the push notification url ["
                 + host
                 + "] resolves to a private or local address. Name it in"
-                + " akka.javasdk.a2a.endpoint.push.allowed-hosts to allow it");
+                + " akka.javasdk.a2a.endpoint.push-delivery.allowed-hosts to allow it");
       }
     }
     return new Check(null, List.of(addresses));

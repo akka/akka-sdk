@@ -42,7 +42,7 @@ public class A2aAdkEchoWorkflowTest extends TestKitSupport {
     return TestKit.Settings.DEFAULT.withAdditionalConfig(
         """
         akka.javasdk.testkit.http-port = %d
-        akka.javasdk.a2a.push.public-url = "http://127.0.0.1:%d"
+        akka.javasdk.a2a.push-receiver.public-url = "http://127.0.0.1:%d"
         akka.javasdk.a2a.remote-agents.echo-push {
           card-url = "%s"
           poll-interval = 1h

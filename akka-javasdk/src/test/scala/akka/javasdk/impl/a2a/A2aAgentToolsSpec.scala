@@ -105,7 +105,8 @@ class A2aAgentToolsSpec
 
     "be none, with a warning, for an agent whose Agent Card cannot be read" in {
       reset()
-      val agents = Seq(RemoteA2aAgent.fromCard(s"${server.baseUrl}/missing/card.json"), RemoteA2aAgent.named("claims"))
+      val agents =
+        Seq(RemoteA2aAgent.fromCardUrl(s"${server.baseUrl}/missing/card.json"), RemoteA2aAgent.named("claims"))
       val tools = akka.actor.testkit.typed.scaladsl.LoggingTestKit
         .warn("could not be read, so its skills are not offered as tools")
         .expect(A2aAgentTools.toolsFor(agents, client))
@@ -131,13 +132,13 @@ class A2aAgentToolsSpec
 
     "be named after the card for an agent given by card URL that is not configured" in {
       reset()
-      val tools = A2aAgentTools.toolsFor(Seq(RemoteA2aAgent.fromCard(server.cardUrl)), unconfiguredClient)
+      val tools = A2aAgentTools.toolsFor(Seq(RemoteA2aAgent.fromCardUrl(server.cardUrl)), unconfiguredClient)
       tools.map(_.name) shouldBe Seq("fake_check-claim", "fake_pay")
     }
 
     "be named after the configuration with the same card URL for an agent given by card URL" in {
       reset()
-      val byUrl = A2aAgentTools.toolsFor(Seq(RemoteA2aAgent.fromCard(server.cardUrl)), client)
+      val byUrl = A2aAgentTools.toolsFor(Seq(RemoteA2aAgent.fromCardUrl(server.cardUrl)), client)
       val byName = A2aAgentTools.toolsFor(Seq(RemoteA2aAgent.named("claims")), client)
       byUrl.map(_.name) shouldBe byName.map(_.name)
       byUrl.map(_.origin) shouldBe byName.map(_.origin)
@@ -293,7 +294,7 @@ class A2aAgentToolsSpec
     }
 
     "refuse a card URL that is not HTTP" in {
-      intercept[IllegalArgumentException](RemoteA2aAgent.fromCard("ftp://example.com/card.json"))
+      intercept[IllegalArgumentException](RemoteA2aAgent.fromCardUrl("ftp://example.com/card.json"))
     }
 
     "refuse a timeout that is not positive" in {

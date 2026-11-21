@@ -315,7 +315,8 @@ final class A2aStreaming {
 
   // Whether the agent of the skill answers with a token stream.
   private boolean isStreamingAgent(String agentId) {
-    for (Class<? extends Agent> agentClass : handler.endpoint()._internalAgents().agents()) {
+    for (Class<? extends Agent> agentClass :
+        handler.endpoint()._internalAgents()._internalAgents()) {
       var component = agentClass.getAnnotation(Component.class);
       if (component != null && component.id().equals(agentId)) {
         for (Method method : agentClass.getMethods()) {

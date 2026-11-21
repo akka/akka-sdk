@@ -13,7 +13,7 @@ public class ClaimsAssistantAgent extends Agent {
       .systemMessage("You help policyholders with their insurance claims.")
       .a2aAgents( // <1>
         RemoteA2aAgent.named("claims"), // <2>
-        RemoteA2aAgent.fromCard("https://rates.example.com/.well-known/agent-card.json") // <3>
+        RemoteA2aAgent.fromCardUrl("https://rates.example.com/.well-known/agent-card.json") // <3>
       )
       .userMessage(question)
       .thenReply();

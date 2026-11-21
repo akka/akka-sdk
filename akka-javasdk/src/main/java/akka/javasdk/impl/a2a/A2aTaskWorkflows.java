@@ -6,6 +6,7 @@ package akka.javasdk.impl.a2a;
 
 import akka.Done;
 import akka.annotation.InternalApi;
+import akka.javasdk.a2a.A2aAgents;
 import akka.javasdk.a2a.A2aMessage;
 import akka.javasdk.a2a.A2aRole;
 import akka.javasdk.a2a.A2aSendMessageResponse;
@@ -18,6 +19,7 @@ import akka.javasdk.impl.client.WorkflowClientImpl;
 import akka.javasdk.workflow.Workflow;
 import java.lang.reflect.Method;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -48,6 +50,32 @@ public final class A2aTaskWorkflows {
     this.componentClient = componentClient;
     this.settings = settings;
     this.store = new A2aTaskStore(componentClient);
+  }
+
+  /**
+   * Checks that every workflow that injects an {@code A2aTaskContext} is published by the A2A
+   * endpoint with {@code A2aAgents.taskWorkflow}, because the context answers the task of an A2A
+   * client and a workflow that no endpoint publishes has no such task.
+   *
+   * @param contextUsers the workflows of the service that take an {@code A2aTaskContext}
+   * @param published what the A2A endpoint publishes, empty when the service has no A2A endpoint
+   * @throws IllegalStateException when a workflow in {@code contextUsers} is not published
+   */
+  public static void requirePublished(
+      Collection<Class<?>> contextUsers, Optional<A2aAgents> published) {
+    var publishedWorkflows = published.map(a -> a._internalTaskWorkflows()).orElse(List.of());
+    for (Class<?> workflowClass : contextUsers) {
+      if (!publishedWorkflows.contains(workflowClass)) {
+        throw new IllegalStateException(
+            "["
+                + workflowClass.getName()
+                + "] takes an A2aTaskContext, which is only available to a workflow that an A2A"
+                + " endpoint publishes with A2aAgents.taskWorkflow("
+                + workflowClass.getSimpleName()
+                + ".class)"
+                + (published.isPresent() ? "" : "; the service has no @A2aEndpoint"));
+      }
+    }
   }
 
   /** The component id of a task workflow. */

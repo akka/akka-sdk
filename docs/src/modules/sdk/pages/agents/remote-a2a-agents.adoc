@@ -26,13 +26,13 @@ include::example$doc-snippets/src/main/java/com/example/a2a/ClaimsAssistantAgent
 ----
 <1> `a2aAgents` takes one or more remote agents.
 <2> `RemoteA2aAgent.named` takes a name configured under `akka.javasdk.a2a.remote-agents`. The tool calls use the credentials and TLS settings of that configuration. See <<naming-remote-agents>>.
-<3> `RemoteA2aAgent.fromCard` takes the URL of an Agent Card. The tool calls use no credentials and no custom TLS settings.
+<3> `RemoteA2aAgent.fromCardUrl` takes the URL of an Agent Card. The tool calls use no credentials and no custom TLS settings.
 
 `RemoteA2aAgent.fromService` takes the name of another Akka service in the same project that has an A2A endpoint. The agent reaches the service by its name, as `RemoteMcpTools.fromService` reaches an MCP endpoint, and the calls carry the identity of the calling service, so the `@Acl` of the other service can allow it. The tool calls use no credentials and no custom TLS settings.
 
 When the agent handles a request, it reads the Agent Card of each remote agent. The client caches the card, as <<naming-remote-agents>> describes. The agent offers each skill on the card to the model as one tool:
 
-* The name of the tool is the name of the remote agent and the id of the skill, joined by `_`, for example `claims_claim-status`. For a remote agent from `named`, the name is the configured name. For a remote agent from `fromCard` or `fromService`, the name is the name of a configuration under `akka.javasdk.a2a.remote-agents` with the same `card-url`, or else the `name` on its Agent Card. A remote agent therefore has the same name whether your code gives it by name or by URL. Characters that model providers do not accept in tool names become `_`. A name longer than 64 characters is shortened and ends with a hash of the full name.
+* The name of the tool is the name of the remote agent and the id of the skill, joined by `_`, for example `claims_claim-status`. For a remote agent from `named`, the name is the configured name. For a remote agent from `fromCardUrl` or `fromService`, the name is the name of a configuration under `akka.javasdk.a2a.remote-agents` with the same `card-url`, or else the `name` on its Agent Card. A remote agent therefore has the same name whether your code gives it by name or by URL. Characters that model providers do not accept in tool names become `_`. A name longer than 64 characters is shortened and ends with a hash of the full name.
 * The description of the tool is the description of the skill, followed by the names of the skill and of the remote agent.
 * The tool takes a required `message` string and an optional `data` object. The agent sends the message as a text part and the data as a data part.
 
@@ -287,7 +287,7 @@ Set the public URL of your service, and the poll interval of a remote agent, in 
 include::example$doc-snippets/src/main/resources/application.conf[tag=a2a-push]
 ----
 
-`akka.javasdk.a2a.push.public-url` is the base URL at which remote agents reach your service. When it is empty, Akka uses `akka.javasdk.a2a.endpoint.public-url`. When both are empty, the service polls. The notification URLs are under `/a2a-push/` on that base URL, so the route of your service must reach that path from the remote agents.
+`akka.javasdk.a2a.push-receiver.public-url` is the base URL at which remote agents reach your service. When it is empty, Akka uses `akka.javasdk.a2a.endpoint.public-url`. When both are empty, the service polls. The notification URLs are under `/a2a-push/` on that base URL, so the route of your service must reach that path from the remote agents.
 
 Delivery is at least once. An update that a command already received for the same task is not delivered again: a status is known by its state, its timestamp and the id of its message, and an artifact by its id and its content. A command can still receive an update twice when the service fails between the delivery and recording it, so make the command safe to repeat. When a delivery of a push notification fails, the endpoint answers with an error and the remote agent retries, as its push notification policy allows. A failed delivery while polling is retried at the next poll.
 

@@ -4,6 +4,7 @@
 
 package akka.javasdk.impl.a2a;
 
+import akka.annotation.InternalApi;
 import akka.javasdk.JsonSupport;
 import akka.javasdk.a2a.A2aAgentCard;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -33,7 +34,9 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Signing and verification of an Agent Card as JSON Web Signatures (A2A v1.0, section 8.4).
+ * INTERNAL API
+ *
+ * <p>Signing and verification of an Agent Card as JSON Web Signatures (A2A v1.0, section 8.4).
  *
  * <p>The payload of every signature is the canonical form of the card: the card as JSON without its
  * {@code signatures}, with the members that hold a default value removed, canonicalized as RFC 8785
@@ -44,6 +47,7 @@ import java.util.Set;
  * <p>The supported algorithms are ES256, ES384, RS256, RS384 and RS512. Keys that do not fit the
  * algorithm, and RSA keys under 2048 bits, are refused.
  */
+@InternalApi
 public final class AgentCardSigning {
   private AgentCardSigning() {}
 

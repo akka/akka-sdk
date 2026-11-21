@@ -4,6 +4,7 @@
 
 package akka.javasdk.a2a;
 
+import akka.javasdk.impl.a2a.A2aMetadataKeys;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.Map;
 
@@ -27,9 +28,6 @@ public record A2aTaskStatusUpdate(
     String taskId, String contextId, A2aTaskStatus status, Map<String, Object> metadata)
     implements A2aTaskUpdate {
 
-  /** The metadata key that marks the update the SDK sends when following a remote task ends. */
-  public static final String FOLLOW_TIMED_OUT = "akka.followTimedOut";
-
   public A2aTaskStatusUpdate {
     metadata = A2aValues.optionalMap(metadata);
   }
@@ -40,6 +38,6 @@ public record A2aTaskStatusUpdate(
    * are delivered.
    */
   public boolean followTimedOut() {
-    return metadata != null && Boolean.TRUE.equals(metadata.get(FOLLOW_TIMED_OUT));
+    return metadata != null && Boolean.TRUE.equals(metadata.get(A2aMetadataKeys.FOLLOW_TIMED_OUT));
   }
 }

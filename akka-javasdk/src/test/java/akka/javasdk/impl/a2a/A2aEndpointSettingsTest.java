@@ -40,7 +40,7 @@ class A2aEndpointSettingsTest {
                 """
                 akka.javasdk.a2a.endpoint {
                   blocking-wait = 2s
-                  push.allowed-hosts = ["Hooks.Internal"]
+                  push-delivery.allowed-hosts = ["Hooks.Internal"]
                 }
                 """),
             true);

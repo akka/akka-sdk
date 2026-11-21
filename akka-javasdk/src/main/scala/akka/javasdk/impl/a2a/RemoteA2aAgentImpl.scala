@@ -23,7 +23,7 @@ private[akka] object RemoteA2aAgentImpl {
   def named(name: String): RemoteA2aAgentImpl =
     RemoteA2aAgentImpl(A2aRemoteTarget.named(name), None, None, None)
 
-  def fromCard(url: String): RemoteA2aAgentImpl =
+  def fromCardUrl(url: String): RemoteA2aAgentImpl =
     RemoteA2aAgentImpl(A2aRemoteTarget.cardUrl(url), None, None, None)
 
   def fromService(serviceName: String): RemoteA2aAgentImpl =

@@ -52,6 +52,7 @@ import akka.javasdk.TextSanitizer
 import akka.javasdk.Tracing
 import akka.javasdk.UnhandledExceptionContext
 import akka.javasdk.UnhandledExceptionHandler
+import akka.javasdk.a2a.A2aAgents
 import akka.javasdk.a2a.A2aClient
 import akka.javasdk.a2a.A2aRequestContext
 import akka.javasdk.a2a.A2aTaskContext
@@ -102,6 +103,7 @@ import akka.javasdk.impl.a2a.A2aRequestHandler
 import akka.javasdk.impl.a2a.A2aRoutesEndpoint
 import akka.javasdk.impl.a2a.A2aServiceRoute
 import akka.javasdk.impl.a2a.A2aTaskContextImpl
+import akka.javasdk.impl.a2a.A2aTaskWorkflows
 import akka.javasdk.impl.agent.AgentImpl
 import akka.javasdk.impl.agent.AgentImpl.AgentContextImpl
 import akka.javasdk.impl.agent.AgentRegistryImpl
@@ -975,11 +977,52 @@ private final class Sdk(
     }
   }
 
+  // A workflow takes an A2aTaskContext only when the A2A endpoint publishes it. The endpoint decides per request what it
+  // publishes, so it is asked here without a request: its request context has no values and fails when used. An
+  // endpoint whose agents() needs a request cannot be checked, and the check is skipped for it.
+  private def validateA2aTaskContextUse(): Unit = {
+    val contextUsers = componentClasses.filter { cls =>
+      Reflect.isWorkflow(cls) && cls.getDeclaredConstructors.exists(
+        _.getParameterTypes.contains(classOf[A2aTaskContext]))
+    }
+    if (contextUsers.nonEmpty) {
+      val endpointClasses = componentClasses.filter(_.hasAnnotation[A2aEndpoint])
+      val published =
+        try {
+          Some(endpointClasses.headOption.map(a2aEndpointPublishes))
+        } catch {
+          case NonFatal(exc) =>
+            logger.warn(
+              "Could not ask the A2A endpoint what it publishes, so [{}] is not checked for A2aTaskContext: {}",
+              contextUsers.map(_.getName).mkString(", "),
+              exc.toString)
+            None
+        }
+      published.foreach(p => A2aTaskWorkflows.requirePublished(contextUsers.toSeq.asJava, p.toJava))
+    }
+  }
+
+  private def a2aEndpointPublishes(a2aEndpointClass: Class[_]): A2aAgents = {
+    val startupRequestContext = java.lang.reflect.Proxy
+      .newProxyInstance(
+        classOf[A2aRequestContext].getClassLoader,
+        Array[Class[_]](classOf[A2aRequestContext]),
+        (_, method, _) =>
+          if (method.getReturnType == classOf[Optional[_]]) Optional.empty()
+          else throw new IllegalStateException(s"[${method.getName}] needs a request"))
+      .asInstanceOf[A2aRequestContext]
+    wiredInstance("A2A Endpoint", a2aEndpointClass.asInstanceOf[Class[AbstractA2aEndpoint]]) {
+      sideEffectingComponentInjects(None, None, Some(a2aEndpointClass.getName)).orElse {
+        case p if p == classOf[A2aRequestContext] => startupRequestContext
+      }
+    }._internalAgents()
+  }
+
   private val followsRemoteA2aTasks = componentClasses.contains(classOf[A2aRemoteTaskSubscriptionEntity])
 
   // Where remote agents send the push notifications of the tasks that this service follows
   private val a2aPushPublicUrl: Option[String] =
-    Seq("a2a.push.public-url", "a2a.endpoint.public-url")
+    Seq("a2a.push-receiver.public-url", "a2a.endpoint.public-url")
       .map(key => sdkConfig.getString(key).trim.stripSuffix("/"))
       .find(_.nonEmpty)
       .filter(_ => followsRemoteA2aTasks)
@@ -1682,6 +1725,7 @@ private final class Sdk(
         case None =>
           validateClassifiers()
           validateSanitizers()
+          validateA2aTaskContextUse()
           startedPromise.trySuccess(
             StartupContext(
               runtimeComponentClients,
@@ -1713,6 +1757,7 @@ private final class Sdk(
           }
           validateClassifiers()
           validateSanitizers()
+          validateA2aTaskContextUse()
           // Only register the shutdown task if the user actually overrode onShutdown,
           // otherwise we'd add a no-op task to coordinated shutdown for every service.
           val onShutdownOverridden =

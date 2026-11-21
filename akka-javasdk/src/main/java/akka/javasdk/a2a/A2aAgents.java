@@ -4,6 +4,7 @@
 
 package akka.javasdk.a2a;
 
+import akka.annotation.InternalApi;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.workflow.Workflow;
 import java.util.ArrayList;
@@ -59,26 +60,47 @@ public final class A2aAgents {
     return with(workflowClass);
   }
 
-  /** The agents, in the order they were added. */
+  /**
+   * INTERNAL API
+   *
+   * <p>The agents, in the order they were added.
+   *
+   * @hidden
+   */
+  @InternalApi
   @SuppressWarnings("unchecked")
-  public List<Class<? extends Agent>> agents() {
+  public List<Class<? extends Agent>> _internalAgents() {
     return published.stream()
         .filter(Agent.class::isAssignableFrom)
         .<Class<? extends Agent>>map(c -> (Class<? extends Agent>) c)
         .toList();
   }
 
-  /** The task workflows, in the order they were added. */
+  /**
+   * INTERNAL API
+   *
+   * <p>The task workflows, in the order they were added.
+   *
+   * @hidden
+   */
+  @InternalApi
   @SuppressWarnings("unchecked")
-  public List<Class<? extends Workflow<?>>> taskWorkflows() {
+  public List<Class<? extends Workflow<?>>> _internalTaskWorkflows() {
     return published.stream()
         .filter(Workflow.class::isAssignableFrom)
         .<Class<? extends Workflow<?>>>map(c -> (Class<? extends Workflow<?>>) c)
         .toList();
   }
 
-  /** The agents and task workflows, in the order they were added. */
-  public List<Class<?>> all() {
+  /**
+   * INTERNAL API
+   *
+   * <p>The agents and task workflows, in the order they were added.
+   *
+   * @hidden
+   */
+  @InternalApi
+  public List<Class<?>> _internalAll() {
     return published;
   }
 

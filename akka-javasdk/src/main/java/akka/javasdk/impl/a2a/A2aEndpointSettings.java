@@ -52,6 +52,7 @@ public record A2aEndpointSettings(
         blockingWait,
         streamIdleTimeout,
         AgentCardSigning.Signer.fromConfig(endpoint.getConfig("signing")),
-        new A2aPushUrlPolicy(devMode, new HashSet<>(endpoint.getStringList("push.allowed-hosts"))));
+        new A2aPushUrlPolicy(
+            devMode, new HashSet<>(endpoint.getStringList("push-delivery.allowed-hosts"))));
   }
 }

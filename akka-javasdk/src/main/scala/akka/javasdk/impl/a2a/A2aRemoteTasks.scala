@@ -399,7 +399,7 @@ private[akka] object A2aRemoteTasks {
         A2aTaskState.UNSPECIFIED,
         A2aMessage.user(A2aPart.text(text)).withRole(A2aRole.AGENT),
         java.time.Instant.now()),
-      java.util.Map.of(A2aTaskStatusUpdate.FOLLOW_TIMED_OUT, java.lang.Boolean.TRUE))
+      java.util.Map.of(A2aMetadataKeys.FOLLOW_TIMED_OUT, java.lang.Boolean.TRUE))
 
   // Compared with a presented token when the subscription has none, so that an unknown subscription takes as long to
   // refuse as a wrong token

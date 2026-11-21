@@ -56,7 +56,7 @@ public final class A2aSkillTable {
    */
   public static A2aSkillTable of(A2aAgents agents, AgentRegistry agentRegistry) {
     var entries = new LinkedHashMap<String, Entry>();
-    for (Class<?> published : agents.all()) {
+    for (Class<?> published : agents._internalAll()) {
       if (Workflow.class.isAssignableFrom(published)) {
         @SuppressWarnings("unchecked")
         var workflowClass = (Class<? extends Workflow<?>>) published;

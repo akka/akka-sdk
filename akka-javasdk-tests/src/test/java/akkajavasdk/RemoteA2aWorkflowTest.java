@@ -77,7 +77,7 @@ public class RemoteA2aWorkflowTest extends TestKitSupport {
         .withModelProvider(RemoteA2aHandOffWithoutMemoryTestAgent.class, model)
         .withAdditionalConfig(
             """
-            akka.javasdk.a2a.push.public-url = "http://push.test/"
+            akka.javasdk.a2a.push-receiver.public-url = "http://push.test/"
             akka.javasdk.a2a.defaults.poll-interval = 300ms
             akka.javasdk.a2a.remote-agents.push-agent.card-url = "%s"
             akka.javasdk.a2a.remote-agents.poll-agent.card-url = "%s"

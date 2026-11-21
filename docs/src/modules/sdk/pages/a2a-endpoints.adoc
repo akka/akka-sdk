@@ -35,7 +35,7 @@ include::example$doc-snippets/src/main/java/com/example/api/ExampleA2aEndpoint.j
 <1> `@A2aEndpoint` sets the name, description and version that the Agent Card shows. The routes are served at `path`, which is `/a2a` by default.
 <2> `@Acl` controls which callers can use the endpoint, as for any endpoint. See xref:sdk:access-control.adoc[].
 <3> The class extends `AbstractA2aEndpoint`. Akka serves the A2A routes at the path of the endpoint, so the class holds only `agents()`.
-<4> `agents()` returns the agents that answer the skills. Akka calls it for each request and for the Agent Card.
+<4> `agents()` returns the agents that answer the skills. Akka calls it for each request and for the Agent Card, and once at startup, without a request, to check the workflows that take an `A2aTaskContext`.
 
 A service has at most one A2A endpoint, because it has one Agent Card. The annotation processor reports an error when it finds a second class annotated with `@A2aEndpoint`.
 
@@ -345,6 +345,8 @@ include::example$doc-snippets/src/main/java/com/example/api/ExampleA2aEndpoint.j
 ----
 <1> The skills appear on the Agent Card in the order the agents and task workflows are added. The first skill answers messages that select no skill.
 
+A workflow can take an `A2aTaskContext` only when an A2A endpoint publishes it with `taskWorkflow`. Otherwise the service fails at startup with a message that names the workflow.
+
 === Reporting progress with `A2aTaskContext`
 
 The methods of `A2aTaskContext` change the task that clients read with `GetTask`:
@@ -421,11 +423,11 @@ A client registers a webhook in two ways:
 A configuration has a `url`, an optional `token` and an optional `authentication` with a `scheme` and `credentials`. A client chooses the URL, so Akka checks it before it stores the configuration, and again before each delivery:
 
 * The URL must be an absolute `https` URL. In local development, `http` is accepted too.
-* Akka resolves the host of the URL. A host with a private, loopback, link-local or otherwise local address is refused, unless `akka.javasdk.a2a.endpoint.push.allowed-hosts` names it. This keeps a client from making your service call its own network.
+* Akka resolves the host of the URL. A host with a private, loopback, link-local or otherwise local address is refused, unless `akka.javasdk.a2a.endpoint.push-delivery.allowed-hosts` names it. This keeps a client from making your service call its own network.
 
 [source,hocon]
 ----
-akka.javasdk.a2a.endpoint.push.allowed-hosts = ["hooks.internal.example.com"]
+akka.javasdk.a2a.endpoint.push-delivery.allowed-hosts = ["hooks.internal.example.com"]
 ----
 
 A refused URL is answered with an invalid parameters error. A delivery to a URL that is refused later is dropped with a warning. A configuration without an `id` gets one, and a configuration with the `id` of an existing one replaces it. A task has at most 10 configurations. The configurations are stored with the task, and a caller with another subject than the task gets a task not found error.
@@ -438,7 +440,7 @@ For each change of the task, Akka posts to each webhook:
 
 Akka treats any 2xx status as delivered. Each notification is delivered by its own built-in workflow, so a webhook that fails does not delay the notifications of other tasks. After a failed attempt the workflow pauses and tries again: the first pause is 1 second, each pause doubles, and no pause is longer than 5 minutes. After 8 failed attempts Akka logs a warning and drops the notification. Notifications of one task can arrive out of order when a webhook fails, so a client orders them by the timestamp of the task status, or reads the task with `GetTask`.
 
-Changes of tasks of short skills are also posted when the task has a configuration. A short task usually ends before a client registers one, unless the client sets `returnImmediately`.
+Changes to the tasks of short skills are posted only when the task has a push notification configuration. The push notification configuration methods are available only when the endpoint publishes a task workflow, so an endpoint that publishes only agents posts nothing. A short task usually ends before a client registers a configuration, unless the client sets `returnImmediately`.
 
 == Authentication and authorization of A2A endpoints
 

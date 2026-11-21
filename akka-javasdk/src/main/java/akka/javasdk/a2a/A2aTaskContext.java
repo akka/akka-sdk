@@ -7,6 +7,8 @@ package akka.javasdk.a2a;
 /**
  * The A2A task that a workflow answers. Inject it into the constructor of a workflow that publishes
  * a long skill with {@link akka.javasdk.annotations.a2a.A2aSkill}. The workflow id is the task id.
+ * The workflow must be published by the A2A endpoint with {@link A2aAgents#taskWorkflow(Class)};
+ * the service fails at startup when another workflow takes an {@code A2aTaskContext}.
  *
  * <p>Each method records the progress in the task that A2A clients read with {@code GetTask}, and
  * sends it to the push notification configurations of the task. Call the methods from a step, where

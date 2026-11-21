@@ -120,7 +120,7 @@ public interface RemoteA2aAgentClient {
      *
      * <ul>
      *   <li>When the Agent Card of the remote agent says that it sends push notifications and
-     *       {@code akka.javasdk.a2a.push.public-url} (or {@code
+     *       {@code akka.javasdk.a2a.push-receiver.public-url} (or {@code
      *       akka.javasdk.a2a.endpoint.public-url}) is set, the client registers a push notification
      *       configuration on the task. Its URL points at an endpoint of this service, and its token
      *       is bound to the workflow and the task.

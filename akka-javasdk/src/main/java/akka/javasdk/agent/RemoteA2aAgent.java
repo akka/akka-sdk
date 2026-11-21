@@ -19,17 +19,18 @@ import java.util.Set;
  * model.
  *
  * <p>The names of the tools are {@code <agent name>_<skill id>}. The agent name is the configured
- * name for {@link #named(String)}. For {@link #fromCard(String)} and {@link #fromService(String)}
- * it is the name of a configuration under {@code akka.javasdk.a2a.remote-agents} with the same
- * {@code card-url}, or else the {@code name} on the Agent Card. The same name is the {@code
- * agentName} of {@link ToolCallGuardrail.ToolOrigin.RemoteA2a}.
+ * name for {@link #named(String)}. For {@link #fromCardUrl(String)} and {@link
+ * #fromService(String)} it is the name of a configuration under {@code
+ * akka.javasdk.a2a.remote-agents} with the same {@code card-url}, or else the {@code name} on the
+ * Agent Card. The same name is the {@code agentName} of {@link
+ * ToolCallGuardrail.ToolOrigin.RemoteA2a}.
  *
  * <p>A failure of the remote agent, such as an error reply or a timeout, is returned to the model
  * as the tool's result, so that the model can decide what to do next. The agent request does not
  * fail.
  *
  * <p>Not for user extension, create instances using {@link #named(String)}, {@link
- * #fromCard(String)} or {@link #fromService(String)}.
+ * #fromCardUrl(String)} or {@link #fromService(String)}.
  */
 @DoNotInherit
 public interface RemoteA2aAgent {
@@ -50,8 +51,8 @@ public interface RemoteA2aAgent {
    *
    * @param url the URL of the Agent Card, which must start with {@code http://} or {@code https://}
    */
-  static RemoteA2aAgent fromCard(String url) {
-    return RemoteA2aAgentImpl.fromCard(url);
+  static RemoteA2aAgent fromCardUrl(String url) {
+    return RemoteA2aAgentImpl.fromCardUrl(url);
   }
 
   /**

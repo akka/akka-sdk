@@ -89,7 +89,7 @@ public non-sealed interface ToolCallGuardrail extends Guardrail {
      * whichever way the agent is referenced, so it is the more reliable of the two.
      *
      * @param agentName the name of the remote agent. For {@link RemoteA2aAgent#named} it is the
-     *     configured name. For {@link RemoteA2aAgent#fromCard} and {@link
+     *     configured name. For {@link RemoteA2aAgent#fromCardUrl} and {@link
      *     RemoteA2aAgent#fromService} it is the name of a configuration under {@code
      *     akka.javasdk.a2a.remote-agents} with the same {@code card-url}, or else the {@code name}
      *     on the Agent Card.
