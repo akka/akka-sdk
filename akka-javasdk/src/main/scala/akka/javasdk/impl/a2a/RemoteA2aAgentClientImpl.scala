@@ -163,6 +163,9 @@ private object RemoteA2aAgentState {
 @InternalApi
 private[akka] object RemoteA2aAgentClientImpl {
 
+  // The agent names and hosts that a warning about withheld credentials was logged for
+  private[a2a] val credentialsWithheld = java.util.concurrent.ConcurrentHashMap.newKeySet[String]()
+
   /**
    * The response, or the timeout error when the response takes longer. A response that arrives after the timeout is
    * discarded, so that its connection returns to the pool.
@@ -683,8 +686,13 @@ private[akka] final class RemoteA2aAgentClientImpl(
   private def call(makeRequest: () => HttpRequest): Future[HttpResponse] = {
     def attempt(retryOnUnauthorized: Boolean): Future[HttpResponse] = {
       val request = makeRequest()
-      // The Agent Card names the URLs of the calls, so a card can point them at plain http
-      if (settings.auth != A2aAuth.NoAuth && !A2aRemoteAgentSettings.safeForCredentials(request.uri.toString))
+      val url = request.uri.toString
+      // The Agent Card names the URLs of the calls, so a card can point them at another host or at plain http
+      val withCredentials = settings.auth != A2aAuth.NoAuth && settings.sendsCredentialsTo(url)
+      if (settings.auth != A2aAuth.NoAuth && !withCredentials) {
+        warnCredentialsWithheld(request.uri.authority.host.address())
+        state.send(request)
+      } else if (withCredentials && !A2aRemoteAgentSettings.safeForCredentials(url))
         Future.failed(
           new A2aClientException(
             s"Remote agent [${settings.name}] was not called at ${request.uri}, because the client sends credentials " +
@@ -713,6 +721,15 @@ private[akka] final class RemoteA2aAgentClientImpl(
           Future.failed(new A2aClientException(s"Calling remote agent [${settings.name}] failed: ${e.getMessage}", e))
       }
   }
+
+  private def warnCredentialsWithheld(host: String): Unit =
+    if (RemoteA2aAgentClientImpl.credentialsWithheld.add(s"${settings.name} $host"))
+      log.warn(
+        "Remote A2A agent [{}] is called at host [{}], which is not the host of its card URL, so the call carries no " +
+        "credentials. List the host under akka.javasdk.a2a.remote-agents.{}.credential-hosts to send them.",
+        settings.name,
+        host,
+        settings.name)
 
   private def addHeaders(request: HttpRequest, headers: Seq[HttpHeader]): HttpRequest =
     request.withHeaders(request.headers ++ headers)

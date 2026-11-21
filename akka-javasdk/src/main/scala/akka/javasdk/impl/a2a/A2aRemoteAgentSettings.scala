@@ -82,11 +82,21 @@ private[akka] final case class A2aRemoteAgentSettings(
     clientCertificate: Option[String],
     clientKey: Option[String],
     cardVerification: Option[A2aCardVerification] = None,
-    followTimeout: FiniteDuration = 24.hours) {
+    followTimeout: FiniteDuration = 24.hours,
+    credentialHosts: Set[String] = Set.empty) {
   override def toString: String =
     s"A2aRemoteAgentSettings($name,$cardUrl,$timeout,$pollInterval,$cardRefresh,$auth," +
     s"caBundle=${caBundle.isDefined},clientCertificate=${clientCertificate.isDefined},clientKey=***," +
-    s"cardVerification=$cardVerification)"
+    s"cardVerification=$cardVerification,credentialHosts=$credentialHosts)"
+
+  private val cardHost: Option[String] = A2aRemoteAgentSettings.hostOf(cardUrl)
+
+  /**
+   * True when the credentials of the agent may go to the URL: its host is the host of the card URL, or one that
+   * `credential-hosts` lists. The Agent Card names the URLs of the calls, so a card can point them at another host.
+   */
+  def sendsCredentialsTo(url: String): Boolean =
+    A2aRemoteAgentSettings.hostOf(url).exists(host => cardHost.contains(host) || credentialHosts.contains(host))
 }
 
 /**
@@ -291,8 +301,16 @@ private[akka] object A2aRemoteAgentSettings {
       clientCertificate,
       clientKey,
       cardVerification,
-      duration("follow-timeout"))
+      duration("follow-timeout"),
+      if (config.hasPath("credential-hosts"))
+        config.getStringList("credential-hosts").asScala.map(_.trim.toLowerCase(java.util.Locale.ROOT)).toSet
+      else Set.empty)
   }
+
+  /** The host of a URL in lower case, or empty when the URL has none. */
+  def hostOf(url: String): Option[String] =
+    try Option(new URI(url).getHost).map(_.toLowerCase(java.util.Locale.ROOT))
+    catch { case NonFatal(_) => None }
 
   private val LoopbackIpv4 = """127\.\d{1,3}\.\d{1,3}\.\d{1,3}""".r
 

@@ -10,6 +10,7 @@ import scala.jdk.CollectionConverters._
 import scala.jdk.FutureConverters._
 
 import akka.actor.testkit.typed.scaladsl.LogCapturing
+import akka.actor.testkit.typed.scaladsl.LoggingTestKit
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.http.scaladsl.model.headers.Authorization
 import akka.javasdk.a2a._
@@ -34,6 +35,11 @@ class RemoteA2aAgentClientSpec
     binding.unbind()
     super.afterAll()
   }
+
+  private def withCredentialHosts(config: Config, hosts: String*): Config =
+    config.withValue(
+      "remote-agents.agent.credential-hosts",
+      com.typesafe.config.ConfigValueFactory.fromIterable(hosts.asJava))
 
   private def a2aConfig(settings: (String, String)*): Config =
     ConfigFactory
@@ -270,11 +276,13 @@ class RemoteA2aAgentClientSpec
       reset()
       val agents = new A2aRemoteAgents(
         system,
-        a2aConfig(
-          "card-url" -> server.cardUrl,
-          "auth.type" -> "header",
-          "auth.header-name" -> "X-Api-Key",
-          "auth.header-value" -> "abc"))
+        withCredentialHosts(
+          a2aConfig(
+            "card-url" -> server.cardUrl,
+            "auth.type" -> "header",
+            "auth.header-name" -> "X-Api-Key",
+            "auth.header-value" -> "abc"),
+          "agent.example.com"))
       val c = new RemoteA2aAgentClientImpl(
         agents.stateFor(A2aRemoteTarget.Named("agent")),
         Nil,
@@ -283,6 +291,30 @@ class RemoteA2aAgentClientSpec
       e.getMessage should include("http://agent.example.com/a2a")
       e.getMessage should include("only to https://")
       server.requests.map(_.path) shouldBe Seq("/.well-known/agent-card.json")
+    }
+
+    "send credentials only to the host of the card URL, or to a listed host" in {
+      reset()
+      // The card URL names localhost; the calls go to the same server as 127.0.0.1, another host
+      val otherHost = server.baseUrl.replace("localhost", "127.0.0.1")
+      def callOtherHost(credentialHosts: Option[String]) = {
+        server.seen.clear()
+        val settings = Seq(
+          "card-url" -> server.cardUrl,
+          "auth.type" -> "header",
+          "auth.header-name" -> "X-Api-Key",
+          "auth.header-value" -> "abc")
+        val config = credentialHosts.foldLeft(a2aConfig(settings: _*))(withCredentialHosts(_, _))
+        val c = new RemoteA2aAgentClientImpl(
+          new A2aRemoteAgents(system, config).stateFor(A2aRemoteTarget.Named("agent")),
+          Nil,
+          _ => A2aBinding.JsonRpc(s"$otherHost/a2a", None))
+        c.send("s", hello).invoke()
+        server.requests.filter(_.path == "/a2a").map(_.headers.get("x-api-key"))
+      }
+
+      LoggingTestKit.warn("not the host of its card URL").expect(callOtherHost(None) shouldBe Seq(None))
+      callOtherHost(Some("127.0.0.1")) shouldBe Seq(Some("abc"))
     }
 
     "fail with a client exception when the token endpoint refuses the client" in {

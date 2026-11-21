@@ -114,6 +114,10 @@ The settings of a remote agent are:
 | `type = none`
 | Credentials. See <<credentials>>.
 
+| `credential-hosts`
+| `[]`
+| Hosts besides the host of `card-url` that receive the credentials. See <<credentials>>.
+
 | `ca-bundle`, `client-certificate`, `client-key`, and their `-file` forms
 |
 | TLS settings. See <<tls>>.
@@ -136,6 +140,8 @@ A call fails with one of two exceptions:
 == Credentials for remote agents
 
 The `auth` setting of a remote agent chooses how the service proves its identity. The client sends the credentials on every request to the agent, including the request for the Agent Card.
+
+The client sends credentials only to the host of the `card-url`. The Agent Card names the URLs of the calls, so a card can point them at another host. A call to another host carries no credentials, and the client logs a warning once for each host. When the agent serves its calls from another host, list that host in `credential-hosts`, for example `credential-hosts = ["claims-api.example.com"]`.
 
 The client sends credentials only to `https://` URLs, and to `http://` URLs on `localhost` for local development and tests. `forAgent` throws `IllegalArgumentException` when the `card-url` or the `token-url` of an agent with credentials is another `http://` URL. A call fails with `A2aClientException` when the Agent Card lists an interface at such a URL.
 
