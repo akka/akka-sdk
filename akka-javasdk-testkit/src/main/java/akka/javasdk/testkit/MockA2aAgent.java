@@ -249,7 +249,11 @@ public final class MockA2aAgent implements AutoCloseable {
 
   private JsonRpcResponse sendMessage(JsonNode id, JsonNode params) {
     var message = params.path("message");
-    var requested = params.path("metadata").path("skillId").asText(null);
+    var requested =
+        params
+            .path("metadata")
+            .path("skillId")
+            .asText(message.path("metadata").path("skillId").asText(null));
     var skill =
         skills.stream()
             .filter(s -> requested == null || s.id().equals(requested))

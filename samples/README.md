@@ -13,6 +13,10 @@ CI checks that all code is correctly formatted. If not, the build will fail.
 
 The GitHub Actions workflow runs `prettier:check` on all Java samples. Formatting errors will be reported as part of the build.
 
+### Samples with several services
+
+A sample folder without a `pom.xml` holds several services, each in a folder with its own `pom.xml`, such as `a2a-agents`. The CI workflow and the samples compilation project treat each service as a sample of its own.
+
 ### Plugin settings
 
 - Line length: 94
