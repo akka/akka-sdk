@@ -11,7 +11,7 @@ public class ClaimStatusAgent extends Agent {
 
   public Effect<String> ask(String question) {
     return effects()
-      .systemMessage("You tell customers the status of their insurance claims.")
+      .systemMessage("You tell policyholders the status of their insurance claims.")
       // tag::skills-and-timeouts[]
       .a2aAgents(
         RemoteA2aAgent.named("claims")

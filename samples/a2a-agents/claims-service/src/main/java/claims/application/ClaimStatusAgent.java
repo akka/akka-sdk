@@ -26,7 +26,7 @@ public class ClaimStatusAgent extends Agent {
   public Effect<String> ask(String question) { // <2>
     return effects()
       .systemMessage(
-        "You tell customers the status of their insurance claims. " +
+        "You tell policyholders the status of their insurance claims. " +
         "Use the claimStatus tool and answer in one sentence."
       )
       .userMessage(question)

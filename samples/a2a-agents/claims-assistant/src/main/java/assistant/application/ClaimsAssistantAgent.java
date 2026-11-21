@@ -10,7 +10,7 @@ public class ClaimsAssistantAgent extends Agent {
   public Effect<String> ask(String question) {
     return effects()
       .systemMessage(
-        "You help customers with their insurance claims. " +
+        "You help policyholders with their insurance claims. " +
         "Ask the claims agent for the status of a claim and answer in one sentence."
       )
       .a2aAgents(
