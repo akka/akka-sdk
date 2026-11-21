@@ -105,7 +105,7 @@ Akka serves the Agent Card at `/.well-known/agent-card.json` on the service. It 
     { "url": "https://claims.example.com/a2a", "protocolBinding": "JSONRPC", "protocolVersion": "1.0" },
     { "url": "https://claims.example.com/a2a", "protocolBinding": "HTTP+JSON", "protocolVersion": "1.0" }
   ],
-  "capabilities": { "streaming": false, "pushNotifications": false },
+  "capabilities": { "streaming": true, "pushNotifications": false },
   "securitySchemes": {
     "oidc": {
       "openIdConnectSecurityScheme": {
@@ -171,14 +171,30 @@ The endpoint serves both bindings at its path. With the default path `/a2a`, the
 | `POST /a2a` with `"method": "SendMessage"`
 | `POST /a2a/message:send`
 
+| `SendStreamingMessage`
+| `POST /a2a` with `"method": "SendStreamingMessage"`, answered as server-sent events
+| `POST /a2a/message:stream`, answered as server-sent events
+
 | `GetTask`
 | `POST /a2a` with `"method": "GetTask"`
 | `GET /a2a/tasks/{id}?historyLength=n`
+
+| `ListTasks`
+| `POST /a2a` with `"method": "ListTasks"`
+| `GET /a2a/tasks`
+
+| `CancelTask`
+| `POST /a2a` with `"method": "CancelTask"`
+| `POST /a2a/tasks/{id}:cancel`
+
+| `SubscribeToTask`
+| `POST /a2a` with `"method": "SubscribeToTask"`, answered as server-sent events
+| `GET /a2a/tasks/{id}:subscribe` or `POST /a2a/tasks/{id}:subscribe`, answered as server-sent events
 |===
 
 A JSON-RPC request has the form `{"jsonrpc": "2.0", "id": 1, "method": "SendMessage", "params": {...}}`. Akka answers with HTTP status 200 and a JSON-RPC response that has either a `result` or an `error` member.
 
-The other A2A methods answer with an error. Streaming methods and the extended Agent Card answer with an unsupported operation error, and push notification methods with a push notification not supported error.
+The other A2A methods answer with an error. The extended Agent Card answers with an unsupported operation error, and push notification methods with a push notification not supported error.
 
 === Errors of an A2A endpoint
 
@@ -216,6 +232,66 @@ A skill published with `A2aAgents.agent(...)` is answered by one call to the age
 . returns the task.
 
 Use this for skills that finish within the time of one request. The message of a failed task does not contain the cause of the failure. Akka logs the cause.
+
+=== Streaming the answer of an agent
+
+A client that sends `SendStreamingMessage` receives the answer as server-sent events while the agent works. Each event is one `StreamResponse` with a single member. On the JSON-RPC binding, each event is wrapped in a JSON-RPC response with the id of the request. The stream has these events:
+
+. The task, in the state `TASK_STATE_WORKING`, with the message of the client in its history.
+. Artifact updates with the answer. An agent that replies in one piece sends one update. An agent that streams its reply sends one update for each chunk of the reply. All chunks belong to one artifact. The first chunk replaces the artifact, each later chunk has `append` set to true, and the last chunk has `lastChunk` set to true.
+. A status update with the state `TASK_STATE_COMPLETED`, or `TASK_STATE_FAILED` when the agent fails. The stream ends after it.
+
+To stream the reply of an agent, publish an agent whose command handler returns `StreamEffect`:
+
+[source,java,indent=0]
+----
+include::example$doc-snippets/src/main/java/com/example/application/ClaimStreamingAgent.java[tag=streaming-skill]
+----
+<1> The handler returns `StreamEffect`, so each token of the model is sent as it arrives.
+
+Akka writes the complete answer to the task when the agent has finished, so `GetTask` returns the same artifact that the stream carried. When the client closes the stream before the agent has finished, Akka cancels the task.
+
+A request that cannot start, for example because it names an unknown skill, is answered with an error and not with a stream.
+
+=== Following a task with `SubscribeToTask`
+
+`SubscribeToTask` follows a task that has not ended. The stream starts with the current task. It continues with a status update for each change of the status and an artifact update for each new or changed artifact, and it ends with the update that moves the task to a terminal state. `SubscribeToTask` on a task that has ended answers with an unsupported operation error, and on a task of another caller with a task not found error.
+
+=== Listing tasks
+
+`ListTasks` returns the tasks of the caller, most recently changed first. When the endpoint has `@JWT`, a caller sees only the tasks that it created. The request has these optional filters:
+
+[cols="1,3"]
+|===
+| Field | Effect
+
+| `contextId`
+| Only the tasks of this conversation.
+
+| `status`
+| Only the tasks in this state, for example `TASK_STATE_COMPLETED`.
+
+| `statusTimestampAfter`
+| Only the tasks whose status changed after this time, as an ISO 8601 timestamp.
+
+| `pageSize`
+| The number of tasks in a page, from 1 to 100. The default is 50.
+
+| `pageToken`
+| The `nextPageToken` of the previous response.
+
+| `historyLength`
+| The number of messages of each task history to return.
+
+| `includeArtifacts`
+| True to return the artifacts of each task. The default is false.
+|===
+
+The response has `nextPageToken`, which is empty on the last page, and `totalSize`, the number of tasks that match across all pages. On the HTTP+JSON binding the filters are query parameters of `GET /a2a/tasks`. A task appears in the list shortly after it changes, because the list is built from the task updates.
+
+=== Canceling a task
+
+`CancelTask` cancels a task that has not ended and returns it in the state `TASK_STATE_CANCELED`. A task that has already ended answers with a task not cancelable error. When the task is a short skill that is still waiting for its agent, the answer of the agent is discarded.
 
 == Authentication and authorization of A2A endpoints
 
