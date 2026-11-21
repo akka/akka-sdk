@@ -23,12 +23,15 @@ import scala.util.control.NonFatal
 import akka.Done
 import akka.annotation.InternalApi
 import akka.javasdk.a2a.A2aArtifact
+import akka.javasdk.a2a.A2aMessage
+import akka.javasdk.a2a.A2aRole
 import akka.javasdk.a2a.A2aPart
 import akka.javasdk.a2a.A2aSendMessageResponse
 import akka.javasdk.a2a.A2aStreamResponse
 import akka.javasdk.a2a.A2aTask
 import akka.javasdk.a2a.A2aTaskArtifactUpdate
 import akka.javasdk.a2a.A2aTaskState
+import akka.javasdk.a2a.A2aTaskStatus
 import akka.javasdk.a2a.A2aTaskStatusUpdate
 import akka.javasdk.a2a.A2aTaskUpdate
 import akka.javasdk.client.ComponentClient
@@ -63,19 +66,22 @@ private[akka] final class A2aRemoteTasks(
     componentClient: () => ComponentClient,
     remoteAgents: A2aRemoteAgents,
     pushPublicUrl: Option[String],
-    val enabled: Boolean)(implicit ec: ExecutionContext) {
+    val enabled: Boolean,
+    sanitizersOf: String => A2aReplySanitizer = _ => A2aRemoteTasks.NoSanitizers)(implicit ec: ExecutionContext) {
   import A2aRemoteTasks._
 
   /**
    * Starts following a task that has not ended: registers a push notification configuration when the remote agent and
    * this service support push, and starts polling otherwise. The updates in the task as given are taken as delivered.
+   * The following ends after the follow timeout.
    */
   def follow(
       client: RemoteA2aAgentClientImpl,
       remote: A2aRemoteRef,
       target: Target,
       task: A2aTask,
-      pollInterval: FiniteDuration): Future[Done] = {
+      pollInterval: FiniteDuration,
+      followTimeout: FiniteDuration): Future[Done] = {
     if (!enabled)
       return Future.failed(
         new IllegalStateException(
@@ -117,26 +123,53 @@ private[akka] final class A2aRemoteTasks(
           }
         }
         .flatMap { usePush =>
-          // With push, one poll catches a change made before the configuration was registered
-          if (usePush) startPoll(subscriptionId, remote, task.id(), pollInterval, once = true)
+          // With push, one poll catches a change made before the configuration was registered, and the poll workflow
+          // then waits for the deadline
+          def start(once: Boolean) =
+            startPoll(
+              new A2aRemoteTaskPollWorkflow.State(
+                subscriptionId,
+                remote,
+                task.id(),
+                task.contextId(),
+                pollInterval.toMillis,
+                once,
+                0,
+                System.currentTimeMillis() + followTimeout.toMillis,
+                followTimeout.toMillis))
+          if (usePush) start(once = true)
           else if (settles(task)) Future.successful(Done)
-          else startPoll(subscriptionId, remote, task.id(), pollInterval, once = false)
+          else start(once = false)
         }
     }
   }
 
-  private def startPoll(
+  private def startPoll(poll: A2aRemoteTaskPollWorkflow.State): Future[Done] =
+    A2aRemoteTaskCalls.startPoll(componentClient(), UUID.randomUUID().toString, poll).asScala
+
+  /**
+   * Ends the following of a task at its deadline: unless an update that ends the task was delivered, the workflow
+   * command receives a status update whose `followTimedOut()` is true, and no later update is delivered.
+   */
+  def followTimedOut(
       subscriptionId: String,
-      remote: A2aRemoteRef,
       taskId: String,
-      interval: FiniteDuration,
-      once: Boolean): Future[Done] =
-    A2aRemoteTaskCalls
-      .startPoll(
-        componentClient(),
-        UUID.randomUUID().toString,
-        new A2aRemoteTaskPollWorkflow.State(subscriptionId, remote, taskId, interval.toMillis, once, 0))
-      .asScala
+      contextId: String,
+      followTimeout: java.time.Duration): CompletionStage[Done] =
+    getSubscription(subscriptionId).flatMap { state =>
+      if (state.target() == null || state.ended()) Future.successful(Done)
+      else {
+        val update = followTimedOutUpdate(taskId, contextId, followTimeout)
+        callWorkflow(state.target(), update).flatMap { _ =>
+          A2aRemoteTaskCalls
+            .delivered(
+              componentClient(),
+              subscriptionId,
+              new A2aRemoteTaskSubscriptionEntity.Delivered(FollowTimedOutKey, true))
+            .asScala
+        }
+      }
+    }.asJava
 
   /**
    * Reads the task once and delivers its changes.
@@ -198,7 +231,8 @@ private[akka] final class A2aRemoteTasks(
       sessionId: String,
       agentComponentId: String,
       toolName: String,
-      pollInterval: FiniteDuration): Future[Done] = {
+      pollInterval: FiniteDuration,
+      followTimeout: FiniteDuration): Future[Done] = {
     val workflowId =
       UUID
         .nameUUIDFromBytes(s"$sessionId\n${client.cardUrl}\n${task.id()}".getBytes(StandardCharsets.UTF_8))
@@ -210,17 +244,31 @@ private[akka] final class A2aRemoteTasks(
         new RemoteA2aTaskWorkflow.State(sessionId, agentComponentId, toolName, remote, task.id(), null, false))
       .asScala
       .flatMap(_ =>
-        follow(client, remote, new Target(HandOffComponentId, HandOffMethodName, workflowId), task, pollInterval))
+        follow(
+          client,
+          remote,
+          new Target(HandOffComponentId, HandOffMethodName, workflowId),
+          task,
+          pollInterval,
+          followTimeout))
   }
 
-  /** The text of the outcome of a handed off task, read from the remote agent. */
-  def handOffOutcome(remote: A2aRemoteRef, taskId: String): CompletionStage[String] =
+  /**
+   * The text of the outcome of a handed off task, read from the remote agent and masked with the tool-result sanitizers
+   * of the agent that handed it off.
+   */
+  def handOffOutcome(remote: A2aRemoteRef, taskId: String, agentComponentId: String): CompletionStage[String] =
     clientFor(remote)
       .getTask(taskId)
       .invokeAsync()
       .asScala
+      .flatMap(task => sanitizersOf(agentComponentId).task(task))
       .map(task => A2aAgentTools.replyText(A2aSendMessageResponse.of(task)))
       .asJava
+
+  /** Masks text with the tool-result sanitizers of an agent. */
+  def sanitizeForAgent(agentComponentId: String, text: String): CompletionStage[String] =
+    sanitizersOf(agentComponentId).text(text).asJava
 
   private def clientFor(remote: A2aRemoteRef) =
     new A2aClientImpl(remoteAgents, Nil, Nil, Some(this)).forTarget(targetOf(remote), None)
@@ -256,19 +304,27 @@ private[akka] final class A2aRemoteTasks(
     }
   }
 
-  private def callWorkflow(target: Target, update: A2aTaskUpdate): Future[Done] =
-    workflowClient
-      .send(
-        new EntityRequest(
-          target.componentId(),
-          target.workflowId(),
-          target.methodName(),
-          serializer.toBytes(update),
-          SpiMetadata.empty))
-      .map { reply =>
-        reply.exceptionPayload.foreach(payload => throw serializer.json.exceptionFromBytes(payload))
-        Done
-      }
+  // An update is masked with the tool-result sanitizers of the workflow that receives it. The hand-off workflow masks
+  // the outcome it writes for its agent instead.
+  private def callWorkflow(target: Target, update: A2aTaskUpdate): Future[Done] = {
+    val masked =
+      if (target.componentId() == HandOffComponentId) Future.successful(update)
+      else sanitizersOf(target.componentId()).update(update)
+    masked.flatMap { sanitized =>
+      workflowClient
+        .send(
+          new EntityRequest(
+            target.componentId(),
+            target.workflowId(),
+            target.methodName(),
+            serializer.toBytes(sanitized),
+            SpiMetadata.empty))
+        .map { reply =>
+          reply.exceptionPayload.foreach(payload => throw serializer.json.exceptionFromBytes(payload))
+          Done
+        }
+    }
+  }
 
   private def parsePush(body: Array[Byte]): Option[Seq[(String, A2aTaskUpdate)]] =
     try {
@@ -307,6 +363,24 @@ private[akka] object A2aRemoteTasks {
 
   val HandOffComponentId = "akka-a2a-remote-task-hand-off"
   val HandOffMethodName = "OnUpdate"
+
+  private val FollowTimedOutKey = "follow-timed-out"
+
+  private[a2a] val NoSanitizers: A2aReplySanitizer = new A2aReplySanitizer(Nil, null)(ExecutionContext.parasitic)
+
+  /** The status update that tells a workflow that the following of a remote task ended before the task did. */
+  def followTimedOutUpdate(taskId: String, contextId: String, followTimeout: java.time.Duration): A2aTaskStatusUpdate =
+    new A2aTaskStatusUpdate(
+      taskId,
+      contextId,
+      new A2aTaskStatus(
+        A2aTaskState.UNSPECIFIED,
+        A2aMessage
+          .user(A2aPart.text(
+            s"The remote task was followed for ${scala.concurrent.duration.FiniteDuration(followTimeout.toMillis, "ms").toCoarsest} without ending or asking for input. No more updates are delivered."))
+          .withRole(A2aRole.AGENT),
+        java.time.Instant.now()),
+      java.util.Map.of(A2aTaskStatusUpdate.FOLLOW_TIMED_OUT, java.lang.Boolean.TRUE))
 
   // Compared with a presented token when the subscription has none, so that an unknown subscription takes as long to
   // refuse as a wrong token

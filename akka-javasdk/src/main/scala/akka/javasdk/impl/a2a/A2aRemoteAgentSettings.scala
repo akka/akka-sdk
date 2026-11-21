@@ -9,7 +9,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
 import scala.jdk.DurationConverters._
 import scala.util.control.NonFatal
@@ -81,7 +81,8 @@ private[akka] final case class A2aRemoteAgentSettings(
     caBundle: Option[String],
     clientCertificate: Option[String],
     clientKey: Option[String],
-    cardVerification: Option[A2aCardVerification] = None) {
+    cardVerification: Option[A2aCardVerification] = None,
+    followTimeout: FiniteDuration = 24.hours) {
   override def toString: String =
     s"A2aRemoteAgentSettings($name,$cardUrl,$timeout,$pollInterval,$cardRefresh,$auth," +
     s"caBundle=${caBundle.isDefined},clientCertificate=${clientCertificate.isDefined},clientKey=***," +
@@ -289,7 +290,8 @@ private[akka] object A2aRemoteAgentSettings {
       pem("ca-bundle"),
       clientCertificate,
       clientKey,
-      cardVerification)
+      cardVerification,
+      duration("follow-timeout"))
   }
 
   private val LoopbackIpv4 = """127\.\d{1,3}\.\d{1,3}\.\d{1,3}""".r

@@ -100,13 +100,7 @@ private[akka] object A2aAgentTools {
 
   private def toolsFor(agent: RemoteA2aAgentImpl, card: A2aAgentCard, client: A2aClientImpl): Seq[A2aTool] = {
     val cardUrl = client.remoteAgents.stateFor(agent.target).settings.cardUrl
-    val agentName = agent.target match {
-      case A2aRemoteTarget.Named(name) => name
-      case _ =>
-        client.remoteAgents
-          .configuredName(cardUrl)
-          .getOrElse(Option(card.name()).filterNot(_.isBlank).getOrElse("remote_agent"))
-    }
+    val agentName = client.remoteAgents.agentName(agent.target, cardUrl, card)
     val skills = Option(card.skills()).map(_.asScala.toSeq).getOrElse(Seq.empty).filter { skill =>
       skill.id() != null && !skill.id().isBlank && agent.allowedSkills.forall(_.contains(skill.id()))
     }
@@ -137,8 +131,11 @@ private[akka] object A2aAgentTools {
    * The tool name for a skill: `<agent>_<skill>`, with every character the model providers refuse replaced by `_`. A
    * name longer than the limit is cut, and ends with a hash of the full name so that it stays distinct.
    */
-  def toolName(agentName: String, skillId: String): String = {
-    val full = s"${agentName}_$skillId"
+  def toolName(agentName: String, skillId: String): String = toolName(agentName, Some(skillId))
+
+  /** The tool name for a skill, or for the agent alone when no skill is named: `<agent>`. */
+  def toolName(agentName: String, skillId: Option[String]): String = {
+    val full = skillId.fold(agentName)(skill => s"${agentName}_$skill")
     val cleaned = full.map(c => if (isNameChar(c)) c else '_')
     val prefixed = if (cleaned.head.isLetter || cleaned.head == '_') cleaned else s"a2a_$cleaned"
     if (prefixed.length <= MaxToolNameLength) prefixed
@@ -166,11 +163,17 @@ private[akka] object A2aAgentTools {
    *   the session id of the agent, sent as the A2A context id
    * @param agentComponentId
    *   the component id of the calling agent, whose session memory receives the outcome of a handed off task
+   * @param writesSessionMemory
+   *   true when the agent writes the built-in session memory, which is the only place the outcome of a handed off task
+   *   can go; otherwise a task still working after the hand-off time is not followed
    */
-  def call(tool: A2aTool, arguments: String, contextId: String, agentComponentId: String, client: A2aClientImpl)(
-      implicit
-      ec: ExecutionContext,
-      scheduler: akka.actor.Scheduler): Future[String] = {
+  def call(
+      tool: A2aTool,
+      arguments: String,
+      contextId: String,
+      agentComponentId: String,
+      writesSessionMemory: Boolean,
+      client: A2aClientImpl)(implicit ec: ExecutionContext, scheduler: akka.actor.Scheduler): Future[String] = {
     val message =
       try Right(toMessage(arguments))
       catch { case NonFatal(e) => Left(s"Error: the tool call could not be sent: ${e.getMessage}") }
@@ -191,7 +194,15 @@ private[akka] object A2aAgentTools {
                       val deadline = System.nanoTime() + handOffAfter.toNanos
                       followUntil(remote, t.task(), deadline).flatMap { task =>
                         if (A2aRemoteTasks.settles(task)) Future.successful(replyText(A2aSendMessageResponse.of(task)))
-                        else
+                        else if (!writesSessionMemory) {
+                          log.info(
+                            "Remote A2A task [{}] of tool [{}] is still working after the hand-off time, and agent [{}] " +
+                            "does not write the built-in session memory, so the task is not followed",
+                            task.id(),
+                            tool.name,
+                            agentComponentId)
+                          Future.successful(notFollowedText(task, handOffAfter))
+                        } else
                           remote
                             .handOff(task, contextId, agentComponentId, tool.name)
                             .map(_ => handedOffText(task, handOffAfter))
@@ -230,6 +241,10 @@ private[akka] object A2aAgentTools {
   private def handedOffText(task: A2aTask, handOffAfter: FiniteDuration): String =
     s"The remote task [${task.id()}] was still working after ${handOffAfter.toCoarsest}, so it continues in the " +
     "background. Its outcome will be added to this conversation when it is known."
+
+  private def notFollowedText(task: A2aTask, handOffAfter: FiniteDuration): String =
+    s"The remote task [${task.id()}] was still working after ${handOffAfter.toCoarsest}, so it continues in the " +
+    "background. Its outcome will not be added to this conversation."
 
   private def toMessage(arguments: String): A2aMessage = {
     val json = mapper.readTree(arguments)

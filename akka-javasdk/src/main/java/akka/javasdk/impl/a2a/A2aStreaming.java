@@ -157,9 +157,8 @@ final class A2aStreaming {
             });
     var events =
         Source.single(A2aStreamResponse.of(A2aRequestHandler.trimHistory(working, historyLength)))
-            .concat(queue.second())
-            .map(envelope::apply);
-    return HttpResponses.serverSentEvents(events);
+            .concat(queue.second());
+    return HttpResponses.serverSentEvents(handler.traceStream(events).map(envelope::apply));
   }
 
   // A task answered by a task workflow: the task, then its changes until it ends or asks for input
@@ -173,7 +172,7 @@ final class A2aStreaming {
         delivered.task().status().state().terminal()
             ? Source.single(first)
             : Source.single(first).concat(updates(delivered, true));
-    return HttpResponses.serverSentEvents(events.map(envelope::apply));
+    return HttpResponses.serverSentEvents(handler.traceStream(events).map(envelope::apply));
   }
 
   // The state of one streamed answer: the artifact id that every chunk and the stored artifact use
@@ -343,7 +342,7 @@ final class A2aStreaming {
           "Task [" + taskId + "] has ended and cannot be subscribed to");
     }
     var events = Source.single(A2aStreamResponse.of(current)).concat(updates(state, false));
-    return HttpResponses.serverSentEvents(events.map(envelope::apply));
+    return HttpResponses.serverSentEvents(handler.traceStream(events).map(envelope::apply));
   }
 
   private record Snapshot(A2aTask task, long version) {}

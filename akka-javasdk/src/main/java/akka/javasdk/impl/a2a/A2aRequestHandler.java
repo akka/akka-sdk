@@ -21,6 +21,7 @@ import akka.javasdk.a2a.A2aRole;
 import akka.javasdk.a2a.A2aSecurityRequirement;
 import akka.javasdk.a2a.A2aSecurityScheme;
 import akka.javasdk.a2a.A2aSendMessageResponse;
+import akka.javasdk.a2a.A2aStreamResponse;
 import akka.javasdk.a2a.A2aTask;
 import akka.javasdk.a2a.A2aTaskState;
 import akka.javasdk.a2a.A2aTaskStatus;
@@ -32,11 +33,13 @@ import akka.javasdk.client.ComponentClient;
 import akka.javasdk.client.DynamicMethodRef;
 import akka.javasdk.http.RequestContext;
 import akka.stream.Materializer;
+import akka.stream.javadsl.Source;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.opentelemetry.api.trace.Span;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -92,6 +95,12 @@ public final class A2aRequestHandler {
   private final A2aStreaming streaming = new A2aStreaming(this);
   private final A2aTaskOperations operations = new A2aTaskOperations(this);
 
+  // The span of the A2A method of this request, which is handled by this instance alone
+  private Optional<Span> span = Optional.empty();
+  // True once a stream answers the request: the span then ends with the stream
+  private boolean streamed = false;
+  private Throwable failure = null;
+
   /**
    * @param requestContext the context that the endpoint was created with
    * @param requestHost the {@code Host} header of the request
@@ -125,6 +134,67 @@ public final class A2aRequestHandler {
   /** Makes the context and task id of the request available to the endpoint. */
   void bind(String contextId, String taskId) {
     requestContext.bind(contextId, taskId);
+    A2aTracing.set(span, A2aTracing.CONTEXT_ID, contextId);
+    A2aTracing.set(span, A2aTracing.TASK_ID, taskId);
+  }
+
+  // ---------------------------------------------------------------------------------------------
+  // Tracing
+
+  /**
+   * Answers the request inside a span for the A2A method, a child of the request's span. The span
+   * ends with the response, or with the stream for a streaming method.
+   */
+  private HttpResponse traced(String method, java.util.function.Supplier<HttpResponse> call) {
+    span = httpContext.tracing().startSpan("A2A " + method);
+    A2aTracing.set(span, A2aTracing.METHOD, method);
+    A2aTracing.set(span, A2aTracing.CALLER_SUBJECT, callerSubject());
+    try {
+      return call.get();
+    } catch (RuntimeException e) {
+      failure = e;
+      throw e;
+    } finally {
+      if (!streamed) A2aTracing.end(span, failure);
+    }
+  }
+
+  // The subject of the caller's token, when the request carries one
+  private String callerSubject() {
+    try {
+      return httpContext.getJwtClaims().subject().orElse(null);
+    } catch (RuntimeException e) {
+      return null;
+    }
+  }
+
+  /** Records the task of a reply on the span. */
+  <T> T traceReply(T reply) {
+    A2aTracing.reply(span, reply);
+    return reply;
+  }
+
+  /** Records a refused request on the span. */
+  private void traceFailure(RuntimeException e) {
+    failure = e;
+  }
+
+  /** Records each event on the span, and ends the span with the stream. */
+  Source<A2aStreamResponse, akka.NotUsed> traceStream(
+      Source<A2aStreamResponse, akka.NotUsed> events) {
+    streamed = true;
+    var traced = span;
+    return events
+        .map(
+            event -> {
+              A2aTracing.event(traced, event);
+              return event;
+            })
+        .watchTermination(
+            (notUsed, done) -> {
+              done.whenComplete((d, error) -> A2aTracing.end(traced, error));
+              return akka.NotUsed.getInstance();
+            });
   }
 
   A2aTaskWorkflows taskWorkflows() {
@@ -150,15 +220,21 @@ public final class A2aRequestHandler {
   }
 
   // A stream that fails before it starts is answered as an ordinary HTTP+JSON error.
-  private HttpResponse httpStream(java.util.function.Supplier<HttpResponse> call) {
-    try {
-      return call.get();
-    } catch (A2aException e) {
-      return httpError(e);
-    } catch (RuntimeException e) {
-      log.error("A2A request failed", e);
-      return httpError(new A2aException(A2aErrorCode.INTERNAL_ERROR, "Internal error"));
-    }
+  private HttpResponse httpStream(String method, java.util.function.Supplier<HttpResponse> call) {
+    return traced(
+        method,
+        () -> {
+          try {
+            return call.get();
+          } catch (A2aException e) {
+            traceFailure(e);
+            return httpError(e);
+          } catch (RuntimeException e) {
+            log.error("A2A request failed", e);
+            traceFailure(e);
+            return httpError(new A2aException(A2aErrorCode.INTERNAL_ERROR, "Internal error"));
+          }
+        });
   }
 
   // ---------------------------------------------------------------------------------------------
@@ -184,34 +260,8 @@ public final class A2aRequestHandler {
         throw new A2aException(
             A2aErrorCode.INVALID_REQUEST, "The request is not a JSON-RPC 2.0 request");
       }
-      checkVersion();
-      JsonNode params = request.params() == null ? mapper.createObjectNode() : request.params();
-      var streamed = streaming.jsonRpc(request.method(), id, params);
-      if (streamed.isPresent()) return streamed.get();
-      JsonNode result =
-          switch (request.method()) {
-            case A2aMethods.LIST_TASKS ->
-                mapper.valueToTree(
-                    operations.list(
-                        read(params, A2aListTasksRequest.class, A2aErrorCode.INVALID_PARAMS)));
-            case A2aMethods.CANCEL_TASK ->
-                mapper.valueToTree(
-                    operations.cancel(
-                        read(params, A2aCancelTaskRequest.class, A2aErrorCode.INVALID_PARAMS)));
-            case A2aMethods.SEND_MESSAGE ->
-                mapper.valueToTree(
-                    send(read(params, A2aSendMessageRequest.class, A2aErrorCode.INVALID_PARAMS)));
-            case A2aMethods.GET_TASK ->
-                mapper.valueToTree(
-                    getTask(read(params, A2aGetTaskRequest.class, A2aErrorCode.INVALID_PARAMS)));
-            case A2aMethods.CREATE_TASK_PUSH_NOTIFICATION_CONFIG,
-                A2aMethods.GET_TASK_PUSH_NOTIFICATION_CONFIG,
-                A2aMethods.LIST_TASK_PUSH_NOTIFICATION_CONFIGS,
-                A2aMethods.DELETE_TASK_PUSH_NOTIFICATION_CONFIG ->
-                pushConfigMethods().jsonRpc(request.method(), params);
-            default -> throw unsupported(request.method());
-          };
-      return response(200, ContentTypes.APPLICATION_JSON, JsonRpcResponse.success(id, result));
+      var rpcId = id;
+      return traced(request.method(), () -> jsonRpcMethod(request, rpcId));
     } catch (A2aException e) {
       return response(
           200, ContentTypes.APPLICATION_JSON, JsonRpcResponse.failure(id, jsonRpcError(e)));
@@ -223,8 +273,61 @@ public final class A2aRequestHandler {
     }
   }
 
+  private HttpResponse jsonRpcMethod(JsonRpcRequest request, JsonNode id) {
+    try {
+      checkVersion();
+      JsonNode params = request.params() == null ? mapper.createObjectNode() : request.params();
+      var streamedResponse = streaming.jsonRpc(request.method(), id, params);
+      if (streamedResponse.isPresent()) return streamedResponse.get();
+      JsonNode result =
+          switch (request.method()) {
+            case A2aMethods.LIST_TASKS ->
+                mapper.valueToTree(
+                    operations.list(
+                        read(params, A2aListTasksRequest.class, A2aErrorCode.INVALID_PARAMS)));
+            case A2aMethods.CANCEL_TASK ->
+                mapper.valueToTree(
+                    traceReply(
+                        operations.cancel(
+                            read(
+                                params, A2aCancelTaskRequest.class, A2aErrorCode.INVALID_PARAMS))));
+            case A2aMethods.SEND_MESSAGE ->
+                mapper.valueToTree(
+                    traceReply(
+                        send(
+                            read(
+                                params,
+                                A2aSendMessageRequest.class,
+                                A2aErrorCode.INVALID_PARAMS))));
+            case A2aMethods.GET_TASK ->
+                mapper.valueToTree(
+                    traceReply(
+                        getTask(
+                            read(params, A2aGetTaskRequest.class, A2aErrorCode.INVALID_PARAMS))));
+            case A2aMethods.CREATE_TASK_PUSH_NOTIFICATION_CONFIG,
+                A2aMethods.GET_TASK_PUSH_NOTIFICATION_CONFIG,
+                A2aMethods.LIST_TASK_PUSH_NOTIFICATION_CONFIGS,
+                A2aMethods.DELETE_TASK_PUSH_NOTIFICATION_CONFIG ->
+                pushConfigMethods().jsonRpc(request.method(), params);
+            default -> throw unsupported(request.method());
+          };
+      return response(200, ContentTypes.APPLICATION_JSON, JsonRpcResponse.success(id, result));
+    } catch (A2aException e) {
+      traceFailure(e);
+      return response(
+          200, ContentTypes.APPLICATION_JSON, JsonRpcResponse.failure(id, jsonRpcError(e)));
+    } catch (RuntimeException e) {
+      log.error("A2A request failed", e);
+      traceFailure(e);
+      var error = new A2aException(A2aErrorCode.INTERNAL_ERROR, "Internal error");
+      return response(
+          200, ContentTypes.APPLICATION_JSON, JsonRpcResponse.failure(id, jsonRpcError(error)));
+    }
+  }
+
   public HttpResponse sendMessage(HttpEntity.Strict body) {
     return httpJson(
+        A2aMethods.SEND_MESSAGE,
         () -> {
           checkVersion();
           JsonNode tree;
@@ -244,6 +347,7 @@ public final class A2aRequestHandler {
   public HttpResponse getTask(String taskId) {
     if (taskId.endsWith(SUBSCRIBE_SUFFIX)) return subscribeToTask(withoutSuffix(taskId));
     return httpJson(
+        A2aMethods.GET_TASK,
         () -> {
           checkVersion();
           Integer historyLength =
@@ -265,6 +369,7 @@ public final class A2aRequestHandler {
 
   public HttpResponse sendStreamingMessage(HttpEntity.Strict body) {
     return httpStream(
+        A2aMethods.SEND_STREAMING_MESSAGE,
         () -> {
           checkVersion();
           return streaming.sendStreamingMessage(
@@ -281,6 +386,7 @@ public final class A2aRequestHandler {
     if (taskIdAndAction.endsWith(SUBSCRIBE_SUFFIX))
       return subscribeToTask(withoutSuffix(taskIdAndAction));
     return httpJson(
+        "unknown",
         () -> {
           throw new A2aException(A2aErrorCode.METHOD_NOT_FOUND, "Method not found");
         });
@@ -292,6 +398,7 @@ public final class A2aRequestHandler {
 
   private HttpResponse subscribeToTask(String taskId) {
     return httpStream(
+        A2aMethods.SUBSCRIBE_TO_TASK,
         () -> {
           checkVersion();
           return streaming.subscribeToTask(taskId, r -> r);
@@ -300,6 +407,7 @@ public final class A2aRequestHandler {
 
   public HttpResponse listTasks() {
     return httpJson(
+        A2aMethods.LIST_TASKS,
         () -> {
           checkVersion();
           return operations.list(operations.listRequestFromQuery());
@@ -308,6 +416,7 @@ public final class A2aRequestHandler {
 
   public HttpResponse cancelTask(String taskId) {
     return httpJson(
+        A2aMethods.CANCEL_TASK,
         () -> {
           checkVersion();
           return operations.cancel(new A2aCancelTaskRequest(null, taskId, null));
@@ -317,6 +426,7 @@ public final class A2aRequestHandler {
   /** An HTTP+JSON route of a method that this agent does not support. */
   public HttpResponse unsupportedMethod(String method) {
     return httpJson(
+        method,
         () -> {
           checkVersion();
           throw unsupported(method);
@@ -420,6 +530,7 @@ public final class A2aRequestHandler {
     var taskId = UUID.randomUUID().toString();
     bind(contextId, taskId);
     var skill = selectSkill(message, request.metadata());
+    A2aTracing.set(span, A2aTracing.SKILL_ID, skill.skill().id());
     var input = agentInput(skill, message);
     var userMessage = message.withContextId(contextId).withTaskId(taskId).withRole(A2aRole.USER);
     return new NewTask(skill, userMessage, input);
@@ -545,6 +656,7 @@ public final class A2aRequestHandler {
   public HttpResponse pushConfigRoute(
       String method, String taskId, String configId, HttpEntity.Strict body) {
     return httpJson(
+        method,
         () -> {
           checkVersion();
           return pushConfigMethods().http(method, taskId, configId, body, httpContext);
@@ -837,15 +949,21 @@ public final class A2aRequestHandler {
     Object run();
   }
 
-  private HttpResponse httpJson(Call call) {
-    try {
-      return response(200, ContentTypes.APPLICATION_JSON, call.run());
-    } catch (A2aException e) {
-      return httpError(e);
-    } catch (RuntimeException e) {
-      log.error("A2A request failed", e);
-      return httpError(new A2aException(A2aErrorCode.INTERNAL_ERROR, "Internal error"));
-    }
+  private HttpResponse httpJson(String method, Call call) {
+    return traced(
+        method,
+        () -> {
+          try {
+            return response(200, ContentTypes.APPLICATION_JSON, traceReply(call.run()));
+          } catch (A2aException e) {
+            traceFailure(e);
+            return httpError(e);
+          } catch (RuntimeException e) {
+            log.error("A2A request failed", e);
+            traceFailure(e);
+            return httpError(new A2aException(A2aErrorCode.INTERNAL_ERROR, "Internal error"));
+          }
+        });
   }
 
   // The google.rpc.Status form of the HTTP+JSON binding.

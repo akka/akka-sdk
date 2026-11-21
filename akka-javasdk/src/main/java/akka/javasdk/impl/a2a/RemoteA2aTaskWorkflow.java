@@ -88,7 +88,8 @@ public final class RemoteA2aTaskWorkflow extends Workflow<RemoteA2aTaskWorkflow.
     var state = currentState();
     if (state == null) return effects().error("No remote task is handed off");
     if (state.recorded()) return effects().reply(Done.getInstance());
-    if (update instanceof A2aTaskStatusUpdate status && settles(status)) {
+    if (update instanceof A2aTaskStatusUpdate status
+        && (settles(status) || status.followTimedOut())) {
       return effects()
           .updateState(state.withLastStatus(status))
           .transitionTo(RemoteA2aTaskWorkflow::record)
@@ -105,13 +106,30 @@ public final class RemoteA2aTaskWorkflow extends Workflow<RemoteA2aTaskWorkflow.
             || state == A2aTaskState.AUTH_REQUIRED);
   }
 
+  // The last status, masked with the agent's tool-result sanitizers, when the task itself cannot be
+  // read
+  private String statusOutcome(State state) {
+    var text = A2aRemoteTasks.statusOutcome(state.lastStatus());
+    try {
+      return remoteTasks
+          .sanitizeForAgent(state.agentComponentId(), text)
+          .toCompletableFuture()
+          .get(READ_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new IllegalStateException(e);
+    } catch (Exception e) {
+      throw new IllegalStateException("Masking the outcome of remote A2A task failed", e);
+    }
+  }
+
   private StepEffect record() {
     var state = currentState();
     String outcome;
     try {
       outcome =
           remoteTasks
-              .handOffOutcome(state.remote(), state.taskId())
+              .handOffOutcome(state.remote(), state.taskId(), state.agentComponentId())
               .toCompletableFuture()
               .get(READ_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
@@ -119,7 +137,7 @@ public final class RemoteA2aTaskWorkflow extends Workflow<RemoteA2aTaskWorkflow.
       throw new IllegalStateException(e);
     } catch (Exception e) {
       log.debug("Reading remote A2A task [{}] failed", state.taskId(), e);
-      outcome = A2aRemoteTasks.statusOutcome(state.lastStatus());
+      outcome = statusOutcome(state);
     }
     var text =
         "The remote task ["

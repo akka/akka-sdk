@@ -29,6 +29,7 @@ class A2aRemoteAgentSettingsSpec extends AnyWordSpec with Matchers {
       settings.cardUrl shouldBe "https://claims.example.com/.well-known/agent-card.json"
       settings.timeout shouldBe 60.seconds
       settings.pollInterval shouldBe 30.seconds
+      settings.followTimeout shouldBe 24.hours
       settings.cardRefresh shouldBe 10.minutes
       settings.auth shouldBe A2aAuth.NoAuth
       settings.caBundle shouldBe None

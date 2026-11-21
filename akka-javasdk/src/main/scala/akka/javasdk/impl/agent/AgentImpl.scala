@@ -468,7 +468,7 @@ private[impl] object AgentImpl {
             else Some(remoteMcp.timeout),
           requestGuardrails = guardrails.legacyMcpToolRequestGuardrails,
           responseGuardrails = guardrails.legacyMcpToolResponseGuardrails,
-          toolCallGuardrails = toolName => guardrails.toolCallGuardrails(toolName))
+          toolCallGuardrails = toolName => guardrails.mcpToolCallGuardrails(remoteMcp.serverUri, toolName))
       case other => throw new IllegalArgumentException(s"Unsupported remote mcp tools impl $other")
     }
 
@@ -841,6 +841,7 @@ private[impl] final class AgentImpl(
             val a2aTools = A2aAgentTools.toolsFor(req.a2aAgents, a2aClient(telemetryContext))
             A2aAgentTools.validateNames(a2aTools, functionToolDescriptors.map(_.name))
             val a2aToolsByName = a2aTools.map(tool => tool.name -> tool).toMap
+            lazy val writesSessionMemory = writesBuiltInSessionMemory(req.memoryProvider)
 
             val toolDescriptors =
               guardrails.withToolGuardrails(functionToolDescriptors) ++
@@ -876,9 +877,13 @@ private[impl] final class AgentImpl(
                 case Some(tool) =>
                   // The session id is the A2A context id, so the remote agent keeps one conversation per session
                   A2aAgentTools
-                    .call(tool, request.arguments, sessionId, componentId, a2aClient(Option(request.telemetryContext)))(
-                      sdkExecutionContext,
-                      system.classicSystem.scheduler)
+                    .call(
+                      tool,
+                      request.arguments,
+                      sessionId,
+                      componentId,
+                      writesSessionMemory,
+                      a2aClient(Option(request.telemetryContext)))(sdkExecutionContext, system.classicSystem.scheduler)
                     .map(text => Seq(new SpiAgent.TextMessageContent(text)): Seq[SpiAgent.MessageContent])(
                       sdkExecutionContext)
                 case None =>
@@ -964,6 +969,19 @@ private[impl] final class AgentImpl(
 
   private def toSpiMcpEndpoints(remoteMcpTools: Seq[RemoteMcpTools]): Seq[SpiAgent.McpToolEndpointDescriptor] =
     AgentImpl.toSpiMcpEndpoints(remoteMcpTools, guardrails)
+
+  // Whether the memory provider writes the built-in session memory, where the outcome of a handed off remote task is
+  // written. A custom provider stores elsewhere, and an intercepted one would be bypassed by a direct write.
+  private def writesBuiltInSessionMemory(memoryProvider: MemoryProvider): Boolean =
+    memoryProvider match {
+      case _: MemoryProvider.Disabled                    => false
+      case p: MemoryProvider.LimitedWindowMemoryProvider => p.write()
+      case _: MemoryProvider.CustomMemoryProvider        => false
+      case _: MemoryProvider.InterceptedMemoryProvider   => false
+      case p: MemoryProvider.FromConfig =>
+        val path = if (p.configPath() == "") "akka.javasdk.agent.memory" else p.configPath()
+        config.getConfig(path).getBoolean("enabled")
+    }
 
   private def deriveSessionMemoryClient(
       memoryProvider: MemoryProvider,

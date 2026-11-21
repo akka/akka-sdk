@@ -118,6 +118,7 @@ import akka.javasdk.impl.a2a.A2aClientImpl
 import akka.javasdk.impl.a2a.A2aRemoteAgents
 import akka.javasdk.impl.a2a.A2aServiceRoute
 import akka.javasdk.impl.a2a.A2aEndpointSettings
+import akka.javasdk.impl.a2a.A2aGovernance
 import akka.javasdk.impl.a2a.A2aPushReceiverEndpoint
 import akka.javasdk.impl.a2a.A2aPushUrlPolicy
 import akka.javasdk.impl.a2a.A2aRemoteTaskSubscriptionEntity
@@ -795,7 +796,7 @@ private final class Sdk(
   // ...) alongside/instead of ClassifierContext.
   private def wireClassifier(clz: Class[Classifier], context: ClassifierContext): Classifier =
     wiredInstance[Classifier]("Classifier", clz) {
-      sideEffectingComponentInjects(None, callerSpiffe = None).orElse {
+      sideEffectingComponentInjects(None, callerSpiffe = None, callerComponentId = None).orElse {
         case c if c == classOf[ClassifierContext] =>
           context
       }
@@ -803,7 +804,7 @@ private final class Sdk(
 
   private def wireSanitizer(clz: Class[TextSanitizer], context: SanitizerContext): TextSanitizer =
     wiredInstance[TextSanitizer]("Sanitizer", clz) {
-      sideEffectingComponentInjects(None, callerSpiffe = None).orElse {
+      sideEffectingComponentInjects(None, callerSpiffe = None, callerComponentId = None).orElse {
         case c if c == classOf[SanitizerContext] =>
           context
       }
@@ -904,7 +905,10 @@ private final class Sdk(
       { context =>
         val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
         val workflow = wiredInstance("Workflow", clz) {
-          sideEffectingComponentInjects(context.asInstanceOf[WorkflowContextImpl].telemetryContext, callerSpiffe)
+          sideEffectingComponentInjects(
+            context.asInstanceOf[WorkflowContextImpl].telemetryContext,
+            callerSpiffe,
+            Some(componentId))
             .orElse {
               // remember to update component type API doc and docs if changing the set of injectables
               case p if p == classOf[WorkflowContext]  => context
@@ -980,13 +984,24 @@ private final class Sdk(
       .find(_.nonEmpty)
       .filter(_ => followsRemoteA2aTasks)
 
+  private lazy val a2aGovernance = new A2aGovernance(
+    (componentId, role) => guardrailProvider.agentGuardrails(componentId, role),
+    (componentId, role) =>
+      sanitizerProvider.configuredSanitizers
+        .filter(s => s.applyAt.contains(ConfiguredSanitizer.ApplyAt.ToolResult) && s.appliesTo(componentId, role))
+        .map(_.name),
+    sanitizerClient,
+    componentId => agentRolesByComponentId.getOrElse(componentId, None),
+    sdkTracerFactory)(sdkExecutionContext)
+
   private lazy val a2aRemoteTasks = new A2aRemoteTasks(
     runtimeComponentClients.workflowClient,
     serializer,
     () => componentClient(None),
     a2aRemoteAgents,
     a2aPushPublicUrl,
-    followsRemoteA2aTasks)(sdkExecutionContext)
+    followsRemoteA2aTasks,
+    a2aGovernance.sanitizersOf)(sdkExecutionContext)
 
   // The push notification receiver is served only when the service follows remote tasks and has a public URL, without
   // which no remote agent can reach it
@@ -1085,7 +1100,7 @@ private final class Sdk(
       case p if p == classOf[ComponentClient] => scanTimeComponentClient
       case r if r == classOf[AgentRegistry]   => scanTimeAgentRegistry
     }
-    overrides.orElse(sideEffectingComponentInjects(None, callerSpiffe = None))
+    overrides.orElse(sideEffectingComponentInjects(None, callerSpiffe = None, callerComponentId = None))
   }
 
   private def isProvided(clz: Class[_]): Boolean = {
@@ -1258,7 +1273,8 @@ private final class Sdk(
               wiredInstance("Timed Action", timedActionClass)(
                 sideEffectingComponentInjects(
                   context.asInstanceOf[TimedActionImpl.CommandContextImpl].telemetryContext,
-                  callerSpiffe)),
+                  callerSpiffe,
+                  Some(componentId))),
             timedActionClass,
             system.classicSystem,
             runtimeComponentClients.timerClient,
@@ -1291,7 +1307,10 @@ private final class Sdk(
             componentId,
             context =>
               wiredInstance("Consumer", consumerClass)(
-                sideEffectingComponentInjects(context.asInstanceOf[MessageContextImpl].telemetryContext, callerSpiffe)),
+                sideEffectingComponentInjects(
+                  context.asInstanceOf[MessageContextImpl].telemetryContext,
+                  callerSpiffe,
+                  Some(componentId))),
             consumerClass,
             consumerSrc,
             consumerDest,
@@ -1386,7 +1405,10 @@ private final class Sdk(
             factoryContext.instanceId,
             context =>
               wiredInstance("AutonomousAgent", autonomousAgentClass) {
-                sideEffectingComponentInjects(context.asInstanceOf[AgentContextImpl].telemetryContext, callerSpiffe)
+                sideEffectingComponentInjects(
+                  context.asInstanceOf[AgentContextImpl].telemetryContext,
+                  callerSpiffe,
+                  Some(componentId))
               },
             sdkExecutionContext,
             sdkTracerFactory,
@@ -1441,7 +1463,10 @@ private final class Sdk(
             factoryContext.sessionId,
             context =>
               wiredInstance("Agent", agentClass) {
-                sideEffectingComponentInjects(context.asInstanceOf[AgentContextImpl].telemetryContext, callerSpiffe)
+                sideEffectingComponentInjects(
+                  context.asInstanceOf[AgentContextImpl].telemetryContext,
+                  callerSpiffe,
+                  Some(componentId))
                   .orElse {
                     // remember to update component type API doc and docs if changing the set of injectables
                     case p if p == classOf[AgentContext] => context
@@ -1460,7 +1485,14 @@ private final class Sdk(
             applicationConfig,
             eventLogClient,
             agentRegistry,
-            telemetryContext => A2aClientImpl(a2aRemoteAgents, telemetryContext, callerSpiffe, Some(a2aRemoteTasks)),
+            // The agent loop runs the guardrails and sanitizers of tool calls, so this client has none
+            telemetryContext =>
+              A2aClientImpl(
+                a2aRemoteAgents,
+                telemetryContext,
+                callerSpiffe,
+                Some(a2aRemoteTasks),
+                tracing = Some(sdkTracerFactory)),
             system)
         }
 
@@ -1485,7 +1517,8 @@ private final class Sdk(
           val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
           new EvaluatorImpl[Evaluator](
             telemetryContext =>
-              wiredInstance("Evaluator", evaluatorClass)(sideEffectingComponentInjects(telemetryContext, callerSpiffe)),
+              wiredInstance("Evaluator", evaluatorClass)(
+                sideEffectingComponentInjects(telemetryContext, callerSpiffe, Some(componentId))),
             evaluatorClass,
             configured.configFor,
             sdkTracerFactory)
@@ -1522,7 +1555,7 @@ private final class Sdk(
                 stateType,
                 telemetryContext =>
                   wiredInstance("Durable Evaluator", evaluatorClass)(
-                    sideEffectingComponentInjects(telemetryContext, callerSpiffe)),
+                    sideEffectingComponentInjects(telemetryContext, callerSpiffe, Some(componentId))),
                 factoryContext.recorder,
                 serializer,
                 sdkExecutionContext,
@@ -1562,13 +1595,16 @@ private final class Sdk(
 
   // callerSpiffe deliberately has no default: every component factory must decide whether outbound
   // calls carry the component's SPIFFE identity (None only where there is no component identity)
+  // callerComponentId is the component id, or the class name of an endpoint, whose guardrails and sanitizers apply to
+  // its A2aClient calls; None only where there is no component
   private def sideEffectingComponentInjects(
       telemetryContext: Option[OtelContext],
-      callerSpiffe: Option[String]): PartialFunction[Class[_], Any] = {
+      callerSpiffe: Option[String],
+      callerComponentId: Option[String]): PartialFunction[Class[_], Any] = {
     // remember to update component type API doc and docs if changing the set of injectables
     case p if p == classOf[ComponentClient]    => componentClient(telemetryContext)
     case h if h == classOf[HttpClientProvider] => httpClientProvider(telemetryContext, callerSpiffe)
-    case a if a == classOf[A2aClient]          => a2aClient(telemetryContext, callerSpiffe)
+    case a if a == classOf[A2aClient]          => a2aClient(telemetryContext, callerSpiffe, callerComponentId)
     case g if g == classOf[GrpcClientProvider] => grpcClientProvider(telemetryContext, callerSpiffe)
     case t if t == classOf[TimerScheduler]     => timerScheduler(telemetryContext)
     case m if m == classOf[Materializer]       => sdkMaterializer
@@ -1595,12 +1631,12 @@ private final class Sdk(
         //        pass auth headers with the runner startup context from the runtime
         Some(
           wiredInstance[ServiceSetup]("Service Setup", serviceClassClass.asInstanceOf[Class[ServiceSetup]])(
-            sideEffectingComponentInjects(None, callerSpiffe = None)))
+            sideEffectingComponentInjects(None, callerSpiffe = None, callerComponentId = None)))
 
       case Some(serviceClassClass) =>
         // just wiring the class
         wiredInstance[Any]("Service Setup", serviceClassClass.asInstanceOf[Class[Any]])(
-          sideEffectingComponentInjects(None, callerSpiffe = None))
+          sideEffectingComponentInjects(None, callerSpiffe = None, callerComponentId = None))
         None
       case _ => None
     }
@@ -1791,9 +1827,10 @@ private final class Sdk(
         SystemMaterializer(system).materializer)
       val callerSpiffe = callerSpiffeHeaderValue(context.spiffeContext)
       val instance = wiredInstance("HTTP Endpoint", httpEndpointClass) {
-        sideEffectingComponentInjects(Option(context.telemetryContext), callerSpiffe).orElse {
-          case p if p == classOf[RequestContext] => requestContext
-        }
+        sideEffectingComponentInjects(Option(context.telemetryContext), callerSpiffe, Some(httpEndpointClass.getName))
+          .orElse {
+            case p if p == classOf[RequestContext] => requestContext
+          }
       }
       instance match {
         case withBaseClass: AbstractHttpEndpoint => withBaseClass._internalSetRequestContext(requestContext)
@@ -1811,7 +1848,7 @@ private final class Sdk(
     val callerSpiffe = callerSpiffeHeaderValue(context.spiffeContext)
     val a2aRequestContext = new A2aRequestContextImpl(requestContext)
     val endpoint = wiredInstance("A2A Endpoint", a2aEndpointClass.asInstanceOf[Class[AbstractA2aEndpoint]]) {
-      sideEffectingComponentInjects(telemetryContext, callerSpiffe).orElse {
+      sideEffectingComponentInjects(telemetryContext, callerSpiffe, Some(a2aEndpointClass.getName)).orElse {
         case p if p == classOf[A2aRequestContext] => a2aRequestContext
       }
     }
@@ -1853,9 +1890,10 @@ private final class Sdk(
       }
 
       val instance = wiredInstance("gRPC Endpoint", grpcEndpointClass) {
-        sideEffectingComponentInjects(Option(context.telemetryContext), callerSpiffe).orElse {
-          case p if p == classOf[GrpcRequestContext] => grpcRequestContext
-        }
+        sideEffectingComponentInjects(Option(context.telemetryContext), callerSpiffe, Some(grpcEndpointClass.getName))
+          .orElse {
+            case p if p == classOf[GrpcRequestContext] => grpcRequestContext
+          }
       }
       instance match {
         case withBaseClass: AbstractGrpcEndpoint => withBaseClass._internalSetRequestContext(grpcRequestContext)
@@ -1898,7 +1936,7 @@ private final class Sdk(
       }
 
       val instance = wiredInstance("MCP Endpoint", mcpEndpointClass) {
-        sideEffectingComponentInjects(telemetryContext, callerSpiffe).orElse {
+        sideEffectingComponentInjects(telemetryContext, callerSpiffe, Some(mcpEndpointClass.getName)).orElse {
           case p if p == classOf[McpRequestContext] => mcpRequestContext
         }
       }
@@ -1997,8 +2035,17 @@ private final class Sdk(
     telemetryContext.fold(withSpiffe: HttpClientProvider)(withSpiffe.withTelemetryContext)
   }
 
-  private def a2aClient(telemetryContext: Option[OtelContext], callerSpiffe: Option[String]): A2aClient =
-    A2aClientImpl(a2aRemoteAgents, telemetryContext, callerSpiffe, Some(a2aRemoteTasks))
+  private def a2aClient(
+      telemetryContext: Option[OtelContext],
+      callerSpiffe: Option[String],
+      callerComponentId: Option[String]): A2aClient =
+    A2aClientImpl(
+      a2aRemoteAgents,
+      telemetryContext,
+      callerSpiffe,
+      Some(a2aRemoteTasks),
+      tracing = Some(sdkTracerFactory),
+      governance = Some(a2aGovernance.forCaller(callerComponentId, telemetryContext)))
 
   private def objectStorageProvider(telemetryContext: Option[OtelContext]): ObjectStorageProvider =
     telemetryContext match {

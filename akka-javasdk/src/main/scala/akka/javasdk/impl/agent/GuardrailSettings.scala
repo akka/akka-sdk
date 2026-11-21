@@ -9,6 +9,7 @@ import java.util.Locale
 import scala.jdk.CollectionConverters._
 
 import akka.annotation.InternalApi
+import akka.javasdk.agent.ToolCallGuardrail.ToolOrigin
 import akka.javasdk.impl.ControlId
 import akka.javasdk.impl.agent.ConfiguredGuardrail.UseFor
 import akka.runtime.sdk.spi.SpiGuardrail
@@ -83,6 +84,38 @@ import com.typesafe.config.ConfigObject
     val values: Seq[UseFor] = Seq(ModelRequest, ModelResponse, McpToolRequest, McpToolResponse, Wildcard)
   }
 
+  /** The values of `tool-origins`, by the origin they select. */
+  val ToolOriginNames: Seq[String] = Seq("function-tool", "remote-mcp", "remote-a2a")
+
+  def toolOriginName(origin: ToolOrigin): String = origin match {
+    case _: ToolOrigin.FunctionTool => "function-tool"
+    case _: ToolOrigin.RemoteMcp    => "remote-mcp"
+    case _: ToolOrigin.RemoteA2a    => "remote-a2a"
+    case _: ToolOrigin.Unknown      => "unknown"
+  }
+
+  private def readToolOrigins(name: String, config: Config): Set[String] =
+    config.getOptionalStringSet("tool-origins").map(_.toLowerCase(Locale.ROOT)).map { value =>
+      if (ToolOriginNames.contains(value)) value
+      else
+        throw new IllegalArgumentException(
+          s"Unknown tool-origins value [$value] in guardrail configuration [$name]. " +
+          s"Use one or more of [${ToolOriginNames.mkString(", ")}].")
+    }
+
+  private def readRemoteAgents(name: String, config: Config, toolOrigins: Set[String]): Set[String] = {
+    val remoteAgents = config.getOptionalStringSet("remote-agents").map(_.trim)
+    if (remoteAgents.exists(_.isEmpty))
+      throw new IllegalArgumentException(s"Guardrail [$name] has an empty value in remote-agents.")
+    if (remoteAgents.nonEmpty && toolOrigins.nonEmpty && !toolOrigins.contains("remote-a2a"))
+      throw new IllegalArgumentException(
+        s"Guardrail [$name] sets remote-agents, which select calls to remote A2A agents, but its tool-origins " +
+        s"[${toolOrigins.toSeq.sorted.mkString(", ")}] leave out remote-a2a.")
+    remoteAgents
+  }
+
+  def normalizedUrl(url: String): String = url.trim.stripSuffix("/")
+
   def apply(name: String, config: Config): ConfiguredGuardrail = {
     val useFor: Set[UseFor] = config
       .getOptionalStringSet("use-for")
@@ -96,6 +129,8 @@ import com.typesafe.config.ConfigObject
         }
       }
 
+    val toolOrigins = readToolOrigins(name, config)
+
     new ConfiguredGuardrail(
       name = name,
       implementationClass = config.getString("class"),
@@ -107,6 +142,8 @@ import com.typesafe.config.ConfigObject
       useFor = useFor,
       // Optional tool-name filter for a ToolCallGuardrail; empty means "all tools on the agent".
       tools = config.getOptionalStringSet("tools"),
+      toolOrigins = toolOrigins,
+      remoteAgents = readRemoteAgents(name, config, toolOrigins),
       config = config,
       controlId = ControlId.read(config, s"Guardrail [$name]"))
   }
@@ -126,7 +163,26 @@ import com.typesafe.config.ConfigObject
     useFor: Set[UseFor],
     tools: Set[String],
     config: Config,
-    controlId: Option[String]) {
+    controlId: Option[String],
+    toolOrigins: Set[String] = Set.empty,
+    remoteAgents: Set[String] = Set.empty) {
   require(!name.isBlank, s"name must be defined for guardrail")
   require(!implementationClass.isBlank, s"implementation-class must be defined for guardrail [$name]")
+
+  /**
+   * Whether `tools`, `tool-origins` and `remote-agents` select a call of the tool from the origin. An empty setting
+   * selects every call. `remote-agents` selects only calls to remote A2A agents, by name or by card URL.
+   */
+  def selectsToolCall(toolName: String, origin: ToolOrigin): Boolean =
+    (tools.isEmpty || tools.contains(toolName)) &&
+    (toolOrigins.isEmpty || toolOrigins.contains(ConfiguredGuardrail.toolOriginName(origin))) &&
+    (remoteAgents.isEmpty || (origin match {
+      case a2a: ToolOrigin.RemoteA2a =>
+        val cardUrl = ConfiguredGuardrail.normalizedUrl(a2a.cardUrl)
+        remoteAgents.exists(agent => agent == a2a.agentName || ConfiguredGuardrail.normalizedUrl(agent) == cardUrl)
+      case _ => false
+    }))
+
+  /** Whether the entry sets `tool-origins` or `remote-agents`, which only a ToolCallGuardrail takes. */
+  def scopesToolOrigins: Boolean = config.hasPath("tool-origins") || config.hasPath("remote-agents")
 }

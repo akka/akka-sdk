@@ -43,6 +43,8 @@ import akka.runtime.sdk.spi.SpiConfiguredGuardrail
 import akka.runtime.sdk.spi.SpiGuardrail
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigRenderOptions
+import io.opentelemetry.api.common.AttributeKey
+import io.opentelemetry.api.trace.StatusCode
 import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.LoggerFactory
@@ -165,17 +167,35 @@ import org.slf4j.LoggerFactory
         "See the agent guardrails documentation for the other options."
       }
 
-    // The ToolCallGuardrails applicable to the given tool. An entry with an empty `tools` set
-    // applies to every tool on the agent; otherwise only to the named tools.
+    /**
+     * The ToolCallGuardrail entries whose `tools`, `tool-origins` and `remote-agents` select a call of the tool from
+     * the origin.
+     */
+    def toolCallGuardrailEntries(toolName: String, origin: ToolCallGuardrail.ToolOrigin): Seq[GuardrailEntry] =
+      entries.filter {
+        case GuardrailEntry(configured, _: ToolCallGuardrail) => configured.selectsToolCall(toolName, origin)
+        case _                                                => false
+      }
+
+    // The ToolCallGuardrails applicable to the given tool. Without an origin, the tool is a function tool.
     // The origin, when given, replaces the one the runtime reports, which is a function tool for every tool that the
     // SDK describes to the runtime.
     private[agent] def toolCallGuardrails(
         toolName: String,
         origin: Option[ToolCallGuardrail.ToolOrigin] = None): Seq[SpiGuardrail.ToolCall] =
-      entries.collect {
-        case GuardrailEntry(configured, g: ToolCallGuardrail)
-            if configured.tools.isEmpty || configured.tools.contains(toolName) =>
-          new ToolCallGuardrailAdapter(toSettings(configured), g, tracerFactory, origin)
+      adapters(toolName, origin.getOrElse(new ToolCallGuardrail.ToolOrigin.FunctionTool()), origin)
+
+    // The ToolCallGuardrails applicable to a tool of the MCP server at the endpoint. The guardrails see the origin
+    // that the runtime reports.
+    private[agent] def mcpToolCallGuardrails(endpoint: String, toolName: String): Seq[SpiGuardrail.ToolCall] =
+      adapters(toolName, new ToolCallGuardrail.ToolOrigin.RemoteMcp(endpoint), None)
+
+    private def adapters(
+        toolName: String,
+        scope: ToolCallGuardrail.ToolOrigin,
+        origin: Option[ToolCallGuardrail.ToolOrigin]): Seq[SpiGuardrail.ToolCall] =
+      toolCallGuardrailEntries(toolName, scope).collect { case GuardrailEntry(configured, g: ToolCallGuardrail) =>
+        new ToolCallGuardrailAdapter(toSettings(configured), g, tracerFactory, origin)
       }
 
     /** The given tool descriptors with their tool-call guardrails attached. */
@@ -235,6 +255,84 @@ import org.slf4j.LoggerFactory
             Option(ctx.telemetryContext),
             tracerFactory)))
   }
+
+  private val directLog = LoggerFactory.getLogger(classOf[ToolCallGuardrail])
+
+  /**
+   * Evaluates ToolCallGuardrail entries for a call that no agent loop makes, such as a call to a remote A2A agent from
+   * a workflow step, with the same outcomes as the runtime gives a tool call: a `Deny`, or a `Fail` with `fail-closed`,
+   * fails the result with a [[Guardrail.GuardrailException]] unless the entry is `report-only`. The entries run one
+   * after the other, and the first that blocks ends the evaluation. Each evaluation is traced as a span with the
+   * guardrail attributes that the runtime uses.
+   */
+  def evaluateToolCall(entries: Seq[GuardrailEntry], ctx: ToolCallGuardrailCallContextImpl)(implicit
+      ec: ExecutionContext): Future[Unit] =
+    entries.foldLeft(Future.unit) { (previous, entry) =>
+      previous.flatMap(_ => evaluateOne(entry, ctx))
+    }
+
+  private def evaluateOne(entry: GuardrailEntry, ctx: ToolCallGuardrailCallContextImpl)(implicit
+      ec: ExecutionContext): Future[Unit] = {
+    val configured = entry.configuredGuardrail
+    val guardrail = entry.guardrail.asInstanceOf[ToolCallGuardrail]
+    val span = ctx.tracing().startSpan("guardrail " + configured.name).toScala
+    span.foreach { s =>
+      s.setAttribute(GuardrailNameAttribute, configured.name)
+      s.setAttribute(GuardrailCategoryAttribute, configured.category)
+    }
+    // Guardrails may block, so they are called on the SDK's dispatcher, not on the caller's thread
+    Future(guardrail.decideAsync(ctx))
+      .flatMap(stage =>
+        if (stage == null) Future.failed(new NullPointerException("Guardrail returned a null CompletionStage"))
+        else ErrorHandling.asScalaUnwrapped(stage))
+      .transform { result =>
+        val decision: Either[Throwable, Decision] = result match {
+          case scala.util.Success(null)     => Left(new NullPointerException("Guardrail returned a null decision"))
+          case scala.util.Success(decision) => Right(decision)
+          case scala.util.Failure(e)        => Left(e)
+        }
+        val outcome = decision match {
+          case Right(_: Allow) =>
+            span.foreach(_.setAttribute(GuardrailResultAttribute, "allow"))
+            Right(())
+          case Right(deny: Deny) =>
+            span.foreach(_.setAttribute(GuardrailResultAttribute, "deny"))
+            val message = s"Guardrail [${configured.name}] denied the call: ${reasonOf(deny.reason)}"
+            if (configured.reportOnly) {
+              directLog.warn("{} (report-only, the call continues)", message)
+              Right(())
+            } else {
+              span.foreach(_.setStatus(StatusCode.ERROR, message))
+              Left(new Guardrail.GuardrailException(message))
+            }
+          case other =>
+            span.foreach(_.setAttribute(GuardrailResultAttribute, "fail"))
+            val (reason, cause) = other match {
+              case Right(fail: Fail) => (reasonOf(fail.reason), Option(fail.cause).orNull)
+              case Left(e)           => (Option(e.getMessage).getOrElse(e.getClass.getName), e)
+              case Right(unknown)    => (s"unknown decision [${unknown.getClass.getName}]", null)
+            }
+            val message = s"Guardrail [${configured.name}] failed to evaluate the call: $reason"
+            if (configured.reportOnly || configured.failMode == SpiGuardrail.FailMode.FailOpen) {
+              directLog.warn("{} (the call continues)", message)
+              Right(())
+            } else {
+              span.foreach(_.setStatus(StatusCode.ERROR, message))
+              Left(new Guardrail.GuardrailException(message, cause))
+            }
+        }
+        span.foreach(_.end())
+        outcome.fold(scala.util.Failure(_), scala.util.Success(_))
+      }
+  }
+
+  private def reasonOf(reason: String): String =
+    if (reason == null || reason.isBlank) "no reason given" else reason
+
+  // The span attributes of a guardrail evaluation, named as the runtime names them
+  private val GuardrailNameAttribute = AttributeKey.stringKey("akka.agent.guardrail.name")
+  private val GuardrailCategoryAttribute = AttributeKey.stringKey("akka.agent.guardrail.category")
+  private val GuardrailResultAttribute = AttributeKey.stringKey("akka.agent.guardrail.result")
 
   // An origin that this SDK does not know, or a null, maps to ToolOrigin.Unknown.
   private def toToolOrigin(origin: SpiGuardrail.ToolOrigin): ToolCallGuardrail.ToolOrigin =
@@ -429,8 +527,29 @@ import org.slf4j.LoggerFactory
 
       case _ =>
         rejectUseFor(c, instance)
+        validateToolOrigins(c, instance)
         GuardrailEntry(c, instance)
     }
+  }
+
+  // tool-origins and remote-agents scope a ToolCallGuardrail. A remote agent is named in akka.javasdk.a2a.remote-agents
+  // or given by the URL of its Agent Card, so that a misspelt name fails at startup rather than guarding nothing.
+  private def validateToolOrigins(c: ConfiguredGuardrail, instance: Guardrail): Unit = {
+    if (c.scopesToolOrigins && !instance.isInstanceOf[ToolCallGuardrail])
+      throw new IllegalArgumentException(
+        s"Guardrail [${c.name}] sets tool-origins or remote-agents, which only a " +
+        s"[${classOf[ToolCallGuardrail].getName}] takes, but [${instance.getClass.getName}] is not one.")
+    val remoteAgentsPath = "akka.javasdk.a2a.remote-agents"
+    val configured =
+      if (applicationConfig.hasPath(remoteAgentsPath)) applicationConfig.getConfig(remoteAgentsPath).root.keySet.asScala
+      else Set.empty[String]
+    val unknown = c.remoteAgents.filterNot { agent =>
+      agent.startsWith("http://") || agent.startsWith("https://") || configured.contains(agent)
+    }
+    if (unknown.nonEmpty)
+      throw new IllegalArgumentException(
+        s"Guardrail [${c.name}] names the remote agents [${unknown.toSeq.sorted.mkString(", ")}] in remote-agents, " +
+        s"which are not configured under $remoteAgentsPath. Use a configured name or the URL of an Agent Card.")
   }
 
   // Fails when the instance implements more than one guardrail interface.

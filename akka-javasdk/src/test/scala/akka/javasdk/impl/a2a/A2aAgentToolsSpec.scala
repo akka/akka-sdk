@@ -72,7 +72,7 @@ class A2aAgentToolsSpec
       contextId: String = "session-1",
       client: A2aClientImpl = client): String =
     Await.result(
-      A2aAgentTools.call(tool, arguments, contextId, "agent", client)(
+      A2aAgentTools.call(tool, arguments, contextId, "agent", writesSessionMemory = true, client)(
         system.executionContext,
         system.classicSystem.scheduler),
       10.seconds)

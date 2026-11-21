@@ -14,10 +14,12 @@ import akka.annotation.InternalApi
 import akka.http.scaladsl.model.HttpHeader
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.settings.ConnectionPoolSettings
+import akka.javasdk.a2a.A2aAgentCard
 import akka.javasdk.a2a.A2aClient
 import akka.javasdk.a2a.RemoteA2aAgentClient
 import akka.runtime.sdk.spi.SpiSpiffeContext
 import com.typesafe.config.Config
+import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.LoggerFactory
@@ -71,6 +73,16 @@ private[akka] final class A2aRemoteAgents(
 
   /** The name of the configuration under `remote-agents` with this card URL, if there is one. */
   def configuredName(cardUrl: String): Option[String] = namesByCardUrl.get(A2aRemoteAgents.normalized(cardUrl))
+
+  /**
+   * The name that guardrails and traces see for a remote agent: the configured name, also for an agent given by URL or
+   * service when a configuration has the same card URL, else the name on its card.
+   */
+  def agentName(target: A2aRemoteTarget, cardUrl: String, card: A2aAgentCard): String = target match {
+    case A2aRemoteTarget.Named(name) => name
+    case _ =>
+      configuredName(cardUrl).getOrElse(Option(card.name()).filterNot(_.isBlank).getOrElse("remote_agent"))
+  }
 
   private val known = new ConcurrentHashMap[A2aRemoteTarget, RemoteA2aAgentState]()
 
@@ -130,7 +142,7 @@ private[akka] object A2aRemoteAgents {
 private[akka] object A2aClientImpl {
   val CallerHeaderName = "X-Akka-Caller"
 
-  private def traceHeaders(telemetryContext: Option[OtelContext]): Vector[HttpHeader] = {
+  def traceHeaders(telemetryContext: Option[OtelContext]): Vector[HttpHeader] = {
     val builder = Vector.newBuilder[HttpHeader]
     telemetryContext.foreach(context =>
       W3CTraceContextPropagator
@@ -139,17 +151,37 @@ private[akka] object A2aClientImpl {
     builder.result()
   }
 
+  /**
+   * @param caller
+   *   the SPIFFE caller value of the calling component
+   * @param tracing
+   *   the tracer for a span per call, whose parent is the telemetry context
+   * @param governance
+   *   the guardrails and sanitizers of the calling component, none on the tool path where the agent loop runs them
+   */
   def apply(
       agents: A2aRemoteAgents,
       telemetryContext: Option[OtelContext],
       caller: Option[String],
-      remoteTasks: Option[A2aRemoteTasks] = None): A2aClientImpl =
+      remoteTasks: Option[A2aRemoteTasks] = None,
+      tracing: Option[() => Tracer] = None,
+      governance: Option[A2aCallGovernance] = None): A2aClientImpl =
     new A2aClientImpl(
       agents,
       traceHeaders(telemetryContext) ++ caller.map(RawHeader(CallerHeaderName, _)),
       caller.map(RawHeader(SpiSpiffeContext.CallerSpiffeHeaderName, _)).toSeq,
-      remoteTasks)
+      remoteTasks,
+      for { tracer <- tracing; parent <- telemetryContext } yield A2aOutboundTracing(parent, tracer),
+      governance)
 }
+
+/**
+ * INTERNAL API
+ *
+ * The parent of the spans of a component's calls to remote agents, and the tracer that starts them.
+ */
+@InternalApi
+private[akka] final case class A2aOutboundTracing(parent: OtelContext, tracer: () => Tracer)
 
 /**
  * INTERNAL API
@@ -164,7 +196,9 @@ private[akka] final class A2aClientImpl(
     agents: A2aRemoteAgents,
     headers: Seq[HttpHeader],
     serviceHeaders: Seq[HttpHeader] = Nil,
-    remoteTasks: Option[A2aRemoteTasks] = None)
+    remoteTasks: Option[A2aRemoteTasks] = None,
+    tracing: Option[A2aOutboundTracing] = None,
+    governance: Option[A2aCallGovernance] = None)
     extends A2aClient {
 
   override def forAgent(name: String): RemoteA2aAgentClient = forTarget(A2aRemoteTarget.named(name), None)
@@ -185,6 +219,9 @@ private[akka] final class A2aClientImpl(
       headers ++ extra,
       timeoutOverride = timeout,
       target = Some(target),
-      remoteTasks = remoteTasks)
+      remoteTasks = remoteTasks,
+      agentName = card => agents.agentName(target, state.settings.cardUrl, card),
+      tracing = tracing,
+      governance = governance)
   }
 }

@@ -7,6 +7,7 @@ package akka.javasdk.impl.a2a
 import java.net.URLEncoder
 import java.security.PublicKey
 import java.nio.charset.StandardCharsets
+import java.util.Optional
 import java.util.UUID
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.ExecutionException
@@ -57,6 +58,9 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
+import io.opentelemetry.api.trace.Span
+import io.opentelemetry.api.trace.SpanKind
+import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.LoggerFactory
 
 /**
@@ -187,7 +191,10 @@ private[akka] final class RemoteA2aAgentClientImpl(
     selectBinding: A2aAgentCard => A2aBinding = A2aBinding.select,
     timeoutOverride: Option[FiniteDuration] = None,
     target: Option[A2aRemoteTarget] = None,
-    remoteTasks: Option[A2aRemoteTasks] = None)
+    remoteTasks: Option[A2aRemoteTasks] = None,
+    agentName: A2aAgentCard => String = _ => "",
+    tracing: Option[A2aOutboundTracing] = None,
+    governance: Option[A2aCallGovernance] = None)
     extends RemoteA2aAgentClient {
 
   import RemoteA2aAgentState.mapper
@@ -310,18 +317,91 @@ private[akka] final class RemoteA2aAgentClientImpl(
       new SendRequestImpl(skill, message, contextId, Some(A2aRemoteTasks.workflowTarget(workflowCommand)))
 
     override def invokeAsync(): CompletionStage[A2aSendMessageResponse] =
-      (notify match {
-        case None => sendFuture(skill, message, contextId, returnImmediately = false)
-        case Some(workflow) =>
-          sendFuture(skill, message, contextId, returnImmediately = true).flatMap {
-            case t: A2aSendMessageResponse.Task if !taskState(t.task()).terminal() =>
-              follow(t.task(), workflow).map(_ => t: A2aSendMessageResponse)
-            case other => Future.successful(other)
-          }
-      }).asJava
+      traced(A2aMethods.SEND_MESSAGE, skill) { (client, span) =>
+        val sent = notify match {
+          case None => client.governedSend(skill, message, contextId, returnImmediately = false, span)
+          case Some(workflow) =>
+            client.governedSend(skill, message, contextId, returnImmediately = true, span).flatMap {
+              case t: A2aSendMessageResponse.Task if !taskState(t.task()).terminal() =>
+                follow(t.task(), workflow).map(_ => t: A2aSendMessageResponse)
+              case other => Future.successful(other)
+            }
+        }
+        sent.map { reply =>
+          A2aTracing.reply(span, reply)
+          reply
+        }
+      }.asJava
 
     override def invoke(): A2aSendMessageResponse = await(invokeAsync())
   }
+
+  // A span per call when the calling component is traced, with the call's own client, whose requests carry the
+  // span's trace context so that the remote agent's spans are its children
+  private def traced[T](method: String, skill: Option[String])(
+      call: (RemoteA2aAgentClientImpl, Optional[Span]) => Future[T]): Future[T] = {
+    val (client, span) = startSpan(method, skill)
+    val result =
+      try call(client, span)
+      catch { case NonFatal(e) => Future.failed(e) }
+    result.onComplete(r => A2aTracing.end(span, r.failed.toOption.orNull))
+    result
+  }
+
+  private def startSpan(method: String, skill: Option[String]): (RemoteA2aAgentClientImpl, Optional[Span]) =
+    tracing match {
+      case None => (this, Optional.empty())
+      case Some(t) =>
+        val span =
+          t.tracer().spanBuilder(s"A2A $method").setParent(t.parent).setSpanKind(SpanKind.CLIENT).startSpan()
+        val spanOpt = Optional.of(span)
+        span.setAttribute(A2aTracing.METHOD, method)
+        A2aTracing.set(spanOpt, A2aTracing.REMOTE_CARD_URL, A2aTracing.withoutCredentials(settings.cardUrl))
+        skill.foreach(A2aTracing.set(spanOpt, A2aTracing.SKILL_ID, _))
+        governance.foreach(g => A2aTracing.set(spanOpt, A2aTracing.CALLER_COMPONENT_ID, g.callerComponentId))
+        (withTraceContext(t.parent.`with`(span)), spanOpt)
+    }
+
+  private def withTraceContext(context: OtelContext): RemoteA2aAgentClientImpl = {
+    val traceHeaderNames = Set("traceparent", "tracestate")
+    new RemoteA2aAgentClientImpl(
+      state,
+      extraHeaders.filterNot(h => traceHeaderNames.contains(h.lowercaseName())) ++
+      A2aClientImpl.traceHeaders(Some(context)),
+      selectBinding,
+      timeoutOverride,
+      target,
+      remoteTasks,
+      agentName,
+      None,
+      governance)
+  }
+
+  /**
+   * Sends a message after the guardrails of the calling component allow it, and masks the reply with its tool-result
+   * sanitizers.
+   */
+  private def governedSend(
+      skill: Option[String],
+      message: A2aMessage,
+      contextId: Option[String],
+      returnImmediately: Boolean,
+      span: Optional[Span]): Future[A2aSendMessageResponse] =
+    beforeSend(skill, message, contextId, span).flatMap { _ =>
+      sendFuture(skill, message, contextId, returnImmediately).flatMap(reply =>
+        governance.fold(Future.successful(reply))(_.replies.response(reply)))
+    }
+
+  private def beforeSend(
+      skill: Option[String],
+      message: A2aMessage,
+      contextId: Option[String],
+      span: Optional[Span]): Future[Unit] =
+    cardFuture().flatMap { card =>
+      val name = agentName(card)
+      A2aTracing.set(span, A2aTracing.REMOTE_AGENT_NAME, name)
+      governance.fold(Future.unit)(_.beforeSend(name, settings.cardUrl, skill, message, contextId))
+    }
 
   private def taskState(task: A2aTask): A2aTaskState =
     Option(task.status()).flatMap(s => Option(s.state())).getOrElse(A2aTaskState.UNSPECIFIED)
@@ -334,11 +414,19 @@ private[akka] final class RemoteA2aAgentClientImpl(
     remoteTasks.getOrElse(throw new IllegalStateException("This client cannot follow remote tasks"))
 
   private def follow(task: A2aTask, workflow: A2aRemoteTaskSubscriptionEntity.Target): Future[Done] =
-    tasks.follow(this, remoteRef, workflow, task, settings.pollInterval)
+    tasks.follow(this, remoteRef, workflow, task, settings.pollInterval, settings.followTimeout)
 
   /** Hands a task that is still working to a workflow that writes its outcome into the agent's session memory. */
   def handOff(task: A2aTask, sessionId: String, agentComponentId: String, toolName: String): Future[Done] =
-    tasks.handOff(this, remoteRef, task, sessionId, agentComponentId, toolName, settings.pollInterval)
+    tasks.handOff(
+      this,
+      remoteRef,
+      task,
+      sessionId,
+      agentComponentId,
+      toolName,
+      settings.pollInterval,
+      settings.followTimeout)
 
   /**
    * Sends a message.
@@ -389,6 +477,33 @@ private[akka] final class RemoteA2aAgentClientImpl(
 
   private def streamFor(skill: Option[String], message: A2aMessage): JavaSource[A2aStreamResponse, NotUsed] =
     Source
+      .lazyFutureSource { () =>
+        val (client, span) = startSpan(A2aMethods.SEND_STREAMING_MESSAGE, skill)
+        client
+          .beforeSend(skill, message, None, span)
+          .map { _ =>
+            client
+              .streamEvents(skill, message)
+              .mapAsync(1)(event => governance.fold(Future.successful(event))(_.replies.event(event)))
+              .map { event =>
+                A2aTracing.event(span, event)
+                event
+              }
+              .watchTermination() { (_, done) =>
+                done.onComplete(r => A2aTracing.end(span, r.failed.toOption.orNull))
+                NotUsed
+              }
+          }
+          .recover { case NonFatal(e) =>
+            A2aTracing.end(span, e)
+            throw e
+          }
+      }
+      .mapMaterializedValue(_ => NotUsed: NotUsed)
+      .asJava
+
+  private def streamEvents(skill: Option[String], message: A2aMessage): Source[A2aStreamResponse, NotUsed] =
+    Source
       .futureSource(cardFuture().map { card =>
         val body = sendMessageRequest(skill, message, None, returnImmediately = false)
         selectBinding(card) match {
@@ -412,7 +527,6 @@ private[akka] final class RemoteA2aAgentClientImpl(
         }
       })
       .mapMaterializedValue(_ => NotUsed: NotUsed)
-      .asJava
 
   override def getTask(taskId: String): RemoteA2aAgentClient.Request[A2aTask] =
     new RequestImpl(() => getTaskFuture(taskId))
