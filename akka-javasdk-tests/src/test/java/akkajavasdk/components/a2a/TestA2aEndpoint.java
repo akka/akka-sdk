@@ -25,8 +25,9 @@ public class TestA2aEndpoint extends AbstractA2aEndpoint {
   // The subject of the last message, read from the request context
   public static volatile String lastSubject;
 
-  // Set by A2aInteropServiceTest: clients such as the compatibility kit do not select a skill
-  public static volatile boolean echoOnly = false;
+  // Set by A2aInteropServiceTest. The compatibility kit selects no skill, so the first skill, the
+  // kit task workflow, answers it and picks its behaviour by the prefix of the message id
+  public static volatile boolean interop = false;
 
   @Override
   protected A2aAgents agents() {
@@ -34,7 +35,13 @@ public class TestA2aEndpoint extends AbstractA2aEndpoint {
     requestContext()
         .contextId()
         .ifPresent(c -> lastSubject = requestContext().getJwtClaims().subject().orElse(null));
-    var agents = A2aAgents.create().agent(A2aEchoAgent.class);
-    return echoOnly ? agents : agents.agent(A2aAssistantAgent.class).agent(A2aStreamingAgent.class);
+    if (interop) {
+      return A2aAgents.create().taskWorkflow(A2aKitTaskWorkflow.class).agent(A2aEchoAgent.class);
+    }
+    return A2aAgents.create()
+        .agent(A2aEchoAgent.class)
+        .agent(A2aAssistantAgent.class)
+        .agent(A2aStreamingAgent.class)
+        .taskWorkflow(A2aKitTaskWorkflow.class);
   }
 }

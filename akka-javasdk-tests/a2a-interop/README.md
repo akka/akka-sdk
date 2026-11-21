@@ -80,7 +80,7 @@ With `--token` or the environment variable `A2A_ECHO_TOKEN`, the server answers 
 
 ## Check the A2A test service of the SDK
 
-`akkajavasdk.A2aInteropServiceTest` runs the test service of `akka-javasdk-tests` on port 19391 for the number of seconds in `A2A_INTEROP_SECONDS`. The service publishes only the echo skill, because the checks do not select a skill. Its A2A routes require a bearer token from the issuer `a2a-test-issuer`, which the testkit accepts without a signature. The compatibility kit has no option for credentials, so run the checks through `bearer_proxy.py`:
+`akkajavasdk.A2aInteropServiceTest` runs the test service of `akka-javasdk-tests` on port 19391 for the number of seconds in `A2A_INTEROP_SECONDS`. The compatibility kit selects no skill, so the first skill on the card answers it: `kit-tasks`, a task workflow (`A2aKitTaskWorkflow`) that implements the kit's message id prefixes and echoes other messages. The workflow also offers the skill `ask`, tagged `input-required`, for check 4 of `adk_client_check.py`. The echo agent follows as the skill `echo`; select it with `--skill echo`. Its A2A routes require a bearer token from the issuer `a2a-test-issuer`, which the testkit accepts without a signature. The compatibility kit has no option for credentials, so run the checks through `bearer_proxy.py`:
 
 ```shell
 A2A_INTEROP_SECONDS=1200 sbt "akka-javasdk-tests/testOnly akkajavasdk.A2aInteropServiceTest"

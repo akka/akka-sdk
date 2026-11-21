@@ -16,13 +16,14 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 /**
  * Keeps the test service running for the A2A interoperability checks in {@code a2a-interop}. Runs
  * only when {@code A2A_INTEROP_SECONDS} is set, and serves for that many seconds on the testkit
- * port. The service publishes only the echo skill, because the checks do not select a skill.
+ * port. The first skill is the kit task workflow, because the compatibility kit selects no skill
+ * and picks behaviours by the prefix of the message id.
  */
 @EnabledIfEnvironmentVariable(named = "A2A_INTEROP_SECONDS", matches = "[0-9]+")
 public class A2aInteropServiceTest extends TestKitSupport {
 
   static {
-    TestA2aEndpoint.echoOnly = true;
+    TestA2aEndpoint.interop = true;
   }
 
   private final TestModelProvider echoModel = new TestModelProvider();
