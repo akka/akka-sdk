@@ -8,7 +8,6 @@ import akka.annotation.InternalApi;
 import akka.javasdk.JsonSupport;
 import akka.javasdk.a2a.A2aStreamResponse;
 import akka.javasdk.a2a.A2aTask;
-import akka.javasdk.a2a.A2aTaskPushNotificationConfig;
 import akka.javasdk.client.ComponentClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.nio.charset.StandardCharsets;

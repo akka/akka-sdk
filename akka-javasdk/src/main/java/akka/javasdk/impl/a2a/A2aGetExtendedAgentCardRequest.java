@@ -2,12 +2,15 @@
  * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.javasdk.a2a;
+package akka.javasdk.impl.a2a;
 
+import akka.javasdk.a2a.A2aAgentCard;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
- * The request of {@code GetExtendedAgentCard}. The result is an {@link A2aAgentCard}.
+ * INTERNAL API
+ *
+ * <p>The request of {@code GetExtendedAgentCard}. The result is an {@link A2aAgentCard}.
  *
  * @param tenant the tenant of the agent, when it serves several
  */

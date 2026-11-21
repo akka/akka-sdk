@@ -6,11 +6,7 @@ package akka.javasdk.impl.a2a;
 
 import akka.annotation.InternalApi;
 import akka.http.javadsl.model.HttpEntity;
-import akka.javasdk.a2a.A2aDeleteTaskPushNotificationConfigRequest;
-import akka.javasdk.a2a.A2aGetTaskPushNotificationConfigRequest;
-import akka.javasdk.a2a.A2aListTaskPushNotificationConfigsRequest;
 import akka.javasdk.a2a.A2aTask;
-import akka.javasdk.a2a.A2aTaskPushNotificationConfig;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.RequestContext;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -37,10 +33,11 @@ public final class A2aPushConfigMethods {
    */
   public A2aPushConfigMethods(
       ComponentClient componentClient,
+      A2aPushUrlPolicy urlPolicy,
       boolean supported,
       Function<String, A2aTask> lookup,
       ObjectMapper mapper) {
-    this.configs = new A2aPushConfigs(componentClient);
+    this.configs = new A2aPushConfigs(componentClient, urlPolicy);
     this.supported = supported;
     this.lookup = lookup;
     this.mapper = mapper;

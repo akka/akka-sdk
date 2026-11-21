@@ -5,9 +5,6 @@
 package akka.javasdk.impl.a2a;
 
 import akka.annotation.InternalApi;
-import akka.javasdk.a2a.A2aCancelTaskRequest;
-import akka.javasdk.a2a.A2aListTasksRequest;
-import akka.javasdk.a2a.A2aListTasksResponse;
 import akka.javasdk.a2a.A2aTask;
 import akka.javasdk.a2a.A2aTaskState;
 import java.time.Instant;
@@ -40,7 +37,7 @@ final class A2aTaskOperations {
     return new A2aListTasksRequest(
         null,
         handler.queryParam("contextId").orElse(null),
-        handler.queryParam("status").map(A2aTaskOperations::parseState).orElse(null),
+        handler.queryParam("status").orElse(null),
         handler.queryParam("pageSize").map(v -> parseInt("pageSize", v)).orElse(null),
         handler.queryParam("pageToken").orElse(null),
         handler.queryParam("historyLength").map(v -> parseInt("historyLength", v)).orElse(null),
@@ -59,10 +56,11 @@ final class A2aTaskOperations {
     }
     A2aRequestHandler.checkHistoryLength(request.historyLength());
     int offset = parseOffset(request.pageToken());
+    var status = request.status() == null ? null : parseState(request.status());
     var states =
-        request.status() == null || request.status() == A2aTaskState.UNSPECIFIED
+        status == null || status == A2aTaskState.UNSPECIFIED
             ? Arrays.stream(A2aTaskState.values()).map(Enum::name).toList()
-            : List.of(request.status().name());
+            : List.of(status.name());
     var after =
         request.statusTimestampAfter() == null ? Instant.EPOCH : request.statusTimestampAfter();
     var owner = handler.owner() == null ? "" : handler.owner();
@@ -110,8 +108,7 @@ final class A2aTaskOperations {
       throw A2aRequestHandler.invalidParams("The request has no task id");
     }
     var task = handler.lookup(request.id());
-    var workflowTask =
-        new A2aTaskWorkflows(handler.componentClient).cancel(handler.skillTable(), task);
+    var workflowTask = handler.taskWorkflows().cancel(handler.skillTable(), task);
     if (workflowTask.isPresent()) return workflowTask.get();
     var result =
         handler

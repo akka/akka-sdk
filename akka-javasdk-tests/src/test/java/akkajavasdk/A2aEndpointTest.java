@@ -12,6 +12,7 @@ import akka.javasdk.JsonSupport;
 import akka.javasdk.agent.SessionMemoryEntity;
 import akka.javasdk.agent.SessionMessage;
 import akka.javasdk.http.StrictResponse;
+import akka.javasdk.impl.a2a.AgentCardSigning;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
@@ -22,7 +23,12 @@ import akkajavasdk.components.a2a.A2aEchoAgent;
 import akkajavasdk.components.a2a.TestA2aEndpoint;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.typesafe.config.ConfigFactory;
+import com.typesafe.config.ConfigValueFactory;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.spec.ECGenParameterSpec;
 import java.util.Base64;
 import java.util.Map;
 import java.util.UUID;
@@ -48,9 +54,84 @@ public class A2aEndpointTest extends TestKitSupport {
           return new AiResponse("echo: " + text);
         });
     assistantModel.fixedResponse("Noted.");
+    var signingKey =
+        "-----BEGIN PRIVATE KEY-----\n"
+            + Base64.getMimeEncoder().encodeToString(CARD_KEYS.getPrivate().getEncoded())
+            + "\n-----END PRIVATE KEY-----";
     return TestKit.Settings.DEFAULT
         .withModelProvider(A2aEchoAgent.class, echoModel)
-        .withModelProvider(A2aAssistantAgent.class, assistantModel);
+        .withModelProvider(A2aAssistantAgent.class, assistantModel)
+        .withAdditionalConfig(
+            ConfigFactory.empty()
+                .withValue(
+                    "akka.javasdk.a2a.endpoint.signing.key",
+                    ConfigValueFactory.fromAnyRef(signingKey))
+                .withValue(
+                    "akka.javasdk.a2a.endpoint.signing.key-id",
+                    ConfigValueFactory.fromAnyRef("card-key")));
+  }
+
+  // The key that signs the Agent Card of the test service
+  private static final KeyPair CARD_KEYS;
+
+  static {
+    try {
+      var generator = KeyPairGenerator.getInstance("EC");
+      generator.initialize(new ECGenParameterSpec("secp256r1"));
+      CARD_KEYS = generator.generateKeyPair();
+    } catch (Exception e) {
+      throw new IllegalStateException(e);
+    }
+  }
+
+  @Test
+  public void signsTheAgentCardWithTheConfiguredKey() throws Exception {
+    var card = json(httpClient.GET("/.well-known/agent-card.json").invoke().body());
+    var signature = card.get("signatures").get(0);
+    var header =
+        json(
+            ByteString.fromArray(
+                Base64.getUrlDecoder().decode(signature.get("protected").asText())));
+    assertThat(header.get("kid").asText()).isEqualTo("card-key");
+    assertThat(header.get("alg").asText()).isEqualTo("ES256");
+    var verification =
+        AgentCardSigning.verify(
+            card, AgentCardSigning.KeyResolver.forKey("card-key", CARD_KEYS.getPublic()));
+    assertThat(verification.verified()).isTrue();
+  }
+
+  @Test
+  public void answersAnAgentCardRequestWithTheCurrentETagWithNotModified() throws Exception {
+    var first = httpClient.GET("/.well-known/agent-card.json").invoke();
+    var etag = first.httpResponse().getHeader("ETag").get().value();
+    assertThat(etag).startsWith("W/\"").endsWith("\"");
+
+    var again =
+        httpClient.GET("/.well-known/agent-card.json").addHeader("If-None-Match", etag).invoke();
+    assertThat(again.status()).isEqualTo(StatusCodes.NOT_MODIFIED);
+    assertThat(again.httpResponse().getHeader("ETag").get().value()).isEqualTo(etag);
+
+    var changed =
+        httpClient
+            .GET("/.well-known/agent-card.json")
+            .addHeader("If-None-Match", "\"something-else\"")
+            .invoke();
+    assertThat(changed.status()).isEqualTo(StatusCodes.OK);
+  }
+
+  @Test
+  public void givesTheEndpointTheHeadersOfTheRequest() throws Exception {
+    var response =
+        httpClient
+            .POST("/a2a")
+            .addHeader("Authorization", token("tagged"))
+            .addHeader("X-Test-Tag", "tag-1")
+            .withRequestBody(
+                ContentTypes.APPLICATION_JSON,
+                bytes(rpc("SendMessage", sendParams("echo", "with a tag", null))))
+            .invoke();
+    assertThat(response.status()).isEqualTo(StatusCodes.OK);
+    assertThat(TestA2aEndpoint.lastTag).isEqualTo("tag-1");
   }
 
   @Test

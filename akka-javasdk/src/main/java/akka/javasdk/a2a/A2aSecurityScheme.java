@@ -5,56 +5,35 @@
 package akka.javasdk.a2a;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.util.Map;
 
 /**
- * A way for a client to authenticate to an agent, as declared in an {@link A2aAgentCard}. Exactly
- * one member is set. The JSON form is an object with that one member, for example {@code
+ * A way for a client to authenticate to an agent, as declared in an {@link A2aAgentCard}: {@link
+ * ApiKey}, {@link HttpAuth}, {@link OAuth2}, {@link OpenIdConnect} or {@link MutualTls}. The JSON
+ * form is an object with one member named after the kind of scheme, for example {@code
  * {"openIdConnectSecurityScheme": {"openIdConnectUrl": "https://..."}}}.
- *
- * @param apiKeySecurityScheme an API key in a header, query parameter or cookie
- * @param httpAuthSecurityScheme an HTTP authentication scheme, for example {@code Bearer}
- * @param oauth2SecurityScheme OAuth 2.0
- * @param openIdConnectSecurityScheme OpenID Connect
- * @param mtlsSecurityScheme mutual TLS
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public record A2aSecurityScheme(
-    ApiKey apiKeySecurityScheme,
-    HttpAuth httpAuthSecurityScheme,
-    OAuth2 oauth2SecurityScheme,
-    OpenIdConnect openIdConnectSecurityScheme,
-    MutualTls mtlsSecurityScheme) {
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.WRAPPER_OBJECT)
+@JsonSubTypes({
+  @JsonSubTypes.Type(value = A2aSecurityScheme.ApiKey.class, name = "apiKeySecurityScheme"),
+  @JsonSubTypes.Type(value = A2aSecurityScheme.HttpAuth.class, name = "httpAuthSecurityScheme"),
+  @JsonSubTypes.Type(value = A2aSecurityScheme.OAuth2.class, name = "oauth2SecurityScheme"),
+  @JsonSubTypes.Type(
+      value = A2aSecurityScheme.OpenIdConnect.class,
+      name = "openIdConnectSecurityScheme"),
+  @JsonSubTypes.Type(value = A2aSecurityScheme.MutualTls.class, name = "mtlsSecurityScheme")
+})
+public sealed interface A2aSecurityScheme
+    permits A2aSecurityScheme.ApiKey,
+        A2aSecurityScheme.HttpAuth,
+        A2aSecurityScheme.OAuth2,
+        A2aSecurityScheme.OpenIdConnect,
+        A2aSecurityScheme.MutualTls {
 
-  public A2aSecurityScheme {
-    A2aValues.exactlyOne(
-        "A2aSecurityScheme",
-        apiKeySecurityScheme,
-        httpAuthSecurityScheme,
-        oauth2SecurityScheme,
-        openIdConnectSecurityScheme,
-        mtlsSecurityScheme);
-  }
-
-  public static A2aSecurityScheme of(ApiKey scheme) {
-    return new A2aSecurityScheme(scheme, null, null, null, null);
-  }
-
-  public static A2aSecurityScheme of(HttpAuth scheme) {
-    return new A2aSecurityScheme(null, scheme, null, null, null);
-  }
-
-  public static A2aSecurityScheme of(OAuth2 scheme) {
-    return new A2aSecurityScheme(null, null, scheme, null, null);
-  }
-
-  public static A2aSecurityScheme of(OpenIdConnect scheme) {
-    return new A2aSecurityScheme(null, null, null, scheme, null);
-  }
-
-  public static A2aSecurityScheme of(MutualTls scheme) {
-    return new A2aSecurityScheme(null, null, null, null, scheme);
-  }
+  /** A description of the scheme, or null. */
+  String description();
 
   /**
    * An API key.
@@ -64,7 +43,7 @@ public record A2aSecurityScheme(
    * @param name the name of the header, query parameter or cookie
    */
   @JsonInclude(JsonInclude.Include.NON_EMPTY)
-  public record ApiKey(String description, String location, String name) {}
+  record ApiKey(String description, String location, String name) implements A2aSecurityScheme {}
 
   /**
    * An HTTP authentication scheme.
@@ -75,7 +54,8 @@ public record A2aSecurityScheme(
    * @param bearerFormat a hint about the format of the bearer token, for example {@code JWT}
    */
   @JsonInclude(JsonInclude.Include.NON_EMPTY)
-  public record HttpAuth(String description, String scheme, String bearerFormat) {}
+  record HttpAuth(String description, String scheme, String bearerFormat)
+      implements A2aSecurityScheme {}
 
   /**
    * OAuth 2.0.
@@ -85,7 +65,8 @@ public record A2aSecurityScheme(
    * @param oauth2MetadataUrl the URL of the authorization server metadata (RFC 8414)
    */
   @JsonInclude(JsonInclude.Include.NON_EMPTY)
-  public record OAuth2(String description, OAuthFlows flows, String oauth2MetadataUrl) {}
+  record OAuth2(String description, OAuthFlows flows, String oauth2MetadataUrl)
+      implements A2aSecurityScheme {}
 
   /**
    * OpenID Connect.
@@ -94,7 +75,7 @@ public record A2aSecurityScheme(
    * @param openIdConnectUrl the URL of the OpenID Connect discovery document
    */
   @JsonInclude(JsonInclude.Include.NON_EMPTY)
-  public record OpenIdConnect(String description, String openIdConnectUrl) {}
+  record OpenIdConnect(String description, String openIdConnectUrl) implements A2aSecurityScheme {}
 
   /**
    * Mutual TLS.
@@ -102,41 +83,31 @@ public record A2aSecurityScheme(
    * @param description a description of the scheme
    */
   @JsonInclude(JsonInclude.Include.NON_EMPTY)
-  public record MutualTls(String description) {}
+  record MutualTls(String description) implements A2aSecurityScheme {}
 
   /**
-   * The OAuth 2.0 flows that an agent supports. Exactly one member is set.
-   *
-   * @param authorizationCode the authorization code flow
-   * @param clientCredentials the client credentials flow
-   * @param implicit the implicit flow, which the protocol deprecates
-   * @param password the resource owner password flow, which the protocol deprecates
-   * @param deviceCode the device code flow
+   * The OAuth 2.0 flow that an agent supports: {@link AuthorizationCodeFlow}, {@link
+   * ClientCredentialsFlow}, {@link ImplicitFlow}, {@link PasswordFlow} or {@link DeviceCodeFlow}.
+   * The JSON form is an object with one member named after the flow, for example {@code
+   * {"clientCredentials": {...}}}.
    */
-  @JsonInclude(JsonInclude.Include.NON_NULL)
-  public record OAuthFlows(
-      AuthorizationCodeFlow authorizationCode,
-      ClientCredentialsFlow clientCredentials,
-      ImplicitFlow implicit,
-      PasswordFlow password,
-      DeviceCodeFlow deviceCode) {
+  @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.WRAPPER_OBJECT)
+  @JsonSubTypes({
+    @JsonSubTypes.Type(value = AuthorizationCodeFlow.class, name = "authorizationCode"),
+    @JsonSubTypes.Type(value = ClientCredentialsFlow.class, name = "clientCredentials"),
+    @JsonSubTypes.Type(value = ImplicitFlow.class, name = "implicit"),
+    @JsonSubTypes.Type(value = PasswordFlow.class, name = "password"),
+    @JsonSubTypes.Type(value = DeviceCodeFlow.class, name = "deviceCode")
+  })
+  sealed interface OAuthFlows
+      permits AuthorizationCodeFlow,
+          ClientCredentialsFlow,
+          ImplicitFlow,
+          PasswordFlow,
+          DeviceCodeFlow {
 
-    public OAuthFlows {
-      A2aValues.exactlyOne(
-          "OAuthFlows", authorizationCode, clientCredentials, implicit, password, deviceCode);
-    }
-
-    public static OAuthFlows of(AuthorizationCodeFlow flow) {
-      return new OAuthFlows(flow, null, null, null, null);
-    }
-
-    public static OAuthFlows of(ClientCredentialsFlow flow) {
-      return new OAuthFlows(null, flow, null, null, null);
-    }
-
-    public static OAuthFlows of(DeviceCodeFlow flow) {
-      return new OAuthFlows(null, null, null, null, flow);
-    }
+    /** The available scopes, from scope name to description. */
+    Map<String, String> scopes();
   }
 
   /**
@@ -149,12 +120,13 @@ public record A2aSecurityScheme(
    * @param pkceRequired true when the flow requires PKCE
    */
   @JsonInclude(JsonInclude.Include.NON_EMPTY)
-  public record AuthorizationCodeFlow(
+  record AuthorizationCodeFlow(
       String authorizationUrl,
       String tokenUrl,
       String refreshUrl,
       Map<String, String> scopes,
-      @JsonInclude(JsonInclude.Include.NON_DEFAULT) boolean pkceRequired) {
+      @JsonInclude(JsonInclude.Include.NON_DEFAULT) boolean pkceRequired)
+      implements OAuthFlows {
 
     public AuthorizationCodeFlow {
       scopes = A2aValues.map(scopes);
@@ -169,8 +141,8 @@ public record A2aSecurityScheme(
    * @param scopes the available scopes, from scope name to description
    */
   @JsonInclude(JsonInclude.Include.NON_EMPTY)
-  public record ClientCredentialsFlow(
-      String tokenUrl, String refreshUrl, Map<String, String> scopes) {
+  record ClientCredentialsFlow(String tokenUrl, String refreshUrl, Map<String, String> scopes)
+      implements OAuthFlows {
 
     public ClientCredentialsFlow {
       scopes = A2aValues.map(scopes);
@@ -185,8 +157,8 @@ public record A2aSecurityScheme(
    * @param scopes the available scopes, from scope name to description
    */
   @JsonInclude(JsonInclude.Include.NON_EMPTY)
-  public record ImplicitFlow(
-      String authorizationUrl, String refreshUrl, Map<String, String> scopes) {
+  record ImplicitFlow(String authorizationUrl, String refreshUrl, Map<String, String> scopes)
+      implements OAuthFlows {
 
     public ImplicitFlow {
       scopes = A2aValues.map(scopes);
@@ -201,7 +173,8 @@ public record A2aSecurityScheme(
    * @param scopes the available scopes, from scope name to description
    */
   @JsonInclude(JsonInclude.Include.NON_EMPTY)
-  public record PasswordFlow(String tokenUrl, String refreshUrl, Map<String, String> scopes) {
+  record PasswordFlow(String tokenUrl, String refreshUrl, Map<String, String> scopes)
+      implements OAuthFlows {
 
     public PasswordFlow {
       scopes = A2aValues.map(scopes);
@@ -217,11 +190,9 @@ public record A2aSecurityScheme(
    * @param scopes the available scopes, from scope name to description
    */
   @JsonInclude(JsonInclude.Include.NON_EMPTY)
-  public record DeviceCodeFlow(
-      String deviceAuthorizationUrl,
-      String tokenUrl,
-      String refreshUrl,
-      Map<String, String> scopes) {
+  record DeviceCodeFlow(
+      String deviceAuthorizationUrl, String tokenUrl, String refreshUrl, Map<String, String> scopes)
+      implements OAuthFlows {
 
     public DeviceCodeFlow {
       scopes = A2aValues.map(scopes);

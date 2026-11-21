@@ -5,6 +5,7 @@
 package akka.javasdk.impl.a2a
 
 import java.net.URLEncoder
+import java.security.PublicKey
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 import java.util.concurrent.CompletionStage
@@ -63,7 +64,10 @@ import org.slf4j.LoggerFactory
  * agent is created per calling component, but the state is created once.
  */
 @InternalApi
-private[akka] final class RemoteA2aAgentState(val system: ActorSystem[_], val settings: A2aRemoteAgentSettings) {
+private[akka] final class RemoteA2aAgentState(
+    val system: ActorSystem[_],
+    val settings: A2aRemoteAgentSettings,
+    val route: Option[A2aServiceRoute] = None) {
   import RemoteA2aAgentState._
 
   implicit val ec: ExecutionContext = system.executionContext
@@ -76,6 +80,9 @@ private[akka] final class RemoteA2aAgentState(val system: ActorSystem[_], val se
     httpsContext(settings.caBundle, settings.clientCertificate, settings.clientKey, "")
 
   def send(request: HttpRequest): Future[HttpResponse] = sendWith(connectionContext)(request)
+
+  // Headers that only a call to another Akka service carries
+  def serviceHeaders: Seq[HttpHeader] = route.fold(Seq.empty[HttpHeader])(_.headers)
 
   // The token endpoint is usually another host than the agent, so it has its own TLS settings
   val tokens: Option[A2aOAuth2TokenCache] = settings.auth match {
@@ -93,7 +100,12 @@ private[akka] final class RemoteA2aAgentState(val system: ActorSystem[_], val se
   }
 
   private def sendWith(context: Option[HttpsConnectionContext])(request: HttpRequest): Future[HttpResponse] =
-    context.fold(http.singleRequest(request))(ctx => http.singleRequest(request, ctx))
+    route.flatMap(_.poolSettings) match {
+      case Some(pool) =>
+        http.singleRequest(request, context.getOrElse(http.defaultClientHttpsContext), pool)
+      case None =>
+        context.fold(http.singleRequest(request))(ctx => http.singleRequest(request, ctx))
+    }
 
   private def httpsContext(
       caBundle: Option[String],
@@ -102,14 +114,26 @@ private[akka] final class RemoteA2aAgentState(val system: ActorSystem[_], val se
       keyPrefix: String): Option[HttpsConnectionContext] =
     if (caBundle.isEmpty && clientCertificate.isEmpty) None
     else
-      Some(
-        ConnectionContext.httpsClient(A2aTls.sslContext(
-          caBundle.map(pemText(_, s"${keyPrefix}ca-bundle")),
-          clientCertificate.map(pemText(_, s"${keyPrefix}client-certificate")),
-          clientKey.map(pemText(_, s"${keyPrefix}client-key")))))
+      try Some(ConnectionContext.httpsClient(A2aTls.sslContext(caBundle, clientCertificate, clientKey)))
+      catch {
+        // The cause is left out, so that the PEM text of a key is not printed
+        case e: IllegalArgumentException =>
+          val names = Seq("ca-bundle", "client-certificate", "client-key")
+            .map(key => s"akka.javasdk.a2a.remote-agents.${settings.name}.$keyPrefix$key")
+            .mkString(", ")
+          throw new IllegalArgumentException(s"${e.getMessage}. Check the settings $names")
+      }
 
-  private def pemText(value: String, key: String): String =
-    A2aRemoteAgentSettings.pemText(value, s"akka.javasdk.a2a.remote-agents.${settings.name}.$key")
+  // Parsed when the state is created, so that a bad key fails when the agent is first used
+  val cardSigningKey: Option[PublicKey] =
+    settings.cardVerification.flatMap(_.publicKey).map { pem =>
+      try AgentCardSigning.parsePublicKey(pem)
+      catch {
+        case e: IllegalArgumentException =>
+          throw new IllegalArgumentException(
+            s"akka.javasdk.a2a.remote-agents.${settings.name}.card-signing-key is invalid: ${e.getMessage}")
+      }
+    }
 
   private val card = new AtomicReference[Option[CachedCard]](None)
 
@@ -175,38 +199,89 @@ private[akka] final class RemoteA2aAgentClientImpl(
 
   // Calls that return an Agent Card, a task or a message
 
-  override def cardAsync(): CompletionStage[A2aAgentCard] = cardFuture().asJava
+  private final class RequestImpl[R](send: () => Future[R]) extends RemoteA2aAgentClient.Request[R] {
+    override def invokeAsync(): CompletionStage[R] = send().asJava
+    override def invoke(): R = await(invokeAsync())
+  }
 
-  override def card(): A2aAgentCard = await(cardAsync())
+  override def card(): RemoteA2aAgentClient.Request[A2aAgentCard] = new RequestImpl(() => cardFuture())
 
   private def cardFuture(): Future[A2aAgentCard] =
     state.cachedCard() match {
       case Some(card) => Future.successful(card)
       case None =>
         call(() => request(HttpMethods.GET, settings.cardUrl)).flatMap { response =>
-          strict(response).map { body =>
+          strict(response).flatMap { body =>
             if (!response.status.isSuccess())
               throw new A2aClientException(
                 s"The Agent Card of remote agent [${settings.name}] could not be fetched, ${settings.cardUrl} answered ${response.status
                   .intValue()}")
-            val card =
-              try mapper.readValue(body, classOf[A2aAgentCard])
-              catch {
-                case NonFatal(e) =>
-                  throw new A2aClientException(
-                    s"The Agent Card of remote agent [${settings.name}] at ${settings.cardUrl} is not valid: ${e.getMessage}",
-                    e)
-              }
-            state.cacheCard(card)
-            card
+            def invalid(e: Throwable) =
+              new A2aClientException(
+                s"The Agent Card of remote agent [${settings.name}] at ${settings.cardUrl} is not valid: ${e.getMessage}",
+                e)
+            val tree =
+              try mapper.readTree(body)
+              catch { case NonFatal(e) => throw invalid(e) }
+            verifySignature(tree).map { _ =>
+              val card =
+                try mapper.treeToValue(tree, classOf[A2aAgentCard])
+                catch { case NonFatal(e) => throw invalid(e) }
+              state.cacheCard(card)
+              card
+            }
           }
         }
     }
 
-  override def send(skill: String, message: A2aMessage): RemoteA2aAgentClient.SendRequest =
-    new SendRequestImpl(skill, message, None)
+  // A card that must be signed and is not signed by the trusted key is refused, so no call reaches the agent
+  private def verifySignature(card: JsonNode): Future[Unit] =
+    settings.cardVerification match {
+      case None => Future.unit
+      case Some(verification) =>
+        keyResolver(verification).map { resolver =>
+          val result = AgentCardSigning.verify(card, resolver)
+          if (!result.verified())
+            throw new A2aClientException(
+              s"The Agent Card of remote agent [${settings.name}] is not signed by a trusted key: ${result.failure()}")
+        }
+    }
 
-  private final class SendRequestImpl(skill: String, message: A2aMessage, contextId: Option[String])
+  private def keyResolver(verification: A2aCardVerification): Future[AgentCardSigning.KeyResolver] =
+    state.cardSigningKey match {
+      case Some(key) => Future.successful(AgentCardSigning.KeyResolver.forAnyKeyId(key))
+      case None =>
+        val jwksUrl = verification.jwksUrl.get
+        // The key set is fetched without the agent's credentials, which belong to the agent alone
+        RemoteA2aAgentClientImpl
+          .within(
+            state.send(HttpRequest(HttpMethods.GET, jwksUrl).withHeaders(Accept(MediaTypes.`application/json`))),
+            timeout,
+            state.system.classicSystem.scheduler,
+            new A2aClientException(s"The key set of remote agent [${settings.name}] was not fetched within $timeout"))
+          .flatMap { response =>
+            strict(response).map { body =>
+              if (!response.status.isSuccess())
+                throw new A2aClientException(
+                  s"The key set of remote agent [${settings.name}] could not be fetched, $jwksUrl answered ${response.status
+                    .intValue()}")
+              AgentCardSigning.KeyResolver.forJwks(new String(body, StandardCharsets.UTF_8))
+            }
+          }
+    }
+
+  override def send(message: A2aMessage): RemoteA2aAgentClient.SendRequest =
+    new SendRequestImpl(None, message, None)
+
+  override def send(skill: String, message: A2aMessage): RemoteA2aAgentClient.SendRequest =
+    new SendRequestImpl(Some(requireSkill(skill)), message, None)
+
+  private def requireSkill(skill: String): String = {
+    if (skill == null || skill.isBlank) throw new IllegalArgumentException("The skill id must not be blank")
+    skill
+  }
+
+  private final class SendRequestImpl(skill: Option[String], message: A2aMessage, contextId: Option[String])
       extends RemoteA2aAgentClient.SendRequest {
 
     override def inContext(contextId: String): RemoteA2aAgentClient.SendRequest =
@@ -227,7 +302,13 @@ private[akka] final class RemoteA2aAgentClientImpl(
     override def invoke(): A2aSendMessageResponse = await(invokeAsync())
   }
 
+  override def stream(message: A2aMessage): JavaSource[A2aStreamResponse, NotUsed] =
+    streamFor(None, message)
+
   override def stream(skill: String, message: A2aMessage): JavaSource[A2aStreamResponse, NotUsed] =
+    streamFor(Some(requireSkill(skill)), message)
+
+  private def streamFor(skill: Option[String], message: A2aMessage): JavaSource[A2aStreamResponse, NotUsed] =
     Source
       .futureSource(cardFuture().map { card =>
         val body = sendMessageRequest(skill, message, None)
@@ -254,7 +335,10 @@ private[akka] final class RemoteA2aAgentClientImpl(
       .mapMaterializedValue(_ => NotUsed: NotUsed)
       .asJava
 
-  override def getTaskAsync(taskId: String): CompletionStage[A2aTask] =
+  override def getTask(taskId: String): RemoteA2aAgentClient.Request[A2aTask] =
+    new RequestImpl(() => getTaskFuture(taskId))
+
+  private def getTaskFuture(taskId: String): Future[A2aTask] =
     cardFuture().flatMap { card =>
       selectBinding(card) match {
         case b: A2aBinding.JsonRpc =>
@@ -264,11 +348,12 @@ private[akka] final class RemoteA2aAgentClientImpl(
           httpJson(HttpMethods.GET, path(b, s"tasks/${encode(taskId)}"), None)
             .map(mapper.treeToValue(_, classOf[A2aTask]))
       }
-    }.asJava
+    }
 
-  override def getTask(taskId: String): A2aTask = await(getTaskAsync(taskId))
+  override def cancel(taskId: String): RemoteA2aAgentClient.Request[A2aTask] =
+    new RequestImpl(() => cancelFuture(taskId))
 
-  override def cancelAsync(taskId: String): CompletionStage[A2aTask] =
+  private def cancelFuture(taskId: String): Future[A2aTask] =
     cardFuture().flatMap { card =>
       selectBinding(card) match {
         case b: A2aBinding.JsonRpc =>
@@ -281,13 +366,11 @@ private[akka] final class RemoteA2aAgentClientImpl(
           httpJson(HttpMethods.POST, path(b, s"tasks/${encode(taskId)}:cancel"), Some(mapper.createObjectNode()))
             .map(mapper.treeToValue(_, classOf[A2aTask]))
       }
-    }.asJava
-
-  override def cancel(taskId: String): A2aTask = await(cancelAsync(taskId))
+    }
 
   // Requests
 
-  private def sendMessageRequest(skill: String, message: A2aMessage, contextId: Option[String]): ObjectNode = {
+  private def sendMessageRequest(skill: Option[String], message: A2aMessage, contextId: Option[String]): ObjectNode = {
     val withDefaults = new A2aMessage(
       Option(message.messageId()).getOrElse(UUID.randomUUID().toString),
       contextId.getOrElse(message.contextId()),
@@ -297,7 +380,7 @@ private[akka] final class RemoteA2aAgentClientImpl(
       message.metadata(),
       message.extensions(),
       message.referenceTaskIds())
-    val metadata = Option(skill).map(s => java.util.Map.of[String, Object]("skillId", s)).orNull
+    val metadata = skill.map(s => java.util.Map.of[String, Object]("skillId", s)).orNull
     mapper.valueToTree(new A2aSendMessageRequest(null, withDefaults, null, metadata))
   }
 

@@ -6,13 +6,17 @@ package akkajavasdk;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import akka.http.javadsl.Http;
 import akka.http.javadsl.model.ContentTypes;
+import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.model.StatusCodes;
+import akka.http.javadsl.model.headers.RawHeader;
 import akka.javasdk.JsonSupport;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
 import akka.javasdk.testkit.TestModelProvider.AiResponse;
+import akka.stream.javadsl.Sink;
 import akka.util.ByteString;
 import akkajavasdk.components.a2a.A2aAssistantAgent;
 import akkajavasdk.components.a2a.A2aEchoAgent;
@@ -70,12 +74,14 @@ public class A2aStreamingTest extends TestKitSupport {
         });
     streamingModel.fixedResponse(
         input -> {
+          if (input.content().equals("fail")) throw new RuntimeException("model unavailable");
           return new AiResponse("Streamed answer for " + input.content());
         });
     return TestKit.Settings.DEFAULT
         .withModelProvider(A2aEchoAgent.class, echoModel)
         .withModelProvider(A2aAssistantAgent.class, assistantModel)
-        .withModelProvider(A2aStreamingAgent.class, streamingModel);
+        .withModelProvider(A2aStreamingAgent.class, streamingModel)
+        .withAdditionalConfig("akka.javasdk.a2a.endpoint.stream-idle-timeout = 3s");
   }
 
   // ---------------------------------------------------------------------------------------------
@@ -202,6 +208,67 @@ public class A2aStreamingTest extends TestKitSupport {
     var last = events.get(events.size() - 1).get("statusUpdate");
     assertThat(last.get("status").get("state").asText()).isEqualTo("TASK_STATE_FAILED");
     assertThat(events.stream().noneMatch(e -> e.has("artifactUpdate"))).isTrue();
+  }
+
+  @Test
+  public void failsTheTaskAndEndsTheStreamWhenAStreamingAgentFails() throws Exception {
+    var response =
+        httpClient
+            .POST("/a2a/message:stream")
+            .addHeader("Authorization", token("alice"))
+            .withRequestBody(
+                ContentTypes.APPLICATION_JSON,
+                bytes(sendParams("a2a-streaming-agent", "fail", null, false)))
+            .withTimeout(Duration.ofSeconds(30))
+            .invoke();
+    var events = events(response.body());
+    var last = events.get(events.size() - 1).get("statusUpdate");
+    assertThat(last.get("status").get("state").asText()).isEqualTo("TASK_STATE_FAILED");
+
+    var taskId = events.get(0).get("task").get("id").asText();
+    var stored = jsonRpc("GetTask", Map.of("id", taskId), token("alice")).get("result");
+    assertThat(stored.get("status").get("state").asText()).isEqualTo("TASK_STATE_FAILED");
+  }
+
+  @Test
+  public void completesTheTaskOfAClientThatDisconnectsFromTheStream() throws Exception {
+    var text = "disconnect " + UUID.randomUUID();
+    var latch = new CountDownLatch(1);
+    blockers.put(text, latch);
+    var request =
+        HttpRequest.POST("http://localhost:" + testKit.getPort() + "/a2a/message:stream")
+            .addHeader(RawHeader.create("Authorization", token("leaver")))
+            .withEntity(
+                ContentTypes.APPLICATION_JSON,
+                bytes(sendParams("a2a-assistant", text, null, false)));
+    var system = testKit.getActorSystem();
+    var response =
+        Http.get(system).singleRequest(request).toCompletableFuture().get(30, TimeUnit.SECONDS);
+    // Read the first event, the task, and then close the connection
+    var first =
+        response
+            .entity()
+            .getDataBytes()
+            .take(1)
+            .runWith(Sink.head(), testKit.getMaterializer())
+            .toCompletableFuture()
+            .get(30, TimeUnit.SECONDS)
+            .utf8String();
+    var taskId =
+        mapper.readTree(first.substring(first.indexOf("data:") + 5).trim()).get("task").get("id");
+    latch.countDown();
+
+    Awaitility.await()
+        .atMost(30, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              var stored =
+                  jsonRpc("GetTask", Map.of("id", taskId.asText()), token("leaver")).get("result");
+              assertThat(stored.get("status").get("state").asText())
+                  .isEqualTo("TASK_STATE_COMPLETED");
+              assertThat(stored.get("artifacts").get(0).get("parts").get(0).get("text").asText())
+                  .isEqualTo("Done: " + text);
+            });
   }
 
   @Test

@@ -167,8 +167,8 @@ public class A2aKitTaskWorkflow extends Workflow<A2aKitTaskWorkflow.State> {
 
   private static String text(A2aMessage message) {
     return message.parts().stream()
-        .map(A2aPart::text)
-        .filter(t -> t != null)
+        .filter(p -> p instanceof A2aPart.Text)
+        .map(p -> ((A2aPart.Text) p).text())
         .collect(Collectors.joining("\n"));
   }
 }

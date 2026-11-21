@@ -48,9 +48,12 @@ public final class A2aPushDeliveryWorkflow extends Workflow<A2aPushDeliveryWorkf
   public record State(String url, String token, String authorization, String body, int attempt) {}
 
   private final HttpClientProvider httpClientProvider;
+  private final A2aPushUrlPolicy urlPolicy;
 
-  public A2aPushDeliveryWorkflow(HttpClientProvider httpClientProvider) {
+  public A2aPushDeliveryWorkflow(
+      HttpClientProvider httpClientProvider, A2aPushUrlPolicy urlPolicy) {
     this.httpClientProvider = httpClientProvider;
+    this.urlPolicy = urlPolicy;
   }
 
   @Override
@@ -75,6 +78,13 @@ public final class A2aPushDeliveryWorkflow extends Workflow<A2aPushDeliveryWorkf
 
   private StepEffect deliver() {
     var delivery = currentState();
+    // The host is resolved again, because it can resolve to another address than when the
+    // configuration was stored
+    var refusal = urlPolicy.refusal(delivery.url());
+    if (refusal != null) {
+      log.warn("Push notification to [{}] not sent: {}", delivery.url(), refusal);
+      return stepEffects().thenDelete();
+    }
     if (post(delivery)) return stepEffects().thenDelete();
     var attempts = delivery.attempt() + 1;
     if (attempts >= MAX_ATTEMPTS) {

@@ -11,8 +11,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import akka.javasdk.JsonSupport;
+import akka.javasdk.impl.a2a.A2aCancelTaskRequest;
 import akka.javasdk.impl.a2a.A2aErrorCode;
+import akka.javasdk.impl.a2a.A2aGetTaskRequest;
+import akka.javasdk.impl.a2a.A2aListTasksRequest;
+import akka.javasdk.impl.a2a.A2aListTasksResponse;
 import akka.javasdk.impl.a2a.A2aMethods;
+import akka.javasdk.impl.a2a.A2aSendMessageRequest;
+import akka.javasdk.impl.a2a.A2aSubscribeToTaskRequest;
 import akka.javasdk.impl.a2a.JsonRpcError;
 import akka.javasdk.impl.a2a.JsonRpcRequest;
 import akka.javasdk.impl.a2a.JsonRpcResponse;
@@ -106,7 +112,7 @@ class A2aTypesJsonTest {
 
     JsonRpcRequest list = rpc("9.4.4-list-tasks-request.JsonRpcRequest.json");
     A2aListTasksRequest listTasks = mapper.treeToValue(list.params(), A2aListTasksRequest.class);
-    assertEquals(A2aTaskState.WORKING, listTasks.status());
+    assertEquals("TASK_STATE_WORKING", listTasks.status());
     assertEquals("context-uuid", listTasks.contextId());
     assertEquals(50, listTasks.pageSize());
     assertEquals("cursor-token", listTasks.pageToken());
@@ -128,14 +134,16 @@ class A2aTypesJsonTest {
     JsonRpcRequest send = rpc("9.4.1-send-message-request.JsonRpcRequest.json");
     A2aSendMessageRequest sendMessage =
         mapper.treeToValue(send.params(), A2aSendMessageRequest.class);
-    assertEquals("What is the weather today?", sendMessage.message().parts().get(0).text());
+    assertEquals(A2aPart.text("What is the weather today?"), sendMessage.message().parts().get(0));
 
     JsonRpcResponse response =
         exampleReader.readValue(
             Files.readString(example("9.4.2-stream-event.JsonRpcResponse.json")),
             JsonRpcResponse.class);
     A2aStreamResponse stream = mapper.treeToValue(response.result(), A2aStreamResponse.class);
-    assertEquals(A2aTaskState.COMPLETED, stream.statusUpdate().status().state());
+    assertEquals(
+        A2aTaskState.COMPLETED,
+        ((A2aStreamResponse.StatusUpdate) stream).statusUpdate().status().state());
   }
 
   private static Path example(String name) {
@@ -181,14 +189,27 @@ class A2aTypesJsonTest {
   }
 
   @Test
-  void rejectsEnumNamesThatAreNotProtocolNames() {
+  void readsEnumNamesThatAreNotProtocolNamesAsUnspecified() throws IOException {
     // the error example in section 6.5 uses TASK_STATE_RUNNING, which is not a state
-    assertThrows(
-        JsonProcessingException.class,
-        () -> mapper.readValue("\"TASK_STATE_RUNNING\"", A2aTaskState.class));
-    assertThrows(
-        JsonProcessingException.class, () -> mapper.readValue("\"completed\"", A2aTaskState.class));
-    assertThrows(JsonProcessingException.class, () -> mapper.readValue("\"USER\"", A2aRole.class));
+    assertEquals(
+        A2aTaskState.UNSPECIFIED, mapper.readValue("\"TASK_STATE_RUNNING\"", A2aTaskState.class));
+    assertEquals(A2aTaskState.UNSPECIFIED, mapper.readValue("\"completed\"", A2aTaskState.class));
+    assertEquals(A2aRole.UNSPECIFIED, mapper.readValue("\"USER\"", A2aRole.class));
+  }
+
+  @Test
+  void readsATaskInAStateOfALaterProtocolVersion() throws IOException {
+    String json =
+        """
+        {"task": {"id": "t1", "contextId": "c1",
+           "status": {"state": "TASK_STATE_PAUSED_BY_OPERATOR"},
+           "history": [{"messageId": "m", "role": "ROLE_SUPERVISOR", "parts": [{"text": "hi"}]}]}}
+        """;
+    var response =
+        (A2aSendMessageResponse.Task) mapper.readValue(json, A2aSendMessageResponse.class);
+    assertEquals(A2aTaskState.UNSPECIFIED, response.task().status().state());
+    assertFalse(response.task().status().state().terminal());
+    assertEquals(A2aRole.UNSPECIFIED, response.task().history().get(0).role());
   }
 
   @Test
@@ -217,10 +238,10 @@ class A2aTypesJsonTest {
          "future": "top"}
         """;
     A2aSendMessageResponse response = mapper.readValue(json, A2aSendMessageResponse.class);
-    A2aTask task = response.task();
+    A2aTask task = ((A2aSendMessageResponse.Task) response).task();
     assertEquals("t1", task.id());
-    assertEquals("hi", task.status().message().parts().get(0).text());
-    assertEquals(Map.of("k", 1), task.artifacts().get(0).parts().get(0).data());
+    assertEquals(A2aPart.text("hi"), task.status().message().parts().get(0));
+    assertEquals(Map.of("k", 1), ((A2aPart.Data) task.artifacts().get(0).parts().get(0)).data());
   }
 
   @Test
@@ -259,15 +280,13 @@ class A2aTypesJsonTest {
   @Test
   void aRawPartMustBeBase64() {
     assertRejected("{\"raw\": \"not base64!\"}");
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> new A2aPart(null, "%%%", null, null, null, null, null));
+    assertThrows(IllegalArgumentException.class, () -> new A2aPart.Raw("%%%", null, null, null));
   }
 
   @Test
   void aTextPartKeepsAnEmptyString() throws IOException {
     A2aPart part = mapper.readValue("{\"text\": \"\"}", A2aPart.class);
-    assertEquals("", part.text());
+    assertEquals(A2aPart.text(""), part);
     assertEquals("{\"text\":\"\"}", mapper.writeValueAsString(part));
   }
 
@@ -284,12 +303,11 @@ class A2aTypesJsonTest {
   @Test
   void rawBytesDecodeBothBase64Alphabets() throws IOException {
     byte[] bytes = {(byte) 0xfb, (byte) 0xff, (byte) 0xfe, 1, 2};
-    A2aPart standard = A2aPart.raw(bytes, "application/octet-stream", "a.bin");
+    A2aPart.Raw standard = A2aPart.raw(bytes, "application/octet-stream", "a.bin");
     assertArrayEquals(bytes, standard.rawBytes());
-    A2aPart urlSafe = mapper.readValue("{\"raw\": \"-__-AQI=\"}", A2aPart.class);
+    var urlSafe = (A2aPart.Raw) mapper.readValue("{\"raw\": \"-__-AQI=\"}", A2aPart.class);
     assertArrayEquals(bytes, urlSafe.rawBytes());
-    assertEquals(
-        standard.raw(), mapper.readValue(mapper.writeValueAsString(standard), A2aPart.class).raw());
+    assertEquals(standard, mapper.readValue(mapper.writeValueAsString(standard), A2aPart.class));
   }
 
   // unions
@@ -313,6 +331,12 @@ class A2aTypesJsonTest {
         () ->
             mapper.readValue(
                 "{\"implicit\": {}, \"password\": {}}", A2aSecurityScheme.OAuthFlows.class));
+    assertThrows(
+        JsonProcessingException.class,
+        () ->
+            mapper.readValue(
+                "{\"apiKeySecurityScheme\": {}, \"mtlsSecurityScheme\": {}}",
+                A2aSecurityScheme.class));
   }
 
   @Test
@@ -369,7 +393,7 @@ class A2aTypesJsonTest {
         new A2aListTasksRequest(
             null,
             "ctx",
-            A2aTaskState.INPUT_REQUIRED,
+            "TASK_STATE_INPUT_REQUIRED",
             20,
             "tok",
             0,
@@ -398,7 +422,7 @@ class A2aTypesJsonTest {
 
   @Test
   void recordsCopyTheirCollections() {
-    var parts = new java.util.ArrayList<>(List.of(A2aPart.text("a")));
+    var parts = new java.util.ArrayList<A2aPart>(List.of(A2aPart.text("a")));
     var metadata = new java.util.HashMap<String, Object>(Map.of("k", "v"));
     A2aMessage message = new A2aMessage("m", null, null, A2aRole.USER, parts, metadata, null, null);
     parts.add(A2aPart.text("b"));
@@ -408,6 +432,21 @@ class A2aTypesJsonTest {
     assertThrows(UnsupportedOperationException.class, () -> message.parts().add(A2aPart.text("c")));
     assertThrows(UnsupportedOperationException.class, () -> message.metadata().put("x", "y"));
     assertTrue(message.extensions().isEmpty());
+  }
+
+  @Test
+  void buildsMessagesWithFactoriesAndWithers() throws IOException {
+    var message = A2aMessage.user("hello").withContextId("c").withTaskId("t");
+    assertEquals(A2aRole.USER, message.role());
+    assertFalse(message.messageId().isBlank());
+    assertEquals(List.of(A2aPart.text("hello")), message.parts());
+    assertEquals("c", message.contextId());
+    assertEquals("t", message.taskId());
+    var reply = A2aMessage.agent(A2aPart.text("a"), A2aPart.data(Map.of("k", 1)));
+    assertEquals(A2aRole.AGENT, reply.role());
+    assertEquals(2, reply.parts().size());
+    assertTrue(!reply.messageId().equals(message.messageId()));
+    assertEquals(message, mapper.readValue(mapper.writeValueAsString(message), A2aMessage.class));
   }
 
   // JSON-RPC

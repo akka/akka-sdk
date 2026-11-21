@@ -10,22 +10,16 @@ import akka.http.javadsl.model.ContentTypes;
 import akka.http.javadsl.model.HttpEntity;
 import akka.http.javadsl.model.HttpHeader;
 import akka.http.javadsl.model.HttpResponse;
+import akka.http.javadsl.model.StatusCodes;
 import akka.http.javadsl.model.headers.RawHeader;
 import akka.javasdk.JsonSupport;
-import akka.javasdk.JwtClaims;
-import akka.javasdk.Principals;
 import akka.javasdk.a2a.A2aAgentCard;
 import akka.javasdk.a2a.A2aArtifact;
-import akka.javasdk.a2a.A2aCancelTaskRequest;
-import akka.javasdk.a2a.A2aGetTaskRequest;
-import akka.javasdk.a2a.A2aListTasksRequest;
 import akka.javasdk.a2a.A2aMessage;
 import akka.javasdk.a2a.A2aPart;
-import akka.javasdk.a2a.A2aRequestContext;
 import akka.javasdk.a2a.A2aRole;
 import akka.javasdk.a2a.A2aSecurityRequirement;
 import akka.javasdk.a2a.A2aSecurityScheme;
-import akka.javasdk.a2a.A2aSendMessageRequest;
 import akka.javasdk.a2a.A2aSendMessageResponse;
 import akka.javasdk.a2a.A2aTask;
 import akka.javasdk.a2a.A2aTaskState;
@@ -37,13 +31,18 @@ import akka.javasdk.annotations.a2a.A2aEndpoint;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.client.DynamicMethodRef;
 import akka.javasdk.http.RequestContext;
+import akka.stream.Materializer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
-import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -83,48 +82,53 @@ public final class A2aRequestHandler {
   private final A2aEndpoint annotation;
   private final JWT jwt;
   final ComponentClient componentClient;
+  final A2aEndpointSettings settings;
+  final Materializer materializer;
+  final A2aTaskStore store;
   private final RequestContext httpContext;
   private final AgentRegistry agentRegistry;
-  private final String configuredPublicUrl;
   private final Optional<String> requestHost;
-  private final RequestContextImpl requestContext = new RequestContextImpl();
+  private final A2aRequestContextImpl requestContext;
   private final A2aStreaming streaming = new A2aStreaming(this);
   private final A2aTaskOperations operations = new A2aTaskOperations(this);
 
   /**
-   * @param configuredPublicUrl the setting {@code akka.javasdk.a2a.endpoint.public-url}, empty when
-   *     not set
+   * @param requestContext the context that the endpoint was created with
    * @param requestHost the {@code Host} header of the request
    */
   public A2aRequestHandler(
       AbstractA2aEndpoint endpoint,
+      A2aRequestContextImpl requestContext,
       ComponentClient componentClient,
       RequestContext httpContext,
       AgentRegistry agentRegistry,
-      String configuredPublicUrl,
-      Optional<String> requestHost) {
+      A2aEndpointSettings settings,
+      Optional<String> requestHost,
+      Materializer materializer) {
     this.endpoint = endpoint;
     this.annotation = endpoint.getClass().getAnnotation(A2aEndpoint.class);
     this.jwt = endpoint.getClass().getAnnotation(JWT.class);
+    this.requestContext = requestContext;
     this.componentClient = componentClient;
+    this.store = new A2aTaskStore(componentClient);
     this.httpContext = httpContext;
     this.agentRegistry = agentRegistry;
-    this.configuredPublicUrl = configuredPublicUrl;
+    this.settings = settings;
     this.requestHost = requestHost;
+    this.materializer = materializer;
   }
 
-  public AbstractA2aEndpoint endpoint() {
+  AbstractA2aEndpoint endpoint() {
     return endpoint;
-  }
-
-  public A2aRequestContext requestContext() {
-    return requestContext;
   }
 
   /** Makes the context and task id of the request available to the endpoint. */
   void bind(String contextId, String taskId) {
-    requestContext.contextId = contextId;
-    requestContext.taskId = taskId;
+    requestContext.bind(contextId, taskId);
+  }
+
+  A2aTaskWorkflows taskWorkflows() {
+    return new A2aTaskWorkflows(componentClient, settings);
   }
 
   <T> T readBody(HttpEntity.Strict body, Class<T> type) {
@@ -319,30 +323,86 @@ public final class A2aRequestHandler {
         });
   }
 
-  /** The Agent Card, built for each request so that it follows the host the client used. */
+  /**
+   * The Agent Card, built for each request so that it follows the host the client used, and signed
+   * when a signing key is configured. A request whose {@code If-None-Match} names the current
+   * {@code ETag} is answered 304 without the card.
+   */
   public HttpResponse agentCard() {
+    byte[] bytes;
+    String etag;
     try {
-      var bytes = mapper.writeValueAsBytes(buildAgentCard());
-      return HttpResponse.create()
-          .withEntity(ContentTypes.APPLICATION_JSON, bytes)
-          .addHeader(RawHeader.create("Cache-Control", CARD_CACHE_CONTROL));
+      var card = buildAgentCard();
+      // The tag is taken before signing, because an ECDSA signature differs each time
+      var unsigned = mapper.writeValueAsBytes(card);
+      etag = etag(unsigned, settings.signer().map(AgentCardSigning.Signer::keyId).orElse(""));
+      bytes =
+          settings.signer().isPresent()
+              ? mapper.writeValueAsBytes(AgentCardSigning.sign(card, settings.signer().get()))
+              : unsigned;
     } catch (JsonProcessingException e) {
       throw new IllegalStateException("Failed to write the Agent Card", e);
+    }
+    var cacheControl = RawHeader.create("Cache-Control", CARD_CACHE_CONTROL);
+    var notModified =
+        httpContext
+            .requestHeader("If-None-Match")
+            .map(HttpHeader::value)
+            .filter(
+                value ->
+                    Arrays.stream(value.split(","))
+                        .map(String::trim)
+                        .anyMatch(tag -> tag.equals(etag) || ("W/" + tag).equals(etag)))
+            .isPresent();
+    if (notModified) {
+      return HttpResponse.create()
+          .withStatus(StatusCodes.NOT_MODIFIED)
+          .addHeader(RawHeader.create("ETag", etag))
+          .addHeader(cacheControl);
+    }
+    return HttpResponse.create()
+        .withEntity(ContentTypes.APPLICATION_JSON, bytes)
+        .addHeader(RawHeader.create("ETag", etag))
+        .addHeader(cacheControl);
+  }
+
+  // A weak entity tag of the card content and the key that signs it: a signed card is the same
+  // card each time, although its signature bytes differ
+  private static String etag(byte[] card, String keyId) {
+    try {
+      var sha = MessageDigest.getInstance("SHA-256");
+      sha.update(card);
+      var digest = sha.digest(keyId.getBytes(StandardCharsets.UTF_8));
+      return "W/\"" + Base64.getUrlEncoder().withoutPadding().encodeToString(digest) + "\"";
+    } catch (NoSuchAlgorithmException e) {
+      throw new IllegalStateException(e);
     }
   }
 
   // ---------------------------------------------------------------------------------------------
   // Methods
 
-  private A2aSendMessageResponse send(A2aSendMessageRequest request) {
+  /** A message on a task that exists, which only a task workflow accepts. */
+  record Continuation(A2aTask task, A2aMessage message) implements Prepared {}
+
+  /** A message that starts a new task. */
+  record NewTask(A2aSkillTable.Entry skill, A2aMessage userMessage, Object input)
+      implements Prepared {}
+
+  /** A checked {@code SendMessage} or {@code SendStreamingMessage} request. */
+  sealed interface Prepared permits Continuation, NewTask {}
+
+  /**
+   * Checks a {@code SendMessage} or {@code SendStreamingMessage} request, and finds the task it
+   * continues, or the skill and the ids of the task it starts.
+   */
+  Prepared prepare(A2aSendMessageRequest request) {
     var message = request.message();
     if (message == null) throw invalidParams("The request has no message");
     if (isBlank(message.messageId())) throw invalidParams("The message has no messageId");
     if (message.parts().isEmpty()) throw invalidParams("The message has no parts");
     if (message.role() == A2aRole.AGENT) throw invalidParams("The message has the role ROLE_AGENT");
-    var configuration = request.configuration();
-    Integer historyLength = configuration == null ? null : configuration.historyLength();
-    checkHistoryLength(historyLength);
+    checkHistoryLength(historyLength(request));
 
     if (!isBlank(message.taskId())) {
       var existing = lookup(message.taskId());
@@ -352,78 +412,94 @@ public final class A2aRequestHandler {
                 + message.taskId()
                 + "]");
       }
-      var continued =
-          new A2aTaskWorkflows(componentClient)
-              .continueTask(skillTable(), existing, message, configuration);
-      if (continued.isPresent()) return continued.get();
-      var state = existing.status().state();
-      throw new A2aException(
-          A2aErrorCode.UNSUPPORTED_OPERATION,
-          state.terminal()
-              ? "Task [" + message.taskId() + "] has ended and accepts no more messages"
-              : "Task [" + message.taskId() + "] is not waiting for input");
+      return new Continuation(existing, message);
     }
 
     var contextId =
         isBlank(message.contextId()) ? UUID.randomUUID().toString() : message.contextId();
     var taskId = UUID.randomUUID().toString();
-    requestContext.contextId = contextId;
-    requestContext.taskId = taskId;
-
+    bind(contextId, taskId);
     var skill = selectSkill(message, request.metadata());
     var input = agentInput(skill, message);
+    var userMessage = message.withContextId(contextId).withTaskId(taskId).withRole(A2aRole.USER);
+    return new NewTask(skill, userMessage, input);
+  }
 
-    var userMessage =
-        new A2aMessage(
-            message.messageId(),
-            contextId,
-            taskId,
-            A2aRole.USER,
-            message.parts(),
-            message.metadata(),
-            message.extensions(),
-            message.referenceTaskIds());
-    if (skill.taskWorkflow() != null) {
-      return new A2aTaskWorkflows(componentClient)
-          .start(skill, userMessage, owner(), configuration);
-    }
+  static Integer historyLength(A2aSendMessageRequest request) {
+    return request.configuration() == null ? null : request.configuration().historyLength();
+  }
+
+  /** The error for a message on a task that does not accept one. */
+  static A2aException notAccepting(A2aTask task) {
+    return new A2aException(
+        A2aErrorCode.UNSUPPORTED_OPERATION,
+        task.status().state().terminal()
+            ? "Task [" + task.id() + "] has ended and accepts no more messages"
+            : "Task [" + task.id() + "] is not waiting for input");
+  }
+
+  /** Records the new task of a short skill, and returns it in the working state. */
+  A2aTask startShortTask(NewTask newTask) {
+    var userMessage = newTask.userMessage();
     var submitted =
         new A2aTask(
-            taskId, contextId, status(A2aTaskState.SUBMITTED), null, List.of(userMessage), null);
+            userMessage.taskId(),
+            userMessage.contextId(),
+            status(A2aTaskState.SUBMITTED),
+            null,
+            List.of(userMessage),
+            null);
     componentClient
-        .forKeyValueEntity(taskId)
+        .forKeyValueEntity(submitted.id())
         .method(A2aTaskEntity::create)
-        .invoke(new A2aTaskEntity.Create(submitted, skill.skill().id(), owner()));
-    var working = withStatus(submitted, status(A2aTaskState.WORKING));
-    store(working);
+        .invoke(new A2aTaskEntity.Create(submitted, newTask.skill().skill().id(), owner()));
+    return store
+        .change(submitted.id(), A2aTaskEntity.Change.status(A2aTaskState.WORKING, null))
+        .orElseThrow()
+        .task();
+  }
 
-    var answer = callAgent(skill, contextId, input);
-    if (configuration != null && configuration.returnImmediately()) {
-      answer.whenComplete(
-          (result, error) -> {
-            try {
-              store(finish(working, result, error));
-            } catch (RuntimeException e) {
-              log.error("Failed to record the outcome of A2A task [{}]", taskId, e);
-            }
-          });
-      return A2aSendMessageResponse.of(trimHistory(working, historyLength));
-    }
-    var finished =
-        answer
-            .handle((result, error) -> finish(working, result, error))
-            .toCompletableFuture()
-            .join();
-    var stored = store(finished);
-    return A2aSendMessageResponse.of(trimHistory(stored, historyLength));
+  private A2aSendMessageResponse send(A2aSendMessageRequest request) {
+    var configuration = request.configuration();
+    var historyLength = historyLength(request);
+    return switch (prepare(request)) {
+      case Continuation continuation ->
+          taskWorkflows()
+              .continueTask(
+                  skillTable(), continuation.task(), continuation.message(), configuration)
+              .orElseThrow(() -> notAccepting(continuation.task()));
+      case NewTask newTask when newTask.skill().taskWorkflow() != null ->
+          taskWorkflows().start(newTask.skill(), newTask.userMessage(), owner(), configuration);
+      case NewTask newTask -> {
+        var working = startShortTask(newTask);
+        var artifactId = UUID.randomUUID().toString();
+        var answer = callAgent(newTask.skill(), working.contextId(), newTask.input());
+        if (configuration != null && configuration.returnImmediately()) {
+          answer.whenComplete(
+              (result, error) -> {
+                try {
+                  record(working, outcome(working, result, error, artifactId));
+                } catch (RuntimeException e) {
+                  log.error("Failed to record the outcome of A2A task [{}]", working.id(), e);
+                }
+              });
+          yield A2aSendMessageResponse.of(trimHistory(working, historyLength));
+        }
+        var change =
+            answer
+                .handle((result, error) -> outcome(working, result, error, artifactId))
+                .toCompletableFuture()
+                .join();
+        yield A2aSendMessageResponse.of(trimHistory(record(working, change), historyLength));
+      }
+    };
   }
 
   private A2aTask getTask(A2aGetTaskRequest request) {
     if (isBlank(request.id())) throw invalidParams("The request has no task id");
     checkHistoryLength(request.historyLength());
     var task = lookup(request.id());
-    requestContext.taskId = task.id();
-    requestContext.contextId = task.contextId();
+    bind(task.contextId(), task.id());
     return trimHistory(task, request.historyLength());
   }
 
@@ -440,11 +516,16 @@ public final class A2aRequestHandler {
     return state.task();
   }
 
-  A2aTask store(A2aTask task) {
-    var stored =
-        componentClient.forKeyValueEntity(task.id()).method(A2aTaskEntity::update).invoke(task);
-    A2aPushNotifier.taskChanged(componentClient, stored);
-    return stored.task();
+  /**
+   * Records the outcome of a short skill, and returns the task. A task that was canceled meanwhile
+   * stays canceled.
+   */
+  private A2aTask record(A2aTask working, A2aTaskEntity.Change change) {
+    return store
+        .change(working.id(), change)
+        .or(() -> store.get(working.id()))
+        .orElseThrow()
+        .task();
   }
 
   A2aSkillTable skillTable() {
@@ -453,7 +534,11 @@ public final class A2aRequestHandler {
 
   private A2aPushConfigMethods pushConfigMethods() {
     return new A2aPushConfigMethods(
-        componentClient, skillTable().hasTaskWorkflows(), this::lookup, mapper);
+        componentClient,
+        settings.pushUrls(),
+        skillTable().hasTaskWorkflows(),
+        this::lookup,
+        mapper);
   }
 
   /** An HTTP+JSON route of the push notification configuration methods. */
@@ -477,7 +562,7 @@ public final class A2aRequestHandler {
   }
 
   A2aSkillTable.Entry selectSkill(A2aMessage message, Map<String, Object> metadata) {
-    var table = A2aSkillTable.of(endpoint._internalAgents(), agentRegistry);
+    var table = skillTable();
     var requested =
         stringValue(message.metadata(), SKILL_ID).or(() -> stringValue(metadata, SKILL_ID));
     if (requested.isPresent()) {
@@ -498,10 +583,14 @@ public final class A2aRequestHandler {
     if (skill.inputType() == null) return null;
     var text =
         message.parts().stream()
-            .map(p -> p.text())
+            .map(p -> p instanceof A2aPart.Text part ? part.text() : null)
             .filter(t -> t != null)
             .collect(Collectors.joining("\n"));
-    var data = message.parts().stream().map(p -> p.data()).filter(d -> d != null).findFirst();
+    var data =
+        message.parts().stream()
+            .filter(p -> p instanceof A2aPart.Data)
+            .map(p -> ((A2aPart.Data) p).data())
+            .findFirst();
     if (skill.inputType() == String.class) {
       if (text.isEmpty() && data.isPresent()) {
         try {
@@ -536,31 +625,24 @@ public final class A2aRequestHandler {
     }
   }
 
-  A2aTask finish(A2aTask working, Object result, Throwable error) {
+  /** The change that records the answer of an agent, or its failure, in the working task. */
+  A2aTaskEntity.Change outcome(A2aTask working, Object result, Throwable error, String artifactId) {
     if (error != null) {
       log.warn("The agent failed to answer A2A task [{}]", working.id(), error);
       var reply =
           agentMessage(working, List.of(A2aPart.text("The agent could not answer the message.")));
-      return withStatus(working, new A2aTaskStatus(A2aTaskState.FAILED, reply, Instant.now()));
+      return A2aTaskEntity.Change.status(A2aTaskState.FAILED, reply);
     }
     var parts =
-        List.of(
+        List.<A2aPart>of(
             result instanceof String text
                 ? A2aPart.text(text)
                 : result == null
                     ? A2aPart.text("")
                     : A2aPart.data(mapper.convertValue(result, Object.class)));
-    var artifact =
-        new A2aArtifact(UUID.randomUUID().toString(), "response", null, parts, null, null);
-    var history = new ArrayList<>(working.history());
-    history.add(agentMessage(working, parts));
-    return new A2aTask(
-        working.id(),
-        working.contextId(),
-        status(A2aTaskState.COMPLETED),
-        List.of(artifact),
-        history,
-        working.metadata());
+    var artifact = new A2aArtifact(artifactId, "response", null, parts, null, null);
+    return new A2aTaskEntity.Change(
+        agentMessage(working, parts), artifact, A2aTaskState.COMPLETED, null, false);
   }
 
   static A2aMessage agentMessage(A2aTask task, List<A2aPart> parts) {
@@ -649,11 +731,10 @@ public final class A2aRequestHandler {
               + "/.well-known/openid-configuration";
       schemes.put(
           urlIssuers.size() == 1 ? "oidc" : "oidc-" + (i + 1),
-          A2aSecurityScheme.of(new A2aSecurityScheme.OpenIdConnect(null, discovery)));
+          new A2aSecurityScheme.OpenIdConnect(null, discovery));
     }
     if (urlIssuers.size() < jwt.bearerTokenIssuers().length || urlIssuers.isEmpty()) {
-      schemes.put(
-          "bearer", A2aSecurityScheme.of(new A2aSecurityScheme.HttpAuth(null, "Bearer", "JWT")));
+      schemes.put("bearer", new A2aSecurityScheme.HttpAuth(null, "Bearer", "JWT"));
     }
     return schemes;
   }
@@ -661,7 +742,7 @@ public final class A2aRequestHandler {
   private String baseUrl() {
     String base;
     if (!annotation.publicUrl().isBlank()) base = annotation.publicUrl();
-    else if (!configuredPublicUrl.isBlank()) base = configuredPublicUrl;
+    else if (!settings.publicUrl().isBlank()) base = settings.publicUrl();
     else {
       var scheme =
           httpContext
@@ -805,31 +886,6 @@ public final class A2aRequestHandler {
           .withEntity(contentType, mapper.writeValueAsBytes(body));
     } catch (JsonProcessingException e) {
       throw new IllegalStateException("Failed to write the A2A response", e);
-    }
-  }
-
-  private final class RequestContextImpl implements A2aRequestContext {
-    private volatile String contextId;
-    private volatile String taskId;
-
-    @Override
-    public Principals getPrincipals() {
-      return httpContext.getPrincipals();
-    }
-
-    @Override
-    public JwtClaims getJwtClaims() {
-      return httpContext.getJwtClaims();
-    }
-
-    @Override
-    public Optional<String> contextId() {
-      return Optional.ofNullable(contextId);
-    }
-
-    @Override
-    public Optional<String> taskId() {
-      return Optional.ofNullable(taskId);
     }
   }
 }

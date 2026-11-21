@@ -8,7 +8,6 @@ import akka.Done;
 import akka.annotation.InternalApi;
 import akka.javasdk.a2a.A2aMessage;
 import akka.javasdk.a2a.A2aRole;
-import akka.javasdk.a2a.A2aSendMessageRequest;
 import akka.javasdk.a2a.A2aSendMessageResponse;
 import akka.javasdk.a2a.A2aTask;
 import akka.javasdk.a2a.A2aTaskState;
@@ -18,7 +17,6 @@ import akka.javasdk.client.ComponentClient;
 import akka.javasdk.impl.client.WorkflowClientImpl;
 import akka.javasdk.workflow.Workflow;
 import java.lang.reflect.Method;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -42,17 +40,13 @@ public final class A2aTaskWorkflows {
   /** The name of the command handler that receives the messages of a task. */
   public static final String ON_MESSAGE = "onMessage";
 
-  /**
-   * How long a {@code SendMessage} without {@code returnImmediately} waits for the task to end or
-   * to ask for input, before it returns the task as it is.
-   */
-  static final Duration BLOCKING_WAIT = Duration.ofSeconds(10);
-
   private final ComponentClient componentClient;
+  private final A2aEndpointSettings settings;
   private final A2aTaskStore store;
 
-  public A2aTaskWorkflows(ComponentClient componentClient) {
+  public A2aTaskWorkflows(ComponentClient componentClient, A2aEndpointSettings settings) {
     this.componentClient = componentClient;
+    this.settings = settings;
     this.store = new A2aTaskStore(componentClient);
   }
 
@@ -106,12 +100,11 @@ public final class A2aTaskWorkflows {
         .method(A2aTaskEntity::create)
         .invoke(new A2aTaskEntity.Create(submitted, skill.skill().id(), owner));
     if (configuration != null && configuration.taskPushNotificationConfig() != null) {
-      new A2aPushConfigs(componentClient).store(taskId, configuration.taskPushNotificationConfig());
+      new A2aPushConfigs(componentClient, settings.pushUrls())
+          .store(taskId, configuration.taskPushNotificationConfig());
     }
     var working =
-        store
-            .modify(taskId, t -> A2aTaskStore.withStatus(t, A2aTaskState.WORKING, null))
-            .orElseThrow();
+        store.change(taskId, A2aTaskEntity.Change.status(A2aTaskState.WORKING, null)).orElseThrow();
     return deliver(skill.taskWorkflow(), working, userMessage);
   }
 
@@ -153,14 +146,7 @@ public final class A2aTaskWorkflows {
             message.extensions(),
             message.referenceTaskIds());
     var changed =
-        store.modify(
-            existing.id(),
-            t -> {
-              var withMessage = A2aTaskStore.withHistory(t, userMessage);
-              return t.status().state() == A2aTaskState.INPUT_REQUIRED
-                  ? A2aTaskStore.withStatus(withMessage, A2aTaskState.WORKING, null)
-                  : withMessage;
-            });
+        store.change(existing.id(), new A2aTaskEntity.Change(userMessage, null, null, null, true));
     if (changed.isEmpty()) return Optional.empty();
     return Optional.of(deliver(skill.get().taskWorkflow(), changed.get(), userMessage));
   }
@@ -189,10 +175,10 @@ public final class A2aTaskWorkflows {
       // The workflow may have ended on its own without ending the task
       log.debug("Could not terminate the workflow of A2A task [{}]", existing.id(), e);
     }
-    return store
-        .modify(existing.id(), t -> A2aTaskStore.withStatus(t, A2aTaskState.CANCELED, null))
-        .map(A2aTaskEntity.State::task)
-        .or(() -> store.get(existing.id()).map(A2aTaskEntity.State::task));
+    var result =
+        componentClient.forKeyValueEntity(existing.id()).method(A2aTaskEntity::cancel).invoke();
+    if (result.canceled()) A2aPushNotifier.taskChanged(componentClient, result.state());
+    return Optional.of(result.state().task());
   }
 
   // ---------------------------------------------------------------------------------------------
@@ -214,7 +200,7 @@ public final class A2aTaskWorkflows {
               delivered.task().contextId(),
               List.of(akka.javasdk.a2a.A2aPart.text("The agent could not accept the message.")));
       return store
-          .modify(taskId, t -> A2aTaskStore.withStatus(t, A2aTaskState.FAILED, reason))
+          .change(taskId, A2aTaskEntity.Change.status(A2aTaskState.FAILED, reason))
           .orElse(delivered);
     }
   }
@@ -245,9 +231,9 @@ public final class A2aTaskWorkflows {
     client.<A2aMessage, Done>methodRefOneArg(onMessageMethod(workflowClass)).invoke(message);
   }
 
-  // Polls the task until it ends or asks for input, or until BLOCKING_WAIT has passed
+  // Polls the task until it ends or asks for input, or until the blocking wait has passed
   private A2aTaskEntity.State awaitInterruptedOrEnded(String taskId, long afterVersion) {
-    var deadline = System.nanoTime() + BLOCKING_WAIT.toNanos();
+    var deadline = System.nanoTime() + settings.blockingWait().toNanos();
     long pause = 10;
     while (true) {
       var current = store.get(taskId).orElseThrow();

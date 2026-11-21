@@ -4,11 +4,12 @@
 
 package akka.javasdk.a2a;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 /** The lifecycle state of an {@link A2aTask}. */
 public enum A2aTaskState {
-  /** Not set. */
+  /** Not set, or a value that this version of the protocol does not know. */
   UNSPECIFIED("TASK_STATE_UNSPECIFIED"),
   /** The agent accepted the task and has not started it. */
   SUBMITTED("TASK_STATE_SUBMITTED"),
@@ -37,6 +38,18 @@ public enum A2aTaskState {
   @JsonValue
   public String wireName() {
     return wireName;
+  }
+
+  /**
+   * The A2aTaskState with the given protocol name. A name that this version does not know, such as
+   * a task state added by a later protocol version, is {@link #UNSPECIFIED}.
+   */
+  @JsonCreator
+  public static A2aTaskState fromWireName(String wireName) {
+    for (A2aTaskState value : values()) {
+      if (value.wireName.equals(wireName)) return value;
+    }
+    return UNSPECIFIED;
   }
 
   /** True when the task can no longer change: completed, failed, canceled or rejected. */

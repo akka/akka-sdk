@@ -73,7 +73,8 @@ private[javasdk] object HttpEndpointDescriptorFactory {
       path: Option[String],
       instanceFactory: HttpEndpointConstructionContext => Any,
       componentOptions: ComponentOptions,
-      provided: Boolean): HttpEndpointDescriptor = {
+      provided: Boolean,
+      implementationClassName: Option[String] = None): HttpEndpointDescriptor = {
 
     // make sure it is predictable - always starts with slash and ends with slash, if undefined, always "/"
     val mainPath = path match {
@@ -145,7 +146,7 @@ private[javasdk] object HttpEndpointDescriptorFactory {
       instanceFactory = instanceFactory,
       methods = methods,
       componentOptions = componentOptions,
-      implementationClassName = endpointClass.getName,
+      implementationClassName = implementationClassName.getOrElse(endpointClass.getName),
       objectMapper = Some(JsonSupport.getObjectMapper),
       shouldInstrument = true,
       provided = provided)

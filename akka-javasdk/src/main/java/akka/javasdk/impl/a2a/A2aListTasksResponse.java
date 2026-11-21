@@ -2,13 +2,16 @@
  * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.javasdk.a2a;
+package akka.javasdk.impl.a2a;
 
+import akka.javasdk.a2a.A2aTask;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.List;
 
 /**
- * The result of {@code ListTasks}. All members are always written, as the protocol requires.
+ * INTERNAL API
+ *
+ * <p>The result of {@code ListTasks}. All members are always written, as the protocol requires.
  *
  * @param tasks the tasks of this page
  * @param nextPageToken the token for the next page, empty on the last page

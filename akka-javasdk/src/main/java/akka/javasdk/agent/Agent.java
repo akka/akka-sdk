@@ -9,7 +9,6 @@ import akka.javasdk.CommandException;
 import akka.javasdk.DependencyProvider;
 import akka.javasdk.Metadata;
 import akka.javasdk.SanitizerException;
-import akka.javasdk.a2a.RemoteA2aAgent;
 import akka.javasdk.agent.Guardrail.GuardrailException;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.FunctionTool;

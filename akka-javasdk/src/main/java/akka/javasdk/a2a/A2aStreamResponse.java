@@ -4,40 +4,67 @@
 
 package akka.javasdk.a2a;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
+import akka.javasdk.impl.a2a.A2aUnions;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import java.util.Objects;
 
 /**
- * One item of a stream of updates, and the body of a push notification. Exactly one member is set.
- * The JSON form is an object with that one member, for example {@code {"statusUpdate": {...}}}.
- *
- * @param task the full task
- * @param message a message
- * @param statusUpdate a change of task status
- * @param artifactUpdate a new or extended artifact
+ * One item of a stream of updates, and the body of a push notification: a {@link Task}, a {@link
+ * Message}, a {@link StatusUpdate} or an {@link ArtifactUpdate}. The JSON form is an object with
+ * one member, for example {@code {"statusUpdate": {...}}}.
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public record A2aStreamResponse(
-    A2aTask task,
-    A2aMessage message,
-    A2aTaskStatusUpdate statusUpdate,
-    A2aTaskArtifactUpdate artifactUpdate) {
+@JsonDeserialize(using = A2aUnions.StreamResponseDeserializer.class)
+public sealed interface A2aStreamResponse
+    permits A2aStreamResponse.Task,
+        A2aStreamResponse.Message,
+        A2aStreamResponse.StatusUpdate,
+        A2aStreamResponse.ArtifactUpdate {
 
-  public A2aStreamResponse {
-    A2aValues.exactlyOne("A2aStreamResponse", task, message, statusUpdate, artifactUpdate);
+  static A2aStreamResponse of(A2aTask task) {
+    return new Task(task);
   }
 
-  public static A2aStreamResponse of(A2aTask task) {
-    return new A2aStreamResponse(task, null, null, null);
+  static A2aStreamResponse of(A2aMessage message) {
+    return new Message(message);
   }
 
-  public static A2aStreamResponse of(A2aMessage message) {
-    return new A2aStreamResponse(null, message, null, null);
-  }
-
-  public static A2aStreamResponse of(A2aTaskUpdate update) {
+  static A2aStreamResponse of(A2aTaskUpdate update) {
     return switch (update) {
-      case A2aTaskStatusUpdate s -> new A2aStreamResponse(null, null, s, null);
-      case A2aTaskArtifactUpdate a -> new A2aStreamResponse(null, null, null, a);
+      case A2aTaskStatusUpdate s -> new StatusUpdate(s);
+      case A2aTaskArtifactUpdate a -> new ArtifactUpdate(a);
     };
+  }
+
+  /** The full task. */
+  @JsonDeserialize(using = JsonDeserializer.None.class)
+  record Task(A2aTask task) implements A2aStreamResponse {
+    public Task {
+      Objects.requireNonNull(task, "task");
+    }
+  }
+
+  /** A message. */
+  @JsonDeserialize(using = JsonDeserializer.None.class)
+  record Message(A2aMessage message) implements A2aStreamResponse {
+    public Message {
+      Objects.requireNonNull(message, "message");
+    }
+  }
+
+  /** A change of task status. */
+  @JsonDeserialize(using = JsonDeserializer.None.class)
+  record StatusUpdate(A2aTaskStatusUpdate statusUpdate) implements A2aStreamResponse {
+    public StatusUpdate {
+      Objects.requireNonNull(statusUpdate, "statusUpdate");
+    }
+  }
+
+  /** A new or extended artifact. */
+  @JsonDeserialize(using = JsonDeserializer.None.class)
+  record ArtifactUpdate(A2aTaskArtifactUpdate artifactUpdate) implements A2aStreamResponse {
+    public ArtifactUpdate {
+      Objects.requireNonNull(artifactUpdate, "artifactUpdate");
+    }
   }
 }

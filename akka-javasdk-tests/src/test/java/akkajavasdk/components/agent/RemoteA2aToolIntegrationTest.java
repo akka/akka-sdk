@@ -210,9 +210,7 @@ public class RemoteA2aToolIntegrationTest extends TestKitSupport {
     assertThat(call).isNotNull();
     assertThat(call.toolName()).isEqualTo("claims_pay");
     assertThat(call.origin())
-        .isEqualTo(
-            new ToolCallGuardrail.ToolOrigin.RemoteA2a(
-                "claims", "pay", "remote-a2a-guarded-test-agent"));
+        .isEqualTo(new ToolCallGuardrail.ToolOrigin.RemoteA2a("claims", remote.cardUrl(), "pay"));
   }
 
   private String ask(String sessionId, String question) {

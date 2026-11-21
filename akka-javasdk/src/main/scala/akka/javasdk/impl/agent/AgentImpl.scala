@@ -844,7 +844,7 @@ private[impl] final class AgentImpl(
 
             val toolDescriptors =
               guardrails.withToolGuardrails(functionToolDescriptors) ++
-              a2aTools.map(tool => guardrails.withToolGuardrails(tool.descriptor, tool.origin(componentId)))
+              a2aTools.map(tool => guardrails.withToolGuardrails(tool.descriptor, tool.origin))
 
             val functionTools =
               FunctionTools.toolInvokersFor(agent) ++

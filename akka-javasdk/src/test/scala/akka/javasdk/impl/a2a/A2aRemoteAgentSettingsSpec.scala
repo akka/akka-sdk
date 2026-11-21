@@ -25,7 +25,7 @@ class A2aRemoteAgentSettingsSpec extends AnyWordSpec with Matchers {
     "read a minimal named agent and take the defaults" in {
       val settings = A2aRemoteAgentSettings.resolve(
         a2a("""remote-agents.claims.card-url = "https://claims.example.com/.well-known/agent-card.json" """),
-        "claims")
+        A2aRemoteTarget.Named("claims"))
       settings.cardUrl shouldBe "https://claims.example.com/.well-known/agent-card.json"
       settings.timeout shouldBe 60.seconds
       settings.pollInterval shouldBe 30.seconds
@@ -53,7 +53,7 @@ class A2aRemoteAgentSettingsSpec extends AnyWordSpec with Matchers {
             client-certificate = "cert"
             client-key = "key"
           }"""),
-        "claims")
+        A2aRemoteTarget.Named("claims"))
       settings.timeout shouldBe 5.seconds
       settings.pollInterval shouldBe 2.seconds
       settings.cardRefresh shouldBe 1.minute
@@ -72,19 +72,21 @@ class A2aRemoteAgentSettingsSpec extends AnyWordSpec with Matchers {
           card-url = "https://claims.example.com/card.json"
           auth { type = header, header-name = X-Api-Key, header-value = abc }
         }"""),
-        "claims")
+        A2aRemoteTarget.Named("claims"))
       settings.auth shouldBe A2aAuth.Header("X-Api-Key", "abc")
     }
 
     "treat an empty value, which an unset environment variable can leave, as absent" in {
       val settings = A2aRemoteAgentSettings.resolve(
         a2a("""remote-agents.claims { card-url = "https://x.example.com/card.json", ca-bundle = "" }"""),
-        "claims")
+        A2aRemoteTarget.Named("claims"))
       settings.caBundle shouldBe None
     }
 
     "accept an agent by card URL, with the defaults and no credentials" in {
-      val settings = A2aRemoteAgentSettings.resolve(a2a(""), "http://localhost:8080/.well-known/agent-card.json")
+      val settings = A2aRemoteAgentSettings.resolve(
+        a2a(""),
+        A2aRemoteTarget.CardUrl("http://localhost:8080/.well-known/agent-card.json"))
       settings.cardUrl shouldBe "http://localhost:8080/.well-known/agent-card.json"
       settings.auth shouldBe A2aAuth.NoAuth
       settings.timeout shouldBe 60.seconds
@@ -93,22 +95,25 @@ class A2aRemoteAgentSettingsSpec extends AnyWordSpec with Matchers {
     "reject an unknown name and list the configured names" in {
       val e = intercept[IllegalArgumentException](
         A2aRemoteAgentSettings
-          .resolve(a2a("""remote-agents.claims.card-url = "https://x.example.com/c.json" """), "other"))
+          .resolve(
+            a2a("""remote-agents.claims.card-url = "https://x.example.com/c.json" """),
+            A2aRemoteTarget.Named("other")))
       e.getMessage should include("[other]")
       e.getMessage should include("claims")
     }
 
     "reject a missing card URL" in {
       intercept[IllegalArgumentException](
-        A2aRemoteAgentSettings.resolve(a2a("remote-agents.claims.timeout = 1s"), "claims")).getMessage should include(
-        "remote-agents.claims.card-url must be set")
+        A2aRemoteAgentSettings.resolve(
+          a2a("remote-agents.claims.timeout = 1s"),
+          A2aRemoteTarget.Named("claims"))).getMessage should include("remote-agents.claims.card-url must be set")
     }
 
     "reject a card URL that is not http or https" in {
       intercept[IllegalArgumentException](
         A2aRemoteAgentSettings.resolve(
           a2a("""remote-agents.claims.card-url = "ftp://x/c.json" """),
-          "claims")).getMessage should include("http:// or https://")
+          A2aRemoteTarget.Named("claims"))).getMessage should include("http:// or https://")
     }
 
     "reject a token URL that is plain http to another host" in {
@@ -116,7 +121,7 @@ class A2aRemoteAgentSettingsSpec extends AnyWordSpec with Matchers {
         A2aRemoteAgentSettings.resolve(
           a2a("""remote-agents.claims { card-url = "https://x.example.com/c.json"
                  auth { type = oauth2-client-credentials, token-url = "http://t.example.com/t", client-id = a, client-secret = b } }"""),
-          "claims")).getMessage should include("auth.token-url must be an https:// URL")
+          A2aRemoteTarget.Named("claims"))).getMessage should include("auth.token-url must be an https:// URL")
     }
 
     "reject a plain http card URL to another host when credentials are configured" in {
@@ -124,12 +129,14 @@ class A2aRemoteAgentSettingsSpec extends AnyWordSpec with Matchers {
         A2aRemoteAgentSettings.resolve(
           a2a("""remote-agents.claims { card-url = "http://x.example.com/c.json"
                  auth { type = header, header-name = X, header-value = v } }"""),
-          "claims")).getMessage should include("card-url must be an https:// URL")
+          A2aRemoteTarget.Named("claims"))).getMessage should include("card-url must be an https:// URL")
     }
 
     "accept a plain http card URL to another host without credentials" in {
       A2aRemoteAgentSettings
-        .resolve(a2a("""remote-agents.claims.card-url = "http://x.example.com/c.json" """), "claims")
+        .resolve(
+          a2a("""remote-agents.claims.card-url = "http://x.example.com/c.json" """),
+          A2aRemoteTarget.Named("claims"))
         .cardUrl shouldBe "http://x.example.com/c.json"
     }
 
@@ -156,7 +163,7 @@ class A2aRemoteAgentSettingsSpec extends AnyWordSpec with Matchers {
     "give an agent reached by URL no credentials and no custom TLS" in {
       val settings = A2aRemoteAgentSettings.resolve(
         a2a("""defaults { auth { type = header, header-name = X, header-value = v }, ca-bundle = ca }"""),
-        "https://x.example.com/c.json")
+        A2aRemoteTarget.CardUrl("https://x.example.com/c.json"))
       settings.auth shouldBe A2aAuth.NoAuth
       settings.caBundle shouldBe None
     }
@@ -178,7 +185,7 @@ class A2aRemoteAgentSettingsSpec extends AnyWordSpec with Matchers {
       val e = intercept[IllegalArgumentException](
         A2aRemoteAgentSettings.resolve(
           a2a("""remote-agents.claims { card-url = "https://x.example.com/c.json", auth { type = header, header-name = X } }"""),
-          "claims"))
+          A2aRemoteTarget.Named("claims")))
       e.getMessage should include("auth.header-value must be set")
     }
 
@@ -187,7 +194,7 @@ class A2aRemoteAgentSettingsSpec extends AnyWordSpec with Matchers {
         A2aRemoteAgentSettings.resolve(
           a2a("""remote-agents.claims { card-url = "https://x.example.com/c.json"
                  auth { type = oauth2-client-credentials, token-url = "https://t.example.com/t", client-id = abc } }"""),
-          "claims"))
+          A2aRemoteTarget.Named("claims")))
       e.getMessage should include("auth.client-secret must be set")
     }
 
@@ -197,7 +204,7 @@ class A2aRemoteAgentSettingsSpec extends AnyWordSpec with Matchers {
           .resolve(
             a2a(s"""remote-agents.claims { card-url = "https://x.example.com/c.json"
                  auth { type = oauth2-client-credentials, token-url = "https://t.example.com/t", client-id = a, client-secret = b $extra } }"""),
-            "claims")
+            A2aRemoteTarget.Named("claims"))
           .auth
           .asInstanceOf[A2aAuth.OAuth2ClientCredentials]
           .authMethod
@@ -211,14 +218,15 @@ class A2aRemoteAgentSettingsSpec extends AnyWordSpec with Matchers {
       intercept[IllegalArgumentException](
         A2aRemoteAgentSettings.resolve(
           a2a("""remote-agents.claims { card-url = "https://x.example.com/c.json", auth.type = basic }"""),
-          "claims")).getMessage should include("must be one of none, header, oauth2-client-credentials")
+          A2aRemoteTarget.Named("claims"))).getMessage should include(
+        "must be one of none, header, oauth2-client-credentials")
     }
 
     "reject a client certificate without a key" in {
       intercept[IllegalArgumentException](
         A2aRemoteAgentSettings.resolve(
           a2a("""remote-agents.claims { card-url = "https://x.example.com/c.json", client-certificate = abc }"""),
-          "claims")).getMessage should include("must be set together")
+          A2aRemoteTarget.Named("claims"))).getMessage should include("must be set together")
     }
 
     "keep secrets out of toString" in {
@@ -228,30 +236,68 @@ class A2aRemoteAgentSettingsSpec extends AnyWordSpec with Matchers {
           auth { type = oauth2-client-credentials, token-url = "https://t.example.com/t", client-id = abc, client-secret = topsecret }
           client-certificate = c, client-key = privatekey
         }"""),
-        "claims")
+        A2aRemoteTarget.Named("claims"))
       (settings.toString should not).include("topsecret")
       (settings.toString should not).include("privatekey")
     }
 
-    "read PEM text as it is and a file by its path" in {
-      A2aRemoteAgentSettings.pemText(
-        "-----BEGIN CERTIFICATE-----\nabc",
-        "ca") shouldBe "-----BEGIN CERTIFICATE-----\nabc"
+    "read PEM text from a setting, or from the file that its -file setting names" in {
       val file = Files.createTempFile("a2a-pem", ".pem")
       try {
         Files.writeString(file, "from file")
-        A2aRemoteAgentSettings.pemText(file.toString, "ca") shouldBe "from file"
+        val settings = A2aRemoteAgentSettings.resolve(
+          a2a(s"""remote-agents.claims {
+            card-url = "https://x.example.com/c.json"
+            ca-bundle = "-----BEGIN CERTIFICATE----- abc"
+            client-certificate-file = "${file.toString.replace("\\", "/")}"
+            client-key = "key"
+          }"""),
+          A2aRemoteTarget.Named("claims"))
+        settings.caBundle shouldBe Some("-----BEGIN CERTIFICATE----- abc")
+        settings.clientCertificate shouldBe Some("from file")
       } finally Files.delete(file)
-      intercept[IllegalArgumentException](
-        A2aRemoteAgentSettings.pemText("/no/such/file.pem", "ca")).getMessage should include("PEM text or the path")
     }
 
-    "not print a value that is neither PEM text nor a readable file" in {
+    "refuse both the text and the -file form of a PEM setting" in {
+      intercept[IllegalArgumentException](
+        A2aRemoteAgentSettings.resolve(
+          a2a("""remote-agents.claims {
+            card-url = "https://x.example.com/c.json", ca-bundle = "pem", ca-bundle-file = "/x.pem" }"""),
+          A2aRemoteTarget.Named("claims"))).getMessage should include("Set only one of")
+    }
+
+    "not print the value of a -file setting that names no readable file" in {
       val headerlessKey = "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7"
-      val e = intercept[IllegalArgumentException](A2aRemoteAgentSettings.pemText(headerlessKey, "x.client-key"))
-      e.getMessage should include("x.client-key")
+      val e = intercept[IllegalArgumentException](
+        A2aRemoteAgentSettings.resolve(
+          a2a(s"""remote-agents.claims {
+            card-url = "https://x.example.com/c.json", client-certificate = c, client-key-file = "$headerlessKey" }"""),
+          A2aRemoteTarget.Named("claims")))
+      e.getMessage should include("client-key-file")
       (e.getMessage should not).include(headerlessKey)
       e.getCause shouldBe null
+    }
+
+    "require a key or a key set URL for a signed card" in {
+      intercept[IllegalArgumentException](
+        A2aRemoteAgentSettings.resolve(
+          a2a("""remote-agents.claims { card-url = "https://x.example.com/c.json", require-signed-card = true }"""),
+          A2aRemoteTarget.Named("claims"))).getMessage should include("card-signing-key")
+      val settings = A2aRemoteAgentSettings.resolve(
+        a2a("""remote-agents.claims {
+          card-url = "https://x.example.com/c.json"
+          require-signed-card = true
+          card-jwks-url = "https://x.example.com/jwks.json" }"""),
+        A2aRemoteTarget.Named("claims"))
+      settings.cardVerification shouldBe Some(A2aCardVerification(None, Some("https://x.example.com/jwks.json")))
+    }
+
+    "give an agent reached as a service the defaults and no credentials" in {
+      val settings =
+        A2aRemoteAgentSettings.resolve(a2a("""defaults { timeout = 7s }"""), A2aRemoteTarget.Service("claims-service"))
+      settings.cardUrl shouldBe "http://claims-service/.well-known/agent-card.json"
+      settings.timeout shouldBe 7.seconds
+      settings.auth shouldBe A2aAuth.NoAuth
     }
   }
 }

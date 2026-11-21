@@ -2,12 +2,15 @@
  * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.javasdk.a2a;
+package akka.javasdk.impl.a2a;
 
+import akka.javasdk.a2a.A2aStreamResponse;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
- * A webhook that an agent calls with updates about a task. This is also the request of {@code
+ * INTERNAL API
+ *
+ * <p>A webhook that an agent calls with updates about a task. This is also the request of {@code
  * CreateTaskPushNotificationConfig}.
  *
  * @param tenant the tenant of the agent, when it serves several

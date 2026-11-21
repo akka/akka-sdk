@@ -27,15 +27,4 @@ final class A2aValues {
   static <V> Map<String, V> optionalMap(Map<String, V> values) {
     return values == null ? null : map(values);
   }
-
-  static void exactlyOne(String type, Object... members) {
-    int count = 0;
-    for (Object member : members) {
-      if (member != null) count++;
-    }
-    if (count != 1) {
-      throw new IllegalArgumentException(
-          type + " must have exactly one member set, but " + count + " are set");
-    }
-  }
 }

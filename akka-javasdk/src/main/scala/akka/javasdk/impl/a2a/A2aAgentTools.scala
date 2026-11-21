@@ -17,11 +17,10 @@ import akka.javasdk.a2a.A2aAgentSkill
 import akka.javasdk.a2a.A2aClientException
 import akka.javasdk.a2a.A2aMessage
 import akka.javasdk.a2a.A2aPart
-import akka.javasdk.a2a.A2aRole
 import akka.javasdk.a2a.A2aSendMessageResponse
 import akka.javasdk.a2a.A2aTask
 import akka.javasdk.a2a.A2aTaskState
-import akka.javasdk.a2a.RemoteA2aAgent
+import akka.javasdk.agent.RemoteA2aAgent
 import akka.javasdk.agent.ToolCallGuardrail
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiJsonSchema
@@ -42,11 +41,20 @@ private[akka] object A2aAgentTools {
   // a letter or '_' first.
   private val MaxToolNameLength = 64
 
-  final case class A2aTool(descriptor: SpiAgent.ToolDescriptor, agent: RemoteA2aAgentImpl, skillId: String) {
+  /**
+   * @param agentName
+   *   the configured name of the remote agent, or the name on its card
+   */
+  final case class A2aTool(
+      descriptor: SpiAgent.ToolDescriptor,
+      agent: RemoteA2aAgentImpl,
+      agentName: String,
+      cardUrl: String,
+      skillId: String) {
     def name: String = descriptor.name
 
-    def origin(caller: String): ToolCallGuardrail.ToolOrigin =
-      new ToolCallGuardrail.ToolOrigin.RemoteA2a(agent.nameOrCardUrl, skillId, caller)
+    def origin: ToolCallGuardrail.ToolOrigin =
+      new ToolCallGuardrail.ToolOrigin.RemoteA2a(agentName, cardUrl, skillId)
   }
 
   private val inputSchema =
@@ -67,10 +75,15 @@ private[akka] object A2aAgentTools {
   def toolsFor(agents: Seq[RemoteA2aAgent], client: A2aClientImpl): Seq[A2aTool] =
     agents.flatMap {
       case agent: RemoteA2aAgentImpl =>
-        val card = client.forAgent(agent.nameOrCardUrl, agent.timeout).card()
-        val agentName =
-          if (agent.isCardUrl) Option(card.name()).filterNot(_.isBlank).getOrElse("remote_agent")
-          else agent.nameOrCardUrl
+        val card = client.forTarget(agent.target, agent.timeout).card().invoke()
+        val cardUrl = client.remoteAgents.stateFor(agent.target).settings.cardUrl
+        val agentName = agent.target match {
+          case A2aRemoteTarget.Named(name) => name
+          case _ =>
+            client.remoteAgents
+              .configuredName(cardUrl)
+              .getOrElse(Option(card.name()).filterNot(_.isBlank).getOrElse("remote_agent"))
+        }
         val skills = Option(card.skills()).map(_.asScala.toSeq).getOrElse(Seq.empty).filter { skill =>
           skill.id() != null && !skill.id().isBlank && agent.allowedSkills.forall(_.contains(skill.id()))
         }
@@ -82,7 +95,8 @@ private[akka] object A2aAgentTools {
               agentName,
               missing.toSeq.sorted.mkString(", "))
         }
-        skills.map(skill => A2aTool(descriptor(toolName(agentName, skill.id()), card, skill), agent, skill.id()))
+        skills.map(skill =>
+          A2aTool(descriptor(toolName(agentName, skill.id()), card, skill), agent, agentName, cardUrl, skill.id()))
       case other =>
         throw new IllegalArgumentException(s"Unsupported RemoteA2aAgent implementation [${other.getClass.getName}]")
     }
@@ -137,17 +151,17 @@ private[akka] object A2aAgentTools {
       case Right(msg) =>
         val sent =
           try client
-            .forAgent(tool.agent.nameOrCardUrl, tool.agent.timeout)
+            .forTarget(tool.agent.target, tool.agent.timeout)
             .send(tool.skillId, msg)
             .inContext(contextId)
             .invokeAsync()
             .asScala
           catch { case NonFatal(e) => Future.failed(e) }
         sent.map(replyText).recover { case NonFatal(e) =>
-          log.debug("The call of tool [{}] to remote A2A agent [{}] failed", tool.name, tool.agent.nameOrCardUrl, e)
+          log.debug("The call of tool [{}] to remote A2A agent [{}] failed", tool.name, tool.agentName, e)
           e match {
             case clientError: A2aClientException => s"Error: ${clientError.getMessage}"
-            case other => s"Error: the call to remote agent [${tool.agent.nameOrCardUrl}] failed: ${other.getMessage}"
+            case other => s"Error: the call to remote agent [${tool.agentName}] failed: ${other.getMessage}"
           }
         }
     }
@@ -162,12 +176,14 @@ private[akka] object A2aAgentTools {
     }
     val textPart =
       A2aPart.text(text.getOrElse(throw new IllegalArgumentException("the message argument is missing or empty")))
-    new A2aMessage(null, null, null, A2aRole.USER, (textPart +: dataPart.toSeq).asJava, null, null, null)
+    A2aMessage.user(textPart, dataPart.toSeq: _*)
   }
 
   def replyText(response: A2aSendMessageResponse): String =
-    if (response.message() != null) partsText(response.message().parts().asScala.toSeq)
-    else taskText(response.task())
+    response match {
+      case m: A2aSendMessageResponse.Message => partsText(m.message().parts().asScala.toSeq)
+      case t: A2aSendMessageResponse.Task    => taskText(t.task())
+    }
 
   private def taskText(task: A2aTask): String = {
     val state = Option(task.status()).flatMap(s => Option(s.state())).getOrElse(A2aTaskState.UNSPECIFIED)
@@ -188,11 +204,11 @@ private[akka] object A2aAgentTools {
 
   private def partsText(parts: Seq[A2aPart]): String =
     parts
-      .map { part =>
-        if (part.text() != null) part.text()
-        else if (part.data() != null) mapper.writeValueAsString(part.data())
-        else if (part.url() != null) s"[file ${fileLabel(part)}: ${part.url()}]"
-        else s"[file ${fileLabel(part)}, content not shown]"
+      .map {
+        case text: A2aPart.Text => text.text()
+        case data: A2aPart.Data => mapper.writeValueAsString(data.data())
+        case url: A2aPart.Url   => s"[file ${fileLabel(url)}: ${url.url()}]"
+        case raw: A2aPart.Raw   => s"[file ${fileLabel(raw)}, content not shown]"
       }
       .mkString("\n")
 

@@ -4,27 +4,41 @@
 
 package akka.javasdk.a2a;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
+import akka.javasdk.impl.a2a.A2aUnions;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import java.util.Objects;
 
 /**
- * The result of {@code SendMessage}: a task, or a message when the agent answers without creating a
- * task. Exactly one member is set.
- *
- * @param task the task
- * @param message the message
+ * The result of {@code SendMessage}: a {@link Task}, or a {@link Message} when the agent answers
+ * without creating a task. The JSON form is an object with one member, {@code {"task": {...}}} or
+ * {@code {"message": {...}}}.
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public record A2aSendMessageResponse(A2aTask task, A2aMessage message) {
+@JsonDeserialize(using = A2aUnions.SendMessageResponseDeserializer.class)
+public sealed interface A2aSendMessageResponse
+    permits A2aSendMessageResponse.Task, A2aSendMessageResponse.Message {
 
-  public A2aSendMessageResponse {
-    A2aValues.exactlyOne("A2aSendMessageResponse", task, message);
+  static A2aSendMessageResponse of(A2aTask task) {
+    return new Task(task);
   }
 
-  public static A2aSendMessageResponse of(A2aTask task) {
-    return new A2aSendMessageResponse(task, null);
+  static A2aSendMessageResponse of(A2aMessage message) {
+    return new Message(message);
   }
 
-  public static A2aSendMessageResponse of(A2aMessage message) {
-    return new A2aSendMessageResponse(null, message);
+  /** The agent answered with a task. */
+  @JsonDeserialize(using = JsonDeserializer.None.class)
+  record Task(A2aTask task) implements A2aSendMessageResponse {
+    public Task {
+      Objects.requireNonNull(task, "task");
+    }
+  }
+
+  /** The agent answered with a message and created no task. */
+  @JsonDeserialize(using = JsonDeserializer.None.class)
+  record Message(A2aMessage message) implements A2aSendMessageResponse {
+    public Message {
+      Objects.requireNonNull(message, "message");
+    }
   }
 }

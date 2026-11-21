@@ -14,6 +14,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.typesafe.config.Config;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.KeyFactory;
@@ -23,6 +25,7 @@ import java.security.Signature;
 import java.security.interfaces.ECKey;
 import java.security.interfaces.RSAKey;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -68,14 +71,33 @@ public final class AgentCardSigning {
     }
 
     /**
-     * Reads the {@code akka.javasdk.a2a.endpoint.signing} section: {@code key} (PEM, PKCS#8),
-     * {@code key-id}, {@code algorithm} and the optional {@code jku}.
+     * Reads the {@code akka.javasdk.a2a.endpoint.signing} section: {@code key} (PEM text, PKCS#8)
+     * or {@code key-file} (the path of a PEM file), {@code key-id}, {@code algorithm} and the
+     * optional {@code jku}.
      *
      * @return empty when no key is configured, which means cards are served unsigned
      * @throws IllegalArgumentException when a key is configured but is unusable or has no key id
      */
     public static Optional<Signer> fromConfig(Config signing) {
-      String pem = signing.getString("key").strip();
+      String text = signing.getString("key").strip();
+      String file = signing.hasPath("key-file") ? signing.getString("key-file").strip() : "";
+      if (!text.isEmpty() && !file.isEmpty()) {
+        throw new IllegalArgumentException(
+            "Set only one of akka.javasdk.a2a.endpoint.signing.key and"
+                + " akka.javasdk.a2a.endpoint.signing.key-file");
+      }
+      String pem;
+      if (!file.isEmpty()) {
+        try {
+          pem = Files.readString(Path.of(file));
+        } catch (IOException | RuntimeException e) {
+          // The cause is not in the error, so that a key pasted into the setting is not printed
+          throw new IllegalArgumentException(
+              "akka.javasdk.a2a.endpoint.signing.key-file must be the path of a readable PEM file");
+        }
+      } else {
+        pem = text;
+      }
       if (pem.isEmpty()) return Optional.empty();
       String algorithm = signing.getString("algorithm");
       PrivateKey key = parsePrivateKey(pem, Algorithm.of(algorithm));
@@ -109,6 +131,11 @@ public final class AgentCardSigning {
     /** Looks the key id up in a JSON Web Key Set that the caller has already fetched. */
     static KeyResolver forJwks(String jwksJson) {
       return (kid, jku) -> Jwks.find(jwksJson, kid);
+    }
+
+    /** Verifies every signature with this key, whatever its key id. */
+    static KeyResolver forAnyKeyId(PublicKey key) {
+      return (kid, jku) -> Optional.of(key);
     }
   }
 
@@ -172,9 +199,67 @@ public final class AgentCardSigning {
     } catch (RuntimeException e) {
       return new Verification(false, null, "The card cannot be canonicalized: " + e.getMessage());
     }
+    return verify(card.signatures(), encodedPayload, resolver);
+  }
 
+  /**
+   * Verifies the signatures of a card as it was received, so that members this version of the
+   * protocol does not know are covered by the signature too. Otherwise as {@link
+   * #verify(A2aAgentCard, KeyResolver)}.
+   */
+  public static Verification verify(JsonNode card, KeyResolver resolver) {
+    if (card == null || !card.isObject()) {
+      return new Verification(false, null, "The card is not a JSON object");
+    }
+    List<A2aAgentCard.Signature> signatures;
+    String encodedPayload;
+    try {
+      JsonNode entries = card.path("signatures");
+      signatures = new ArrayList<>();
+      for (JsonNode entry : entries) {
+        signatures.add(mapper.treeToValue(entry, A2aAgentCard.Signature.class));
+      }
+      ObjectNode copy = card.deepCopy();
+      addRequired(copy);
+      encodedPayload = base64Url.encodeToString(Jcs.canonicalize(canonicalPayload(copy)));
+    } catch (IOException | RuntimeException e) {
+      return new Verification(false, null, "The card cannot be canonicalized: " + e.getMessage());
+    }
+    if (signatures.isEmpty()) return new Verification(false, null, "The card has no signatures");
+    return verify(signatures, encodedPayload, resolver);
+  }
+
+  /**
+   * Reads a public key from PEM text ({@code -----BEGIN PUBLIC KEY-----}, X.509
+   * SubjectPublicKeyInfo), an EC or an RSA key.
+   *
+   * @throws IllegalArgumentException when the text is not such a key
+   */
+  public static PublicKey parsePublicKey(String pem) {
+    String base64 =
+        pem.replace("-----BEGIN PUBLIC KEY-----", "")
+            .replace("-----END PUBLIC KEY-----", "")
+            .replaceAll("\\s", "");
+    byte[] der;
+    try {
+      der = Base64.getDecoder().decode(base64);
+    } catch (IllegalArgumentException e) {
+      throw new IllegalArgumentException("The public key is not PEM text");
+    }
+    for (String type : List.of("EC", "RSA")) {
+      try {
+        return KeyFactory.getInstance(type).generatePublic(new X509EncodedKeySpec(der));
+      } catch (GeneralSecurityException e) {
+        // try the next key type
+      }
+    }
+    throw new IllegalArgumentException("The public key is not an EC or RSA public key");
+  }
+
+  private static Verification verify(
+      List<A2aAgentCard.Signature> signatures, String encodedPayload, KeyResolver resolver) {
     List<String> failures = new ArrayList<>();
-    for (A2aAgentCard.Signature entry : card.signatures()) {
+    for (A2aAgentCard.Signature entry : signatures) {
       try {
         return new Verification(true, verifyOne(entry, encodedPayload, resolver), null);
       } catch (SignatureFailure | GeneralSecurityException | IOException | RuntimeException e) {

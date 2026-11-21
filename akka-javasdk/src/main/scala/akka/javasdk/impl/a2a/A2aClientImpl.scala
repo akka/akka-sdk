@@ -7,13 +7,16 @@ package akka.javasdk.impl.a2a
 import java.util.concurrent.ConcurrentHashMap
 
 import scala.concurrent.duration.FiniteDuration
+import scala.jdk.CollectionConverters._
 
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.http.scaladsl.model.HttpHeader
 import akka.http.scaladsl.model.headers.RawHeader
+import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.javasdk.a2a.A2aClient
 import akka.javasdk.a2a.RemoteA2aAgentClient
+import akka.runtime.sdk.spi.SpiSpiffeContext
 import com.typesafe.config.Config
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.context.{ Context => OtelContext }
@@ -22,15 +25,54 @@ import org.slf4j.LoggerFactory
 /**
  * INTERNAL API
  *
- * The state of every remote agent the service calls, shared by the clients of all components so that cards and access
- * tokens are fetched once.
+ * How the client reaches another Akka service: its base URL, the connection pool settings that resolve its name in dev
+ * mode, and the headers that identify this service to it.
  */
 @InternalApi
-private[akka] final class A2aRemoteAgents(system: ActorSystem[_], a2aConfig: Config) {
+private[akka] final case class A2aServiceRoute(
+    baseUrl: String,
+    poolSettings: Option[ConnectionPoolSettings],
+    headers: Seq[HttpHeader])
+
+/**
+ * INTERNAL API
+ *
+ * The state of every remote agent the service calls, shared by the clients of all components so that cards and access
+ * tokens are fetched once.
+ *
+ * @param serviceRoute
+ *   how to reach another Akka service by its name
+ */
+@InternalApi
+private[akka] final class A2aRemoteAgents(
+    system: ActorSystem[_],
+    a2aConfig: Config,
+    serviceRoute: String => A2aServiceRoute = A2aRemoteAgents.noServices) {
   A2aRemoteAgentSettings.validateDefaults(a2aConfig)
   A2aRemoteAgentSettings.unusedTlsWarnings(a2aConfig).foreach(A2aRemoteAgents.log.warn)
 
-  private val named = new ConcurrentHashMap[String, RemoteA2aAgentState]()
+  // The configured agents by card URL, so that an agent reached by URL is known by its configured name
+  private val namesByCardUrl: Map[String, String] = {
+    val remoteAgents = a2aConfig.getConfig("remote-agents")
+    remoteAgents
+      .root()
+      .keySet()
+      .asScala
+      .toSeq
+      .sorted
+      .flatMap { name =>
+        val key = com.typesafe.config.ConfigUtil.joinPath(name, "card-url")
+        if (remoteAgents.hasPath(key)) Some(A2aRemoteAgents.normalized(remoteAgents.getString(key)) -> name)
+        else None
+      }
+      .reverse
+      .toMap
+  }
+
+  /** The name of the configuration under `remote-agents` with this card URL, if there is one. */
+  def configuredName(cardUrl: String): Option[String] = namesByCardUrl.get(A2aRemoteAgents.normalized(cardUrl))
+
+  private val known = new ConcurrentHashMap[A2aRemoteTarget, RemoteA2aAgentState]()
 
   // Agents given by URL are not limited by the configuration, so only the most recently used are kept
   private val byUrl = new java.util.LinkedHashMap[String, RemoteA2aAgentState](16, 0.75f, true) {
@@ -38,19 +80,31 @@ private[akka] final class A2aRemoteAgents(system: ActorSystem[_], a2aConfig: Con
       size() > A2aRemoteAgents.MaxAgentsByUrl
   }
 
-  def stateFor(nameOrCardUrl: String): RemoteA2aAgentState =
-    if (A2aRemoteAgentSettings.isCardUrl(nameOrCardUrl))
-      byUrl.synchronized {
-        Option(byUrl.get(nameOrCardUrl)).getOrElse {
-          val state = newState(nameOrCardUrl)
-          byUrl.put(nameOrCardUrl, state)
-          state
+  def stateFor(target: A2aRemoteTarget): RemoteA2aAgentState =
+    target match {
+      case A2aRemoteTarget.CardUrl(url) =>
+        byUrl.synchronized {
+          Option(byUrl.get(url)).getOrElse {
+            val state = newState(target)
+            byUrl.put(url, state)
+            state
+          }
         }
-      }
-    else named.computeIfAbsent(nameOrCardUrl, newState(_))
+      case _ => known.computeIfAbsent(target, newState(_))
+    }
 
-  private def newState(nameOrCardUrl: String): RemoteA2aAgentState =
-    new RemoteA2aAgentState(system, A2aRemoteAgentSettings.resolve(a2aConfig, nameOrCardUrl))
+  private def newState(target: A2aRemoteTarget): RemoteA2aAgentState = {
+    val settings = A2aRemoteAgentSettings.resolve(a2aConfig, target)
+    target match {
+      case A2aRemoteTarget.Service(serviceName) =>
+        val route = serviceRoute(serviceName)
+        new RemoteA2aAgentState(
+          system,
+          settings.copy(cardUrl = route.baseUrl.stripSuffix("/") + A2aRemoteAgentSettings.CardPath),
+          Some(route))
+      case _ => new RemoteA2aAgentState(system, settings)
+    }
+  }
 
   private[a2a] def agentsByUrl: Int = byUrl.synchronized(byUrl.size())
 }
@@ -61,6 +115,11 @@ private[akka] final class A2aRemoteAgents(system: ActorSystem[_], a2aConfig: Con
 @InternalApi
 private[akka] object A2aRemoteAgents {
   val MaxAgentsByUrl = 64
+
+  val noServices: String => A2aServiceRoute = serviceName =>
+    throw new IllegalArgumentException(s"Service [$serviceName] cannot be reached")
+
+  def normalized(cardUrl: String): String = cardUrl.trim.stripSuffix("/")
   private val log = LoggerFactory.getLogger(classOf[A2aRemoteAgents])
 }
 
@@ -81,19 +140,40 @@ private[akka] object A2aClientImpl {
   }
 
   def apply(agents: A2aRemoteAgents, telemetryContext: Option[OtelContext], caller: Option[String]): A2aClientImpl =
-    new A2aClientImpl(agents, traceHeaders(telemetryContext) ++ caller.map(RawHeader(CallerHeaderName, _)))
+    new A2aClientImpl(
+      agents,
+      traceHeaders(telemetryContext) ++ caller.map(RawHeader(CallerHeaderName, _)),
+      caller.map(RawHeader(SpiSpiffeContext.CallerSpiffeHeaderName, _)).toSeq)
 }
 
 /**
  * INTERNAL API
+ *
+ * @param headers
+ *   headers of every call
+ * @param serviceHeaders
+ *   headers of calls to another Akka service only, which identify the calling component
  */
 @InternalApi
-private[akka] final class A2aClientImpl(agents: A2aRemoteAgents, headers: Seq[HttpHeader]) extends A2aClient {
+private[akka] final class A2aClientImpl(
+    agents: A2aRemoteAgents,
+    headers: Seq[HttpHeader],
+    serviceHeaders: Seq[HttpHeader] = Nil)
+    extends A2aClient {
 
-  override def forAgent(nameOrCardUrl: String): RemoteA2aAgentClient =
-    new RemoteA2aAgentClientImpl(agents.stateFor(nameOrCardUrl), headers)
+  override def forAgent(name: String): RemoteA2aAgentClient = forTarget(A2aRemoteTarget.named(name), None)
+
+  override def forCardUrl(cardUrl: String): RemoteA2aAgentClient = forTarget(A2aRemoteTarget.cardUrl(cardUrl), None)
+
+  override def forService(serviceName: String): RemoteA2aAgentClient =
+    forTarget(A2aRemoteTarget.service(serviceName), None)
+
+  def remoteAgents: A2aRemoteAgents = agents
 
   /** A client whose calls use the given timeout instead of the one configured for the agent. */
-  def forAgent(nameOrCardUrl: String, timeout: Option[FiniteDuration]): RemoteA2aAgentClient =
-    new RemoteA2aAgentClientImpl(agents.stateFor(nameOrCardUrl), headers, timeoutOverride = timeout)
+  def forTarget(target: A2aRemoteTarget, timeout: Option[FiniteDuration]): RemoteA2aAgentClient = {
+    val state = agents.stateFor(target)
+    val extra = if (state.route.isDefined) state.serviceHeaders ++ serviceHeaders else Nil
+    new RemoteA2aAgentClientImpl(state, headers ++ extra, timeoutOverride = timeout)
+  }
 }

@@ -56,6 +56,9 @@ class RemoteA2aAgentClientSpec
 
   private def hello = new A2aMessage(null, null, null, null, java.util.List.of(A2aPart.text("hello")), null, null, null)
 
+  private def taskOf(response: A2aSendMessageResponse): A2aTask =
+    response.asInstanceOf[A2aSendMessageResponse.Task].task()
+
   private def collect(source: akka.stream.javadsl.Source[A2aStreamResponse, _]): Seq[A2aStreamResponse] =
     Await.result(source.runWith(Sink.seq[A2aStreamResponse], system).asScala, 10.seconds).asScala.toSeq
 
@@ -66,26 +69,26 @@ class RemoteA2aAgentClientSpec
     "fetch the Agent Card and cache it until the refresh time" in {
       reset()
       val c = client("card-refresh" -> "500ms")()
-      c.card().name() shouldBe "fake"
-      c.card().name() shouldBe "fake"
+      c.card().invoke().name() shouldBe "fake"
+      c.card().invoke().name() shouldBe "fake"
       server.cardRequests.get() shouldBe 1
       Thread.sleep(700)
-      c.card()
+      c.card().invoke()
       server.cardRequests.get() shouldBe 2
     }
 
     "share the card between the clients of different components" in {
       reset()
       val agents = new A2aRemoteAgents(system, a2aConfig("card-url" -> server.cardUrl))
-      A2aClientImpl(agents, None, Some("a")).forAgent("agent").card()
-      A2aClientImpl(agents, None, Some("b")).forAgent("agent").card()
+      A2aClientImpl(agents, None, Some("a")).forAgent("agent").card().invoke()
+      A2aClientImpl(agents, None, Some("b")).forAgent("agent").card().invoke()
       server.cardRequests.get() shouldBe 1
     }
 
     "reach an agent given by card URL" in {
       reset()
       val agents = new A2aRemoteAgents(system, a2aConfig())
-      A2aClientImpl(agents, None, None).forAgent(server.cardUrl).card().name() shouldBe "fake"
+      A2aClientImpl(agents, None, None).forCardUrl(server.cardUrl).card().invoke().name() shouldBe "fake"
     }
 
     "refuse defaults that hold credentials" in {
@@ -98,15 +101,17 @@ class RemoteA2aAgentClientSpec
 
     "keep the most recently used agents given by URL, up to a limit" in {
       val agents = new A2aRemoteAgents(system, a2aConfig())
-      val first = agents.stateFor("https://agent-0.example.com/card.json")
-      val evicted = agents.stateFor("https://agent-1.example.com/card.json")
+      val first = agents.stateFor(A2aRemoteTarget.CardUrl("https://agent-0.example.com/card.json"))
+      val evicted = agents.stateFor(A2aRemoteTarget.CardUrl("https://agent-1.example.com/card.json"))
       (2 to A2aRemoteAgents.MaxAgentsByUrl + 5).foreach { i =>
-        agents.stateFor(s"https://agent-$i.example.com/card.json")
-        agents.stateFor("https://agent-0.example.com/card.json")
+        agents.stateFor(A2aRemoteTarget.CardUrl(s"https://agent-$i.example.com/card.json"))
+        agents.stateFor(A2aRemoteTarget.CardUrl("https://agent-0.example.com/card.json"))
       }
       agents.agentsByUrl shouldBe A2aRemoteAgents.MaxAgentsByUrl
-      (agents.stateFor("https://agent-0.example.com/card.json") should be).theSameInstanceAs(first)
-      (agents.stateFor("https://agent-1.example.com/card.json") should not).be(theSameInstanceAs(evicted))
+      (agents.stateFor(A2aRemoteTarget.CardUrl("https://agent-0.example.com/card.json")) should be)
+        .theSameInstanceAs(first)
+      (agents.stateFor(A2aRemoteTarget.CardUrl("https://agent-1.example.com/card.json")) should not)
+        .be(theSameInstanceAs(evicted))
     }
 
     "discard a response that arrives after the timeout" in {
@@ -136,12 +141,13 @@ class RemoteA2aAgentClientSpec
     "fail with a client exception when the Agent Card answers with an error" in {
       reset()
       val e =
-        intercept[A2aClientException](client()(cardUrl = server.cardUrl.replace("agent-card.json", "token")).card())
+        intercept[A2aClientException](
+          client()(cardUrl = server.cardUrl.replace("agent-card.json", "token")).card().invoke())
       e.getMessage should include("404")
     }
 
     "fail with a client exception when the agent is not reachable" in {
-      val e = intercept[A2aClientException](client()(cardUrl = "http://127.0.0.1:1/card.json").card())
+      val e = intercept[A2aClientException](client()(cardUrl = "http://127.0.0.1:1/card.json").card().invoke())
       e.getMessage should include("[agent]")
     }
 
@@ -158,44 +164,46 @@ class RemoteA2aAgentClientSpec
       "send a message in a context, with the skill" in {
         val c = only
         val reply = c.send("claims", hello).inContext("ctx-1").invoke()
-        reply.task().contextId() shouldBe "ctx-1"
-        reply.task().status().state() shouldBe A2aTaskState.COMPLETED
-        reply.task().metadata().get("skillId") shouldBe "claims"
+        taskOf(reply).contextId() shouldBe "ctx-1"
+        taskOf(reply).status().state() shouldBe A2aTaskState.COMPLETED
+        taskOf(reply).metadata().get("skillId") shouldBe "claims"
       }
 
       "send a message asynchronously and read the context of the message" in {
         val c = only
-        val message = new A2aMessage("m1", "ctx-msg", null, A2aRole.USER, hello.parts(), null, null, null)
-        val reply = c.send(null, message).invokeAsync().toCompletableFuture.get()
-        reply.task().contextId() shouldBe "ctx-msg"
-        reply.task().metadata() shouldBe null
+        val message = A2aMessage.user("hello").withMessageId("m1").withContextId("ctx-msg")
+        val reply = c.send(message).invokeAsync().toCompletableFuture.get()
+        taskOf(reply).contextId() shouldBe "ctx-msg"
+        taskOf(reply).metadata() shouldBe null
       }
 
       "stream a message" in {
         val c = only
         val events = collect(c.stream("claims", hello))
-        events.map(e =>
-          Option(e.statusUpdate()).map(_.status().state()).orElse(Option(e.task()).map(_.status().state()))) shouldBe
-        Seq(Some(A2aTaskState.WORKING), Some(A2aTaskState.COMPLETED))
+        events.map {
+          case s: A2aStreamResponse.StatusUpdate => Some(s.statusUpdate().status().state())
+          case t: A2aStreamResponse.Task         => Some(t.task().status().state())
+          case _                                 => None
+        } shouldBe Seq(Some(A2aTaskState.WORKING), Some(A2aTaskState.COMPLETED))
       }
 
       "get a task" in {
         val c = only
-        val task = c.getTask("task-9")
+        val task = c.getTask("task-9").invoke()
         task.id() shouldBe "task-9"
         task.status().state() shouldBe A2aTaskState.WORKING
       }
 
       "cancel a task" in {
         val c = only
-        c.cancel("task-9").status().state() shouldBe A2aTaskState.CANCELED
+        c.cancel("task-9").invoke().status().state() shouldBe A2aTaskState.CANCELED
       }
 
       "map a task that does not exist to a remote error" in {
         val c = only
-        val e = intercept[A2aRemoteErrorException](c.getTask("missing"))
+        val e = intercept[A2aRemoteErrorException](c.getTask("missing").invoke())
         e.code() shouldBe -32001
-        e.reason() shouldBe "TASK_NOT_FOUND"
+        e.reason() shouldBe java.util.Optional.of("TASK_NOT_FOUND")
       }
     }
   }
@@ -204,7 +212,7 @@ class RemoteA2aAgentClientSpec
 
     "prefer JSON-RPC when the card lists both bindings" in {
       reset()
-      client()().getTask("task-1")
+      client()().getTask("task-1").invoke()
       server.requests.map(_.path) should contain("/a2a")
       server.requests.map(_.path) should not contain "/rest/tasks/task-1"
     }
@@ -221,7 +229,7 @@ class RemoteA2aAgentClientSpec
 
     "leave the caller header out when the caller is not known" in {
       reset()
-      client()().card()
+      client()().card().invoke()
       server.requests.head.headers.keySet should not contain "x-akka-caller"
     }
 
@@ -229,8 +237,8 @@ class RemoteA2aAgentClientSpec
       reset()
       server.authorized = _.headers.exists(h => h.name == "X-Api-Key" && h.value == "abc")
       val c = client("auth.type" -> "header", "auth.header-name" -> "X-Api-Key", "auth.header-value" -> "abc")()
-      c.send("s", hello).invoke().task() should not be null
-      intercept[A2aClientException](client()().card()).getMessage should include("401")
+      taskOf(c.send("s", hello).invoke()) should not be null
+      intercept[A2aClientException](client()().card().invoke()).getMessage should include("401")
     }
 
     "send an OAuth token and reuse it" in {
@@ -238,7 +246,7 @@ class RemoteA2aAgentClientSpec
       server.authorized = _.header[Authorization].exists(_.value == "Bearer tok-1")
       val c = client(oauth(): _*)()
       c.send("s", hello).invoke()
-      c.getTask("t")
+      c.getTask("t").invoke()
       server.tokenRequests.get() shouldBe 1
     }
 
@@ -246,7 +254,7 @@ class RemoteA2aAgentClientSpec
       reset()
       server.authorized = _.header[Authorization].exists(_.value == "Bearer tok-2")
       val c = client(oauth(): _*)()
-      c.send("s", hello).invoke().task() should not be null
+      taskOf(c.send("s", hello).invoke()) should not be null
       server.tokenRequests.get() shouldBe 2
     }
 
@@ -254,7 +262,7 @@ class RemoteA2aAgentClientSpec
       reset()
       server.authorized = _ => false
       val c = client(oauth(): _*)()
-      intercept[A2aClientException](c.card()).getMessage should include("401")
+      intercept[A2aClientException](c.card().invoke()).getMessage should include("401")
       server.tokenRequests.get() shouldBe 2
     }
 
@@ -268,7 +276,7 @@ class RemoteA2aAgentClientSpec
           "auth.header-name" -> "X-Api-Key",
           "auth.header-value" -> "abc"))
       val c = new RemoteA2aAgentClientImpl(
-        agents.stateFor("agent"),
+        agents.stateFor(A2aRemoteTarget.Named("agent")),
         Nil,
         _ => A2aBinding.JsonRpc("http://agent.example.com/a2a", None))
       val e = intercept[A2aClientException](c.send("s", hello).invoke())
@@ -280,7 +288,80 @@ class RemoteA2aAgentClientSpec
     "fail with a client exception when the token endpoint refuses the client" in {
       reset()
       val c = client(oauth("auth.token-url" -> server.cardUrl): _*)()
-      intercept[A2aClientException](c.card()).getMessage should include("405")
+      intercept[A2aClientException](c.card().invoke()).getMessage should include("405")
+    }
+  }
+
+  "The remote agent client of an agent that requires a signed card" should {
+
+    val keys = {
+      val generator = java.security.KeyPairGenerator.getInstance("EC")
+      generator.initialize(new java.security.spec.ECGenParameterSpec("secp256r1"))
+      generator.generateKeyPair()
+    }
+    val publicKeyPem =
+      "-----BEGIN PUBLIC KEY-----\n" +
+      java.util.Base64.getMimeEncoder().encodeToString(keys.getPublic.getEncoded) +
+      "\n-----END PUBLIC KEY-----"
+    val signer = new AgentCardSigning.Signer(keys.getPrivate, "k1", "ES256", null)
+    def signed(card: A2aAgentCard): A2aAgentCard = AgentCardSigning.sign(card, signer)
+    def altered(card: A2aAgentCard): A2aAgentCard = {
+      val s = signed(card)
+      new A2aAgentCard(
+        s.name(),
+        "Changed after signing",
+        s.supportedInterfaces(),
+        s.provider(),
+        s.version(),
+        s.documentationUrl(),
+        s.capabilities(),
+        s.securitySchemes(),
+        s.securityRequirements(),
+        s.defaultInputModes(),
+        s.defaultOutputModes(),
+        s.skills(),
+        s.signatures(),
+        s.iconUrl())
+    }
+    def withKey = client("require-signed-card" -> "true", "card-signing-key" -> publicKeyPem)()
+
+    "accept a card signed by the configured key" in {
+      reset()
+      server.cardTransform = signed
+      try withKey.card().invoke().name() shouldBe "fake"
+      finally server.cardTransform = identity
+    }
+
+    "refuse a card that was changed after it was signed, and send nothing to the agent" in {
+      reset()
+      server.cardTransform = altered
+      try {
+        val e = intercept[A2aClientException](withKey.send("s", hello).invoke())
+        e.getMessage should include("not signed by a trusted key")
+        server.requests.map(_.path) shouldBe Seq("/.well-known/agent-card.json")
+      } finally server.cardTransform = identity
+    }
+
+    "refuse a card that is not signed" in {
+      reset()
+      intercept[A2aClientException](withKey.card().invoke()).getMessage should include("no signatures")
+    }
+
+    "accept a card signed by a key in the configured key set" in {
+      reset()
+      val point = keys.getPublic.asInstanceOf[java.security.interfaces.ECPublicKey].getW
+      def coordinate(value: java.math.BigInteger): String = {
+        val bytes = value.toByteArray.dropWhile(_ == 0)
+        java.util.Base64.getUrlEncoder.withoutPadding().encodeToString(Array.fill[Byte](32 - bytes.length)(0) ++ bytes)
+      }
+      server.jwks = s"""{"keys":[{"kty":"EC","crv":"P-256","kid":"k1","x":"${coordinate(
+        point.getAffineX)}","y":"${coordinate(point.getAffineY)}"}]}"""
+      server.cardTransform = signed
+      try client("require-signed-card" -> "true", "card-jwks-url" -> s"${server.baseUrl}/jwks.json")()
+        .card()
+        .invoke()
+        .name() shouldBe "fake"
+      finally server.cardTransform = identity
     }
   }
 

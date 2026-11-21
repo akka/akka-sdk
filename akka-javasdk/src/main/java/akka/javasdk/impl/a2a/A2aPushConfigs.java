@@ -5,10 +5,7 @@
 package akka.javasdk.impl.a2a;
 
 import akka.annotation.InternalApi;
-import akka.javasdk.a2a.A2aListTaskPushNotificationConfigsResponse;
-import akka.javasdk.a2a.A2aTaskPushNotificationConfig;
 import akka.javasdk.client.ComponentClient;
-import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,16 +24,18 @@ public final class A2aPushConfigs {
   static final int DEFAULT_PAGE_SIZE = 50;
 
   private final ComponentClient componentClient;
+  private final A2aPushUrlPolicy urlPolicy;
 
-  public A2aPushConfigs(ComponentClient componentClient) {
+  public A2aPushConfigs(ComponentClient componentClient, A2aPushUrlPolicy urlPolicy) {
     this.componentClient = componentClient;
+    this.urlPolicy = urlPolicy;
   }
 
   /**
    * Stores a configuration for a task. A configuration without an id gets a new one, and one with
    * the id of an existing configuration replaces it.
    *
-   * @throws A2aException INVALID_PARAMS when the URL is not an http or https URL
+   * @throws A2aException INVALID_PARAMS when the URL policy refuses the URL
    */
   public A2aTaskPushNotificationConfig store(String taskId, A2aTaskPushNotificationConfig config) {
     checkUrl(config.url());
@@ -115,21 +114,8 @@ public final class A2aPushConfigs {
         .pushConfigs();
   }
 
-  private static void checkUrl(String url) {
-    if (url == null || url.isBlank()) {
-      throw new A2aException(
-          A2aErrorCode.INVALID_PARAMS, "The push notification configuration has no url");
-    }
-    try {
-      var uri = URI.create(url);
-      var scheme = uri.getScheme();
-      if (uri.getHost() == null || !("https".equals(scheme) || "http".equals(scheme))) {
-        throw new IllegalArgumentException();
-      }
-    } catch (IllegalArgumentException e) {
-      throw new A2aException(
-          A2aErrorCode.INVALID_PARAMS,
-          "The push notification url must be an absolute http or https URL");
-    }
+  private void checkUrl(String url) {
+    var refusal = urlPolicy.refusal(url);
+    if (refusal != null) throw new A2aException(A2aErrorCode.INVALID_PARAMS, refusal);
   }
 }

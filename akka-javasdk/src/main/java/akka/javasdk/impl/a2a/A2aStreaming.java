@@ -4,18 +4,15 @@
 
 package akka.javasdk.impl.a2a;
 
+import akka.Done;
 import akka.NotUsed;
 import akka.annotation.InternalApi;
 import akka.http.javadsl.model.HttpResponse;
 import akka.japi.Pair;
 import akka.japi.pf.PFBuilder;
 import akka.javasdk.a2a.A2aArtifact;
-import akka.javasdk.a2a.A2aMessage;
 import akka.javasdk.a2a.A2aPart;
-import akka.javasdk.a2a.A2aRole;
-import akka.javasdk.a2a.A2aSendMessageRequest;
 import akka.javasdk.a2a.A2aStreamResponse;
-import akka.javasdk.a2a.A2aSubscribeToTaskRequest;
 import akka.javasdk.a2a.A2aTask;
 import akka.javasdk.a2a.A2aTaskArtifactUpdate;
 import akka.javasdk.a2a.A2aTaskState;
@@ -24,6 +21,8 @@ import akka.javasdk.agent.Agent;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.http.HttpResponses;
 import akka.javasdk.impl.client.AgentClientImpl;
+import akka.stream.OverflowStrategy;
+import akka.stream.javadsl.Sink;
 import akka.stream.javadsl.Source;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.lang.reflect.Method;
@@ -34,7 +33,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,6 +51,9 @@ import org.slf4j.LoggerFactory;
 final class A2aStreaming {
 
   private static final Logger log = LoggerFactory.getLogger(A2aStreaming.class);
+
+  // The events a slow client can fall behind the agent before the agent waits for it
+  static final int CLIENT_BUFFER = 256;
 
   // Entity notifications are live only. A change between reading the task and the notification
   // stream connecting is caught by reading the task again.
@@ -93,101 +94,70 @@ final class A2aStreaming {
 
   HttpResponse sendStreamingMessage(
       A2aSendMessageRequest request, Function<A2aStreamResponse, Object> envelope) {
-    var message = request.message();
-    if (message == null) throw A2aRequestHandler.invalidParams("The request has no message");
-    if (A2aRequestHandler.isBlank(message.messageId())) {
-      throw A2aRequestHandler.invalidParams("The message has no messageId");
-    }
-    if (message.parts().isEmpty())
-      throw A2aRequestHandler.invalidParams("The message has no parts");
-    if (message.role() == A2aRole.AGENT) {
-      throw A2aRequestHandler.invalidParams("The message has the role ROLE_AGENT");
-    }
-    var configuration = request.configuration();
-    Integer historyLength = configuration == null ? null : configuration.historyLength();
-    A2aRequestHandler.checkHistoryLength(historyLength);
+    var historyLength = A2aRequestHandler.historyLength(request);
+    return switch (handler.prepare(request)) {
+      case A2aRequestHandler.Continuation continuation ->
+          followTaskWorkflow(
+              handler
+                  .taskWorkflows()
+                  .continueWithoutWaiting(
+                      handler.skillTable(), continuation.task(), continuation.message())
+                  .orElseThrow(() -> A2aRequestHandler.notAccepting(continuation.task())),
+              historyLength,
+              envelope);
+      case A2aRequestHandler.NewTask newTask when newTask.skill().taskWorkflow() != null ->
+          followTaskWorkflow(
+              handler
+                  .taskWorkflows()
+                  .startWithoutWaiting(
+                      newTask.skill(),
+                      newTask.userMessage(),
+                      handler.owner(),
+                      request.configuration()),
+              historyLength,
+              envelope);
+      case A2aRequestHandler.NewTask newTask -> streamShortTask(newTask, historyLength, envelope);
+    };
+  }
 
-    if (!A2aRequestHandler.isBlank(message.taskId())) {
-      var existing = handler.lookup(message.taskId());
-      if (!A2aRequestHandler.isBlank(message.contextId())
-          && !message.contextId().equals(existing.contextId())) {
-        throw A2aRequestHandler.invalidParams(
-            "The contextId of the message does not match the context of task ["
-                + message.taskId()
-                + "]");
-      }
-      var continued =
-          new A2aTaskWorkflows(handler.componentClient)
-              .continueWithoutWaiting(handler.skillTable(), existing, message);
-      if (continued.isPresent())
-        return followTaskWorkflow(continued.get(), historyLength, envelope);
-      throw new A2aException(
-          A2aErrorCode.UNSUPPORTED_OPERATION,
-          existing.status().state().terminal()
-              ? "Task [" + message.taskId() + "] has ended and accepts no more messages"
-              : "Task [" + message.taskId() + "] is not waiting for input");
-    }
-
-    var contextId =
-        A2aRequestHandler.isBlank(message.contextId())
-            ? UUID.randomUUID().toString()
-            : message.contextId();
-    var taskId = UUID.randomUUID().toString();
-    handler.bind(contextId, taskId);
-
-    var skill = handler.selectSkill(message, request.metadata());
-    var input = handler.agentInput(skill, message);
-
-    var userMessage =
-        new A2aMessage(
-            message.messageId(),
-            contextId,
-            taskId,
-            A2aRole.USER,
-            message.parts(),
-            message.metadata(),
-            message.extensions(),
-            message.referenceTaskIds());
-    if (skill.taskWorkflow() != null) {
-      var started =
-          new A2aTaskWorkflows(handler.componentClient)
-              .startWithoutWaiting(skill, userMessage, handler.owner(), configuration);
-      return followTaskWorkflow(started, historyLength, envelope);
-    }
-    var submitted =
-        new A2aTask(
-            taskId,
-            contextId,
-            A2aRequestHandler.status(A2aTaskState.SUBMITTED),
-            null,
-            List.of(userMessage),
-            null);
-    handler
-        .componentClient
-        .forKeyValueEntity(taskId)
-        .method(A2aTaskEntity::create)
-        .invoke(new A2aTaskEntity.Create(submitted, skill.skill().id(), handler.owner()));
-    var working =
-        A2aRequestHandler.withStatus(submitted, A2aRequestHandler.status(A2aTaskState.WORKING));
-    handler.store(working);
-
+  // The agent's answer runs to its end and is recorded in the task even when the client
+  // disconnects, so that the client can resubscribe to the task. The client receives the events
+  // through a queue that the answer feeds.
+  private HttpResponse streamShortTask(
+      A2aRequestHandler.NewTask newTask,
+      Integer historyLength,
+      Function<A2aStreamResponse, Object> envelope) {
+    var working = handler.startShortTask(newTask);
     var outcome = new Outcome(working);
+    var contextId = working.contextId();
     var body =
-        isStreamingAgent(skill.agentId())
-            ? tokenEvents(outcome, skill, contextId, input)
-            : replyEvents(outcome, skill, contextId, input);
+        isStreamingAgent(newTask.skill().agentId())
+            ? tokenEvents(outcome, newTask.skill(), contextId, newTask.input())
+            : replyEvents(outcome, newTask.skill(), contextId, newTask.input());
+    var queue =
+        Source.<A2aStreamResponse>queue(CLIENT_BUFFER, OverflowStrategy.backpressure())
+            .preMaterialize(handler.materializer);
+    var client = queue.first();
+    body.mapAsync(
+            1,
+            event ->
+                client
+                    .offer(event)
+                    // A client that has gone fails the offer, and the answer runs on
+                    .handle((result, error) -> Done.getInstance()))
+        .runWith(Sink.ignore(), handler.materializer)
+        .whenComplete(
+            (done, error) -> {
+              if (error == null) {
+                client.complete();
+              } else {
+                log.error("The stream of A2A task [{}] failed", working.id(), error);
+                client.fail(error);
+              }
+            });
     var events =
         Source.single(A2aStreamResponse.of(A2aRequestHandler.trimHistory(working, historyLength)))
-            .concat(body)
-            // A client that disconnects before the answer is complete cancels the task.
-            .watchTermination(
-                (notUsed, done) -> {
-                  done.whenComplete(
-                      (ok, error) -> {
-                        if (!outcome.recorded.get()) cancelAfterDisconnect(taskId);
-                      });
-                  return notUsed;
-                })
+            .concat(queue.second())
             .map(envelope::apply);
     return HttpResponses.serverSentEvents(events);
   }
@@ -206,12 +176,10 @@ final class A2aStreaming {
     return HttpResponses.serverSentEvents(events.map(envelope::apply));
   }
 
-  // The state of one streamed answer: the artifact id that every chunk uses, and whether the
-  // outcome has been written to the task.
+  // The state of one streamed answer: the artifact id that every chunk and the stored artifact use
   private static final class Outcome {
     final A2aTask working;
     final String artifactId = UUID.randomUUID().toString();
-    final AtomicBoolean recorded = new AtomicBoolean(false);
 
     Outcome(A2aTask working) {
       this.working = working;
@@ -241,8 +209,10 @@ final class A2aStreaming {
     } catch (RuntimeException e) {
       tokens = Source.failed(e);
     }
-    var taskId = outcome.working.id();
     return tokens
+        // The runtime does not end the token stream of every model that fails, so a stream that
+        // stays silent too long counts as a failure
+        .idleTimeout(handler.settings.streamIdleTimeout())
         .<Object>map(token -> token)
         .recover(new PFBuilder<Throwable, Object>().match(Throwable.class, error -> error).build())
         .statefulMap(
@@ -300,35 +270,22 @@ final class A2aStreaming {
   private CompletionStage<List<A2aStreamResponse>> record(
       Outcome outcome, Finished finished, boolean chunksSent) {
     var working = outcome.working;
-    var done = handler.finish(working, finished.result(), finished.error());
-    var withArtifactId =
-        done.artifacts().isEmpty()
-            ? done
-            : new A2aTask(
-                done.id(),
-                done.contextId(),
-                done.status(),
-                done.artifacts().stream()
-                    .map(
-                        a ->
-                            new A2aArtifact(
-                                outcome.artifactId,
-                                a.name(),
-                                a.description(),
-                                a.parts(),
-                                a.metadata(),
-                                a.extensions()))
-                    .toList(),
-                done.history(),
-                done.metadata());
+    var change = handler.outcome(working, finished.result(), finished.error(), outcome.artifactId);
     return handler
-        .componentClient
-        .forKeyValueEntity(working.id())
-        .method(A2aTaskEntity::update)
-        .invokeAsync(withArtifactId)
+        .store
+        .changeAsync(working.id(), change)
+        .thenCompose(
+            changed ->
+                changed.isPresent()
+                    ? CompletableFuture.completedFuture(changed.get())
+                    : handler
+                        .componentClient
+                        .forKeyValueEntity(working.id())
+                        .method(A2aTaskEntity::get)
+                        .invokeAsync()
+                        .thenApply(A2aTaskEntity.Lookup::state))
         .thenApply(
             state -> {
-              outcome.recorded.set(true);
               var events = new ArrayList<A2aStreamResponse>();
               var task = state.task();
               // Chunks of a streamed answer were sent already. A reply in one piece is sent now.
@@ -350,18 +307,6 @@ final class A2aStreaming {
                   A2aStreamResponse.of(
                       new A2aTaskStatusUpdate(task.id(), task.contextId(), task.status(), null)));
               return List.copyOf(events);
-            });
-  }
-
-  private void cancelAfterDisconnect(String taskId) {
-    handler
-        .componentClient
-        .forKeyValueEntity(taskId)
-        .method(A2aTaskEntity::cancel)
-        .invokeAsync()
-        .whenComplete(
-            (result, error) -> {
-              if (error != null) log.warn("Failed to cancel A2A task [{}]", taskId, error);
             });
   }
 
@@ -423,7 +368,7 @@ final class A2aStreaming {
         entity
             .notificationStream(A2aTaskEntity::updates)
             .source()
-            .map(changed -> new Snapshot(changed.task(), changed.version()));
+            .map(notification -> new Snapshot(notification.task(), notification.version()));
     var reads =
         Source.tick(FIRST_RE_READ, RE_READ_INTERVAL, NotUsed.getInstance())
             .mapAsync(1, tick -> entity.method(A2aTaskEntity::get).invokeAsync())
@@ -446,8 +391,8 @@ final class A2aStreaming {
         .mapConcat(events -> events)
         .takeWhile(
             event -> {
-              if (event.statusUpdate() == null) return true;
-              var state = event.statusUpdate().status().state();
+              if (!(event instanceof A2aStreamResponse.StatusUpdate update)) return true;
+              var state = update.statusUpdate().status().state();
               boolean interrupted =
                   state == A2aTaskState.INPUT_REQUIRED || state == A2aTaskState.AUTH_REQUIRED;
               return !(state.terminal() || (endWhenInterrupted && interrupted));

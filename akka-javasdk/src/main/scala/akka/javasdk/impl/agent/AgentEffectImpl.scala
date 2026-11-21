@@ -23,7 +23,7 @@ import akka.javasdk.agent.Agent.Effect.OnSuccessBuilder
 import akka.javasdk.agent.ContentLoader
 import akka.javasdk.agent.MemoryProvider
 import akka.javasdk.agent.ModelProvider
-import akka.javasdk.a2a.RemoteA2aAgent
+import akka.javasdk.agent.RemoteA2aAgent
 import akka.javasdk.agent.RemoteMcpTools
 import akka.javasdk.agent.UserMessage
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.PrimaryEffectImpl

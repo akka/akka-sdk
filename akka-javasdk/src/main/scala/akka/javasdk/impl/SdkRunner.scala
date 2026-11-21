@@ -78,6 +78,7 @@ import akka.javasdk.grpc.GrpcClientProvider
 import akka.javasdk.grpc.GrpcRequestContext
 import akka.javasdk.http.AbstractHttpEndpoint
 import akka.javasdk.a2a.A2aClient
+import akka.javasdk.a2a.A2aRequestContext
 import akka.javasdk.a2a.A2aTaskContext
 import akka.javasdk.http.HttpClientProvider
 import akka.javasdk.http.RequestContext
@@ -115,7 +116,12 @@ import akka.javasdk.impl.grpc.GrpcClientProviderImpl
 import akka.javasdk.impl.a2a.A2aAgentCardEndpoint
 import akka.javasdk.impl.a2a.A2aClientImpl
 import akka.javasdk.impl.a2a.A2aRemoteAgents
+import akka.javasdk.impl.a2a.A2aServiceRoute
+import akka.javasdk.impl.a2a.A2aEndpointSettings
+import akka.javasdk.impl.a2a.A2aPushUrlPolicy
+import akka.javasdk.impl.a2a.A2aRequestContextImpl
 import akka.javasdk.impl.a2a.A2aRequestHandler
+import akka.javasdk.impl.a2a.A2aRoutesEndpoint
 import akka.javasdk.impl.a2a.A2aTaskContextImpl
 import akka.javasdk.impl.http.HttpClientProviderImpl
 import akka.javasdk.impl.http.HttpRequestContextImpl
@@ -704,7 +710,16 @@ private final class Sdk(
     httpMockLookup)
 
   // Not lazy, so that invalid A2A defaults fail the service at startup
-  private val a2aRemoteAgents = new A2aRemoteAgents(system, sdkConfig.getConfig("a2a"))
+  private val a2aRemoteAgents = new A2aRemoteAgents(
+    system,
+    sdkConfig.getConfig("a2a"),
+    serviceName => {
+      val (baseUrl, poolSettings) = httpClientProvider.serviceTarget(serviceName)
+      A2aServiceRoute(
+        baseUrl,
+        poolSettings,
+        remoteIdentification.map(ri => RawHeader(ri.headerName, ri.headerValue)).toSeq)
+    })
 
   private lazy val userServiceConfig = {
     // hiding these paths from the config provided to user
@@ -889,7 +904,8 @@ private final class Sdk(
           sideEffectingComponentInjects(context.asInstanceOf[WorkflowContextImpl].telemetryContext, callerSpiffe)
             .orElse {
               // remember to update component type API doc and docs if changing the set of injectables
-              case p if p == classOf[WorkflowContext] => context
+              case p if p == classOf[WorkflowContext]  => context
+              case p if p == classOf[A2aPushUrlPolicy] => a2aEndpointSettings.pushUrls()
               case p if p == classOf[A2aTaskContext] =>
                 new A2aTaskContextImpl(
                   context.workflowId(),
@@ -920,8 +936,13 @@ private final class Sdk(
       GrpcEndpointDescriptorFactory(anyRefClass, grpcEndpointFactory(anyRefClass), sdkMaterializer)(system)
     }
 
-  // The A2A endpoint serves its routes at its own path and its Agent Card at the root well-known path. The card
-  // route takes the endpoint's @Acl and not its @JWT, so a client can read the card before it has a token.
+  // Not lazy, so that an invalid signing key or push setting fails the service at startup
+  private val a2aEndpointSettings =
+    A2aEndpointSettings.fromConfig(sdkConfig.getConfig("a2a.endpoint"), sdkSettings.devModeSettings.isDefined)
+
+  // The A2A routes are served by an SDK class at the path of the developer's endpoint, and the Agent Card at the root
+  // well-known path. The card route takes the endpoint's @Acl and not its @JWT, so a client can read the card before
+  // it has a token.
   private val a2aEndpointDescriptors = {
     val a2aEndpointClasses = componentClasses.filter(_.hasAnnotation[A2aEndpoint])
     if (a2aEndpointClasses.size > 1)
@@ -931,11 +952,12 @@ private final class Sdk(
       val endpointOptions = HttpEndpointDescriptorFactory.classOptions(a2aEndpointClass)
       Seq(
         HttpEndpointDescriptorFactory.create(
-          a2aEndpointClass,
+          classOf[A2aRoutesEndpoint],
           Some(a2aEndpointClass.getAnnotation(classOf[A2aEndpoint]).path()),
-          a2aEndpointFactory(a2aEndpointClass),
+          context => new A2aRoutesEndpoint(a2aRequestHandler(a2aEndpointClass, context)),
           endpointOptions,
-          provided = false),
+          provided = false,
+          implementationClassName = Some(a2aEndpointClass.getName)),
         HttpEndpointDescriptorFactory.create(
           classOf[A2aAgentCardEndpoint],
           Some(classOf[A2aAgentCardEndpoint].getAnnotation(classOf[HttpEndpoint]).value()),
@@ -1743,9 +1765,6 @@ private final class Sdk(
       instance
   }
 
-  private def a2aEndpointFactory(a2aEndpointClass: Class[_]): HttpEndpointConstructionContext => AnyRef =
-    context => a2aRequestHandler(a2aEndpointClass, context).endpoint()
-
   private def a2aRequestHandler(
       a2aEndpointClass: Class[_],
       context: HttpEndpointConstructionContext): A2aRequestHandler = {
@@ -1753,18 +1772,21 @@ private final class Sdk(
     val requestContext = new HttpRequestContextImpl(context, sdkTracerFactory, regionInfo)(
       SystemMaterializer(system).materializer)
     val callerSpiffe = callerSpiffeHeaderValue(context.spiffeContext)
+    val a2aRequestContext = new A2aRequestContextImpl(requestContext)
     val endpoint = wiredInstance("A2A Endpoint", a2aEndpointClass.asInstanceOf[Class[AbstractA2aEndpoint]]) {
-      sideEffectingComponentInjects(telemetryContext, callerSpiffe)
+      sideEffectingComponentInjects(telemetryContext, callerSpiffe).orElse {
+        case p if p == classOf[A2aRequestContext] => a2aRequestContext
+      }
     }
-    val handler = new A2aRequestHandler(
+    new A2aRequestHandler(
       endpoint,
+      a2aRequestContext,
       componentClient(telemetryContext),
       requestContext,
       agentRegistry,
-      sdkConfig.getString("a2a.endpoint.public-url"),
-      context.httpRequest.headers.collectFirst { case h if h.is("host") => h.value }.toJava)
-    endpoint._internalSetHandler(handler)
-    handler
+      a2aEndpointSettings,
+      context.httpRequest.headers.collectFirst { case h if h.is("host") => h.value }.toJava,
+      sdkMaterializer)
   }
 
   private def grpcEndpointFactory[E](grpcEndpointClass: Class[E]): GrpcEndpointRequestConstructionContext => E =

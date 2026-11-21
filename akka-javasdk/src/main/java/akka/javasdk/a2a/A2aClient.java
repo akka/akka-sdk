@@ -19,13 +19,30 @@ import akka.annotation.DoNotInherit;
 public interface A2aClient {
 
   /**
-   * Returns a client for one remote agent.
+   * A client for a remote agent configured under {@code akka.javasdk.a2a.remote-agents.<name>},
+   * with the credentials and TLS settings of that configuration.
    *
-   * @param nameOrCardUrl either a name configured under {@code
-   *     akka.javasdk.a2a.remote-agents.<name>}, or the URL of an Agent Card, which must start with
-   *     {@code http://} or {@code https://}. An agent given by URL has no credentials and no custom
-   *     TLS settings, and uses the timeouts under {@code akka.javasdk.a2a.defaults}.
    * @throws IllegalArgumentException if the name is not configured or its configuration is invalid
    */
-  RemoteA2aAgentClient forAgent(String nameOrCardUrl);
+  RemoteA2aAgentClient forAgent(String name);
+
+  /**
+   * A client for a remote agent given by the URL of its Agent Card. The agent has no credentials
+   * and no custom TLS settings, and uses the settings under {@code akka.javasdk.a2a.defaults}.
+   *
+   * @param cardUrl the URL of the Agent Card, which must start with {@code http://} or {@code
+   *     https://}
+   * @throws IllegalArgumentException if the URL is not an http or https URL
+   */
+  RemoteA2aAgentClient forCardUrl(String cardUrl);
+
+  /**
+   * A client for the A2A endpoint of another Akka service in the same project, reached by its
+   * service name in the way an {@link akka.javasdk.http.HttpClientProvider} reaches it. The calls
+   * carry the identity of this service, so the other service's {@code @Acl} can allow it. The agent
+   * uses the settings under {@code akka.javasdk.a2a.defaults}.
+   *
+   * @param serviceName the name of the other service
+   */
+  RemoteA2aAgentClient forService(String serviceName);
 }

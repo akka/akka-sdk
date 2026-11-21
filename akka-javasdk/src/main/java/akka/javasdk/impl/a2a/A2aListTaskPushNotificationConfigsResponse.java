@@ -2,13 +2,15 @@
  * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.javasdk.a2a;
+package akka.javasdk.impl.a2a;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.List;
 
 /**
- * The result of {@code ListTaskPushNotificationConfigs}.
+ * INTERNAL API
+ *
+ * <p>The result of {@code ListTaskPushNotificationConfigs}.
  *
  * @param configs the configurations of this page
  * @param nextPageToken the token for the next page, empty on the last page

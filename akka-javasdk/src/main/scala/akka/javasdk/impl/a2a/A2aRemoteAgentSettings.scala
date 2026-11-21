@@ -80,10 +80,28 @@ private[akka] final case class A2aRemoteAgentSettings(
     auth: A2aAuth,
     caBundle: Option[String],
     clientCertificate: Option[String],
-    clientKey: Option[String]) {
+    clientKey: Option[String],
+    cardVerification: Option[A2aCardVerification] = None) {
   override def toString: String =
     s"A2aRemoteAgentSettings($name,$cardUrl,$timeout,$pollInterval,$cardRefresh,$auth," +
-    s"caBundle=${caBundle.isDefined},clientCertificate=${clientCertificate.isDefined},clientKey=***)"
+    s"caBundle=${caBundle.isDefined},clientCertificate=${clientCertificate.isDefined},clientKey=***," +
+    s"cardVerification=$cardVerification)"
+}
+
+/**
+ * INTERNAL API
+ *
+ * How the client checks the signature of a remote Agent Card, when the agent requires a signed card. One of the two is
+ * set.
+ *
+ * @param publicKey
+ *   the PEM text of the public key that signs the card
+ * @param jwksUrl
+ *   the URL of a JSON Web Key Set that holds the key, fetched with the agent's TLS settings
+ */
+@InternalApi
+private[akka] final case class A2aCardVerification(publicKey: Option[String], jwksUrl: Option[String]) {
+  override def toString: String = s"A2aCardVerification(publicKey=${publicKey.isDefined},$jwksUrl)"
 }
 
 /**
@@ -98,31 +116,44 @@ private[akka] object A2aRemoteAgentSettings {
    * @param nameOrCardUrl
    *   a name under `remote-agents`, or the URL of an Agent Card
    */
-  def resolve(a2a: Config, nameOrCardUrl: String): A2aRemoteAgentSettings = {
-    val defaults = a2a.getConfig("defaults")
-    if (isCardUrl(nameOrCardUrl))
-      // The URL can come from anywhere, so an agent that is not configured gets no credentials and no custom TLS
-      fromConfig(
-        nameOrCardUrl,
-        defaults
-          .withoutPath("ca-bundle")
-          .withoutPath("client-certificate")
-          .withoutPath("client-key")
-          .withValue("card-url", ConfigValueFactory.fromAnyRef(nameOrCardUrl))
-          .withValue("auth.type", ConfigValueFactory.fromAnyRef("none")))
-    else {
+  def resolve(a2a: Config, target: A2aRemoteTarget): A2aRemoteAgentSettings = target match {
+    case A2aRemoteTarget.Named(name) =>
+      val defaults = a2a.getConfig("defaults")
       val remoteAgents = a2a.getConfig("remote-agents")
-      if (!remoteAgents.hasPath(quoted(nameOrCardUrl)))
+      if (!remoteAgents.hasPath(quoted(name)))
         throw new IllegalArgumentException(
-          s"No remote A2A agent [$nameOrCardUrl] is configured under akka.javasdk.a2a.remote-agents " +
+          s"No remote A2A agent [$name] is configured under akka.javasdk.a2a.remote-agents " +
           s"(configured: ${remoteAgents.root().keySet().asScala.toSeq.sorted.mkString("[", ", ", "]")}). " +
-          "Pass the URL of an Agent Card to call an agent that is not configured.")
-      fromConfig(nameOrCardUrl, remoteAgents.getConfig(quoted(nameOrCardUrl)).withFallback(defaults))
-    }
+          "Use the URL of an Agent Card to call an agent that is not configured.")
+      fromConfig(name, remoteAgents.getConfig(quoted(name)).withFallback(defaults))
+    case A2aRemoteTarget.CardUrl(url) =>
+      unconfigured(a2a, url, url)
+    case A2aRemoteTarget.Service(serviceName) =>
+      unconfigured(a2a, serviceName, s"http://$serviceName$CardPath")
   }
 
-  def isCardUrl(nameOrCardUrl: String): Boolean =
-    nameOrCardUrl.startsWith("http://") || nameOrCardUrl.startsWith("https://")
+  /** The path of the Agent Card of an Akka service. */
+  val CardPath = "/.well-known/agent-card.json"
+
+  // An agent that is not configured gets no credentials, no custom TLS and no card verification: its URL can come from
+  // anywhere, and the defaults are shared by every such agent.
+  private def unconfigured(a2a: Config, name: String, cardUrl: String): A2aRemoteAgentSettings =
+    fromConfig(
+      name,
+      Seq(
+        "ca-bundle",
+        "ca-bundle-file",
+        "client-certificate",
+        "client-certificate-file",
+        "client-key",
+        "client-key-file",
+        "require-signed-card")
+        .foldLeft(a2a.getConfig("defaults"))(_.withoutPath(_))
+        .withValue("card-url", ConfigValueFactory.fromAnyRef(cardUrl))
+        .withValue("auth.type", ConfigValueFactory.fromAnyRef("none")))
+
+  def isCardUrl(value: String): Boolean =
+    value.startsWith("http://") || value.startsWith("https://")
 
   /**
    * The defaults apply to every agent, including one given by a URL, so they must not hold credentials.
@@ -147,7 +178,7 @@ private[akka] object A2aRemoteAgentSettings {
         else Some(remoteAgents.getConfig(quoted(name)).withFallback(defaults))
       def set(key: String) = agent.exists(c => c.hasPath(key) && c.getString(key).trim.nonEmpty)
       val plainHttp = agent.exists(c => c.hasPath("card-url") && c.getString("card-url").trim.startsWith("http://"))
-      if (plainHttp && (set("ca-bundle") || set("client-certificate")))
+      if (plainHttp && Seq("ca-bundle", "ca-bundle-file", "client-certificate", "client-certificate-file").exists(set))
         Some(
           s"Remote A2A agent [$name] has a ca-bundle or client-certificate, but its card-url is an http:// URL, " +
           "so the TLS settings are not used")
@@ -173,11 +204,21 @@ private[akka] object A2aRemoteAgentSettings {
       value
     }
     def duration(key: String): FiniteDuration = config.getDuration(key).toScala
+    // PEM text under the key, or the PEM text of the file named under the key with "-file" appended
+    def pem(key: String): Option[String] =
+      (optional(key), optional(s"$key-file")) match {
+        case (Some(_), Some(_)) =>
+          throw new IllegalArgumentException(s"Set only one of ${where(key)} and ${where(s"$key-file")}")
+        case (Some(text), None) => Some(text)
+        case (None, Some(path)) => Some(readPemFile(path, where(s"$key-file")))
+        case (None, None)       => None
+      }
     def certificateAndKey(certificateKey: String, keyKey: String): (Option[String], Option[String]) = {
-      val certificate = optional(certificateKey)
-      val key = optional(keyKey)
+      val certificate = pem(certificateKey)
+      val key = pem(keyKey)
       if (certificate.isDefined != key.isDefined)
-        throw new IllegalArgumentException(s"${where(certificateKey)} and ${where(keyKey)} must be set together")
+        throw new IllegalArgumentException(
+          s"${where(certificateKey)} and ${where(keyKey)} (or their -file settings) must be set together")
       (certificate, key)
     }
     def credentialUrl(key: String, value: String): String = {
@@ -207,7 +248,7 @@ private[akka] object A2aRemoteAgentSettings {
               throw new IllegalArgumentException(
                 s"${where("auth.token-endpoint-auth-method")} must be client_secret_basic or client_secret_post, got [$other]")
           },
-          optional("auth.token-ca-bundle"),
+          pem("auth.token-ca-bundle"),
           tokenClientCertificate,
           tokenClientKey)
       case other =>
@@ -220,6 +261,17 @@ private[akka] object A2aRemoteAgentSettings {
     val cardUrl = httpUrl("card-url", required("card-url"))
     if (auth != A2aAuth.NoAuth) credentialUrl("card-url", cardUrl)
 
+    val cardVerification =
+      if (config.hasPath("require-signed-card") && config.getBoolean("require-signed-card")) {
+        val publicKey = pem("card-signing-key")
+        val jwksUrl = optional("card-jwks-url").map(httpUrl("card-jwks-url", _))
+        if (publicKey.isDefined == jwksUrl.isDefined)
+          throw new IllegalArgumentException(
+            s"${where("require-signed-card")} needs exactly one of ${where("card-signing-key")}, " +
+            s"${where("card-signing-key-file")} and ${where("card-jwks-url")}")
+        Some(A2aCardVerification(publicKey, jwksUrl))
+      } else None
+
     A2aRemoteAgentSettings(
       name,
       cardUrl,
@@ -227,9 +279,10 @@ private[akka] object A2aRemoteAgentSettings {
       duration("poll-interval"),
       duration("card-refresh"),
       auth,
-      optional("ca-bundle"),
+      pem("ca-bundle"),
       clientCertificate,
-      clientKey)
+      clientKey,
+      cardVerification)
   }
 
   private val LoopbackIpv4 = """127\.\d{1,3}\.\d{1,3}\.\d{1,3}""".r
@@ -247,19 +300,67 @@ private[akka] object A2aRemoteAgentSettings {
     } catch { case NonFatal(_) => false }
 
   /**
-   * PEM text is used as it is. Anything else is the path of a file that holds the PEM text.
+   * The content of a PEM file.
    *
    * @param setting
-   *   the setting that holds the value, named in the error
+   *   the setting that holds the path, named in the error
    */
-  def pemText(value: String, setting: String): String =
-    if (value.contains("-----BEGIN")) value
-    else
-      try new String(Files.readAllBytes(Path.of(value)), StandardCharsets.UTF_8)
-      catch {
-        // Neither the value nor the cause is in the error: a key without its PEM header would be printed
-        case NonFatal(_) =>
-          throw new IllegalArgumentException(
-            s"$setting must be PEM text or the path of a readable PEM file, and no file could be read at that path")
-      }
+  def readPemFile(path: String, setting: String): String =
+    try new String(Files.readAllBytes(Path.of(path)), StandardCharsets.UTF_8)
+    catch {
+      // The cause is not in the error, so that a key pasted into the setting by mistake is not printed
+      case NonFatal(_) =>
+        throw new IllegalArgumentException(s"$setting must be the path of a readable PEM file")
+    }
+}
+
+/**
+ * INTERNAL API
+ *
+ * A remote agent as the developer names it.
+ */
+@InternalApi
+private[akka] sealed trait A2aRemoteTarget {
+
+  /** The name of the agent in tool names, guardrail origins and messages. */
+  def name: String
+}
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[akka] object A2aRemoteTarget {
+
+  /** An agent configured under `akka.javasdk.a2a.remote-agents.<name>`. */
+  final case class Named(name: String) extends A2aRemoteTarget
+
+  /** An agent given by the URL of its Agent Card. */
+  final case class CardUrl(url: String) extends A2aRemoteTarget {
+    def name: String = url
+  }
+
+  /** The A2A endpoint of another Akka service. */
+  final case class Service(serviceName: String) extends A2aRemoteTarget {
+    def name: String = serviceName
+  }
+
+  def named(name: String): Named = {
+    if (name == null || name.isBlank) throw new IllegalArgumentException("A remote A2A agent name must not be blank")
+    Named(name)
+  }
+
+  def cardUrl(url: String): CardUrl = {
+    if (url == null || !A2aRemoteAgentSettings.isCardUrl(url))
+      throw new IllegalArgumentException(
+        s"The Agent Card URL of a remote A2A agent must start with http:// or https://, got [$url]")
+    CardUrl(url)
+  }
+
+  def service(serviceName: String): Service = {
+    if (serviceName == null || serviceName.isBlank || serviceName.exists(c => c == '.' || c == ':' || c == '/'))
+      throw new IllegalArgumentException(
+        s"The service of a remote A2A agent must be the bare name of an Akka service, got [$serviceName]")
+    Service(serviceName)
+  }
 }

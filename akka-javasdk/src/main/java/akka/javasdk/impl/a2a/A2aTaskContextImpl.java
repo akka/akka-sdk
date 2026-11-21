@@ -60,7 +60,7 @@ public final class A2aTaskContextImpl implements A2aTaskContext {
   @Override
   public void working(String text) {
     var message = agentMessage(text);
-    store.modify(taskId, t -> A2aTaskStore.withStatus(t, A2aTaskState.WORKING, message));
+    store.change(taskId, A2aTaskEntity.Change.status(A2aTaskState.WORKING, message));
   }
 
   @Override
@@ -75,17 +75,15 @@ public final class A2aTaskContextImpl implements A2aTaskContext {
                 artifact.metadata(),
                 artifact.extensions())
             : artifact;
-    store.modify(taskId, t -> A2aTaskStore.withArtifact(t, withId));
+    store.change(taskId, A2aTaskEntity.Change.artifact(withId));
   }
 
   @Override
   public void inputRequired(String question) {
     var message = agentMessage(question);
-    store.modify(
+    store.change(
         taskId,
-        t ->
-            A2aTaskStore.withStatus(
-                A2aTaskStore.withHistory(t, message), A2aTaskState.INPUT_REQUIRED, message));
+        new A2aTaskEntity.Change(message, null, A2aTaskState.INPUT_REQUIRED, message, false));
   }
 
   @Override
@@ -120,8 +118,7 @@ public final class A2aTaskContextImpl implements A2aTaskContext {
 
   private void finish(A2aTaskState state, A2aMessage message) {
     var inTask = inTask(message);
-    store.modify(
-        taskId, t -> A2aTaskStore.withStatus(A2aTaskStore.withHistory(t, inTask), state, inTask));
+    store.change(taskId, new A2aTaskEntity.Change(inTask, null, state, inTask, false));
   }
 
   private A2aMessage inTask(A2aMessage message) {

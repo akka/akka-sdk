@@ -13,6 +13,8 @@ import scala.jdk.CollectionConverters._
 import akka.actor.testkit.typed.scaladsl.LogCapturing
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.javasdk.a2a._
+import akka.http.scaladsl.model.headers.RawHeader
+import akka.javasdk.agent.RemoteA2aAgent
 import akka.javasdk.agent.ToolCallGuardrail
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
@@ -45,6 +47,16 @@ class A2aAgentToolsSpec
 
   private def client = A2aClientImpl(new A2aRemoteAgents(system, a2aConfig), None, None)
 
+  // A client with no configured agents, that reaches the service "claims-service" at the fake server
+  private def unconfiguredClient =
+    A2aClientImpl(
+      new A2aRemoteAgents(
+        system,
+        system.settings.config.getConfig("akka.javasdk.a2a"),
+        _ => A2aServiceRoute(server.baseUrl, None, Seq(RawHeader("X-Service-Identity", "caller-service")))),
+      None,
+      Some("caller-component"))
+
   private def reset(): Unit = {
     server.seen.clear()
     server.skills = Seq(skill("check-claim", "Checks a claim"), skill("pay", "Pays a claim"))
@@ -52,9 +64,13 @@ class A2aAgentToolsSpec
   }
 
   private def textMessage(texts: String*) =
-    new A2aMessage("m", null, null, A2aRole.AGENT, texts.map(A2aPart.text).asJava, null, null, null)
+    new A2aMessage("m", null, null, A2aRole.AGENT, texts.map(t => A2aPart.text(t): A2aPart).asJava, null, null, null)
 
-  private def call(tool: A2aAgentTools.A2aTool, arguments: String, contextId: String = "session-1"): String =
+  private def call(
+      tool: A2aAgentTools.A2aTool,
+      arguments: String,
+      contextId: String = "session-1",
+      client: A2aClientImpl = client): String =
     Await.result(A2aAgentTools.call(tool, arguments, contextId, client)(system.executionContext), 10.seconds)
 
   "The tool name of a skill" should {
@@ -100,16 +116,42 @@ class A2aAgentToolsSpec
       tools.map(_.skillId) shouldBe Seq("pay")
     }
 
-    "be named after the card for an agent given by card URL" in {
+    "be named after the card for an agent given by card URL that is not configured" in {
       reset()
-      val tools = A2aAgentTools.toolsFor(Seq(RemoteA2aAgent.fromCard(server.cardUrl)), client)
+      val tools = A2aAgentTools.toolsFor(Seq(RemoteA2aAgent.fromCard(server.cardUrl)), unconfiguredClient)
       tools.map(_.name) shouldBe Seq("fake_check-claim", "fake_pay")
     }
 
-    "carry the remote agent, the skill and the caller as their origin" in {
+    "be named after the configuration with the same card URL for an agent given by card URL" in {
+      reset()
+      val byUrl = A2aAgentTools.toolsFor(Seq(RemoteA2aAgent.fromCard(server.cardUrl)), client)
+      val byName = A2aAgentTools.toolsFor(Seq(RemoteA2aAgent.named("claims")), client)
+      byUrl.map(_.name) shouldBe byName.map(_.name)
+      byUrl.map(_.origin) shouldBe byName.map(_.origin)
+    }
+
+    "carry the remote agent's name, its card URL and the skill as their origin" in {
       reset()
       val tool = A2aAgentTools.toolsFor(Seq(RemoteA2aAgent.named("claims")), client).head
-      tool.origin("my-agent") shouldBe new ToolCallGuardrail.ToolOrigin.RemoteA2a("claims", "check-claim", "my-agent")
+      tool.origin shouldBe new ToolCallGuardrail.ToolOrigin.RemoteA2a("claims", server.cardUrl, "check-claim")
+    }
+
+    "reach another Akka service by its name, with the identity of the caller" in {
+      reset()
+      val tools = A2aAgentTools.toolsFor(Seq(RemoteA2aAgent.fromService("claims-service")), unconfiguredClient)
+      tools.map(_.name) shouldBe Seq("fake_check-claim", "fake_pay")
+      tools.head.origin shouldBe new ToolCallGuardrail.ToolOrigin.RemoteA2a("fake", server.cardUrl, "check-claim")
+      call(tools.head, """{"message":"check"}""", client = unconfiguredClient)
+      val sent = server.requests.filter(_.path == "/a2a").last
+      sent.headers("x-service-identity") shouldBe "caller-service"
+      sent.headers("x-akka-caller") shouldBe "caller-component"
+    }
+
+    "offer the skills named as varargs" in {
+      reset()
+      val tools =
+        A2aAgentTools.toolsFor(Seq(RemoteA2aAgent.named("claims").withAllowedSkills("pay", "check-claim")), client)
+      tools.map(_.skillId) shouldBe Seq("check-claim", "pay")
     }
 
     "be rejected when a name clashes with another tool" in {
@@ -232,6 +274,10 @@ class A2aAgentToolsSpec
   }
 
   "A remote agent" should {
+
+    "refuse a service name that is not a bare name" in {
+      intercept[IllegalArgumentException](RemoteA2aAgent.fromService("claims.example.com"))
+    }
 
     "refuse a card URL that is not HTTP" in {
       intercept[IllegalArgumentException](RemoteA2aAgent.fromCard("ftp://example.com/card.json"))

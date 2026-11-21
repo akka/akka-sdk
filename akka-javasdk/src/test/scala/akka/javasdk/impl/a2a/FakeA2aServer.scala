@@ -60,10 +60,16 @@ final class FakeA2aServer(implicit system: ActorSystem[_]) {
    */
   @volatile var sendReply: Option[JsonNode => Either[JsonRpcError, A2aSendMessageResponse]] = None
 
+  /** Applied to the card before it is served, for example to sign it. */
+  @volatile var cardTransform: A2aAgentCard => A2aAgentCard = identity
+
+  /** The JSON Web Key Set served at /jwks.json. */
+  @volatile var jwks: String = """{"keys":[]}"""
+
   /** Requests that fail this check get a 401. */
   @volatile var authorized: HttpRequest => Boolean = _ => true
 
-  @volatile private var baseUrl = ""
+  @volatile var baseUrl = ""
 
   def cardUrl: String = s"$baseUrl/.well-known/agent-card.json"
 
@@ -220,8 +226,10 @@ final class FakeA2aServer(implicit system: ActorSystem[_]) {
         } ~ path(".well-known" / "agent-card.json") {
           get {
             cardRequests.incrementAndGet()
-            complete(jsonEntity(card))
+            complete(jsonEntity(cardTransform(card)))
           }
+        } ~ path("jwks.json") {
+          get(complete(HttpEntity(ContentTypes.`application/json`, jwks)))
         } ~ path("a2a")(post(jsonRpc)) ~ httpJson
     }
 }

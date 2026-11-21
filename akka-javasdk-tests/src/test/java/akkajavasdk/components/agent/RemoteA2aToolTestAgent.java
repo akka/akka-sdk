@@ -4,8 +4,8 @@
 
 package akkajavasdk.components.agent;
 
-import akka.javasdk.a2a.RemoteA2aAgent;
 import akka.javasdk.agent.Agent;
+import akka.javasdk.agent.RemoteA2aAgent;
 import akka.javasdk.annotations.Component;
 import java.util.Set;
 

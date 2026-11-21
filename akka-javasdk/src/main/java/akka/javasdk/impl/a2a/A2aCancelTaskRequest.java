@@ -2,13 +2,15 @@
  * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.javasdk.a2a;
+package akka.javasdk.impl.a2a;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.Map;
 
 /**
- * The request of {@code CancelTask}.
+ * INTERNAL API
+ *
+ * <p>The request of {@code CancelTask}.
  *
  * @param tenant the tenant of the agent, when it serves several
  * @param id the id of the task

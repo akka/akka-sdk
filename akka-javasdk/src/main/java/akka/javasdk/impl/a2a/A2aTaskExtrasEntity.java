@@ -7,7 +7,6 @@ package akka.javasdk.impl.a2a;
 import akka.Done;
 import akka.annotation.InternalApi;
 import akka.javasdk.a2a.A2aMessage;
-import akka.javasdk.a2a.A2aTaskPushNotificationConfig;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import java.util.ArrayList;

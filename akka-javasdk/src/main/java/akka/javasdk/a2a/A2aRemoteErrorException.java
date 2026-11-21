@@ -4,6 +4,8 @@
 
 package akka.javasdk.a2a;
 
+import java.util.Optional;
+
 /**
  * The remote A2A agent answered with a protocol error.
  *
@@ -26,8 +28,8 @@ public final class A2aRemoteErrorException extends A2aClientException {
     return code;
   }
 
-  /** The A2A error reason, such as {@code TASK_NOT_FOUND}, or {@code null} when it is not known. */
-  public String reason() {
-    return reason;
+  /** The A2A error reason, such as {@code TASK_NOT_FOUND}, when the remote agent reported one. */
+  public Optional<String> reason() {
+    return Optional.ofNullable(reason);
   }
 }

@@ -84,21 +84,22 @@ class A2aBindingSpec extends AnyWordSpec with Matchers {
     "map a JSON-RPC error code to its A2A reason" in {
       val e = A2aBinding.jsonRpcError(JsonRpcError.of(A2aErrorCode.TASK_NOT_FOUND))
       e.code shouldBe -32001
-      e.reason shouldBe "TASK_NOT_FOUND"
+      e.reason shouldBe java.util.Optional.of("TASK_NOT_FOUND")
       e.getMessage should include("Task not found")
     }
 
     "keep the code and message of a JSON-RPC error that has no A2A reason" in {
       val e = A2aBinding.jsonRpcError(new JsonRpcError(-32099, "custom", null))
       e.code shouldBe -32099
-      e.reason shouldBe null
+      e.reason shouldBe java.util.Optional.empty()
       e.getMessage shouldBe "custom"
     }
 
     "read the reason from the ErrorInfo of a JSON-RPC error" in {
       val data = JsonSupport.getObjectMapper.readTree(
         """[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"CONTENT_TYPE_NOT_SUPPORTED","domain":"a2a-protocol.org"}]""")
-      A2aBinding.jsonRpcError(new JsonRpcError(-32000, "bad", data)).reason shouldBe "CONTENT_TYPE_NOT_SUPPORTED"
+      A2aBinding.jsonRpcError(new JsonRpcError(-32000, "bad", data)).reason shouldBe java.util.Optional.of(
+        "CONTENT_TYPE_NOT_SUPPORTED")
     }
 
     "map an HTTP+JSON error by its ErrorInfo reason to the A2A code" in {
@@ -107,7 +108,7 @@ class A2aBindingSpec extends AnyWordSpec with Matchers {
       val e = A2aBinding.httpJsonError(404, Some(body))
       e shouldBe a[A2aRemoteErrorException]
       e.asInstanceOf[A2aRemoteErrorException].code shouldBe -32001
-      e.asInstanceOf[A2aRemoteErrorException].reason shouldBe "TASK_NOT_FOUND"
+      e.asInstanceOf[A2aRemoteErrorException].reason shouldBe java.util.Optional.of("TASK_NOT_FOUND")
     }
 
     "report a plain HTTP failure as a client exception" in {

@@ -171,6 +171,18 @@ public class A2aTaskWorkflowTest extends TestKitSupport {
   }
 
   @Test
+  public void refusesAPushUrlOnALocalAddressThatIsNotAllowed() throws Exception {
+    var task = send(message("ask", "start", null, null), null).get("task");
+    var error =
+        rpc(
+                "CreateTaskPushNotificationConfig",
+                Map.of("taskId", id(task), "url", "http://169.254.169.254/latest/meta-data"))
+            .get("error");
+    assertThat(error.get("code").asInt()).isEqualTo(-32602);
+    assertThat(error.get("message").asText()).contains("private or local address");
+  }
+
+  @Test
   public void createsGetsListsAndDeletesPushConfigurations() throws Exception {
     var task = send(message("ask", "start", null, null), null).get("task");
     var taskId = id(task);

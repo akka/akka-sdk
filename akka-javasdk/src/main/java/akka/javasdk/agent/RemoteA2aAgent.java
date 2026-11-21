@@ -1,0 +1,92 @@
+/*
+ * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
+ */
+
+package akka.javasdk.agent;
+
+import akka.annotation.DoNotInherit;
+import akka.javasdk.impl.a2a.RemoteA2aAgentImpl;
+import java.time.Duration;
+import java.util.Set;
+
+/**
+ * A remote Agent2Agent (A2A) agent that an agent offers to its model as tools.
+ *
+ * <p>Pass it to {@link Agent.Effect.Builder#a2aAgents}. The agent reads the remote agent's Agent
+ * Card and offers each skill on the card to the model as one tool. The tool takes a required {@code
+ * message} text and an optional {@code data} object. When the model calls the tool, the agent sends
+ * the message to the skill with the session id as the A2A context id, and returns the reply to the
+ * model.
+ *
+ * <p>The names of the tools are {@code <agent name>_<skill id>}. The agent name is the configured
+ * name for {@link #named(String)}. For {@link #fromCard(String)} and {@link #fromService(String)}
+ * it is the name of a configuration under {@code akka.javasdk.a2a.remote-agents} with the same
+ * {@code card-url}, or else the {@code name} on the Agent Card. The same name is the {@code
+ * agentName} of {@link ToolCallGuardrail.ToolOrigin.RemoteA2a}.
+ *
+ * <p>A failure of the remote agent, such as an error reply or a timeout, is returned to the model
+ * as the tool's result, so that the model can decide what to do next. The agent request does not
+ * fail.
+ *
+ * <p>Not for user extension, create instances using {@link #named(String)}, {@link
+ * #fromCard(String)} or {@link #fromService(String)}.
+ */
+@DoNotInherit
+public interface RemoteA2aAgent {
+
+  /**
+   * A remote agent configured under {@code akka.javasdk.a2a.remote-agents.<name>}, with the
+   * credentials and TLS settings of that configuration.
+   *
+   * @param name the name of the configuration entry
+   */
+  static RemoteA2aAgent named(String name) {
+    return RemoteA2aAgentImpl.named(name);
+  }
+
+  /**
+   * A remote agent given by the URL of its Agent Card. It has no credentials and no custom TLS
+   * settings, and uses the settings under {@code akka.javasdk.a2a.defaults}.
+   *
+   * @param url the URL of the Agent Card, which must start with {@code http://} or {@code https://}
+   */
+  static RemoteA2aAgent fromCard(String url) {
+    return RemoteA2aAgentImpl.fromCard(url);
+  }
+
+  /**
+   * The A2A endpoint of another Akka service in the same project. The calls go to the service by
+   * its name, as {@link RemoteMcpTools#fromService(String)} does, and carry the identity of this
+   * service, so the other service's {@code @Acl} can allow it. It uses the settings under {@code
+   * akka.javasdk.a2a.defaults}.
+   *
+   * @param serviceName the name of the other service
+   */
+  static RemoteA2aAgent fromService(String serviceName) {
+    return RemoteA2aAgentImpl.fromService(serviceName);
+  }
+
+  /**
+   * Offers only the skills with these ids to the model. Skills on the Agent Card that are not in
+   * the set are not offered and cannot be called.
+   *
+   * <p>By default, every skill on the Agent Card is offered.
+   */
+  RemoteA2aAgent withAllowedSkills(Set<String> skillIds);
+
+  /**
+   * Offers only the skills with these ids to the model. Skills on the Agent Card that are not
+   * listed are not offered and cannot be called.
+   *
+   * <p>By default, every skill on the Agent Card is offered.
+   */
+  RemoteA2aAgent withAllowedSkills(String skillId, String... moreSkillIds);
+
+  /**
+   * Limits how long a tool call waits for the remote agent's reply. When the time passes, the model
+   * receives a timeout error as the tool's result.
+   *
+   * <p>By default, the {@code timeout} of the remote agent's configuration applies.
+   */
+  RemoteA2aAgent withTimeout(Duration timeout);
+}

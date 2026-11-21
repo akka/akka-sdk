@@ -2,14 +2,17 @@
  * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.javasdk.a2a;
+package akka.javasdk.impl.a2a;
 
+import akka.javasdk.a2a.A2aMessage;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.List;
 import java.util.Map;
 
 /**
- * The request of {@code SendMessage} and {@code SendStreamingMessage}.
+ * INTERNAL API
+ *
+ * <p>The request of {@code SendMessage} and {@code SendStreamingMessage}.
  *
  * @param tenant the tenant of the agent, when it serves several
  * @param message the message to send
