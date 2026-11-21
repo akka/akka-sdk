@@ -68,6 +68,7 @@ public final class MockA2aAgent implements AutoCloseable {
       TEXT,
       DATA,
       WORKING_THEN_COMPLETED,
+      INPUT_REQUIRED,
       FAILED_TASK,
       ERROR
     }
@@ -76,12 +77,23 @@ public final class MockA2aAgent implements AutoCloseable {
     private final String text;
     private final Map<String, Object> data;
     private final Duration workingFor;
+    private final String answeredText;
 
     private Reply(Kind kind, String text, Map<String, Object> data, Duration workingFor) {
+      this(kind, text, data, workingFor, null);
+    }
+
+    private Reply(
+        Kind kind,
+        String text,
+        Map<String, Object> data,
+        Duration workingFor,
+        String answeredText) {
       this.kind = kind;
       this.text = text;
       this.data = data;
       this.workingFor = workingFor;
+      this.answeredText = answeredText;
     }
 
     /** A message with one text part. */
@@ -102,6 +114,16 @@ public final class MockA2aAgent implements AutoCloseable {
      */
     public static Reply workingThenCompleted(Duration workingFor, String resultText) {
       return new Reply(Kind.WORKING_THEN_COMPLETED, resultText, null, workingFor);
+    }
+
+    /**
+     * A task that is waiting for input when the mock accepts it, with the question as the message
+     * of its status. A {@code SendMessage} that carries the id of the task answers the question.
+     * The task is then working, and the first {@code GetTask} that follows finds it completed, with
+     * an artifact that has one text part, {@code thenText}.
+     */
+    public static Reply inputRequired(String question, String thenText) {
+      return new Reply(Kind.INPUT_REQUIRED, question, null, Duration.ZERO, thenText);
     }
 
     /** A task that has failed, with the given text as the message of its status. */
@@ -130,7 +152,7 @@ public final class MockA2aAgent implements AutoCloseable {
 
   private record Skill(String id, String description, Reply reply) {}
 
-  private record TaskRecord(String contextId, Reply reply, Instant created) {}
+  private record TaskRecord(String contextId, Reply reply, Instant created, boolean answered) {}
 
   private static final ObjectMapper mapper = JsonSupport.getObjectMapper();
 
@@ -281,9 +303,15 @@ public final class MockA2aAgent implements AutoCloseable {
       case ERROR ->
           JsonRpcResponse.failure(
               id, JsonRpcError.of(A2aErrorCode.INTERNAL_ERROR, reply.text, null));
-      case WORKING_THEN_COMPLETED, FAILED_TASK -> {
+      case WORKING_THEN_COMPLETED, FAILED_TASK, INPUT_REQUIRED -> {
+        var answeredId = textOrNull(message.get("taskId"));
+        var asked = answeredId == null ? null : tasks.get(answeredId);
+        if (reply.kind == Reply.Kind.INPUT_REQUIRED && asked != null) {
+          tasks.put(answeredId, new TaskRecord(asked.contextId(), reply, asked.created(), true));
+          yield success(id, A2aSendMessageResponse.of(task(answeredId, true)));
+        }
         var taskId = UUID.randomUUID().toString();
-        tasks.put(taskId, new TaskRecord(context, reply, Instant.now()));
+        tasks.put(taskId, new TaskRecord(context, reply, Instant.now(), false));
         yield success(id, A2aSendMessageResponse.of(task(taskId, true)));
       }
     };
@@ -324,6 +352,14 @@ public final class MockA2aAgent implements AutoCloseable {
               null);
       return new A2aTask(taskId, record.contextId(), status, null, null, null);
     }
+    if (reply.kind == Reply.Kind.INPUT_REQUIRED && !record.answered()) {
+      var status =
+          new A2aTaskStatus(
+              A2aTaskState.INPUT_REQUIRED,
+              A2aMessage.agent(reply.text).withContextId(record.contextId()),
+              null);
+      return new A2aTask(taskId, record.contextId(), status, null, null, null);
+    }
     var done = !justAccepted && !Instant.now().isBefore(record.created().plus(reply.workingFor));
     if (!done) {
       return new A2aTask(
@@ -335,7 +371,15 @@ public final class MockA2aAgent implements AutoCloseable {
           null);
     }
     var artifact =
-        new A2aArtifact("result", "result", null, List.of(A2aPart.text(reply.text)), null, null);
+        new A2aArtifact(
+            "result",
+            "result",
+            null,
+            List.of(
+                A2aPart.text(
+                    reply.kind == Reply.Kind.INPUT_REQUIRED ? reply.answeredText : reply.text)),
+            null,
+            null);
     return new A2aTask(
         taskId,
         record.contextId(),

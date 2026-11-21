@@ -374,6 +374,7 @@ A reply is one of these:
 `Reply.data(map)`:: A message with one data part.
 `Reply.workingThenCompleted(duration, text)`:: A task that is working when the mock accepts it. After the duration, `GetTask` finds it completed, with an artifact that has one text part. Use it to test <<hand-off>> and <<workflow-step>>.
 `Reply.failed(message)`:: A task that has failed, with the message as the text of its status.
+`Reply.inputRequired(question, thenText)`:: A task that is waiting for input when the mock accepts it, with the question as the message of its status. A `SendMessage` that carries the id of the task answers it. The task is then working, and the first `GetTask` that follows finds it completed, with an artifact that has one text part, `thenText`.
 `Reply.error(message)`:: A JSON-RPC error. The agent under test receives `A2aRemoteErrorException`, or a tool result that starts with `Error:`.
 
 A message that names no skill goes to the first skill. A message that names a skill that the mock does not have gets an invalid parameters error.

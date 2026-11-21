@@ -32,6 +32,8 @@ class MockA2aAgentTest {
               "slow",
               "A review that takes long",
               Reply.workingThenCompleted(Duration.ofHours(1), "Never"))
+          .withSkill(
+              "ask", "Asks for a policy", Reply.inputRequired("Which policy?", "Approved for P-1"))
           .withSkill("reject", "Rejects a claim", Reply.failed("Claim is not covered"))
           .withSkill("explode", "Always fails", Reply.error("Boom"))
           .start();
@@ -101,6 +103,27 @@ class MockA2aAgentTest {
     var done = rpc("GetTask", Map.of("id", review.get("id").asText())).get("result");
     assertThat(done.at("/status/state").asText()).isEqualTo("TASK_STATE_COMPLETED");
     assertThat(done.at("/artifacts/0/parts/0/text").asText()).isEqualTo("Approved");
+  }
+
+  @SuppressWarnings("unchecked")
+  @Test
+  void anInputRequiredTaskCompletesOnceAnswered() throws Exception {
+    var asked = send("ask", "Review", "ctx-1").get("task");
+    var taskId = asked.get("id").asText();
+    assertThat(asked.at("/status/state").asText()).isEqualTo("TASK_STATE_INPUT_REQUIRED");
+    assertThat(asked.at("/status/message/parts/0/text").asText()).isEqualTo("Which policy?");
+    assertThat(rpc("GetTask", Map.of("id", taskId)).at("/result/status/state").asText())
+        .isEqualTo("TASK_STATE_INPUT_REQUIRED");
+
+    var answer = message("ask", "P-1", "ctx-1");
+    ((Map<String, Object>) answer.get("message")).put("taskId", taskId);
+    var answered = rpc("SendMessage", answer).at("/result/task");
+    assertThat(answered.get("id").asText()).isEqualTo(taskId);
+    assertThat(answered.at("/status/state").asText()).isEqualTo("TASK_STATE_WORKING");
+
+    var done = rpc("GetTask", Map.of("id", taskId)).get("result");
+    assertThat(done.at("/status/state").asText()).isEqualTo("TASK_STATE_COMPLETED");
+    assertThat(done.at("/artifacts/0/parts/0/text").asText()).isEqualTo("Approved for P-1");
   }
 
   @Test
