@@ -13,6 +13,7 @@ import akka.annotation.InternalApi;
  * <pre>{@code
  * @A2aEndpoint(name = "Claims", version = "1.0.0")
  * @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
+ * @JWT(validate = JWT.JwtMethodMode.BEARER_TOKEN, bearerTokenIssuers = "https://idp.example.com")
  * public class ClaimsA2aEndpoint extends AbstractA2aEndpoint {
  *   @Override
  *   protected A2aAgents agents() {
@@ -24,6 +25,11 @@ import akka.annotation.InternalApi;
  * <p>The SDK serves the A2A methods and the Agent Card. It creates the subclass for each request,
  * so its constructor can accept an {@link A2aRequestContext}, besides the parameters an HTTP
  * endpoint accepts, and {@link #agents()} can depend on the caller.
+ *
+ * <p>Give an endpoint that more than one client can reach a {@link akka.javasdk.annotations.JWT}
+ * annotation. The SDK keeps the tasks and agent sessions of each token subject apart. Without a
+ * subject, callers that send the same context id share the agent session, and {@code ListTasks} is
+ * refused.
  */
 public abstract class AbstractA2aEndpoint {
 

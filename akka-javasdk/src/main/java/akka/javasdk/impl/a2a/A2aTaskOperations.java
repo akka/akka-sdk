@@ -48,7 +48,18 @@ final class A2aTaskOperations {
         handler.queryParam("includeArtifacts").map(Boolean::valueOf).orElse(null));
   }
 
+  /**
+   * Lists the tasks of the caller. A caller without an authenticated subject is refused, because
+   * its tasks cannot be told apart from the tasks of other callers.
+   */
   A2aListTasksResponse list(A2aListTasksRequest request) {
+    var owner = handler.owner();
+    if (owner == null) {
+      throw new A2aException(
+          A2aErrorCode.UNSUPPORTED_OPERATION,
+          "ListTasks needs an authenticated caller: the endpoint must have @JWT and the token a"
+              + " subject");
+    }
     int pageSize = request.pageSize() == null ? DEFAULT_PAGE_SIZE : request.pageSize();
     if (pageSize < 1 || pageSize > MAX_PAGE_SIZE) {
       throw A2aRequestHandler.invalidParams(
@@ -63,7 +74,6 @@ final class A2aTaskOperations {
             : List.of(status.name());
     var after =
         request.statusTimestampAfter() == null ? Instant.EPOCH : request.statusTimestampAfter();
-    var owner = handler.owner() == null ? "" : handler.owner();
     var views = handler.componentClient.forView();
     var page =
         A2aRequestHandler.isBlank(request.contextId())

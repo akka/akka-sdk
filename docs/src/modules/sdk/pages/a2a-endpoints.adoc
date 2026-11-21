@@ -33,7 +33,7 @@ To create an A2A endpoint, annotate a class with `@A2aEndpoint`, extend `Abstrac
 include::example$doc-snippets/src/main/java/com/example/api/ExampleA2aEndpoint.java[tag=endpoint-class]
 ----
 <1> `@A2aEndpoint` sets the name, description and version that the Agent Card shows. The routes are served at `path`, which is `/a2a` by default.
-<2> `@Acl` controls which callers can use the endpoint, as for any endpoint. See xref:sdk:access-control.adoc[].
+<2> `@Acl` controls which callers can use the endpoint, as for any endpoint. See xref:sdk:access-control.adoc[]. An endpoint open to the internet also needs `@JWT`, so that each caller has a subject. Akka keeps the tasks and conversations of each subject apart, as described in <<_authentication_and_authorization_of_a2a_endpoints>>.
 <3> The class extends `AbstractA2aEndpoint`. Akka serves the A2A routes at the path of the endpoint, so the class holds only `agents()`.
 <4> `agents()` returns the agents that answer the skills. Akka calls it for each request and for the Agent Card, and once at startup, without a request, to check the workflows that take an `A2aTaskContext`.
 
@@ -288,7 +288,7 @@ A request that cannot start, for example because it names an unknown skill, is a
 
 === Listing tasks
 
-`ListTasks` returns the tasks of the caller, most recently changed first. When the endpoint has `@JWT`, a caller sees only the tasks that it created. The request has these optional filters:
+`ListTasks` returns the tasks of the caller, most recently changed first. A caller sees only the tasks that it created. `ListTasks` needs a caller with a subject: on an endpoint without `@JWT`, or for a token without a subject, it answers with an unsupported operation error. The request has these optional filters:
 
 [cols="1,3"]
 |===
@@ -458,7 +458,9 @@ include::example$doc-snippets/src/main/java/com/example/api/ExampleA2aEndpoint.j
 
 The Agent Card route applies the `@Acl` of the endpoint and does not require a token, so a client can read the card before it obtains one.
 
-When the endpoint requires a token, Akka stores the subject of the token with each task. `GetTask` and `SendMessage` answer a task not found error to a caller with another subject.
+When the endpoint requires a token, Akka stores the subject of the token with each task. `GetTask` and `SendMessage` answer a task not found error to a caller with another subject. The session of an agent also depends on the subject, as described in <<_conversations_context_id_and_session_memory>>.
+
+An endpoint without `@JWT` cannot tell its callers apart. Its callers share the conversations of a context id, `ListTasks` is refused, and any caller that knows the id of a task can read it. Use an endpoint without `@JWT` only when every caller is trusted, for example a service in the same project that `@Acl` admits.
 
 === Reading claims from `A2aRequestContext`
 

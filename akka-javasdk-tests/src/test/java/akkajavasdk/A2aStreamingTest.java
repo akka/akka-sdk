@@ -556,6 +556,26 @@ public class A2aStreamingTest extends TestKitSupport {
         .get("task");
   }
 
+  @Test
+  public void refusesListTasksToACallerWithoutASubject() throws Exception {
+    var claims = Base64.getEncoder().encodeToString(bytes(Map.of("iss", "a2a-test-issuer")));
+    var withoutSubject =
+        "Bearer "
+            + Base64.getEncoder().encodeToString("{\"alg\":\"none\"}".getBytes())
+            + "."
+            + claims;
+    // A task without an owner, which a list without a subject would otherwise return
+    jsonRpc("SendMessage", sendParams("echo", "unowned", null, false), withoutSubject);
+
+    var error = jsonRpc("ListTasks", Map.of(), withoutSubject).get("error");
+    assertThat(error.get("code").asInt()).isEqualTo(-32004);
+    assertThat(error.get("message").asText()).contains("authenticated caller");
+
+    var rest = httpClient.GET("/a2a/tasks").addHeader("Authorization", withoutSubject).invoke();
+    assertThat(rest.status()).isEqualTo(StatusCodes.BAD_REQUEST);
+    assertThat(rest.body().utf8String()).contains("UNSUPPORTED_OPERATION");
+  }
+
   private JsonNode jsonRpc(String method, Object params, String token) throws Exception {
     var response =
         httpClient
