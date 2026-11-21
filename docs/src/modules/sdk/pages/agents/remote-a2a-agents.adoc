@@ -10,7 +10,7 @@ include::ROOT:partial$include.adoc[]
 
 A remote A2A agent is an agent that runs outside your service and speaks the Agent2Agent (A2A) protocol. The remote agent publishes an Agent Card, which is a JSON document that names the agent, lists its skills, and says how to reach it. A skill is one task that the agent can do. Your service calls the agent with `A2aClient`, which reads the Agent Card, sends the requests, and applies the credentials and TLS settings that you configure for that agent.
 
-This page describes how an agent offers the skills of a remote agent to its model as tools, how to name a remote agent in configuration, how to give your service credentials for it, how to set the certificates that TLS uses to reach it, and how to choose the skills and the timeout of the tools.
+This page describes how an agent offers the skills of a remote agent to its model as tools, how to name a remote agent in configuration, how to give your service credentials for it, how to set the certificates that TLS uses to reach it, how to require a signed Agent Card, and how to choose the skills and the timeout of the tools.
 
 [#remote-agents-as-tools]
 == Remote A2A agents as tools
@@ -26,9 +26,11 @@ include::example$doc-snippets/src/main/java/com/example/a2a/ClaimsAssistantAgent
 <2> `RemoteA2aAgent.named` takes a name configured under `akka.javasdk.a2a.remote-agents`. The tool calls use the credentials and TLS settings of that configuration. See <<naming-remote-agents>>.
 <3> `RemoteA2aAgent.fromCard` takes the URL of an Agent Card. The tool calls use no credentials and no custom TLS settings.
 
+`RemoteA2aAgent.fromService` takes the name of another Akka service in the same project that has an A2A endpoint. The agent reaches the service by its name, as `RemoteMcpTools.fromService` reaches an MCP endpoint, and the calls carry the identity of the calling service, so the `@Acl` of the other service can allow it. The tool calls use no credentials and no custom TLS settings.
+
 When the agent handles a request, it reads the Agent Card of each remote agent. The client caches the card, as <<naming-remote-agents>> describes. The agent offers each skill on the card to the model as one tool:
 
-* The name of the tool is the name of the remote agent and the id of the skill, joined by `_`, for example `claims_claim-status`. For a remote agent from `fromCard`, the name is the `name` on its Agent Card. Characters that model providers do not accept in tool names become `_`. A name longer than 64 characters is shortened and ends with a hash of the full name.
+* The name of the tool is the name of the remote agent and the id of the skill, joined by `_`, for example `claims_claim-status`. For a remote agent from `named`, the name is the configured name. For a remote agent from `fromCard` or `fromService`, the name is the name of a configuration under `akka.javasdk.a2a.remote-agents` with the same `card-url`, or else the `name` on its Agent Card. A remote agent therefore has the same name whether your code gives it by name or by URL. Characters that model providers do not accept in tool names become `_`. A name longer than 64 characters is shortened and ends with a hash of the full name.
 * The description of the tool is the description of the skill, followed by the names of the skill and of the remote agent.
 * The tool takes a required `message` string and an optional `data` object. The agent sends the message as a text part and the data as a data part.
 
@@ -48,7 +50,7 @@ The agent request fails before the model is called in two cases:
 * The Agent Card of a remote agent cannot be read.
 * The name of a tool is the same as the name of a function tool of the agent, or of another skill. The request fails with `IllegalArgumentException`. Use `withAllowedSkills` to leave out a skill whose name clashes. See <<skills-and-timeouts>>.
 
-A `ToolCallGuardrail` can allow or deny each call. See xref:sdk:agents/guardrails.adoc#_implementing_a_tool_call_guardrail[Implementing a tool call guardrail].
+A `ToolCallGuardrail` can allow or deny each call. The origin of a call to a remote A2A agent is `ToolCallGuardrail.ToolOrigin.RemoteA2a`, which carries the name of the remote agent as the tool names use it, the URL of its Agent Card, and the id of the skill. A guardrail can match the agent by its name or by its card URL. See xref:sdk:agents/guardrails.adoc#_implementing_a_tool_call_guardrail[Implementing a tool call guardrail].
 
 [#naming-remote-agents]
 == Naming remote agents in configuration
@@ -70,9 +72,13 @@ include::example$doc-snippets/src/main/java/com/example/a2a/ClaimStatusEndpoint.
 ----
 <1> `A2aClient` is injected into the constructor.
 <2> `forAgent("claims")` reads the settings of `akka.javasdk.a2a.remote-agents.claims`. It throws `IllegalArgumentException` when the name is not configured or its settings are not valid.
-<3> `send` takes the id of a skill and a message. A2A has no field for the skill, so the client sends the id as `skillId` in the metadata of the request. Call `inContext` on the result to continue a conversation with a context id.
+<3> `A2aMessage.user` creates a message from the client with one text part and a new message id. The `with` methods set the other fields, such as the context id.
+<4> `send` takes the id of a skill and a message. A2A has no field for the skill, so the client sends the id as `skillId` in the metadata of the request. Without a skill id, `send(message)` leaves the choice to the remote agent. Call `inContext` on the request to continue a conversation with a context id.
+<5> The reply is a task or a message. `A2aSendMessageResponse` is a sealed interface, so a `switch` covers both cases.
 
-For a one-off call, pass the URL of an Agent Card to `forAgent` instead of a name. An agent that you give by URL has no credentials and no custom TLS settings, and takes its timeouts from `akka.javasdk.a2a.defaults`. For this reason, the `defaults` cannot hold credentials: the service fails to start when `akka.javasdk.a2a.defaults.auth.type` is not `none`.
+Each method of `RemoteA2aAgentClient` returns a request that is not yet sent: `card()`, `send(...)`, `getTask(taskId)` and `cancel(taskId)`. Send it with `invoke()`, which blocks for the reply, or with `invokeAsync()`, which returns a `CompletionStage`, as with the requests of `ComponentClient`. `stream(...)` returns a `Source` of the events, and the request starts when the stream is materialized.
+
+For a one-off call, pass the URL of an Agent Card to `forCardUrl`. To call the A2A endpoint of another Akka service in the same project, pass its name to `forService`. An agent that you give by URL or by service has no credentials and no custom TLS settings, and takes its timeouts from `akka.javasdk.a2a.defaults`. For this reason, the `defaults` cannot hold credentials: the service fails to start when `akka.javasdk.a2a.defaults.auth.type` is not `none`.
 
 The settings of a remote agent are:
 
@@ -96,9 +102,13 @@ The settings of a remote agent are:
 | `type = none`
 | Credentials. See <<credentials>>.
 
-| `ca-bundle`, `client-certificate`, `client-key`
+| `ca-bundle`, `client-certificate`, `client-key`, and their `-file` forms
 |
 | TLS settings. See <<tls>>.
+
+| `require-signed-card`, `card-signing-key`, `card-signing-key-file`, `card-jwks-url`
+| `false`
+| A signed Agent Card. See <<signed-cards>>.
 |===
 
 The client reads the Agent Card on the first call and caches it. It then chooses a protocol binding from the interfaces that the card lists. The client uses the JSON-RPC binding when the card lists it, and the HTTP+JSON binding otherwise. When the card lists neither binding, every call fails with `A2aClientException`.
@@ -107,7 +117,7 @@ Each request carries an `X-Akka-Caller` header that identifies the calling compo
 
 A call fails with one of two exceptions:
 
-* `A2aRemoteErrorException` means that the remote agent answered with a protocol error. Its `code()` is the JSON-RPC error code, for example `-32001` for a task that does not exist. Its `reason()` is the A2A reason, for example `TASK_NOT_FOUND`.
+* `A2aRemoteErrorException` means that the remote agent answered with a protocol error. Its `code()` is the JSON-RPC error code, for example `-32001` for a task that does not exist. Its `reason()` is the A2A reason, for example `TASK_NOT_FOUND`, when the remote agent reported one.
 * `A2aClientException` covers every other failure, such as an unreachable agent, a timeout, a rejected credential, a failed TLS handshake, or a reply that is not valid A2A. `A2aRemoteErrorException` is a subclass of `A2aClientException`.
 
 [#credentials]
@@ -158,18 +168,29 @@ include::example$doc-snippets/src/main/resources/application.conf[tag=a2a-remote
 
 `client-certificate` and `client-key`:: The certificate chain and the private key that the service presents when the agent requires mutual TLS. Put the certificate of the service first, followed by any intermediate certificates. Set both settings or neither.
 
-Each of the three settings holds either PEM text or the path of a file that holds PEM text. A value that contains `-----BEGIN` is read as PEM text. Any other value is read as a path. Passing the PEM text in an environment variable avoids a file in the container image.
+Each of the three settings holds PEM text. To read the PEM text from a file instead, set the setting with `-file` appended to its name, such as `ca-bundle-file = "/etc/claims/ca.pem"`. Set one form of a setting, not both. Passing the PEM text in an environment variable avoids a file in the container image.
 
-The token endpoint of OAuth 2.0 client credentials has its own TLS settings, because it is usually another server than the agent. By default, the client verifies the token endpoint against the certificates that the Java runtime trusts and presents no client certificate. For an identity provider with a certificate from a private authority, or one that requires mutual TLS, set `auth.token-ca-bundle`, `auth.token-client-certificate` and `auth.token-client-key`. They take the same values as the settings above.
+The token endpoint of OAuth 2.0 client credentials has its own TLS settings, because it is usually another server than the agent. By default, the client verifies the token endpoint against the certificates that the Java runtime trusts and presents no client certificate. For an identity provider with a certificate from a private authority, or one that requires mutual TLS, set `auth.token-ca-bundle`, `auth.token-client-certificate` and `auth.token-client-key`, or their `-file` forms. They take the same values as the settings above.
 
 The private key must be an unencrypted PKCS#8 key, which starts with `-----BEGIN PRIVATE KEY-----`. The key can be an RSA, EC or Ed25519 key. `forAgent` throws `IllegalArgumentException` for a key in another format. The `openssl pkcs8 -topk8 -nocrypt` command converts a PKCS#1 or SEC1 key.
 
 A TLS failure, such as an untrusted certificate, a certificate for another host name, or a missing client certificate, fails the call with `A2aClientException`. The message of the exception names the cause that the TLS layer reported.
 
+[#signed-cards]
+== Requiring a signed Agent Card
+
+An Agent Card can carry JSON Web Signatures of its content. To use a remote agent only when its card is signed by a key that you trust, set `require-signed-card = true` and give the key in one of two ways:
+
+`card-signing-key`:: The public key as PEM text, which starts with `-----BEGIN PUBLIC KEY-----`. `card-signing-key-file` names a file that holds it instead. The client accepts a signature made with this key, whatever its key id.
+
+`card-jwks-url`:: The URL of a JSON Web Key Set. The client fetches the key set without the credentials of the agent, and accepts a signature whose key id names a key in the set. The client never follows a `jku` that the card itself names.
+
+The client checks the card each time it fetches it. A card that has no valid signature fails every call with `A2aClientException`, and no request reaches the agent. The settings apply to agents named in configuration only.
+
 [#skills-and-timeouts]
 == Choosing skills and timeouts
 
-By default, the agent offers every skill on the Agent Card to the model. Each tool adds to the request that the model reads, and a remote agent can have skills that your agent must not use. `withAllowedSkills` offers only the skills with the given ids. The model cannot call a skill that the agent does not offer. When the set names a skill that the Agent Card does not list, the agent logs a warning.
+By default, the agent offers every skill on the Agent Card to the model. Each tool adds to the request that the model reads, and a remote agent can have skills that your agent must not use. `withAllowedSkills` offers only the skills with the given ids, given as a set or as arguments. The model cannot call a skill that the agent does not offer. When the set names a skill that the Agent Card does not list, the agent logs a warning.
 
 `withTimeout` limits how long a tool call waits for the reply of the remote agent. It replaces the `timeout` of the configuration for the requests of this agent, including the request for the Agent Card. When the time passes, the model receives a text that starts with `Error:`.
 

@@ -73,8 +73,8 @@ public class ExampleA2aTaskWorkflow extends Workflow<ExampleA2aTaskWorkflow.Stat
     return message
       .parts()
       .stream()
-      .map(A2aPart::text)
-      .filter(t -> t != null)
+      .filter(part -> part instanceof A2aPart.Text)
+      .map(part -> ((A2aPart.Text) part).text())
       .collect(Collectors.joining("\n"));
   }
   // tag::task-workflow[]

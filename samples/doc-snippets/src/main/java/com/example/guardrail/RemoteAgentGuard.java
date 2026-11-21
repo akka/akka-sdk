@@ -10,7 +10,7 @@ public class RemoteAgentGuard implements ToolCallGuardrail {
   public Decision decide(CallContext ctx) {
     if (
       ctx.origin() instanceof ToolOrigin.RemoteA2a remote && // <1>
-      remote.agent().equals("billing") &&
+      remote.agentName().equals("billing") &&
       remote.skill().equals("refund") // <2>
     ) {
       return new Decision.Deny("refunds through the billing agent require human approval");

@@ -34,7 +34,7 @@ include::example$doc-snippets/src/main/java/com/example/api/ExampleA2aEndpoint.j
 ----
 <1> `@A2aEndpoint` sets the name, description and version that the Agent Card shows. The routes are served at `path`, which is `/a2a` by default.
 <2> `@Acl` controls which callers can use the endpoint, as for any endpoint. See xref:sdk:access-control.adoc[].
-<3> The class extends `AbstractA2aEndpoint`, which serves the A2A routes.
+<3> The class extends `AbstractA2aEndpoint`. Akka serves the A2A routes at the path of the endpoint, so the class holds only `agents()`.
 <4> `agents()` returns the agents that answer the skills. Akka calls it for each request and for the Agent Card.
 
 A service has at most one A2A endpoint, because it has one Agent Card. The annotation processor reports an error when it finds a second class annotated with `@A2aEndpoint`.
@@ -134,7 +134,27 @@ Akka serves the Agent Card at `/.well-known/agent-card.json` on the service. It 
 }
 ----
 
-The response has the header `Cache-Control: max-age=300`.
+The response has the header `Cache-Control: max-age=300` and an `ETag`. A request whose `If-None-Match` header names the current `ETag` is answered with status 304 and no card.
+
+=== Signing the Agent Card
+
+When a signing key is set, Akka signs the Agent Card with a JSON Web Signature, as the A2A specification describes, so that a client can check that the card comes from your service and has not been changed. Each signature covers the canonical form of the card, and the protected header carries the key id.
+
+[source,hocon]
+----
+akka.javasdk.a2a.endpoint.signing {
+  key = ${?CLAIMS_CARD_SIGNING_KEY}
+  key-id = "claims-2026"
+  algorithm = "ES256"
+}
+----
+
+`key`:: The private key as PEM text, an unencrypted PKCS#8 key that starts with `-----BEGIN PRIVATE KEY-----`. `key-file` names a file that holds it instead. Set one of the two.
+`key-id`:: The key id that a client uses to find the public key. It is required when a key is set.
+`algorithm`:: `ES256` (an EC key on P-256, the default), `ES384` (P-384), `RS256`, `RS384` or `RS512` (an RSA key of at least 2048 bits).
+`jku`:: Optional. The URL of a JSON Web Key Set that holds the public key, written into each signature.
+
+The service fails to start when the key cannot be read or does not fit the algorithm.
 
 === Setting the public URL of the endpoint
 
@@ -252,7 +272,9 @@ include::example$doc-snippets/src/main/java/com/example/application/ClaimStreami
 ----
 <1> The handler returns `StreamEffect`, so each token of the model is sent as it arrives.
 
-Akka writes the complete answer to the task when the agent has finished, so `GetTask` returns the same artifact that the stream carried. When the client closes the stream before the agent has finished, Akka cancels the task.
+Akka writes the complete answer to the task when the agent has finished, so `GetTask` returns the same artifact that the stream carried. When the client closes the stream before the agent has finished, the agent keeps working and Akka still records its answer in the task. The client can follow the task again with `SubscribeToTask` or read it with `GetTask`.
+
+When the model of an agent that streams its reply fails, the task fails and the stream ends with the state `TASK_STATE_FAILED`. An agent that sends no token for longer than `akka.javasdk.a2a.endpoint.stream-idle-timeout`, 60 seconds by default, is treated as failed.
 
 A request that cannot start, for example because it names an unknown skill, is answered with an error and not with a stream.
 
@@ -357,7 +379,7 @@ Each method returns when the task is stored, and sends the change to the push no
 === Messages and task states that a client sees
 
 * The first `SendMessage` of a skill records the task in the state `TASK_STATE_SUBMITTED`, then `TASK_STATE_WORKING`, and starts the workflow with the task id as the workflow id. Akka calls `onMessage` with the message.
-* Without `returnImmediately`, `SendMessage` waits until the task ends or asks for input, for at most 10 seconds, and returns the task as it is then. With `returnImmediately`, it returns the task in the state `TASK_STATE_WORKING` at once. The client follows the task with `GetTask` or with push notifications.
+* Without `returnImmediately`, `SendMessage` waits until the task ends or asks for input, for at most the time that `akka.javasdk.a2a.endpoint.blocking-wait` sets (10 seconds by default), and returns the task as it is then. With `returnImmediately`, it returns the task in the state `TASK_STATE_WORKING` at once. The client follows the task with `GetTask` or with push notifications.
 * A message that names the task id of a task that has not ended is added to the history and passed to `onMessage`. A task in the state `TASK_STATE_INPUT_REQUIRED` returns to `TASK_STATE_WORKING`. A message to a task that has ended is refused with an unsupported operation error.
 * When `onMessage` returns an error, the task fails.
 
@@ -396,7 +418,17 @@ A client registers a webhook in two ways:
 | `DELETE /a2a/tasks/{id}/pushNotificationConfigs/{configId}`
 |===
 
-A configuration has a `url`, which must be an absolute `http` or `https` URL, an optional `token` and an optional `authentication` with a `scheme` and `credentials`. A configuration without an `id` gets one, and a configuration with the `id` of an existing one replaces it. A task has at most 10 configurations. The configurations are stored with the task, and a caller with another subject than the task gets a task not found error.
+A configuration has a `url`, an optional `token` and an optional `authentication` with a `scheme` and `credentials`. A client chooses the URL, so Akka checks it before it stores the configuration, and again before each delivery:
+
+* The URL must be an absolute `https` URL. In local development, `http` is accepted too.
+* Akka resolves the host of the URL. A host with a private, loopback, link-local or otherwise local address is refused, unless `akka.javasdk.a2a.endpoint.push.allowed-hosts` names it. This keeps a client from making your service call its own network.
+
+[source,hocon]
+----
+akka.javasdk.a2a.endpoint.push.allowed-hosts = ["hooks.internal.example.com"]
+----
+
+A refused URL is answered with an invalid parameters error. A delivery to a URL that is refused later is dropped with a warning. A configuration without an `id` gets one, and a configuration with the `id` of an existing one replaces it. A task has at most 10 configurations. The configurations are stored with the task, and a caller with another subject than the task gets a task not found error.
 
 For each change of the task, Akka posts to each webhook:
 
@@ -424,15 +456,16 @@ When the endpoint requires a token, Akka stores the subject of the token with ea
 
 === Reading claims from `A2aRequestContext`
 
-`requestContext()` gives the `A2aRequestContext` of the request while the endpoint handles it. It has the principals and the JWT claims of the caller, and the context id and task id once Akka has read or assigned them.
+Akka creates the endpoint class for each request, so its constructor can accept an `A2aRequestContext`. The context has the principals and the JWT claims of the caller, the headers of the request, tracing, the SPIFFE context of a caller in the same project, and the context id and task id once Akka has read or assigned them.
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleA2aEndpoint.java[ExampleA2aEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/api/ExampleA2aEndpoint.java[tag=request-context]
 ----
-<1> The context id is set for A2A methods. It is empty when Akka builds the Agent Card.
-<2> The JWT claims are available on the A2A routes of an endpoint with `@JWT`. The Agent Card route has no token, so read the claims only when a context id is present.
+<1> The constructor accepts the `A2aRequestContext` of the request, besides the parameters that an HTTP endpoint accepts.
+<2> The context id is set for A2A methods. It is empty when Akka builds the Agent Card.
+<3> The JWT claims are available on the A2A routes of an endpoint with `@JWT`. The Agent Card route has no token, so read the claims only when a context id is present.
 
 == Testing A2A endpoints
 

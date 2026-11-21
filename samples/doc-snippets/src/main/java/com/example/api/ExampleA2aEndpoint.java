@@ -1,6 +1,7 @@
 package com.example.api;
 
 import akka.javasdk.a2a.A2aAgents;
+import akka.javasdk.a2a.A2aRequestContext;
 import akka.javasdk.a2a.AbstractA2aEndpoint;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.JWT;
@@ -29,17 +30,28 @@ public class ExampleA2aEndpoint extends AbstractA2aEndpoint { // <3>
 
   private static final Logger logger = LoggerFactory.getLogger(ExampleA2aEndpoint.class);
 
+  // end::endpoint-class[]
+  // tag::request-context[]
+  private final A2aRequestContext requestContext;
+
+  public ExampleA2aEndpoint(A2aRequestContext requestContext) { // <1>
+    this.requestContext = requestContext;
+  }
+
+  // end::request-context[]
+  // tag::endpoint-class[]
+
   @Override
   protected A2aAgents agents() { // <4>
     // end::endpoint-class[]
     // tag::request-context[]
-    requestContext()
-      .contextId() // <1>
+    requestContext
+      .contextId() // <2>
       .ifPresent(contextId ->
         logger.info(
           "Message in context {} from {}",
           contextId,
-          requestContext().getJwtClaims().subject().orElse("unknown") // <2>
+          requestContext.getJwtClaims().subject().orElse("unknown") // <3>
         ));
     // end::request-context[]
     // tag::endpoint-class[]

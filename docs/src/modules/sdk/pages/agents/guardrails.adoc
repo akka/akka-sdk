@@ -141,10 +141,12 @@ For an MCP tool, `toolName()` returns the name of the tool on the MCP server.
 If the `RemoteMcpTools` has a `ToolInterceptor`, the runtime evaluates the guardrail after `interceptRequest`.
 The guardrail then sees the arguments that the interceptor returns.
 
-For a skill of a remote A2A agent, it returns a `ToolOrigin.RemoteA2a`. Its `agent()` is the name given to
-`RemoteA2aAgent.named`, or the Agent Card URL given to `RemoteA2aAgent.fromCard`. Its `skill()` is the id of the skill,
-and its `caller()` is the component id of the agent that makes the call. `toolName()` returns the name of the tool that
-the model sees. See xref:sdk:agents/remote-a2a-agents.adoc[Remote A2A agents].
+For a skill of a remote A2A agent, it returns a `ToolOrigin.RemoteA2a`. Its `agentName()` is the name given to
+`RemoteA2aAgent.named`. For `RemoteA2aAgent.fromCard` and `RemoteA2aAgent.fromService`, it is the name of a configuration
+under `akka.javasdk.a2a.remote-agents` with the same `card-url`, or else the `name` on the Agent Card. Its `cardUrl()` is
+the URL of the Agent Card, whichever way the agent is given, and its `skill()` is the id of the skill. `CallContext.agentId()`
+names the agent that makes the call. `toolName()` returns the name of the tool that the model sees. See
+xref:sdk:agents/remote-a2a-agents.adoc[Remote A2A agents].
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/guardrail/RemoteAgentGuard.java[RemoteAgentGuard.java]
@@ -152,7 +154,7 @@ the model sees. See xref:sdk:agents/remote-a2a-agents.adoc[Remote A2A agents].
 include::example$doc-snippets/src/main/java/com/example/guardrail/RemoteAgentGuard.java[tag=all]
 ----
 <1> Match the `RemoteA2a` origin to guard only the calls to remote A2A agents.
-<2> `agent()` and `skill()` name the remote agent and its skill, whatever name the model uses for the tool.
+<2> `agentName()` and `skill()` name the remote agent and its skill, whatever name the model uses for the tool.
 
 == Configuring guardrails
 
