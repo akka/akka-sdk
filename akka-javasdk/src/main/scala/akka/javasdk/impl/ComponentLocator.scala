@@ -404,11 +404,7 @@ private[javasdk] object ComponentLocator {
     Seq(classOf[TaskEntity], classOf[BacklogEntity])
 
   val a2aProvidedComponents: Seq[Class[_]] =
-    Seq(
-      classOf[A2aTaskEntity],
-      classOf[A2aTasksView],
-      classOf[A2aTaskExtrasEntity],
-      classOf[A2aPushDeliveryWorkflow])
+    Seq(classOf[A2aTaskEntity], classOf[A2aTasksView], classOf[A2aTaskExtrasEntity], classOf[A2aPushDeliveryWorkflow])
 
   // all components that the SDK adds when the service needs them
   val providedComponents: Seq[Class[_]] =
