@@ -1,24 +1,30 @@
 #!/usr/bin/env python3
 """A2A server built on a2a-python, used to test the Akka SDK's A2A client and to check the harness.
 
-Serves the JSON-RPC and HTTP+JSON bindings of protocol 1.0 with two skills:
+Serves the JSON-RPC and HTTP+JSON bindings of protocol 1.0 with three skills:
 
 - echo: replies "echo: <text>" as a streamed artifact and completes the task.
 - ask: replies with an input-required task that asks for a name, then completes with a greeting
   when the next message on the task arrives. The skill is tagged "input-required".
+- slow: works for three seconds, then replies "slow echo: <text>" as an artifact and completes.
 
-A message selects a skill with the metadata field "skillId". Without it the server uses echo.
+A message selects a skill with the metadata field "skillId", in the message or in the request. Without it the
+server uses echo.
 A message id that starts with a prefix the compatibility kit uses (for example "tck-complete-task")
 gets the behaviour the kit expects, so the kit can run against this server.
 
 With --token (or A2A_ECHO_TOKEN) every request except the Agent Card needs the header
 "Authorization: Bearer <token>".
+
+With --push the Agent Card offers push notifications, and the server sends them to the push
+notification configurations of each task.
 """
 
 import argparse
 import asyncio
 import os
 
+import httpx
 import uvicorn
 from google.protobuf import json_format
 from google.protobuf.struct_pb2 import Value
@@ -30,6 +36,8 @@ from a2a.server.agent_execution.context import RequestContext
 from a2a.server.events.event_queue import EventQueue
 from a2a.server.request_handlers import DefaultRequestHandler
 from a2a.server.routes import create_agent_card_routes, create_jsonrpc_routes, create_rest_routes
+from a2a.server.tasks.base_push_notification_sender import BasePushNotificationSender
+from a2a.server.tasks.inmemory_push_notification_config_store import InMemoryPushNotificationConfigStore
 from a2a.server.tasks.inmemory_task_store import InMemoryTaskStore
 from a2a.server.tasks.task_updater import TaskUpdater
 from a2a.types import AgentCapabilities, AgentCard, AgentInterface, AgentSkill, Part, TaskState
@@ -57,11 +65,20 @@ class EchoExecutor(AgentExecutor):
             await updater.complete(updater.new_agent_message([Part(text=f"Hello, {get_message_text(message)}")]))
             return
 
-        skill = message.metadata["skillId"] if "skillId" in message.metadata else "echo"
+        # The skill id is read from the message's metadata, as the a2a-python client sends it, or from the
+        # request's metadata, as the Akka SDK's client sends it
+        skill = message.metadata["skillId"] if "skillId" in message.metadata else context.metadata.get("skillId", "echo")
         if skill == "ask":
             await updater.requires_input(updater.new_agent_message([Part(text="What is your name?")]))
         elif skill == "echo":
             await self._echo(get_message_text(message), updater)
+        elif skill == "slow":
+            await updater.start_work()
+            await asyncio.sleep(3)
+            await updater.add_artifact(
+                parts=[Part(text=f"slow echo: {get_message_text(message)}")], artifact_id="slow-reply", last_chunk=True
+            )
+            await updater.complete()
         else:
             raise A2AError(f"unknown skill {skill}")
 
@@ -153,7 +170,7 @@ class BearerToken:
         await self.app(scope, receive, send)
 
 
-def build_card(host: str, port: int) -> AgentCard:
+def build_card(host: str, port: int, push: bool = False) -> AgentCard:
     base = f"http://{host}:{port}"
     return AgentCard(
         name="Echo",
@@ -163,13 +180,16 @@ def build_card(host: str, port: int) -> AgentCard:
             AgentInterface(url=base, protocol_binding="JSONRPC", protocol_version="1.0"),
             AgentInterface(url=base + REST_PATH, protocol_binding="HTTP+JSON", protocol_version="1.0"),
         ],
-        capabilities=AgentCapabilities(streaming=True, push_notifications=False),
+        capabilities=AgentCapabilities(streaming=True, push_notifications=push),
         # The kit sends a part with an unknown media type and expects either success (CORE-SEND-003) or, unless
         # the card declares the type, an error (HTTP_JSON-STATUS-001). A server passes both by declaring "*/*".
         default_input_modes=["*/*"],
         default_output_modes=["text/plain"],
         skills=[
             AgentSkill(id="echo", name="Echo", description="Repeats the text it receives", tags=["echo", "tck"]),
+            AgentSkill(
+                id="slow", name="Slow", description="Repeats the text it receives after three seconds", tags=["slow"]
+            ),
             AgentSkill(
                 id="ask",
                 name="Ask",
@@ -180,9 +200,18 @@ def build_card(host: str, port: int) -> AgentCard:
     )
 
 
-def build_app(host: str, port: int, token: str | None):
-    card = build_card(host, port)
-    handler = DefaultRequestHandler(agent_executor=EchoExecutor(), task_store=InMemoryTaskStore(), agent_card=card)
+def build_app(host: str, port: int, token: str | None, push: bool = False):
+    card = build_card(host, port, push)
+    push_args = {}
+    if push:
+        config_store = InMemoryPushNotificationConfigStore()
+        push_args = {
+            "push_config_store": config_store,
+            "push_sender": BasePushNotificationSender(httpx.AsyncClient(), config_store),
+        }
+    handler = DefaultRequestHandler(
+        agent_executor=EchoExecutor(), task_store=InMemoryTaskStore(), agent_card=card, **push_args
+    )
     # The Agent Card routes come before the REST routes, which mount a catch-all tenant path.
     routes = [
         *create_jsonrpc_routes(request_handler=handler, rpc_url="/"),
@@ -198,8 +227,11 @@ def main() -> None:
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, required=True)
     parser.add_argument("--token", default=os.environ.get("A2A_ECHO_TOKEN"), help="require this bearer token")
+    parser.add_argument("--push", action="store_true", help="offer and send push notifications")
     args = parser.parse_args()
-    uvicorn.run(build_app(args.host, args.port, args.token), host=args.host, port=args.port, log_level="warning")
+    uvicorn.run(
+        build_app(args.host, args.port, args.token, args.push), host=args.host, port=args.port, log_level="warning"
+    )
 
 
 if __name__ == "__main__":

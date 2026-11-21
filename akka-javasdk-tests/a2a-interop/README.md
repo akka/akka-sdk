@@ -68,13 +68,16 @@ A message selects a skill with the metadata field `skillId`. Options:
 ## Run the echo server
 
 ```shell
-.venv/bin/python adk_echo_server.py --port 9000 [--token TOKEN]
+.venv/bin/python adk_echo_server.py --port 9000 [--token TOKEN] [--push]
 ```
 
-The server serves both bindings. The JSON-RPC endpoint is `/` and the HTTP+JSON endpoint is `/a2a/rest`. It has two skills:
+The server serves both bindings. The JSON-RPC endpoint is `/` and the HTTP+JSON endpoint is `/a2a/rest`. It has three skills:
 
 - `echo` replies with `echo: <text>` as a streamed artifact and completes the task.
 - `ask` returns an input-required task that asks for a name. The next message on the task completes it with a greeting. The skill has the tag `input-required`.
+- `slow` works for three seconds, then replies with `slow echo: <text>` as an artifact and completes the task.
+
+With `--push`, the Agent Card offers push notifications, and the server sends them to the push notification configurations of each task.
 
 With `--token` or the environment variable `A2A_ECHO_TOKEN`, the server answers every request except the Agent Card with 401 unless the request has the matching bearer token.
 

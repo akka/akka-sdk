@@ -30,10 +30,11 @@ public class RemoteTaskFollowingWorkflow extends Workflow<RemoteTaskFollowingWor
 
   /**
    * @param agent the name of the remote agent in configuration
+   * @param skill the id of the skill
    * @param text the message to send
    * @param timeoutMillis how long to wait for the remote task
    */
-  public record Start(String agent, String text, long timeoutMillis) {}
+  public record Start(String agent, String skill, String text, long timeoutMillis) {}
 
   /**
    * @param taskId the id of the remote task, once sent
@@ -69,7 +70,7 @@ public class RemoteTaskFollowingWorkflow extends Workflow<RemoteTaskFollowingWor
     var reply =
         a2aClient
             .forAgent(start.agent())
-            .send("assess", A2aMessage.user(start.text()))
+            .send(start.skill(), A2aMessage.user(start.text()))
             .notifyWorkflow(
                 componentClient
                     .forWorkflow(context.workflowId())

@@ -242,7 +242,7 @@ public class RemoteA2aWorkflowTest extends TestKitSupport {
     componentClient
         .forWorkflow(workflowId)
         .method(RemoteTaskFollowingWorkflow::start)
-        .invoke(new RemoteTaskFollowingWorkflow.Start(agent, text, timeoutMillis));
+        .invoke(new RemoteTaskFollowingWorkflow.Start(agent, "assess", text, timeoutMillis));
     return workflowId;
   }
 
