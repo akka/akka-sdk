@@ -4,6 +4,10 @@ on:
   pull_request:
     paths:
       - 'akka-javasdk-tests/a2a-interop/**'
+      - 'akka-javasdk-tests/src/test/java/akkajavasdk/A2aInteropServiceTest.java'
+      - 'akka-javasdk-tests/src/test/java/akkajavasdk/components/a2a/**'
+      - 'akka-javasdk/src/main/java/akka/javasdk/a2a/**'
+      - 'akka-javasdk/src/main/java/akka/javasdk/impl/a2a/**'
       - '.github/workflows/a2a-interop.yml'
   workflow_dispatch:
 
@@ -18,14 +22,51 @@ jobs:
   a2a-interop:
     name: Run the A2A compatibility kit
     runs-on: Akka-Default
-    defaults:
-      run:
-        working-directory: akka-javasdk-tests/a2a-interop
-
+    env:
+      # How long the test service of the SDK runs, in seconds
+      A2A_INTEROP_SECONDS: 1800
     steps:
+      - name: Checkout Global Scripts
+        uses: actions/checkout@v6
+        with:
+          repository: akka/github-actions-scripts
+          path: scripts
+          fetch-depth: 0
+
+      - name: Setup global resolver
+        run: |
+          chmod +x ./scripts/setup_global_resolver.sh
+          ./scripts/setup_global_resolver.sh
+
       - name: Checkout
         # https://github.com/actions/checkout/releases
         uses: actions/checkout@v6
+
+      - name: Checkout GitHub merge
+        if: github.event.pull_request
+        run: |-
+          git fetch origin pull/${{ github.event.pull_request.number }}/merge:scratch
+          git checkout scratch
+
+      - name: Cache Coursier cache
+        # https://github.com/actions/cache/releases
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cache/coursier
+            ~/.sbt
+            ~/.ivy2/cache
+          key: coursier-v3-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
+          restore-keys: |
+            coursier-v3-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-
+            coursier-v3-
+            coursier-v2-
+
+      - name: Set up JDK 21
+        # https://github.com/coursier/setup-action/releases
+        uses: coursier/setup-action@v3.0.0
+        with:
+          jvm: temurin:1.21
 
       - name: Set up Python
         # https://github.com/actions/setup-python/releases
@@ -34,29 +75,49 @@ jobs:
           # The compatibility kit supports Python 3.11 to 3.14.
           python-version: '3.12'
 
-      # PLACEHOLDER: the A2A test service of the Akka SDK does not exist yet. Until it does, this step starts
-      # the a2a-python echo server, which checks the harness itself. Replace this step with one that
-      # starts the SDK's A2A test service on port 9000 and waits for its Agent Card. The kit and the client
-      # check below stay as they are.
-      - name: Start the A2A service
+      # The test service publishes the echo skill on port 19391. Its A2A routes require a bearer token, so the
+      # kit and the client check reach it through bearer_proxy.py on port 9000.
+      - name: Start the A2A test service of the SDK
+        run: |
+          nohup sbt "akka-javasdk-tests/testOnly akkajavasdk.A2aInteropServiceTest" > a2a-service.log 2>&1 &
+          for i in $(seq 1 180); do
+            curl --silent --fail http://127.0.0.1:19391/.well-known/agent-card.json > /dev/null && exit 0
+            sleep 5
+          done
+          tail -n 200 a2a-service.log
+          exit 1
+
+      - name: Start the proxy that adds the bearer token
+        working-directory: akka-javasdk-tests/a2a-interop
         run: |
           python3 -m venv .venv
           .venv/bin/python -m pip install --quiet -r requirements.txt
-          nohup .venv/bin/python adk_echo_server.py --port 9000 > service.log 2>&1 &
+          header=$(printf '{"alg":"none"}' | base64 -w0)
+          claims=$(printf '{"iss":"a2a-test-issuer","sub":"interop"}' | base64 -w0)
+          nohup .venv/bin/python bearer_proxy.py --port 9000 --target http://127.0.0.1:19391 \
+            --token "${header}.${claims}" > proxy.log 2>&1 &
           for i in $(seq 1 30); do
             curl --silent --fail http://127.0.0.1:9000/.well-known/agent-card.json > /dev/null && exit 0
             sleep 1
           done
-          cat service.log
+          cat proxy.log
           exit 1
 
+      # The kit exits with a failure when a mandatory (MUST) requirement fails. Its recommended (SHOULD)
+      # findings are written to the report and do not fail the job.
       - name: Run the compatibility kit
+        working-directory: akka-javasdk-tests/a2a-interop
         run: ./run_tck.sh http://127.0.0.1:9000/.well-known/agent-card.json
 
       - name: Run the a2a-python client check on both bindings
+        working-directory: akka-javasdk-tests/a2a-interop
         run: |
           .venv/bin/python adk_client_check.py http://127.0.0.1:9000/.well-known/agent-card.json --binding jsonrpc
           .venv/bin/python adk_client_check.py http://127.0.0.1:9000/.well-known/agent-card.json --binding http_json
+
+      - name: Show the service log
+        if: failure()
+        run: tail -n 300 a2a-service.log
 
       - name: Upload the kit reports
         if: always()
