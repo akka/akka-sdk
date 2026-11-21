@@ -39,7 +39,8 @@ public class RemoteTaskFollowingWorkflow extends Workflow<RemoteTaskFollowingWor
   /**
    * @param taskId the id of the remote task, once sent
    * @param updates the updates received, as text
-   * @param outcome {@code completed}, {@code timed out}, or null while waiting
+   * @param outcome {@code completed}, {@code timed out}, {@code follow timed out}, or null while
+   *     waiting
    */
   public record State(Start start, String taskId, List<String> updates, String outcome) {
     State with(String taskId, List<String> updates, String outcome) {
@@ -88,6 +89,12 @@ public class RemoteTaskFollowingWorkflow extends Workflow<RemoteTaskFollowingWor
     var state = currentState();
     var updates = new ArrayList<>(state.updates());
     updates.add(describe(update));
+    if (update instanceof A2aTaskStatusUpdate status && status.followTimedOut()) {
+      return effects()
+          .updateState(state.with(state.taskId(), updates, "follow timed out"))
+          .end()
+          .thenReply(Done.getInstance());
+    }
     var ended = update instanceof A2aTaskStatusUpdate status && status.status().state().terminal();
     if (ended) {
       return effects()

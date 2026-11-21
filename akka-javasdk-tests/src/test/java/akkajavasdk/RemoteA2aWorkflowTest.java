@@ -29,8 +29,10 @@ import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
 import akka.javasdk.testkit.TestModelProvider.AiResponse;
 import akka.javasdk.testkit.TestModelProvider.ToolInvocationRequest;
+import akkajavasdk.components.a2a.RemoteTaskDuringStepWorkflow;
 import akkajavasdk.components.a2a.RemoteTaskFollowingWorkflow;
 import akkajavasdk.components.agent.RemoteA2aHandOffTestAgent;
+import akkajavasdk.components.agent.RemoteA2aHandOffWithoutMemoryTestAgent;
 import akkajavasdk.components.agent.RemoteA2aUnreadableCardTestAgent;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -70,6 +72,7 @@ public class RemoteA2aWorkflowTest extends TestKitSupport {
     return TestKit.Settings.DEFAULT
         .withModelProvider(RemoteA2aHandOffTestAgent.class, model)
         .withModelProvider(RemoteA2aUnreadableCardTestAgent.class, model)
+        .withModelProvider(RemoteA2aHandOffWithoutMemoryTestAgent.class, model)
         .withAdditionalConfig(
             """
             akka.javasdk.a2a.push.public-url = "http://push.test/"
@@ -77,10 +80,18 @@ public class RemoteA2aWorkflowTest extends TestKitSupport {
             akka.javasdk.a2a.remote-agents.push-agent.card-url = "%s"
             akka.javasdk.a2a.remote-agents.poll-agent.card-url = "%s"
             akka.javasdk.a2a.remote-agents.slow.card-url = "%s"
+            akka.javasdk.a2a.remote-agents.stalled.card-url = "%s"
+            akka.javasdk.a2a.remote-agents.stalled.follow-timeout = 1500ms
+            akka.javasdk.a2a.remote-agents.instant.card-url = "%s"
             akka.javasdk.a2a.remote-agents.unreachable.card-url = "http://127.0.0.1:9/.well-known/agent-card.json"
             akka.javasdk.a2a.remote-agents.unreachable.timeout = 2s
             """
-                .formatted(remote.cardUrl("push"), remote.cardUrl("poll"), remote.cardUrl("poll")));
+                .formatted(
+                    remote.cardUrl("push"),
+                    remote.cardUrl("poll"),
+                    remote.cardUrl("poll"),
+                    remote.cardUrl("poll"),
+                    remote.cardUrl("instant")));
   }
 
   @AfterAll
@@ -220,6 +231,82 @@ public class RemoteA2aWorkflowTest extends TestKitSupport {
   }
 
   @Test
+  public void shouldEndFollowingAfterTheFollowTimeout() {
+    var workflowId = startWorkflow("stalled", "assess claim 8", 60_000);
+    awaitTaskId(workflowId);
+
+    var state = awaitOutcome(workflowId);
+
+    assertThat(state.outcome()).isEqualTo("follow timed out");
+    assertThat(state.updates()).containsExactly("status TASK_STATE_UNSPECIFIED");
+  }
+
+  @Test
+  public void shouldNotHandOffATaskWhenTheAgentWritesNoSessionMemory() {
+    model
+        .whenMessage(message -> message.equals("Assess claim 9"))
+        .reply(new ToolInvocationRequest("slow_assess", "{\"message\":\"assess claim 9\"}"));
+    model
+        .whenToolResult(result -> result.name().equals("slow_assess"))
+        .thenReply(result -> new AiResponse("Tool said: " + result.content()));
+    var sessionId = UUID.randomUUID().toString();
+
+    var reply =
+        LoggingTestKit.info(
+                "does not write the built-in session memory, so the task is not followed")
+            .expect(
+                testKit.getActorSystem(),
+                () ->
+                    componentClient
+                        .forAgent()
+                        .inSession(sessionId)
+                        .method(RemoteA2aHandOffWithoutMemoryTestAgent::ask)
+                        .invoke("Assess claim 9"));
+
+    assertThat(reply).contains("will not be added to this conversation");
+    var taskId = remote.taskWithText("assess claim 9");
+    remote.complete(taskId, "claim 9 approved");
+    assertThat(history(sessionId)).isEmpty();
+    // The task is not followed, so nobody reads it again
+    var reads = remote.reads.getOrDefault(taskId, 0);
+    Awaitility.await()
+        .during(2, TimeUnit.SECONDS)
+        .atMost(3, TimeUnit.SECONDS)
+        .until(() -> remote.reads.getOrDefault(taskId, 0) == reads);
+  }
+
+  @Test
+  public void shouldDeliverAnUpdateThatArrivesWhileTheSendingStepRuns() {
+    var workflowId = UUID.randomUUID().toString();
+    componentClient
+        .forWorkflow(workflowId)
+        .method(RemoteTaskDuringStepWorkflow::start)
+        .invoke(
+            new RemoteTaskDuringStepWorkflow.Start("instant", "assess", "assess claim 10", 3000));
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(20, TimeUnit.SECONDS)
+        .until(
+            () ->
+                componentClient
+                        .forWorkflow(workflowId)
+                        .method(RemoteTaskDuringStepWorkflow::get)
+                        .invoke()
+                        .outcome()
+                    != null);
+    var state =
+        componentClient.forWorkflow(workflowId).method(RemoteTaskDuringStepWorkflow::get).invoke();
+    assertThat(state.outcome()).isEqualTo("completed");
+    assertThat(state.stepDone()).isTrue();
+    // The first poll read the completed task while the step ran; the runtime handled the update
+    // command once the step had ended
+    assertThat(state.updates())
+        .containsExactly("artifact after the step", "status TASK_STATE_COMPLETED after the step");
+    assertThat(remote.reads.get(remote.taskWithText("assess claim 10"))).isEqualTo(1);
+  }
+
+  @Test
   public void shouldDropTheToolsOfAnAgentWhoseCardCannotBeRead() {
     model.fixedResponse("Answered without the remote agent");
 
@@ -305,17 +392,19 @@ public class RemoteA2aWorkflowTest extends TestKitSupport {
   }
 
   /**
-   * An A2A agent with one skill, {@code assess}, served twice: under {@code /push} with a card that
-   * offers push notifications, and under {@code /poll} with a card that does not. Each message
-   * starts a task that stays working until the test completes it. The agent records the push
-   * notification configurations and does not send push notifications itself: the test sends them.
+   * An A2A agent with one skill, {@code assess}, served under {@code /push} with a card that offers
+   * push notifications, and under {@code /poll} and {@code /instant} with a card that does not.
+   * Each message starts a task that stays working until the test completes it. The agent records
+   * the push notification configurations and does not send push notifications itself: the test
+   * sends them.
    */
   private record FakeTaskAgent(
       HttpServer server,
       Map<String, A2aTask> tasks,
       Map<String, String> texts,
       Map<String, A2aTaskPushNotificationConfig> pushConfigs,
-      Queue<String> returnedImmediately) {
+      Queue<String> returnedImmediately,
+      Map<String, Integer> reads) {
     private static final ObjectMapper mapper = JsonSupport.getObjectMapper();
 
     static FakeTaskAgent start() {
@@ -327,11 +416,12 @@ public class RemoteA2aWorkflowTest extends TestKitSupport {
                 new ConcurrentHashMap<>(),
                 new ConcurrentHashMap<>(),
                 new ConcurrentHashMap<>(),
-                new ConcurrentLinkedQueue<>());
-        for (var mode : List.of("push", "poll")) {
+                new ConcurrentLinkedQueue<>(),
+                new ConcurrentHashMap<>());
+        for (var mode : List.of("push", "poll", "instant")) {
           server.createContext(
               "/" + mode + "/.well-known/agent-card.json", e -> agent.card(e, mode));
-          server.createContext("/" + mode + "/a2a", agent::jsonRpc);
+          server.createContext("/" + mode + "/a2a", e -> agent.jsonRpc(e, mode));
         }
         server.start();
         return agent;
@@ -394,7 +484,8 @@ public class RemoteA2aWorkflowTest extends TestKitSupport {
       respond(exchange, mapper.writeValueAsBytes(card));
     }
 
-    private void jsonRpc(HttpExchange exchange) throws IOException {
+    // Under /instant, a task is completed when it is first read
+    private void jsonRpc(HttpExchange exchange, String mode) throws IOException {
       var request = mapper.readTree(exchange.getRequestBody().readAllBytes());
       var params = request.get("params");
       JsonNode result =
@@ -418,7 +509,12 @@ public class RemoteA2aWorkflowTest extends TestKitSupport {
               tasks.put(taskId, task);
               yield mapper.valueToTree(Map.of("task", task));
             }
-            case "GetTask" -> mapper.valueToTree(tasks.get(params.get("id").asText()));
+            case "GetTask" -> {
+              var taskId = params.get("id").asText();
+              reads.merge(taskId, 1, Integer::sum);
+              if (mode.equals("instant")) complete(taskId, "done at once");
+              yield mapper.valueToTree(tasks.get(taskId));
+            }
             case "CreateTaskPushNotificationConfig" -> {
               var config = mapper.treeToValue(params, A2aTaskPushNotificationConfig.class);
               var stored =

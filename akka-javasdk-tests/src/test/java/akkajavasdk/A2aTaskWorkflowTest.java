@@ -16,7 +16,7 @@ import akka.javasdk.testkit.TestModelProvider;
 import akka.javasdk.testkit.TestModelProvider.AiResponse;
 import akka.util.ByteString;
 import akkajavasdk.components.a2a.A2aEchoAgent;
-import akkajavasdk.components.a2a.A2aPushReceiverEndpoint;
+import akkajavasdk.components.a2a.TestPushWebhookEndpoint;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
@@ -160,10 +160,10 @@ public class A2aTaskWorkflowTest extends TestKitSupport {
         .atMost(30, SECONDS)
         .until(
             () ->
-                A2aPushReceiverEndpoint.received.getOrDefault(receiver, List.of()).stream()
+                TestPushWebhookEndpoint.received.getOrDefault(receiver, List.of()).stream()
                     .anyMatch(r -> r.body().contains("TASK_STATE_COMPLETED")));
-    assertThat(A2aPushReceiverEndpoint.attempts.get(receiver)).isGreaterThan(1);
-    var delivered = A2aPushReceiverEndpoint.received.get(receiver).getFirst();
+    assertThat(TestPushWebhookEndpoint.attempts.get(receiver)).isGreaterThan(1);
+    var delivered = TestPushWebhookEndpoint.received.get(receiver).getFirst();
     assertThat(delivered.token()).isEqualTo("task-token");
     assertThat(delivered.authorization()).isEqualTo("Bearer webhook-secret");
     var body = mapper.readTree(delivered.body());

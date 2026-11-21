@@ -23,7 +23,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 @HttpEndpoint("/a2a-push-receiver")
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
-public class A2aPushReceiverEndpoint extends AbstractHttpEndpoint {
+public class TestPushWebhookEndpoint extends AbstractHttpEndpoint {
 
   /**
    * @param body the posted JSON
