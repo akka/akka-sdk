@@ -74,11 +74,11 @@ public class A2aEndpointTest extends TestKitSupport {
       assertThat(i.get("protocolVersion").asText()).isEqualTo("1.0");
     }
 
-    assertThat(card.get("capabilities").get("streaming").asBoolean()).isFalse();
+    assertThat(card.get("capabilities").get("streaming").asBoolean()).isTrue();
     assertThat(card.get("defaultInputModes").toString()).contains("*/*");
 
     var skills = card.get("skills");
-    assertThat(skills).hasSize(2);
+    assertThat(skills).hasSize(3);
     var echo = skills.get(0);
     assertThat(echo.get("id").asText()).isEqualTo("echo");
     assertThat(echo.get("name").asText()).isEqualTo("Echo");
@@ -252,10 +252,6 @@ public class A2aEndpointTest extends TestKitSupport {
 
   @Test
   public void answersUnsupportedMethodsAndVersions() throws Exception {
-    var streaming =
-        jsonRpc("SendStreamingMessage", sendParams("echo", "hi", null), token("a")).get("error");
-    assertThat(streaming.get("code").asInt()).isEqualTo(-32004);
-
     var unknown = jsonRpc("NoSuchMethod", Map.of(), token("a")).get("error");
     assertThat(unknown.get("code").asInt()).isEqualTo(-32601);
 

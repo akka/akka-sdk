@@ -35,6 +35,6 @@ public class TestA2aEndpoint extends AbstractA2aEndpoint {
         .contextId()
         .ifPresent(c -> lastSubject = requestContext().getJwtClaims().subject().orElse(null));
     var agents = A2aAgents.create().agent(A2aEchoAgent.class);
-    return echoOnly ? agents : agents.agent(A2aAssistantAgent.class);
+    return echoOnly ? agents : agents.agent(A2aAssistantAgent.class).agent(A2aStreamingAgent.class);
   }
 }
