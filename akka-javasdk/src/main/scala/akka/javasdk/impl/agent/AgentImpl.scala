@@ -50,6 +50,8 @@ import akka.javasdk.impl.ForwardCompat.knownOr
 import akka.javasdk.impl.HandlerNotFoundException
 import akka.javasdk.impl.JsonSchema
 import akka.javasdk.impl.MetadataImpl
+import akka.javasdk.impl.a2a.A2aAgentTools
+import akka.javasdk.impl.a2a.A2aClientImpl
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.ConstantSystemMessage
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.NoPrimaryEffect
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.RequestModel
@@ -466,7 +468,7 @@ private[impl] object AgentImpl {
             else Some(remoteMcp.timeout),
           requestGuardrails = guardrails.legacyMcpToolRequestGuardrails,
           responseGuardrails = guardrails.legacyMcpToolResponseGuardrails,
-          toolCallGuardrails = guardrails.toolCallGuardrails)
+          toolCallGuardrails = toolName => guardrails.mcpToolCallGuardrails(remoteMcp.serverUri, toolName))
       case other => throw new IllegalArgumentException(s"Unsupported remote mcp tools impl $other")
     }
 
@@ -751,6 +753,7 @@ private[impl] final class AgentImpl(
     config: Config,
     eventLogClient: EventLogClient,
     agentRegistry: AgentRegistry,
+    a2aClient: Option[OtelContext] => A2aClientImpl,
     _system: ActorSystem[_])
     extends SpiAgent {
   import AgentImpl._
@@ -834,8 +837,15 @@ private[impl] final class AgentImpl(
             // unlikely, but better to crash it them have them shadowing each other
             FunctionTools.validateNames(allToolClasses)
 
+            val functionToolDescriptors = allToolClasses.flatMap(FunctionTools.descriptorsFor)
+            val a2aTools = A2aAgentTools.toolsFor(req.a2aAgents, a2aClient(telemetryContext))
+            A2aAgentTools.validateNames(a2aTools, functionToolDescriptors.map(_.name))
+            val a2aToolsByName = a2aTools.map(tool => tool.name -> tool).toMap
+            lazy val writesSessionMemory = writesBuiltInSessionMemory(req.memoryProvider)
+
             val toolDescriptors =
-              guardrails.withToolGuardrails(allToolClasses.flatMap(FunctionTools.descriptorsFor))
+              guardrails.withToolGuardrails(functionToolDescriptors) ++
+              a2aTools.map(tool => guardrails.withToolGuardrails(tool.descriptor, tool.origin))
 
             val functionTools =
               FunctionTools.toolInvokersFor(agent) ++
@@ -863,9 +873,26 @@ private[impl] final class AgentImpl(
             val onSuccessAsSent = (sentUserMessage: SpiAgent.UserMessage, results: Seq[SpiAgent.Response]) =>
               onSuccess(sessionMemoryClient, sentUserMessage, userMessageAt, agentRole, results)
             val callToolFunction = (request: SpiAgent.ToolCallCommand) =>
-              Future {
-                Telemetry.withCurrentContext(Option(request.telemetryContext))(toolExecutor.executeMultimodal(request))
-              }(sdkExecutionContext)
+              a2aToolsByName.get(request.name) match {
+                case Some(tool) =>
+                  // The A2A context id is derived from the session id, so the remote agent keeps one conversation
+                  // per session
+                  A2aAgentTools
+                    .call(
+                      tool,
+                      request.arguments,
+                      sessionId,
+                      componentId,
+                      writesSessionMemory,
+                      a2aClient(Option(request.telemetryContext)))(sdkExecutionContext, system.classicSystem.scheduler)
+                    .map(text => Seq(new SpiAgent.TextMessageContent(text)): Seq[SpiAgent.MessageContent])(
+                      sdkExecutionContext)
+                case None =>
+                  Future {
+                    Telemetry.withCurrentContext(Option(request.telemetryContext))(
+                      toolExecutor.executeMultimodal(request))
+                  }(sdkExecutionContext)
+              }
 
             if (guardrails.hasLegacyModelGuardrails)
               new SpiAgent.RequestModelEffect(
@@ -943,6 +970,19 @@ private[impl] final class AgentImpl(
 
   private def toSpiMcpEndpoints(remoteMcpTools: Seq[RemoteMcpTools]): Seq[SpiAgent.McpToolEndpointDescriptor] =
     AgentImpl.toSpiMcpEndpoints(remoteMcpTools, guardrails)
+
+  // Whether the memory provider writes the built-in session memory, where the outcome of a handed off remote task is
+  // written. A custom provider stores elsewhere, and an intercepted one would be bypassed by a direct write.
+  private def writesBuiltInSessionMemory(memoryProvider: MemoryProvider): Boolean =
+    memoryProvider match {
+      case _: MemoryProvider.Disabled                    => false
+      case p: MemoryProvider.LimitedWindowMemoryProvider => p.write()
+      case _: MemoryProvider.CustomMemoryProvider        => false
+      case _: MemoryProvider.InterceptedMemoryProvider   => false
+      case p: MemoryProvider.FromConfig =>
+        val path = if (p.configPath() == "") "akka.javasdk.agent.memory" else p.configPath()
+        config.getConfig(path).getBoolean("enabled")
+    }
 
   private def deriveSessionMemoryClient(
       memoryProvider: MemoryProvider,

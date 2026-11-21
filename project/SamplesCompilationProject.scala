@@ -87,10 +87,18 @@ object SamplesCompilationProject {
           }
           .map(configureFunc)
 
+      // A sample folder without a pom.xml holds several services, each in a folder with its own pom.xml.
       def findSamples: Seq[File] = {
         file(pathToSample)
           .listFiles()
           .filter { file => file.isDirectory }
+          .toSeq
+          .flatMap { dir =>
+            if (new File(dir, "pom.xml").exists) Seq(dir)
+            else
+              Option(dir.listFiles()).toSeq.flatten.filter(sub => sub.isDirectory && new File(sub, "pom.xml").exists)
+          }
+          .filter(_.getName != "target")
       }
     }
   }

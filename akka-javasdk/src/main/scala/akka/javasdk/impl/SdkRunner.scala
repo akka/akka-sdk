@@ -52,6 +52,11 @@ import akka.javasdk.TextSanitizer
 import akka.javasdk.Tracing
 import akka.javasdk.UnhandledExceptionContext
 import akka.javasdk.UnhandledExceptionHandler
+import akka.javasdk.a2a.A2aAgents
+import akka.javasdk.a2a.A2aClient
+import akka.javasdk.a2a.A2aRequestContext
+import akka.javasdk.a2a.A2aTaskContext
+import akka.javasdk.a2a.AbstractA2aEndpoint
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.AgentContext
 import akka.javasdk.agent.AgentRegistry
@@ -62,6 +67,7 @@ import akka.javasdk.agent.ModelProvider
 import akka.javasdk.agent.autonomous.AutonomousAgent
 import akka.javasdk.annotations.Component
 import akka.javasdk.annotations.GrpcEndpoint
+import akka.javasdk.annotations.a2a.A2aEndpoint
 import akka.javasdk.annotations.http.HttpEndpoint
 import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.client.ComponentClient
@@ -83,6 +89,21 @@ import akka.javasdk.impl.ComponentDescriptorFactory.consumerStartFrom
 import akka.javasdk.impl.Sdk.StartupContext
 import akka.javasdk.impl.SdkRunner.extractSpiSettings
 import akka.javasdk.impl.SpiffeContextImpl
+import akka.javasdk.impl.a2a.A2aAgentCardEndpoint
+import akka.javasdk.impl.a2a.A2aClientImpl
+import akka.javasdk.impl.a2a.A2aEndpointSettings
+import akka.javasdk.impl.a2a.A2aGovernance
+import akka.javasdk.impl.a2a.A2aPushReceiverEndpoint
+import akka.javasdk.impl.a2a.A2aPushUrlPolicy
+import akka.javasdk.impl.a2a.A2aRemoteAgents
+import akka.javasdk.impl.a2a.A2aRemoteTaskSubscriptionEntity
+import akka.javasdk.impl.a2a.A2aRemoteTasks
+import akka.javasdk.impl.a2a.A2aRequestContextImpl
+import akka.javasdk.impl.a2a.A2aRequestHandler
+import akka.javasdk.impl.a2a.A2aRoutesEndpoint
+import akka.javasdk.impl.a2a.A2aServiceRoute
+import akka.javasdk.impl.a2a.A2aTaskContextImpl
+import akka.javasdk.impl.a2a.A2aTaskWorkflows
 import akka.javasdk.impl.agent.AgentImpl
 import akka.javasdk.impl.agent.AgentImpl.AgentContextImpl
 import akka.javasdk.impl.agent.AgentRegistryImpl
@@ -144,6 +165,7 @@ import akka.runtime.sdk.spi
 import akka.runtime.sdk.spi.AgentDescriptor
 import akka.runtime.sdk.spi.AutonomousAgentDescriptor
 import akka.runtime.sdk.spi.ComponentClients
+import akka.runtime.sdk.spi.ComponentOptions
 import akka.runtime.sdk.spi.ConsumerDescriptor
 import akka.runtime.sdk.spi.DeploymentInfo
 import akka.runtime.sdk.spi.EvaluatorDescriptor
@@ -219,6 +241,14 @@ import org.slf4j.event.Level
 @InternalApi
 object SdkRunner {
   val userServiceLog: Logger = LoggerFactory.getLogger("akka.javasdk.ServiceLog")
+
+  // Internal A2A classes that only the SDK's own workflows may take in their constructors
+  private[impl] val sdkOnlyWorkflowDependencies: Set[Class[_]] =
+    Set(classOf[A2aPushUrlPolicy], classOf[A2aRemoteTasks], classOf[A2aEndpointSettings])
+
+  /** True when the SDK injects an internal A2A dependency into the workflow class. */
+  private[impl] def injectsSdkOnlyDependency(workflowClass: Class[_], dependency: Class[_]): Boolean =
+    sdkOnlyWorkflowDependencies(dependency) && ComponentLocator.providedComponents.contains(workflowClass)
 
   val FutureDone: Future[Done] = Future.successful(Done)
 
@@ -576,6 +606,7 @@ private[javasdk] object Sdk {
     classOf[ComponentClient],
     classOf[TimerScheduler],
     classOf[HttpClientProvider],
+    classOf[A2aClient],
     classOf[GrpcClientProvider],
     classOf[Tracer],
     classOf[Span],
@@ -588,7 +619,7 @@ private[javasdk] object Sdk {
     classOf[AgentRegistry],
     classOf[ObjectStorageProvider],
     classOf[LedgerClient],
-    classOf[DecisionModelClient])
+    classOf[DecisionModelClient]) ++ SdkRunner.sdkOnlyWorkflowDependencies
 
   // Run a user-supplied callback, logging any failure on the user component's own logger so it reaches the user.
   // Rethrows by default; pass rethrow = false where a failing callback must not abort the surrounding flow.
@@ -692,6 +723,18 @@ private final class Sdk(
     None,
     httpMockLookup)
 
+  // Not lazy, so that invalid A2A defaults fail the service at startup
+  private val a2aRemoteAgents = new A2aRemoteAgents(
+    system,
+    sdkConfig.getConfig("a2a"),
+    serviceName => {
+      val (baseUrl, poolSettings) = httpClientProvider.serviceTarget(serviceName)
+      A2aServiceRoute(
+        baseUrl,
+        poolSettings,
+        remoteIdentification.map(ri => RawHeader(ri.headerName, ri.headerValue)).toSeq)
+    })
+
   private lazy val userServiceConfig = {
     // hiding these paths from the config provided to user
     val sensitivePaths = List("akka", "kalix.meta", "kalix.proxy", "kalix.runtime", "system")
@@ -763,7 +806,7 @@ private final class Sdk(
   // ...) alongside/instead of ClassifierContext.
   private def wireClassifier(clz: Class[Classifier], context: ClassifierContext): Classifier =
     wiredInstance[Classifier]("Classifier", clz) {
-      sideEffectingComponentInjects(None, callerSpiffe = None).orElse {
+      sideEffectingComponentInjects(None, callerSpiffe = None, callerComponentId = None).orElse {
         case c if c == classOf[ClassifierContext] =>
           context
       }
@@ -771,7 +814,7 @@ private final class Sdk(
 
   private def wireSanitizer(clz: Class[TextSanitizer], context: SanitizerContext): TextSanitizer =
     wiredInstance[TextSanitizer]("Sanitizer", clz) {
-      sideEffectingComponentInjects(None, callerSpiffe = None).orElse {
+      sideEffectingComponentInjects(None, callerSpiffe = None, callerComponentId = None).orElse {
         case c if c == classOf[SanitizerContext] =>
           context
       }
@@ -830,7 +873,8 @@ private final class Sdk(
       true
     } else {
       // additional check to skip logging for endpoints
-      if (!clz.hasAnnotation[HttpEndpoint] && !clz.hasAnnotation[GrpcEndpoint] && !clz.hasAnnotation[McpEndpoint]) {
+      if (!clz.hasAnnotation[HttpEndpoint] && !clz.hasAnnotation[GrpcEndpoint] && !clz.hasAnnotation[McpEndpoint] &&
+        !clz.hasAnnotation[A2aEndpoint]) {
         // this could happen when we remove the @Component annotation from the class,
         // the file descriptor generated by annotation processor might still have this class entry,
         // for instance when working with IDE and incremental compilation (without clean)
@@ -871,10 +915,23 @@ private final class Sdk(
       { context =>
         val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
         val workflow = wiredInstance("Workflow", clz) {
-          sideEffectingComponentInjects(context.asInstanceOf[WorkflowContextImpl].telemetryContext, callerSpiffe)
+          sideEffectingComponentInjects(
+            context.asInstanceOf[WorkflowContextImpl].telemetryContext,
+            callerSpiffe,
+            Some(componentId))
             .orElse {
               // remember to update component type API doc and docs if changing the set of injectables
               case p if p == classOf[WorkflowContext] => context
+              case p if p == classOf[A2aPushUrlPolicy] && SdkRunner.injectsSdkOnlyDependency(clz, p) =>
+                a2aEndpointSettings.pushUrls()
+              case p if p == classOf[A2aEndpointSettings] && SdkRunner.injectsSdkOnlyDependency(clz, p) =>
+                a2aEndpointSettings
+              case p if p == classOf[A2aRemoteTasks] && SdkRunner.injectsSdkOnlyDependency(clz, p) =>
+                a2aRemoteTasks
+              case p if p == classOf[A2aTaskContext] =>
+                new A2aTaskContextImpl(
+                  context.workflowId(),
+                  componentClient(context.asInstanceOf[WorkflowContextImpl].telemetryContext))
               case p if p == classOf[NotificationPublisher[_]] =>
                 new NotificationPublisher[Any] {
                   override def publish(msg: Any): Unit = {
@@ -899,6 +956,121 @@ private final class Sdk(
     .map { grpcEndpointClass =>
       val anyRefClass = grpcEndpointClass.asInstanceOf[Class[AnyRef]]
       GrpcEndpointDescriptorFactory(anyRefClass, grpcEndpointFactory(anyRefClass), sdkMaterializer)(system)
+    }
+
+  // Not lazy, so that an invalid signing key or push setting fails the service at startup
+  private val a2aEndpointSettings =
+    A2aEndpointSettings.fromConfig(sdkConfig.getConfig("a2a.endpoint"), sdkSettings.devModeSettings.isDefined)
+
+  // The A2A routes are served by an SDK class at the path of the developer's endpoint, and the Agent Card at the root
+  // well-known path. The card route takes the endpoint's @Acl and not its @JWT, so a client can read the card before
+  // it has a token.
+  private val a2aEndpointDescriptors = {
+    val a2aEndpointClasses = componentClasses.filter(_.hasAnnotation[A2aEndpoint])
+    if (a2aEndpointClasses.size > 1)
+      throw new IllegalStateException(
+        "A service can have at most one @A2aEndpoint, found: " + a2aEndpointClasses.map(_.getName).mkString(", "))
+    a2aEndpointClasses.flatMap { a2aEndpointClass =>
+      val endpointOptions = HttpEndpointDescriptorFactory.classOptions(a2aEndpointClass)
+      Seq(
+        HttpEndpointDescriptorFactory.create(
+          classOf[A2aRoutesEndpoint],
+          Some(a2aEndpointClass.getAnnotation(classOf[A2aEndpoint]).path()),
+          context => new A2aRoutesEndpoint(a2aRequestHandler(a2aEndpointClass, context)),
+          endpointOptions,
+          provided = false,
+          implementationClassName = Some(a2aEndpointClass.getName)),
+        HttpEndpointDescriptorFactory.create(
+          classOf[A2aAgentCardEndpoint],
+          Some(classOf[A2aAgentCardEndpoint].getAnnotation(classOf[HttpEndpoint]).value()),
+          context => new A2aAgentCardEndpoint(a2aRequestHandler(a2aEndpointClass, context)),
+          new ComponentOptions(endpointOptions.aclOpt, None),
+          provided = true))
+    }
+  }
+
+  // A workflow takes an A2aTaskContext only when the A2A endpoint publishes it. The endpoint decides per request what it
+  // publishes, so it is asked here without a request: its request context has no values and fails when used. An
+  // endpoint whose agents() needs a request cannot be checked, and the check is skipped for it.
+  private def validateA2aTaskContextUse(): Unit = {
+    val contextUsers = componentClasses.filter { cls =>
+      Reflect.isWorkflow(cls) && cls.getDeclaredConstructors.exists(
+        _.getParameterTypes.contains(classOf[A2aTaskContext]))
+    }
+    if (contextUsers.nonEmpty) {
+      val endpointClasses = componentClasses.filter(_.hasAnnotation[A2aEndpoint])
+      val published =
+        try {
+          Some(endpointClasses.headOption.map(a2aEndpointPublishes))
+        } catch {
+          case NonFatal(exc) =>
+            logger.warn(
+              "Could not ask the A2A endpoint what it publishes, so [{}] is not checked for A2aTaskContext: {}",
+              contextUsers.map(_.getName).mkString(", "),
+              exc.toString)
+            None
+        }
+      published.foreach(p => A2aTaskWorkflows.requirePublished(contextUsers.toSeq.asJava, p.toJava))
+    }
+  }
+
+  private def a2aEndpointPublishes(a2aEndpointClass: Class[_]): A2aAgents = {
+    val startupRequestContext = java.lang.reflect.Proxy
+      .newProxyInstance(
+        classOf[A2aRequestContext].getClassLoader,
+        Array[Class[_]](classOf[A2aRequestContext]),
+        (_, method, _) =>
+          if (method.getReturnType == classOf[Optional[_]]) Optional.empty()
+          else throw new IllegalStateException(s"[${method.getName}] needs a request"))
+      .asInstanceOf[A2aRequestContext]
+    wiredInstance("A2A Endpoint", a2aEndpointClass.asInstanceOf[Class[AbstractA2aEndpoint]]) {
+      sideEffectingComponentInjects(None, None, Some(a2aEndpointClass.getName)).orElse {
+        case p if p == classOf[A2aRequestContext] => startupRequestContext
+      }
+    }._internalAgents()
+  }
+
+  private val followsRemoteA2aTasks = componentClasses.contains(classOf[A2aRemoteTaskSubscriptionEntity])
+
+  // Where remote agents send the push notifications of the tasks that this service follows
+  private val a2aPushPublicUrl: Option[String] =
+    Seq("a2a.push-receiver.public-url", "a2a.endpoint.public-url")
+      .map(key => sdkConfig.getString(key).trim.stripSuffix("/"))
+      .find(_.nonEmpty)
+      .filter(_ => followsRemoteA2aTasks)
+
+  private lazy val a2aGovernance = new A2aGovernance(
+    (componentId, role) => guardrailProvider.agentGuardrails(componentId, role),
+    (componentId, role) =>
+      sanitizerProvider.configuredSanitizers
+        .filter(s => s.applyAt.contains(ConfiguredSanitizer.ApplyAt.ToolResult) && s.appliesTo(componentId, role))
+        .map(_.name),
+    sanitizerClient,
+    componentId => agentRolesByComponentId.getOrElse(componentId, None),
+    sdkTracerFactory)(sdkExecutionContext)
+
+  private lazy val a2aRemoteTasks = new A2aRemoteTasks(
+    runtimeComponentClients.workflowClient,
+    serializer,
+    () => componentClient(None),
+    a2aRemoteAgents,
+    a2aPushPublicUrl,
+    followsRemoteA2aTasks,
+    a2aGovernance.sanitizersOf)(sdkExecutionContext)
+
+  // The push notification receiver is served only when the service follows remote tasks and has a public URL, without
+  // which no remote agent can reach it
+  private val a2aPushReceiverDescriptors =
+    a2aPushPublicUrl.toSeq.map { _ =>
+      HttpEndpointDescriptorFactory.create(
+        classOf[A2aPushReceiverEndpoint],
+        Some(A2aPushReceiverEndpoint.PATH),
+        context =>
+          new A2aPushReceiverEndpoint(
+            a2aRemoteTasks,
+            context.requestHeaders.header(A2aPushReceiverEndpoint.TOKEN_HEADER).map(_.value()).toJava),
+        HttpEndpointDescriptorFactory.classOptions(classOf[A2aPushReceiverEndpoint]),
+        provided = true)
     }
 
   private val mcpEndpoints = componentClasses
@@ -983,7 +1155,7 @@ private final class Sdk(
       case p if p == classOf[ComponentClient] => scanTimeComponentClient
       case r if r == classOf[AgentRegistry]   => scanTimeAgentRegistry
     }
-    overrides.orElse(sideEffectingComponentInjects(None, callerSpiffe = None))
+    overrides.orElse(sideEffectingComponentInjects(None, callerSpiffe = None, callerComponentId = None))
   }
 
   private def isProvided(clz: Class[_]): Boolean = {
@@ -1108,7 +1280,7 @@ private final class Sdk(
             keyValue = true,
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
-            provided = false,
+            provided = isProvided(clz),
             replicationFilterEnabled = Reflect.isReplicationFilterEnabled(clz),
             protobufDescriptors = protobufDescriptors.toVector)
 
@@ -1139,7 +1311,7 @@ private final class Sdk(
             ctx => workflowInstanceFactory(componentId, ctx, clz.asInstanceOf[Class[Workflow[Nothing]]]),
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
-            provided = false,
+            provided = isProvided(clz),
             protobufDescriptors = protobufDescriptors.toVector,
             componentType = WorkflowType,
             // FIXME: pass the workflow step names
@@ -1156,7 +1328,8 @@ private final class Sdk(
               wiredInstance("Timed Action", timedActionClass)(
                 sideEffectingComponentInjects(
                   context.asInstanceOf[TimedActionImpl.CommandContextImpl].telemetryContext,
-                  callerSpiffe)),
+                  callerSpiffe,
+                  Some(componentId))),
             timedActionClass,
             system.classicSystem,
             runtimeComponentClients.timerClient,
@@ -1189,7 +1362,10 @@ private final class Sdk(
             componentId,
             context =>
               wiredInstance("Consumer", consumerClass)(
-                sideEffectingComponentInjects(context.asInstanceOf[MessageContextImpl].telemetryContext, callerSpiffe)),
+                sideEffectingComponentInjects(
+                  context.asInstanceOf[MessageContextImpl].telemetryContext,
+                  callerSpiffe,
+                  Some(componentId))),
             consumerClass,
             consumerSrc,
             consumerDest,
@@ -1284,7 +1460,10 @@ private final class Sdk(
             factoryContext.instanceId,
             context =>
               wiredInstance("AutonomousAgent", autonomousAgentClass) {
-                sideEffectingComponentInjects(context.asInstanceOf[AgentContextImpl].telemetryContext, callerSpiffe)
+                sideEffectingComponentInjects(
+                  context.asInstanceOf[AgentContextImpl].telemetryContext,
+                  callerSpiffe,
+                  Some(componentId))
               },
             sdkExecutionContext,
             sdkTracerFactory,
@@ -1339,7 +1518,10 @@ private final class Sdk(
             factoryContext.sessionId,
             context =>
               wiredInstance("Agent", agentClass) {
-                sideEffectingComponentInjects(context.asInstanceOf[AgentContextImpl].telemetryContext, callerSpiffe)
+                sideEffectingComponentInjects(
+                  context.asInstanceOf[AgentContextImpl].telemetryContext,
+                  callerSpiffe,
+                  Some(componentId))
                   .orElse {
                     // remember to update component type API doc and docs if changing the set of injectables
                     case p if p == classOf[AgentContext] => context
@@ -1358,6 +1540,14 @@ private final class Sdk(
             applicationConfig,
             eventLogClient,
             agentRegistry,
+            // The agent loop runs the guardrails and sanitizers of tool calls, so this client has none
+            telemetryContext =>
+              A2aClientImpl(
+                a2aRemoteAgents,
+                telemetryContext,
+                callerSpiffe,
+                Some(a2aRemoteTasks),
+                tracing = Some(sdkTracerFactory)),
             system)
         }
 
@@ -1382,7 +1572,8 @@ private final class Sdk(
           val callerSpiffe = callerSpiffeHeaderValue(factoryContext.spiffeContext)
           new EvaluatorImpl[Evaluator](
             telemetryContext =>
-              wiredInstance("Evaluator", evaluatorClass)(sideEffectingComponentInjects(telemetryContext, callerSpiffe)),
+              wiredInstance("Evaluator", evaluatorClass)(
+                sideEffectingComponentInjects(telemetryContext, callerSpiffe, Some(componentId))),
             evaluatorClass,
             configured.configFor,
             sdkTracerFactory)
@@ -1419,7 +1610,7 @@ private final class Sdk(
                 stateType,
                 telemetryContext =>
                   wiredInstance("Durable Evaluator", evaluatorClass)(
-                    sideEffectingComponentInjects(telemetryContext, callerSpiffe)),
+                    sideEffectingComponentInjects(telemetryContext, callerSpiffe, Some(componentId))),
                 factoryContext.recorder,
                 serializer,
                 sdkExecutionContext,
@@ -1429,7 +1620,12 @@ private final class Sdk(
             provided = false)
 
       case clz if Reflect.isView(clz) =>
-        viewDescriptors :+= ViewDescriptorFactory(clz, serializer, regionInfo, sdkExecutionContext)
+        viewDescriptors :+= ViewDescriptorFactory(
+          clz,
+          serializer,
+          regionInfo,
+          sdkExecutionContext,
+          provided = isProvided(clz))
 
       case clz if Reflect.isRestEndpoint(clz) =>
       // handled separately because Component is not mandatory
@@ -1454,12 +1650,16 @@ private final class Sdk(
 
   // callerSpiffe deliberately has no default: every component factory must decide whether outbound
   // calls carry the component's SPIFFE identity (None only where there is no component identity)
+  // callerComponentId is the component id, or the class name of an endpoint, whose guardrails and sanitizers apply to
+  // its A2aClient calls; None only where there is no component
   private def sideEffectingComponentInjects(
       telemetryContext: Option[OtelContext],
-      callerSpiffe: Option[String]): PartialFunction[Class[_], Any] = {
+      callerSpiffe: Option[String],
+      callerComponentId: Option[String]): PartialFunction[Class[_], Any] = {
     // remember to update component type API doc and docs if changing the set of injectables
     case p if p == classOf[ComponentClient]    => componentClient(telemetryContext)
     case h if h == classOf[HttpClientProvider] => httpClientProvider(telemetryContext, callerSpiffe)
+    case a if a == classOf[A2aClient]          => a2aClient(telemetryContext, callerSpiffe, callerComponentId)
     case g if g == classOf[GrpcClientProvider] => grpcClientProvider(telemetryContext, callerSpiffe)
     case t if t == classOf[TimerScheduler]     => timerScheduler(telemetryContext)
     case m if m == classOf[Materializer]       => sdkMaterializer
@@ -1486,12 +1686,12 @@ private final class Sdk(
         //        pass auth headers with the runner startup context from the runtime
         Some(
           wiredInstance[ServiceSetup]("Service Setup", serviceClassClass.asInstanceOf[Class[ServiceSetup]])(
-            sideEffectingComponentInjects(None, callerSpiffe = None)))
+            sideEffectingComponentInjects(None, callerSpiffe = None, callerComponentId = None)))
 
       case Some(serviceClassClass) =>
         // just wiring the class
         wiredInstance[Any]("Service Setup", serviceClassClass.asInstanceOf[Class[Any]])(
-          sideEffectingComponentInjects(None, callerSpiffe = None))
+          sideEffectingComponentInjects(None, callerSpiffe = None, callerComponentId = None))
         None
       case _ => None
     }
@@ -1518,6 +1718,8 @@ private final class Sdk(
       (eventSourcedEntityDescriptors ++
         keyValueEntityDescriptors ++
         httpEndpointDescriptors ++
+        a2aEndpointDescriptors ++
+        a2aPushReceiverDescriptors ++
         grpcEndpointDescriptors ++
         timedActionDescriptors ++
         consumerDescriptors ++
@@ -1535,6 +1737,7 @@ private final class Sdk(
         case None =>
           validateClassifiers()
           validateSanitizers()
+          validateA2aTaskContextUse()
           startedPromise.trySuccess(
             StartupContext(
               runtimeComponentClients,
@@ -1566,6 +1769,7 @@ private final class Sdk(
           }
           validateClassifiers()
           validateSanitizers()
+          validateA2aTaskContextUse()
           // Only register the shutdown task if the user actually overrode onShutdown,
           // otherwise we'd add a no-op task to coordinated shutdown for every service.
           val onShutdownOverridden =
@@ -1680,15 +1884,40 @@ private final class Sdk(
         SystemMaterializer(system).materializer)
       val callerSpiffe = callerSpiffeHeaderValue(context.spiffeContext)
       val instance = wiredInstance("HTTP Endpoint", httpEndpointClass) {
-        sideEffectingComponentInjects(Option(context.telemetryContext), callerSpiffe).orElse {
-          case p if p == classOf[RequestContext] => requestContext
-        }
+        sideEffectingComponentInjects(Option(context.telemetryContext), callerSpiffe, Some(httpEndpointClass.getName))
+          .orElse {
+            case p if p == classOf[RequestContext] => requestContext
+          }
       }
       instance match {
         case withBaseClass: AbstractHttpEndpoint => withBaseClass._internalSetRequestContext(requestContext)
         case _                                   =>
       }
       instance
+  }
+
+  private def a2aRequestHandler(
+      a2aEndpointClass: Class[_],
+      context: HttpEndpointConstructionContext): A2aRequestHandler = {
+    val telemetryContext = Option(context.telemetryContext)
+    val requestContext = new HttpRequestContextImpl(context, sdkTracerFactory, regionInfo)(
+      SystemMaterializer(system).materializer)
+    val callerSpiffe = callerSpiffeHeaderValue(context.spiffeContext)
+    val a2aRequestContext = new A2aRequestContextImpl(requestContext)
+    val endpoint = wiredInstance("A2A Endpoint", a2aEndpointClass.asInstanceOf[Class[AbstractA2aEndpoint]]) {
+      sideEffectingComponentInjects(telemetryContext, callerSpiffe, Some(a2aEndpointClass.getName)).orElse {
+        case p if p == classOf[A2aRequestContext] => a2aRequestContext
+      }
+    }
+    new A2aRequestHandler(
+      endpoint,
+      a2aRequestContext,
+      componentClient(telemetryContext),
+      requestContext,
+      agentRegistry,
+      a2aEndpointSettings,
+      context.httpRequest.headers.collectFirst { case h if h.is("host") => h.value }.toJava,
+      sdkMaterializer)
   }
 
   private def grpcEndpointFactory[E](grpcEndpointClass: Class[E]): GrpcEndpointRequestConstructionContext => E =
@@ -1718,9 +1947,10 @@ private final class Sdk(
       }
 
       val instance = wiredInstance("gRPC Endpoint", grpcEndpointClass) {
-        sideEffectingComponentInjects(Option(context.telemetryContext), callerSpiffe).orElse {
-          case p if p == classOf[GrpcRequestContext] => grpcRequestContext
-        }
+        sideEffectingComponentInjects(Option(context.telemetryContext), callerSpiffe, Some(grpcEndpointClass.getName))
+          .orElse {
+            case p if p == classOf[GrpcRequestContext] => grpcRequestContext
+          }
       }
       instance match {
         case withBaseClass: AbstractGrpcEndpoint => withBaseClass._internalSetRequestContext(grpcRequestContext)
@@ -1763,7 +1993,7 @@ private final class Sdk(
       }
 
       val instance = wiredInstance("MCP Endpoint", mcpEndpointClass) {
-        sideEffectingComponentInjects(telemetryContext, callerSpiffe).orElse {
+        sideEffectingComponentInjects(telemetryContext, callerSpiffe, Some(mcpEndpointClass.getName)).orElse {
           case p if p == classOf[McpRequestContext] => mcpRequestContext
         }
       }
@@ -1861,6 +2091,18 @@ private final class Sdk(
     val withSpiffe = callerSpiffe.fold(httpClientProvider)(httpClientProvider.withCallerSpiffeHeader)
     telemetryContext.fold(withSpiffe: HttpClientProvider)(withSpiffe.withTelemetryContext)
   }
+
+  private def a2aClient(
+      telemetryContext: Option[OtelContext],
+      callerSpiffe: Option[String],
+      callerComponentId: Option[String]): A2aClient =
+    A2aClientImpl(
+      a2aRemoteAgents,
+      telemetryContext,
+      callerSpiffe,
+      Some(a2aRemoteTasks),
+      tracing = Some(sdkTracerFactory),
+      governance = Some(a2aGovernance.forCaller(callerComponentId, telemetryContext)))
 
   private def objectStorageProvider(telemetryContext: Option[OtelContext]): ObjectStorageProvider =
     telemetryContext match {

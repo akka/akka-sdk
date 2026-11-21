@@ -23,6 +23,7 @@ import akka.javasdk.agent.Agent.Effect.OnSuccessBuilder
 import akka.javasdk.agent.ContentLoader
 import akka.javasdk.agent.MemoryProvider
 import akka.javasdk.agent.ModelProvider
+import akka.javasdk.agent.RemoteA2aAgent
 import akka.javasdk.agent.RemoteMcpTools
 import akka.javasdk.agent.UserMessage
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.PrimaryEffectImpl
@@ -53,6 +54,7 @@ private[javasdk] object BaseAgentEffectBuilder {
         memoryProvider = MemoryProvider.fromConfig(),
         toolInstancesOrClasses = Seq.empty,
         mcpTools = Seq.empty,
+        a2aAgents = Seq.empty,
         contentLoader = None)
   }
 
@@ -72,6 +74,7 @@ private[javasdk] object BaseAgentEffectBuilder {
       memoryProvider: MemoryProvider,
       toolInstancesOrClasses: Seq[AnyRef],
       mcpTools: Seq[RemoteMcpTools],
+      a2aAgents: Seq[RemoteA2aAgent],
       contentLoader: Option[ContentLoader])
       extends PrimaryEffectImpl {
 
@@ -93,6 +96,9 @@ private[javasdk] object BaseAgentEffectBuilder {
 
     def addMcpTools(tools: Seq[RemoteMcpTools]): RequestModel =
       copy(mcpTools = mcpTools ++ tools)
+
+    def addA2aAgents(agents: Seq[RemoteA2aAgent]): RequestModel =
+      copy(a2aAgents = a2aAgents ++ agents)
 
   }
 
@@ -199,6 +205,16 @@ private[javasdk] final class BaseAgentEffectBuilder[Reply]
 
   override def mcpTools(tools: util.List[RemoteMcpTools]): Builder = {
     updateRequestModel(_.addMcpTools(tools.asScala.toSeq))
+    this
+  }
+
+  override def a2aAgents(agent: RemoteA2aAgent, moreAgents: RemoteA2aAgent*): Builder = {
+    updateRequestModel(_.addA2aAgents(agent +: moreAgents))
+    this
+  }
+
+  override def a2aAgents(agents: util.List[RemoteA2aAgent]): Builder = {
+    updateRequestModel(_.addA2aAgents(agents.asScala.toSeq))
     this
   }
 

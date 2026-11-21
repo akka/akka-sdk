@@ -1,0 +1,25 @@
+// Source: A2A v1.0.1 specification, section 6.5 Task Listing and Management (working tasks, response)
+{
+  "tasks": [
+    {
+      "id": "789abc-def0-1234-5678-9abcdef01234",
+      "contextId": "another-context-id",
+      "status": {
+        "state": "TASK_STATE_WORKING",
+        "message": {
+          "role": "ROLE_AGENT",
+          "parts": [
+            {
+              "text": "Processing your document analysis..."
+            }
+          ],
+          "messageId": "msg-status-update"
+        },
+        "timestamp": "2024-03-15T10:20:00Z"
+      }
+    }
+  ],
+  "totalSize": 1,
+  "pageSize": 20,
+  "nextPageToken": ""
+}

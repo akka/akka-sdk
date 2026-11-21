@@ -144,6 +144,8 @@ include::example$doc-snippets/src/main/java/com/example/application/RemoteMcpWea
 
 When using MCP endpoints in other Akka services, the service ACLs apply just like for xref:http-endpoints.adoc[HTTP endpoints] and xref:grpc-endpoints.adoc[gRPC endpoints].
 
+To offer the skills of an agent in another system that speaks the Agent2Agent (A2A) protocol as tools, see xref:sdk:agents/remote-a2a-agents.adoc[Remote A2A agents].
+
 [#returning_images_or_pdfs]
 == Returning images or PDFs from a function tool
 

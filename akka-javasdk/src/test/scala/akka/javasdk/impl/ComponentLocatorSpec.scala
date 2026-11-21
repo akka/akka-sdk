@@ -29,6 +29,8 @@ import org.scalatest.wordspec.AnyWordSpec
 
 class UnannotatedCounter extends KeyValueEntity[Integer]
 
+class InjectsA2aClient(client: akka.javasdk.a2a.A2aClient)
+
 object ComponentLocatorSpec {
   private def componentPath(componentType: String): String = s"$DescriptorComponentBasePath.$componentType"
 
@@ -824,6 +826,29 @@ class ComponentLocatorSpec extends AnyWordSpec with Matchers {
       ComponentLocator.isComponentDescriptor("akka-javasdk.conf") shouldBe false
       ComponentLocator.isComponentDescriptor("akka-javasdk-components_foo.json") shouldBe false
       ComponentLocator.isComponentDescriptor("MANIFEST.MF") shouldBe false
+    }
+  }
+
+  "ComponentLocator.followsRemoteTasks" should {
+    val reference = ConfigFactory.load()
+    def config(settings: String) = ConfigFactory.parseString(settings).withFallback(reference)
+
+    "be false for a service without remote agents, A2aClient or the setting" in {
+      followsRemoteTasks(reference, Seq(classOf[Counter])) shouldBe false
+    }
+
+    "be true when a remote agent is configured" in {
+      followsRemoteTasks(
+        config("akka.javasdk.a2a.remote-agents.claims.card-url = \"https://claims.example.com\""),
+        Seq(classOf[Counter])) shouldBe true
+    }
+
+    "be true when a component injects A2aClient" in {
+      followsRemoteTasks(reference, Seq(classOf[Counter], classOf[InjectsA2aClient])) shouldBe true
+    }
+
+    "be true when the setting is on" in {
+      followsRemoteTasks(config("akka.javasdk.a2a.remote-tasks.enabled = on"), Seq(classOf[Counter])) shouldBe true
     }
   }
 }

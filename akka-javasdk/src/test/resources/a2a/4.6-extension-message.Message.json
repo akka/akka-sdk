@@ -1,0 +1,16 @@
+// Source: A2A v1.0.1 specification, section 4.6.2 Extensions Points (message with extension data)
+{
+  "role": "ROLE_USER",
+  "parts": [
+    {"text": "Find restaurants near me"}
+  ],
+  "extensions": ["https://example.com/extensions/geolocation/v1"],
+  "metadata": {
+    "https://example.com/extensions/geolocation/v1": {
+      "latitude": 37.7749,
+      "longitude": -122.4194,
+      "accuracy": 10.0,
+      "timestamp": "2025-10-21T14:30:00Z"
+    }
+  }
+}

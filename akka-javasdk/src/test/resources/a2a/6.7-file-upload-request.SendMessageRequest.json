@@ -1,0 +1,17 @@
+// Source: A2A v1.0.1 specification, section 6.7 File Exchange (request body; the published example misses a comma after raw and has a trailing comma, both corrected)
+{
+  "message": {
+    "role": "ROLE_USER",
+    "parts": [
+      {
+        "text": "Analyze this image and highlight any faces."
+      },
+      {
+        "raw": "iVBORw0KGgoAAAANSUhEUgAAAAUA",
+        "filename": "input_image.png",
+        "mediaType": "image/png"
+      }
+    ],
+    "messageId": "6dbc13b5-bd57-4c2b-b503-24e381b6c8d6"
+  }
+}

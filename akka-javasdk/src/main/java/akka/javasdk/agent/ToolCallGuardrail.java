@@ -25,7 +25,10 @@ import java.util.concurrent.CompletionStage;
  */
 public non-sealed interface ToolCallGuardrail extends Guardrail {
 
-  /** Where the called tool runs: {@link FunctionTool}, {@link RemoteMcp} or {@link Unknown}. */
+  /**
+   * Where the called tool runs: {@link FunctionTool}, {@link RemoteMcp}, {@link RemoteA2a} or
+   * {@link Unknown}.
+   */
   sealed interface ToolOrigin {
 
     /** A function tool of the agent. */
@@ -75,6 +78,41 @@ public non-sealed interface ToolCallGuardrail extends Guardrail {
 
       private static String rawPath(URI uri) {
         return uri.getRawPath() == null ? "" : uri.getRawPath();
+      }
+    }
+
+    /**
+     * A skill of a remote Agent2Agent (A2A) agent, offered to the model through {@link
+     * Agent.Effect.Builder#a2aAgents}.
+     *
+     * <p>A guardrail can match the agent by its name or by its card URL. The card URL is the same
+     * whichever way the agent is referenced, so it is the more reliable of the two.
+     *
+     * @param agentName the name of the remote agent. For {@link RemoteA2aAgent#named} it is the
+     *     configured name. For {@link RemoteA2aAgent#fromCardUrl} and {@link
+     *     RemoteA2aAgent#fromService} it is the name of a configuration under {@code
+     *     akka.javasdk.a2a.remote-agents} with the same {@code card-url}, or else the {@code name}
+     *     on the Agent Card.
+     * @param cardUrl the URL of the remote agent's Agent Card. {@link #toString} leaves out the
+     *     user info, the query and the fragment.
+     * @param skill the id of the skill on the remote agent's Agent Card
+     */
+    record RemoteA2a(String agentName, String cardUrl, String skill) implements ToolOrigin {
+      public RemoteA2a {
+        Objects.requireNonNull(agentName, "agentName");
+        Objects.requireNonNull(cardUrl, "cardUrl");
+        Objects.requireNonNull(skill, "skill");
+      }
+
+      @Override
+      public String toString() {
+        return "RemoteA2a[agentName="
+            + agentName
+            + ", cardUrl="
+            + RemoteMcp.withoutCredentials(cardUrl)
+            + ", skill="
+            + skill
+            + "]";
       }
     }
 

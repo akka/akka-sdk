@@ -1,0 +1,6 @@
+// Source: A2A v1.0.1 specification, section 9.4.8 GetExtendedAgentCard (request, no params)
+{
+  "jsonrpc": "2.0",
+  "id": 6,
+  "method": "GetExtendedAgentCard"
+}

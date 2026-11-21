@@ -74,6 +74,8 @@ import akka.stream.Materializer;
 import akka.stream.SystemMaterializer;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import com.typesafe.config.ConfigUtil;
+import com.typesafe.config.ConfigValueFactory;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -686,6 +688,22 @@ public class TestKit {
      */
     public Settings withAdditionalConfig(String additionalConfig) {
       return withAdditionalConfig(ConfigFactory.parseString(additionalConfig));
+    }
+
+    /**
+     * Name a started {@link MockA2aAgent} as a remote A2A agent, so that {@code
+     * RemoteA2aAgent.named(name)} and {@code A2aClient.forAgent(name)} reach the mock. The setting
+     * adds {@code akka.javasdk.a2a.remote-agents.<name>.card-url} to the additional config that the
+     * settings hold so far. A later call to {@link #withAdditionalConfig(Config)} replaces it.
+     *
+     * @param name the name of the remote agent in the configuration
+     * @param agent a mock that has started
+     * @return The updated settings.
+     */
+    public Settings withMockedA2aAgent(String name, MockA2aAgent agent) {
+      var key = ConfigUtil.joinPath("akka", "javasdk", "a2a", "remote-agents", name, "card-url");
+      return withAdditionalConfig(
+          additionalConfig.withValue(key, ConfigValueFactory.fromAnyRef(agent.cardUrl())));
     }
 
     /**

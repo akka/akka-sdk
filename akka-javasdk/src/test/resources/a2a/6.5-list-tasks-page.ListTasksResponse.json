@@ -1,0 +1,7 @@
+// Source: A2A v1.0.1 specification, section 6.5 Pagination Example (response; the elided tasks are removed)
+{
+  "tasks": [],
+  "totalSize": 15,
+  "pageSize": 10,
+  "nextPageToken": "base64-encoded-next-cursor-token"
+}

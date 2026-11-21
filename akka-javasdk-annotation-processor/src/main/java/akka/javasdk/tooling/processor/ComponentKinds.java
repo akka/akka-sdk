@@ -16,6 +16,7 @@ final class ComponentKinds {
   static final String HTTP_ENDPOINT = "http-endpoint";
   static final String GRPC_ENDPOINT = "grpc-endpoint";
   static final String MCP_ENDPOINT = "mcp-endpoint";
+  static final String A2A_ENDPOINT = "a2a-endpoint";
   static final String EVENT_SOURCED_ENTITY = "event-sourced-entity";
   static final String KEY_VALUE_ENTITY = "key-value-entity";
   static final String TIMED_ACTION = "timed-action";
@@ -41,6 +42,7 @@ final class ComponentKinds {
       case "akka.javasdk.annotations.GrpcEndpoint" -> GRPC_ENDPOINT;
       case "akka.javasdk.annotations.Setup" -> SERVICE_SETUP;
       case "akka.javasdk.annotations.mcp.McpEndpoint" -> MCP_ENDPOINT;
+      case "akka.javasdk.annotations.a2a.A2aEndpoint" -> A2A_ENDPOINT;
       case "akka.javasdk.annotations.Component" ->
           recurseForComponentType(annotatedClass, annotatedClass);
       default ->

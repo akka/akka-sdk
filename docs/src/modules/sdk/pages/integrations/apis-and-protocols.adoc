@@ -1,5 +1,5 @@
 = APIs & protocols
-:page-summary: Built-in REST, OpenAPI, WebSocket, gRPC, and MCP support, plus web application assets served to a browser. A2A and MCP clients built into the Agent component.
+:page-summary: Built-in REST, OpenAPI, WebSocket, gRPC, MCP and A2A support, plus web application assets served to a browser.
 :page-persona: builder-developer, builder-ai-ml
 
 include::ROOT:partial$include.adoc[]
@@ -22,19 +22,24 @@ High-performance APIs with protocol buffer definitions. See xref:sdk:grpc-endpoi
 * **MCP Endpoints** — Expose Agent functions to remote LLMs via `@FunctionTool` annotations. See xref:sdk:mcp-endpoints.adoc[MCP Endpoints].
 * **MCP CLI server** — `akka mcp serve` exposes CLI operations as MCP tools for Claude Desktop, VS Code, and Cursor.
 
+== A2A (Agent2Agent)
+
+* **A2A endpoints**: Publish agents and workflows as skills to clients of the Agent2Agent (A2A) protocol. Akka serves the Agent Card and the A2A routes. See xref:sdk:a2a-endpoints.adoc[A2A Endpoints].
+* **Remote A2A agents**: Offer the skills of an agent on another platform to the model of an agent as tools, or call the agent from a workflow step. See xref:sdk:agents/remote-a2a-agents.adoc[Remote A2A agents].
+
 == Agent protocol support
 
-A2A and MCP clients are built into Akka's Agent component. Agents consume tools and communicate with other agents through both protocols, with no external libraries.
+Akka supports MCP and A2A in both directions.
 
-* **A2A (Agent-to-Agent)** — Google's protocol for agent-to-agent communication
-* **MCP (Model Context Protocol)** — Anthropic's protocol for connecting AI models to external tools
-
-link:{url-blog-mcp-a2a-acp}[MCP, A2A, ACP: What does it all mean?, window="new"]
+* An MCP endpoint publishes tools, resources and prompts to MCP clients, and an agent uses the tools of remote MCP servers. See xref:sdk:mcp-endpoints.adoc[MCP Endpoints] and xref:sdk:agents/extending.adoc#_using_tools_from_remote_mcp_servers[Using tools from remote MCP servers].
+* An A2A endpoint publishes agents and workflows as skills to A2A clients, and an agent or a workflow calls remote A2A agents. See xref:sdk:a2a-endpoints.adoc[A2A Endpoints] and xref:sdk:agents/remote-a2a-agents.adoc[Remote A2A agents].
 
 == See also
 
 * xref:sdk:http-endpoints.adoc[HTTP Endpoints]
 * xref:sdk:grpc-endpoints.adoc[gRPC Endpoints]
 * xref:sdk:mcp-endpoints.adoc[MCP Endpoints]
+* xref:sdk:a2a-endpoints.adoc[A2A Endpoints]
+* xref:sdk:agents/remote-a2a-agents.adoc[Remote A2A agents]
 * xref:sdk:web-applications.adoc[Web applications]
 * xref:sdk:agents.adoc[Agents]

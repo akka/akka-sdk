@@ -290,6 +290,26 @@ public abstract class Agent implements AgentDelegationWorker {
       Builder mcpTools(List<RemoteMcpTools> tools);
 
       /**
+       * Offers the skills of one or more remote Agent2Agent (A2A) agents to the model as tools.
+       *
+       * <p>Each allowed skill on a remote agent's Agent Card becomes one tool. A tool call sends
+       * the model's message to the skill, with an A2A context id derived from the session id, and
+       * returns the reply to the model.
+       *
+       * <p>Construct instances using {@link RemoteA2aAgent#named(String)}, {@link
+       * RemoteA2aAgent#fromCardUrl(String)} or {@link RemoteA2aAgent#fromService(String)}.
+       */
+      Builder a2aAgents(RemoteA2aAgent agent, RemoteA2aAgent... moreAgents);
+
+      /**
+       * Offers the skills of one or more remote Agent2Agent (A2A) agents to the model as tools.
+       *
+       * <p>Construct instances using {@link RemoteA2aAgent#named(String)}, {@link
+       * RemoteA2aAgent#fromCardUrl(String)} or {@link RemoteA2aAgent#fromService(String)}.
+       */
+      Builder a2aAgents(List<RemoteA2aAgent> agents);
+
+      /**
        * Sets a custom content loader.
        *
        * <p>When multimodal messages contain image, PDF references, they are normally automatically
@@ -651,6 +671,26 @@ public abstract class Agent implements AgentDelegationWorker {
        * <p>Construct instances using {@link RemoteMcpTools#fromServer(String)}
        */
       Builder mcpTools(List<RemoteMcpTools> tools);
+
+      /**
+       * Offers the skills of one or more remote Agent2Agent (A2A) agents to the model as tools.
+       *
+       * <p>Each allowed skill on a remote agent's Agent Card becomes one tool. A tool call sends
+       * the model's message to the skill, with an A2A context id derived from the session id, and
+       * returns the reply to the model.
+       *
+       * <p>Construct instances using {@link RemoteA2aAgent#named(String)}, {@link
+       * RemoteA2aAgent#fromCardUrl(String)} or {@link RemoteA2aAgent#fromService(String)}.
+       */
+      Builder a2aAgents(RemoteA2aAgent agent, RemoteA2aAgent... moreAgents);
+
+      /**
+       * Offers the skills of one or more remote Agent2Agent (A2A) agents to the model as tools.
+       *
+       * <p>Construct instances using {@link RemoteA2aAgent#named(String)}, {@link
+       * RemoteA2aAgent#fromCardUrl(String)} or {@link RemoteA2aAgent#fromService(String)}.
+       */
+      Builder a2aAgents(List<RemoteA2aAgent> agents);
 
       /**
        * Sets a custom content loader.

@@ -1,0 +1,20 @@
+// Source: A2A v1.0.1 specification, section 9.5 Error Handling (A2A specific error response)
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "error": {
+    "code": -32001,
+    "message": "Task not found",
+    "data": [
+      {
+        "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+        "reason": "TASK_NOT_FOUND",
+        "domain": "a2a-protocol.org",
+        "metadata": {
+          "taskId": "nonexistent-task-id",
+          "timestamp": "2025-11-09T10:30:00.000Z"
+        }
+      }
+    ]
+  }
+}

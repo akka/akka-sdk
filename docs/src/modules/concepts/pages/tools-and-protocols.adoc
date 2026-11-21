@@ -14,7 +14,11 @@ Function tools run application methods. Components offered as tools give the mod
 
 The Model Context Protocol (MCP) connects agents to remote tools. An Akka agent can consume a remote MCP server, while an MCP endpoint exposes tools, resources, and prompts from your service to clients. These are opposite directions of the same integration.
 
-Agent-to-Agent (A2A) supports communication across agent systems. Inside an Akka service, the component client and coordination capabilities provide direct access without requiring a remote protocol for every call.
+The Agent2Agent (A2A) protocol supports communication between agents on different platforms. An agent publishes an Agent Card that lists its skills. An A2A client reads the card and sends messages to a skill. Like MCP, A2A works in both directions in Akka: an xref:sdk:a2a-endpoints.adoc[A2A endpoint] publishes your agents and workflows as skills, and an agent or a workflow calls xref:sdk:agents/remote-a2a-agents.adoc[remote A2A agents]. The Agentic AI Foundation of the Linux Foundation stewards the protocol.
+
+Use MCP when the remote system offers functions that the model calls with arguments and that return a result. Use A2A when the remote system is itself an agent that you send a message to, that can work on a request for minutes or hours, and that can ask for more input. Inside an Akka service, the component client and coordination capabilities provide direct access without requiring a remote protocol for every call.
+
+An exchange that lasts a few seconds and that the model chooses is a tool call: an agent offers the skills of a remote A2A agent as tools. An exchange that is fixed in code, that runs for minutes or hours, or that must stop for a person is a workflow step: the step sends the message and pauses until the updates of the remote A2A task arrive. An A2A task is a unit of work of the protocol and is not the task of an autonomous agent. Autonomous agents take no part in A2A: an A2A endpoint cannot publish an autonomous agent, and an autonomous agent does not call remote A2A agents.
 
 == Discovery and coordination
 
@@ -32,6 +36,8 @@ A broad tool set increases prompt size and makes selection harder. Remote tools 
 
 * xref:sdk:agents/extending.adoc[] declares tools and configures MCP interception.
 * xref:sdk:mcp-endpoints.adoc[] exposes a service to MCP clients.
+* xref:sdk:a2a-endpoints.adoc[] publishes agents and workflows to A2A clients.
+* xref:sdk:agents/remote-a2a-agents.adoc[] calls agents on other platforms.
 * xref:sdk:agents/calling.adoc#_calling_agents_by_id[Calling agents by ID] uses the registry.
 * xref:sdk:autonomous-agents/coordination.adoc[] chooses between tools, tasks, and agents.
 * xref:sdk:integrations/apis-and-protocols.adoc[] describes supported integrations.

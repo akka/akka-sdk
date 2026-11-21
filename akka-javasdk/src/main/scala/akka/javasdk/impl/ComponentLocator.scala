@@ -18,6 +18,8 @@ import scala.util.Success
 import akka.actor.DynamicAccess
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
+import akka.javasdk.a2a.A2aClient
+import akka.javasdk.a2a.AbstractA2aEndpoint
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.PromptTemplate
 import akka.javasdk.agent.SessionMemoryEntity
@@ -28,12 +30,21 @@ import akka.javasdk.agent.evaluator.ToxicityEvaluator
 import akka.javasdk.agent.task.TaskEntity
 import akka.javasdk.annotations.Component
 import akka.javasdk.annotations.GrpcEndpoint
+import akka.javasdk.annotations.a2a.A2aEndpoint
 import akka.javasdk.annotations.http.HttpEndpoint
 import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.evaluation.DurableEvaluator
 import akka.javasdk.evaluation.Evaluator
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
+import akka.javasdk.impl.a2a.A2aPushDeliveryWorkflow
+import akka.javasdk.impl.a2a.A2aRemoteTaskPollWorkflow
+import akka.javasdk.impl.a2a.A2aRemoteTaskSubscriptionEntity
+import akka.javasdk.impl.a2a.A2aShortTaskWorkflow
+import akka.javasdk.impl.a2a.A2aTaskEntity
+import akka.javasdk.impl.a2a.A2aTaskExtrasEntity
+import akka.javasdk.impl.a2a.A2aTasksView
+import akka.javasdk.impl.a2a.RemoteA2aTaskWorkflow
 import akka.javasdk.impl.agent.task.BacklogEntity
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.timedaction.TimedAction
@@ -75,6 +86,7 @@ private[javasdk] object ComponentLocator {
 
   // Component type keys - these must be kept in sync with ComponentKinds.java
   // in the akka-javasdk-annotation-processor module
+  val A2aEndpointKey = "a2a-endpoint"
   val AgentKey = "agent"
   val AutonomousAgentKey = "autonomous-agent"
   val EvaluatorKey = "evaluator"
@@ -90,6 +102,7 @@ private[javasdk] object ComponentLocator {
   val DurableEvaluatorKey = "durable-evaluator"
 
   private val AllComponentTypeKeys = Seq(
+    A2aEndpointKey,
     AgentKey,
     AutonomousAgentKey,
     EvaluatorKey,
@@ -111,6 +124,7 @@ private[javasdk] object ComponentLocator {
       HttpEndpointKey -> classOf[AnyRef],
       GrpcEndpointKey -> classOf[AnyRef],
       McpEndpointKey -> classOf[AnyRef],
+      A2aEndpointKey -> classOf[AbstractA2aEndpoint],
       TimedActionKey -> classOf[TimedAction],
       ConsumerKey -> classOf[Consumer],
       EventSourcedEntityKey -> classOf[EventSourcedEntity[_, _]],
@@ -394,8 +408,37 @@ private[javasdk] object ComponentLocator {
   val autonomousAgentProvidedComponents: Seq[Class[_]] =
     Seq(classOf[TaskEntity], classOf[BacklogEntity])
 
+  val a2aProvidedComponents: Seq[Class[_]] =
+    Seq(
+      classOf[A2aTaskEntity],
+      classOf[A2aTasksView],
+      classOf[A2aTaskExtrasEntity],
+      classOf[A2aPushDeliveryWorkflow],
+      classOf[A2aShortTaskWorkflow])
+
+  // Follow remote A2A tasks for workflows (notifyWorkflow) and for the tool calls that agents hand off
+  val a2aRemoteTaskComponents: Seq[Class[_]] =
+    Seq(classOf[A2aRemoteTaskSubscriptionEntity], classOf[A2aRemoteTaskPollWorkflow], classOf[RemoteA2aTaskWorkflow])
+
   // all components that the SDK adds when the service needs them
-  val providedComponents: Seq[Class[_]] = agentProvidedComponents ++ autonomousAgentProvidedComponents
+  val providedComponents: Seq[Class[_]] =
+    agentProvidedComponents ++ autonomousAgentProvidedComponents ++ a2aProvidedComponents ++ a2aRemoteTaskComponents
+
+  /**
+   * True when the service needs the components that follow remote A2A tasks: it configures a remote agent, a component
+   * injects [[A2aClient]], or `akka.javasdk.a2a.remote-tasks.enabled` is on. An agent that hands off a tool call to an
+   * agent given by URL or service needs the setting.
+   */
+  def followsRemoteTasks(config: com.typesafe.config.Config, classes: Seq[Class[_]]): Boolean = {
+    def has(path: String) = config.hasPath(path)
+    (has("akka.javasdk.a2a.remote-tasks.enabled") && config.getBoolean("akka.javasdk.a2a.remote-tasks.enabled")) ||
+    (has("akka.javasdk.a2a.remote-agents") && !config.getConfig("akka.javasdk.a2a.remote-agents").root().isEmpty) ||
+    classes.exists(injectsA2aClient)
+  }
+
+  /** True when a constructor of the class takes an [[A2aClient]]. */
+  def injectsA2aClient(clz: Class[_]): Boolean =
+    clz.getDeclaredConstructors.exists(_.getParameterTypes.contains(classOf[A2aClient]))
 
   case class LocatedClasses(components: Seq[Class[_]], service: Option[Class[_]])
 
@@ -412,6 +455,7 @@ private[javasdk] object ComponentLocator {
       case HttpEndpointKey => annotated(classOf[HttpEndpoint])
       case GrpcEndpointKey => annotated(classOf[GrpcEndpoint])
       case McpEndpointKey  => annotated(classOf[McpEndpoint])
+      case A2aEndpointKey  => annotated(classOf[A2aEndpoint])
       case ViewKey         => component(classOf[View])
       case other           => component(ComponentTypeBaseClasses(other))
     }
@@ -600,19 +644,29 @@ private[javasdk] object ComponentLocator {
     if (hasAutonomousAgentComponents)
       logger.debug("AutonomousAgent component detected, adding autonomous agent provided components")
 
+    val hasA2aEndpoint = components.exists(c => classOf[AbstractA2aEndpoint].isAssignableFrom(c))
+
+    val serviceSetupClass: Option[Class[_]] =
+      if (descriptorConfig.hasPath(DescriptorServiceSetupEntryPath))
+        Some(dynamicAccess.getClassFor[AnyRef](descriptorConfig.getString(DescriptorServiceSetupEntryPath)).get)
+      else None
+    val followsRemoteA2aTasks =
+      followsRemoteTasks(applicationConfig, components ++ serviceSetupClass)
+
     val withBuildInComponents =
+      (if (hasA2aEndpoint) a2aProvidedComponents else Seq.empty) ++
+      (if (followsRemoteA2aTasks) a2aRemoteTaskComponents else Seq.empty) ++
       (if (hasAgentComponents || hasAutonomousAgentComponents) agentProvidedComponents else Seq.empty) ++
       (if (hasAutonomousAgentComponents) autonomousAgentProvidedComponents else Seq.empty) ++
       components
 
-    if (descriptorConfig.hasPath(DescriptorServiceSetupEntryPath)) {
-      // central config/lifecycle class
-      val serviceSetupClassName = descriptorConfig.getString(DescriptorServiceSetupEntryPath)
-      val serviceSetup = dynamicAccess.getClassFor[AnyRef](serviceSetupClassName).get
-      logger.debug("Found and loaded service class setup: [{}]", serviceSetup)
-      LocatedClasses(withBuildInComponents, Some(serviceSetup))
-    } else {
-      LocatedClasses(withBuildInComponents, None)
+    serviceSetupClass match {
+      case Some(serviceSetup) =>
+        // central config/lifecycle class
+        logger.debug("Found and loaded service class setup: [{}]", serviceSetup)
+        LocatedClasses(withBuildInComponents, Some(serviceSetup))
+      case None =>
+        LocatedClasses(withBuildInComponents, None)
     }
   }
 }

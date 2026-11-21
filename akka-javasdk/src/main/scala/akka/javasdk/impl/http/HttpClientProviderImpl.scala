@@ -81,58 +81,59 @@ private[akka] final class HttpClientProviderImpl(
     }
   }
 
+  /**
+   * The base URL of another Akka service, and the connection pool settings that resolve its name in dev mode.
+   */
+  private[akka] def serviceTarget(name: String): (String, Option[ConnectionPoolSettings]) =
+    settings.devModeSettings match {
+      case Some(devModeSettings) =>
+        // Note: platform services do not exist in dev mode, a service that belongs to one is looked up by name only
+        devModeSettings.backoffice.services.get(name) match {
+          case Some(_) if platformService.isDefined =>
+            throw new IllegalArgumentException(
+              s"Service [$name] in platform service [${platformService.get}] cannot be reached through a backoffice mapping in dev mode")
+          case Some(backofficeSettings) =>
+            (s"https://${backofficeSettings.backofficeProxyHost}", None)
+          case None =>
+            val devModeResolverTransport = ClientTransport.withCustomResolver((name, port) =>
+              // dev mode, other service name, use Akka discovery to find it
+              // the runtime has set up a mechanism that finds locally running
+              // services. Since in dev mode blocking is probably fine for now.
+              Discovery(system.classicSystem).discovery
+                .lookup(name, 5.seconds)
+                .map { resolved =>
+                  try {
+                    val resolvedTarget = resolved.addresses.head
+                    log.debug("Local service resolution found service [{}] at [{}:{}]", name, resolvedTarget.host, port)
+                    InetSocketAddress.createUnresolved(resolvedTarget.host, resolvedTarget.port.getOrElse(port))
+                  } catch {
+                    case NonFatal(ex) =>
+                      throw new RuntimeException(
+                        s"Failed to look up service [$name] in dev-mode, make sure that it is also running " +
+                        "with a separate port and service name correctly defined in its application.conf under 'akka.javasdk.dev-mode.service-name' " +
+                        "if it differs from the maven project name.",
+                        ex)
+                  }
+                }(system.executionContext))
+
+            val connectionSettings = ClientConnectionSettings(system).withTransport(devModeResolverTransport)
+            val poolSettings = ConnectionPoolSettings(system).withConnectionSettings(connectionSettings)
+
+            (
+              // always http because local
+              s"http://$name",
+              Some(poolSettings))
+        }
+      case None =>
+        // production, request to other service, service mesh manages TLS
+        (s"http://${ServiceAddress.hostFor(name, deploymentInfo, platformService)}", None)
+    }
+
   private def realHttpClientFor(name: String): HttpClient = {
     val nameIsService = isServiceName(name)
     val (baseUrl, connectionPoolSettings) =
-      if (nameIsService) {
-        settings.devModeSettings match {
-          case Some(devModeSettings) =>
-            // Note: platform services do not exist in dev mode, a service that belongs to one is looked up by name only
-            devModeSettings.backoffice.services.get(name) match {
-              case Some(_) if platformService.isDefined =>
-                throw new IllegalArgumentException(
-                  s"Service [$name] in platform service [${platformService.get}] cannot be reached through a backoffice mapping in dev mode")
-              case Some(backofficeSettings) =>
-                (s"https://${backofficeSettings.backofficeProxyHost}", None)
-              case None =>
-                val devModeResolverTransport = ClientTransport.withCustomResolver((name, port) =>
-                  // dev mode, other service name, use Akka discovery to find it
-                  // the runtime has set up a mechanism that finds locally running
-                  // services. Since in dev mode blocking is probably fine for now.
-                  Discovery(system.classicSystem).discovery
-                    .lookup(name, 5.seconds)
-                    .map { resolved =>
-                      try {
-                        val resolvedTarget = resolved.addresses.head
-                        log.debug(
-                          "Local service resolution found service [{}] at [{}:{}]",
-                          name,
-                          resolvedTarget.host,
-                          port)
-                        InetSocketAddress.createUnresolved(resolvedTarget.host, resolvedTarget.port.getOrElse(port))
-                      } catch {
-                        case NonFatal(ex) =>
-                          throw new RuntimeException(
-                            s"Failed to look up service [$name] in dev-mode, make sure that it is also running " +
-                            "with a separate port and service name correctly defined in its application.conf under 'akka.javasdk.dev-mode.service-name' " +
-                            "if it differs from the maven project name.",
-                            ex)
-                      }
-                    }(system.executionContext))
-
-                val connectionSettings = ClientConnectionSettings(system).withTransport(devModeResolverTransport)
-                val poolSettings = ConnectionPoolSettings(system).withConnectionSettings(connectionSettings)
-
-                (
-                  // always http because local
-                  s"http://$name",
-                  Some(poolSettings))
-            }
-          case None =>
-            // production, request to other service, service mesh manages TLS
-            (s"http://${ServiceAddress.hostFor(name, deploymentInfo, platformService)}", None)
-        }
-      } else {
+      if (nameIsService) serviceTarget(name)
+      else {
         // if it isn't a service, we expect it is arbitrary http or https server including the protocol part
         if (!name.startsWith("http://") && !name.startsWith("https://"))
           throw new IllegalArgumentException(

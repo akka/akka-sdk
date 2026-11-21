@@ -50,9 +50,34 @@ private[javasdk] object HttpEndpointDescriptorFactory {
       endpointClass: Class[_],
       instanceFactory: HttpEndpointConstructionContext => Any): HttpEndpointDescriptor = {
     assert(Reflect.isRestEndpoint(endpointClass))
+    create(
+      endpointClass,
+      Option(endpointClass.getAnnotation(classOf[HttpEndpoint])).map(_.value()),
+      instanceFactory,
+      classOptions(endpointClass),
+      provided = false)
+  }
+
+  /** The ACL and JWT options of the class annotations of an endpoint. */
+  def classOptions(endpointClass: Class[_]): ComponentOptions =
+    new ComponentOptions(
+      deriveAclOptions(Option(endpointClass.getAnnotation(classOf[Acl]))),
+      deriveJWTOptions(Option(endpointClass.getAnnotation(classOf[JWT])), endpointClass.getCanonicalName))
+
+  /**
+   * A descriptor for the annotated methods of a class at the given path, with the given class options. Used for
+   * endpoints that the SDK serves without an `@HttpEndpoint` annotation.
+   */
+  def create(
+      endpointClass: Class[_],
+      path: Option[String],
+      instanceFactory: HttpEndpointConstructionContext => Any,
+      componentOptions: ComponentOptions,
+      provided: Boolean,
+      implementationClassName: Option[String] = None): HttpEndpointDescriptor = {
 
     // make sure it is predictable - always starts with slash and ends with slash, if undefined, always "/"
-    val mainPath = Option(endpointClass.getAnnotation(classOf[HttpEndpoint])).map(_.value()) match {
+    val mainPath = path match {
       case None     => "/"
       case Some("") => "/"
       case Some(path) =>
@@ -120,11 +145,11 @@ private[javasdk] object HttpEndpointDescriptorFactory {
       mainPath = Some(mainPath),
       instanceFactory = instanceFactory,
       methods = methods,
-      componentOptions = new ComponentOptions(
-        deriveAclOptions(Option(endpointClass.getAnnotation(classOf[Acl]))),
-        deriveJWTOptions(Option(endpointClass.getAnnotation(classOf[JWT])), endpointClass.getCanonicalName)),
-      implementationClassName = endpointClass.getName,
-      objectMapper = Some(JsonSupport.getObjectMapper))
+      componentOptions = componentOptions,
+      implementationClassName = implementationClassName.getOrElse(endpointClass.getName),
+      objectMapper = Some(JsonSupport.getObjectMapper),
+      shouldInstrument = true,
+      provided = provided)
   }
 
   private[impl] def deriveSpec(method: Method, pathParameterCount: Int): HttpEndpointMethodSpec = {

@@ -55,6 +55,8 @@ public class Validations {
     } else if (typeDef.hasAnnotation(MCP_ENDPOINT_ANNOTATION)) {
       // no specific validations for mcp endpoint beyond ACL patterns
       return aclPatterns;
+    } else if (typeDef.hasAnnotation(A2aValidations.A2A_ENDPOINT_ANNOTATION)) {
+      return A2aValidations.validateEndpoint(typeDef).combine(aclPatterns);
     } else {
       return validateComponent(typeDef).combine(aclPatterns);
     }
@@ -191,6 +193,7 @@ public class Validations {
         .combine(KeyValueEntityValidations.validate(typeDef))
         .combine(EventSourcedEntityValidations.validate(typeDef))
         .combine(AgentValidations.validate(typeDef))
+        .combine(A2aValidations.validateSkills(typeDef))
         .combine(AutonomousAgentValidations.validate(typeDef))
         .combine(ViewValidations.validate(typeDef));
   }

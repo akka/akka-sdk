@@ -14,6 +14,15 @@ For configuration of AI model providers, please refer to xref:sdk:model-provider
 include::sdk:example$akka-javasdk/src/main/resources/reference.conf[tag=reference]
 ----
 
+== Agent2Agent settings
+
+The `akka.javasdk.a2a` settings configure the xref:sdk:a2a-endpoints.adoc[A2A endpoint] that publishes agents, the push notifications that remote agents send to your service, and the xref:sdk:agents/remote-a2a-agents.adoc[remote A2A agents] that your service calls.
+
+[source,hocon,indent=0]
+----
+include::sdk:example$akka-javasdk/src/main/resources/reference.conf[tag=a2a]
+----
+
 == References
 - xref:sdk:setup-and-dependency-injection.adoc[]
 - xref:sdk:model-provider-details.adoc[]

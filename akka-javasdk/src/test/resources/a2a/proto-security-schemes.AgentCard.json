@@ -1,0 +1,58 @@
+// Source: constructed from specification/a2a.proto in A2A v1.0.1 (messages SecurityScheme, OAuthFlows and their members).
+// The specification text has no JSON example of the API key, HTTP, OAuth 2.0 and mutual TLS schemes.
+{
+  "name": "Security Schemes Agent",
+  "securitySchemes": {
+    "key": {
+      "apiKeySecurityScheme": {"description": "Key in a header", "location": "header", "name": "X-Api-Key"}
+    },
+    "bearer": {
+      "httpAuthSecurityScheme": {"scheme": "Bearer", "bearerFormat": "JWT"}
+    },
+    "oauth": {
+      "oauth2SecurityScheme": {
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://auth.example.com/token",
+            "scopes": {"read": "Read tasks", "write": "Send messages"}
+          }
+        },
+        "oauth2MetadataUrl": "https://auth.example.com/.well-known/oauth-authorization-server"
+      }
+    },
+    "code": {
+      "oauth2SecurityScheme": {
+        "flows": {
+          "authorizationCode": {
+            "authorizationUrl": "https://auth.example.com/authorize",
+            "tokenUrl": "https://auth.example.com/token",
+            "refreshUrl": "https://auth.example.com/refresh",
+            "scopes": {"openid": "Identity"},
+            "pkceRequired": true
+          }
+        }
+      }
+    },
+    "device": {
+      "oauth2SecurityScheme": {
+        "flows": {
+          "deviceCode": {
+            "deviceAuthorizationUrl": "https://auth.example.com/device",
+            "tokenUrl": "https://auth.example.com/token",
+            "scopes": {"openid": "Identity"}
+          }
+        }
+      }
+    },
+    "oidc": {
+      "openIdConnectSecurityScheme": {"openIdConnectUrl": "https://idp.example.com/.well-known/openid-configuration"}
+    },
+    "mtls": {
+      "mtlsSecurityScheme": {"description": "Client certificate"}
+    }
+  },
+  "securityRequirements": [
+    {"schemes": {"oauth": {"list": ["read", "write"]}}},
+    {"schemes": {"mtls": {}, "key": {}}}
+  ]
+}

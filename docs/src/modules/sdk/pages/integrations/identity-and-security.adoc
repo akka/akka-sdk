@@ -17,6 +17,10 @@ Secret values are never exposed in the CLI or Console.
 
 See xref:operations:projects/secrets.adoc[Manage secrets] for configuration details.
 
+== Credentials for remote A2A agents
+
+A service that calls a remote agent over the Agent2Agent (A2A) protocol configures credentials for each remote agent by name: a static header, such as an API key, or OAuth 2.0 client credentials. The values come from environment variables, which you supply as secrets. An agent can also be reached over mutual TLS with a client certificate. See xref:sdk:agents/remote-a2a-agents.adoc#credentials[Credentials for remote agents] and xref:sdk:agents/remote-a2a-agents.adoc#tls[TLS and client certificates for remote agents].
+
 == External secret providers
 
 === Azure KeyVault
@@ -37,3 +41,4 @@ Connect to any secret provider with a Java client library:
 * xref:operations:projects/external-secrets.adoc[Manage external secrets]
 * xref:sdk:access-control.adoc[Access control]
 * xref:sdk:auth-with-jwts.adoc[JWT authentication]
+* xref:sdk:agents/remote-a2a-agents.adoc[Remote A2A agents]

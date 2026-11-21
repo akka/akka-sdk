@@ -52,6 +52,7 @@ Access these documentation files for detailed patterns:
 - `akka-context/sdk/agents/structured.html.md` - Structured model responses
 - `akka-context/sdk/agents/failures.html.md` - Handling agent failures
 - `akka-context/sdk/agents/extending.html.md` - Extending agents with function tools
+- `akka-context/sdk/agents/remote-a2a-agents.html.md` - Calling agents on other platforms over A2A, as tools or from workflow steps
 - `akka-context/sdk/agents/streaming.html.md` - Streaming model responses with agents
 - `akka-context/sdk/agents/orchestrating.html.md` - Orchestrating multiple agents through Workflows
 - `akka-context/sdk/agents/guardrails.html.md` - Constraining and controlling agent behavior with guardrails
@@ -77,6 +78,7 @@ Access these documentation files for detailed patterns:
 - `akka-context/sdk/web-applications.html.md` - Serving a browser UI from the service: single-page application files, generated HTML, custom domains
 - `akka-context/sdk/grpc-endpoints.html.md` - Protocol buffer APIs
 - `akka-context/sdk/mcp-endpoints.html.md` - Exposing tools, resources, and prompts to MCP clients
+- `akka-context/sdk/a2a-endpoints.html.md` - Publishing agents and workflows as skills to A2A clients
 - `akka-context/sdk/timed-actions.html.md` - Scheduling and timers
 - `akka-context/sdk/evaluators.html.md` - Evaluators that judge agent interactions, bound to agents in configuration
 - `akka-context/sdk/evaluators/examples.html.md` - Example evaluators that ask a judge agent for a score against a criterion, or a toxicity, summary, or hallucination label
@@ -152,6 +154,8 @@ Decide the component mapping BEFORE writing code. The full rubrics with reasonin
 | API for browsers; SSE/WebSocket; serve a UI | HTTP Endpoint | Non-browser clients → gRPC Endpoint |
 | Typed contract for services and other non-browser clients | gRPC Endpoint | Browser-facing consumers → HTTP Endpoint |
 | Expose tools/resources/prompts to LLM clients in other services | MCP Endpoint | Agents in the same service → function tools; human or programmatic clients → HTTP/gRPC Endpoint |
+| Expose agents to agents on other platforms | A2A Endpoint | Agents in the same service → component client; tools for LLM clients → MCP Endpoint |
+| Use an agent on another platform | Remote A2A agent (`a2aAgents` on an Agent) | The exchange is fixed in code, runs for minutes or hours, or waits for a person → call it from a Workflow step with `A2aClient` |
 | Pure logic: validation, calculation, transformation | Plain class in `domain` | Never a component; no state, no subscription, no schedule, no API |
 
 Boundary rules:

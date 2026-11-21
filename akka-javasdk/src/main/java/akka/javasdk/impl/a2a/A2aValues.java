@@ -1,0 +1,26 @@
+/*
+ * Copyright (C) 2021-2026 Lightbend Inc. <https://www.lightbend.com>
+ */
+
+package akka.javasdk.impl.a2a;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+/** Copy helpers that keep the internal protocol records immutable. */
+final class A2aValues {
+  private A2aValues() {}
+
+  static <T> List<T> list(List<T> values) {
+    return values == null ? List.of() : Collections.unmodifiableList(new ArrayList<>(values));
+  }
+
+  // Metadata stays null when absent so that it is left out of the JSON. A JSON object can hold
+  // null values, which Map.copyOf rejects.
+  static <V> Map<String, V> optionalMap(Map<String, V> values) {
+    return values == null ? null : Collections.unmodifiableMap(new LinkedHashMap<>(values));
+  }
+}

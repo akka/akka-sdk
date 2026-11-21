@@ -1,0 +1,10 @@
+{
+  "name": "Example Agent",
+  "description": "",
+  "capabilities": {
+    "streaming": false,
+    "pushNotifications": false,
+    "extensions": []
+  },
+  "skills": []
+}
