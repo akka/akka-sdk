@@ -12,6 +12,7 @@ import akka.javasdk.client.ComponentClient;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -37,13 +38,17 @@ public final class A2aTaskStore {
 
   /**
    * Applies a change to a task that has not ended, and sends it to the push notification
-   * configurations. A task that has ended is left unchanged.
+   * configurations. A task that has ended is left unchanged. It blocks, so call it only where
+   * blocking is allowed, such as an endpoint or a workflow step.
    *
    * @return the stored state, or empty when the task has ended
    */
   public Optional<A2aTaskEntity.State> change(String taskId, A2aTaskEntity.Change change) {
-    return changed(
-        componentClient.forKeyValueEntity(taskId).method(A2aTaskEntity::change).invoke(change));
+    var result =
+        componentClient.forKeyValueEntity(taskId).method(A2aTaskEntity::change).invoke(change);
+    if (!result.applied()) return Optional.empty();
+    A2aPushNotifier.taskChanged(componentClient, result.state()).toCompletableFuture().join();
+    return Optional.of(result.state());
   }
 
   /** As {@link #change}, without blocking. */
@@ -53,13 +58,13 @@ public final class A2aTaskStore {
         .forKeyValueEntity(taskId)
         .method(A2aTaskEntity::change)
         .invokeAsync(change)
-        .thenApply(this::changed);
+        .thenCompose(this::changed);
   }
 
-  private Optional<A2aTaskEntity.State> changed(A2aTaskEntity.Changed result) {
-    if (!result.applied()) return Optional.empty();
-    A2aPushNotifier.taskChanged(componentClient, result.state());
-    return Optional.of(result.state());
+  private CompletionStage<Optional<A2aTaskEntity.State>> changed(A2aTaskEntity.Changed result) {
+    if (!result.applied()) return CompletableFuture.completedFuture(Optional.empty());
+    return A2aPushNotifier.taskChanged(componentClient, result.state())
+        .thenApply(done -> Optional.of(result.state()));
   }
 
   /** A message from the agent in the task and context of the task. */

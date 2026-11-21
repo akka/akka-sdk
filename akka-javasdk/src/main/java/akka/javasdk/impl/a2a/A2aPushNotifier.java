@@ -4,6 +4,7 @@
 
 package akka.javasdk.impl.a2a;
 
+import akka.Done;
 import akka.annotation.InternalApi;
 import akka.javasdk.JsonSupport;
 import akka.javasdk.a2a.A2aStreamResponse;
@@ -13,6 +14,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,43 +37,60 @@ public final class A2aPushNotifier {
   private A2aPushNotifier() {}
 
   /**
-   * Starts one delivery of the task per push notification configuration. A failure to start a
-   * delivery is logged and does not fail the change of the task.
+   * Starts one delivery of the task per push notification configuration, without blocking. A
+   * failure to start a delivery is logged and does not fail the change of the task, so the returned
+   * stage always completes normally.
    */
-  public static void taskChanged(ComponentClient componentClient, A2aTaskEntity.State changed) {
-    List<A2aTaskPushNotificationConfig> configs;
-    try {
-      configs =
-          componentClient
-              .forKeyValueEntity(changed.task().id())
-              .method(A2aTaskExtrasEntity::get)
-              .invoke()
-              .pushConfigs();
-    } catch (RuntimeException e) {
-      log.warn("Failed to read the push notification configurations of A2A task", e);
-      return;
-    }
-    if (configs.isEmpty()) return;
+  public static CompletionStage<Done> taskChanged(
+      ComponentClient componentClient, A2aTaskEntity.State changed) {
+    return componentClient
+        .forKeyValueEntity(changed.task().id())
+        .method(A2aTaskExtrasEntity::get)
+        .invokeAsync()
+        .thenCompose(extras -> startDeliveries(componentClient, changed, extras.pushConfigs()))
+        .exceptionally(
+            e -> {
+              log.warn("Failed to read the push notification configurations of A2A task", e);
+              return Done.getInstance();
+            });
+  }
+
+  private static CompletionStage<Done> startDeliveries(
+      ComponentClient componentClient,
+      A2aTaskEntity.State changed,
+      List<A2aTaskPushNotificationConfig> configs) {
+    if (configs.isEmpty()) return CompletableFuture.completedFuture(Done.getInstance());
     var body = body(changed.task());
-    for (var config : configs) {
-      // One delivery per task version and configuration, so a repeated change starts none again
-      var deliveryId =
-          UUID.nameUUIDFromBytes(
-                  (changed.task().id() + "\n" + changed.version() + "\n" + config.id())
-                      .getBytes(StandardCharsets.UTF_8))
-              .toString();
-      var delivery =
-          new A2aPushDeliveryWorkflow.State(
-              config.url(), config.token(), authorization(config), body, 0);
-      try {
-        componentClient
-            .forWorkflow(deliveryId)
-            .method(A2aPushDeliveryWorkflow::start)
-            .invoke(delivery);
-      } catch (RuntimeException e) {
-        log.warn("Failed to start a push notification of A2A task [{}]", changed.task().id(), e);
-      }
-    }
+    var started =
+        configs.stream()
+            .map(
+                config -> {
+                  // One delivery per task version and configuration, so a repeated change starts
+                  // none again
+                  var deliveryId =
+                      UUID.nameUUIDFromBytes(
+                              (changed.task().id() + "\n" + changed.version() + "\n" + config.id())
+                                  .getBytes(StandardCharsets.UTF_8))
+                          .toString();
+                  var delivery =
+                      new A2aPushDeliveryWorkflow.State(
+                          config.url(), config.token(), authorization(config), body, 0);
+                  return componentClient
+                      .forWorkflow(deliveryId)
+                      .method(A2aPushDeliveryWorkflow::start)
+                      .invokeAsync(delivery)
+                      .exceptionally(
+                          e -> {
+                            log.warn(
+                                "Failed to start a push notification of A2A task [{}]",
+                                changed.task().id(),
+                                e);
+                            return Done.getInstance();
+                          })
+                      .toCompletableFuture();
+                })
+            .toArray(CompletableFuture[]::new);
+    return CompletableFuture.allOf(started).thenApply(v -> Done.getInstance());
   }
 
   // The full task without its history, which the client reads with GetTask when it needs it

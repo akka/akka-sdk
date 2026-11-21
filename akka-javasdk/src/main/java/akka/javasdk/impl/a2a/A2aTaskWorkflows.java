@@ -205,7 +205,9 @@ public final class A2aTaskWorkflows {
     }
     var result =
         componentClient.forKeyValueEntity(existing.id()).method(A2aTaskEntity::cancel).invoke();
-    if (result.canceled()) A2aPushNotifier.taskChanged(componentClient, result.state());
+    if (result.canceled()) {
+      A2aPushNotifier.taskChanged(componentClient, result.state()).toCompletableFuture().join();
+    }
     return Optional.of(result.state().task());
   }
 

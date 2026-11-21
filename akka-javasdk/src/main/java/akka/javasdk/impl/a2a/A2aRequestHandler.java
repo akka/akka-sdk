@@ -586,14 +586,16 @@ public final class A2aRequestHandler {
         var artifactId = UUID.randomUUID().toString();
         var answer = callAgent(newTask.skill(), working.contextId(), newTask.input());
         if (configuration != null && configuration.returnImmediately()) {
-          answer.whenComplete(
-              (result, error) -> {
-                try {
-                  record(working, outcome(working, result, error, artifactId));
-                } catch (RuntimeException e) {
-                  log.error("Failed to record the outcome of A2A task [{}]", working.id(), e);
-                }
-              });
+          // Composed without blocking: the stage completes on the thread that completes the agent
+          answer
+              .handle((result, error) -> outcome(working, result, error, artifactId))
+              .thenCompose(change -> store.changeAsync(working.id(), change))
+              .whenComplete(
+                  (stored, e) -> {
+                    if (e != null) {
+                      log.error("Failed to record the outcome of A2A task [{}]", working.id(), e);
+                    }
+                  });
           yield A2aSendMessageResponse.of(trimHistory(working, historyLength));
         }
         var change =
