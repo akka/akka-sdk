@@ -10,6 +10,8 @@ import claims.application.ClaimStatusAgent;
 // Opened up for access from the public internet to make the service easy to try out.
 // For actual services meant for production this must be carefully considered,
 // and often set more limited
+// A service open to other callers adds @JWT, so that each caller has its own tasks and
+// conversations. See "Authentication and authorization of A2A endpoints" on the A2A endpoints page.
 @A2aEndpoint(
   name = "Claims",
   description = "Answers questions about insurance claims and reviews them",
