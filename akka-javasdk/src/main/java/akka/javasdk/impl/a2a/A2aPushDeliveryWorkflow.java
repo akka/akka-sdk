@@ -5,14 +5,24 @@
 package akka.javasdk.impl.a2a;
 
 import akka.Done;
+import akka.actor.ActorSystem;
 import akka.annotation.InternalApi;
+import akka.http.javadsl.ClientTransport;
+import akka.http.javadsl.Http;
 import akka.http.javadsl.model.ContentTypes;
+import akka.http.javadsl.model.HttpRequest;
+import akka.http.javadsl.model.headers.RawHeader;
+import akka.http.javadsl.settings.ConnectionPoolSettings;
 import akka.javasdk.annotations.Component;
-import akka.javasdk.http.HttpClientProvider;
 import akka.javasdk.workflow.Workflow;
-import java.net.URI;
+import akka.stream.Materializer;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,12 +57,11 @@ public final class A2aPushDeliveryWorkflow extends Workflow<A2aPushDeliveryWorkf
    */
   public record State(String url, String token, String authorization, String body, int attempt) {}
 
-  private final HttpClientProvider httpClientProvider;
+  private final ActorSystem system;
   private final A2aPushUrlPolicy urlPolicy;
 
-  public A2aPushDeliveryWorkflow(
-      HttpClientProvider httpClientProvider, A2aPushUrlPolicy urlPolicy) {
-    this.httpClientProvider = httpClientProvider;
+  public A2aPushDeliveryWorkflow(Materializer materializer, A2aPushUrlPolicy urlPolicy) {
+    this.system = materializer.system();
     this.urlPolicy = urlPolicy;
   }
 
@@ -80,12 +89,12 @@ public final class A2aPushDeliveryWorkflow extends Workflow<A2aPushDeliveryWorkf
     var delivery = currentState();
     // The host is resolved again, because it can resolve to another address than when the
     // configuration was stored
-    var refusal = urlPolicy.refusal(delivery.url());
-    if (refusal != null) {
-      log.warn("Push notification to [{}] not sent: {}", delivery.url(), refusal);
+    var check = urlPolicy.check(delivery.url());
+    if (check.refusal() != null) {
+      log.warn("Push notification to [{}] not sent: {}", delivery.url(), check.refusal());
       return stepEffects().thenDelete();
     }
-    if (post(delivery)) return stepEffects().thenDelete();
+    if (post(system, delivery, check.addresses())) return stepEffects().thenDelete();
     var attempts = delivery.attempt() + 1;
     if (attempts >= MAX_ATTEMPTS) {
       log.warn(
@@ -108,30 +117,52 @@ public final class A2aPushDeliveryWorkflow extends Workflow<A2aPushDeliveryWorkf
     return backoff.compareTo(MAX_BACKOFF) > 0 ? MAX_BACKOFF : backoff;
   }
 
-  private boolean post(State delivery) {
+  /**
+   * Posts the notification, and connects to one of the checked addresses when there are any. The
+   * request keeps the host name of the URL, so the {@code Host} header, TLS server name indication
+   * and certificate verification use the name and not the address.
+   *
+   * @param addresses the addresses that the URL policy checked, or empty to resolve the host when
+   *     connecting
+   * @return true when the webhook answered with a 2xx status
+   */
+  static boolean post(ActorSystem system, State delivery, List<InetAddress> addresses) {
     try {
-      var uri = URI.create(delivery.url());
-      var origin = uri.getScheme() + "://" + uri.getRawAuthority();
-      var path = uri.getRawPath() == null || uri.getRawPath().isEmpty() ? "/" : uri.getRawPath();
-      if (uri.getRawQuery() != null) path = path + "?" + uri.getRawQuery();
       var request =
-          httpClientProvider
-              .httpClientFor(origin)
-              .POST(path)
-              .withTimeout(REQUEST_TIMEOUT)
-              .withRequestBody(
+          HttpRequest.POST(delivery.url())
+              .withEntity(
                   ContentTypes.APPLICATION_JSON, delivery.body().getBytes(StandardCharsets.UTF_8));
       if (delivery.token() != null && !delivery.token().isBlank()) {
-        request = request.addHeader(A2aPushNotifier.TOKEN_HEADER, delivery.token());
+        request =
+            request.addHeader(RawHeader.create(A2aPushNotifier.TOKEN_HEADER, delivery.token()));
       }
       if (delivery.authorization() != null) {
-        request = request.addHeader("Authorization", delivery.authorization());
+        request = request.addHeader(RawHeader.create("Authorization", delivery.authorization()));
       }
-      var status = request.invoke().status();
-      if (status.isSuccess()) return true;
-      log.debug("Push notification to [{}] answered {}", delivery.url(), status.intValue());
+      var http = Http.get(system);
+      var pool = ConnectionPoolSettings.create(system);
+      if (!addresses.isEmpty()) {
+        var pinned = addresses.getFirst();
+        pool =
+            pool.withTransport(
+                ClientTransport.withCustomResolver(
+                    (host, port) ->
+                        CompletableFuture.completedFuture(
+                            new InetSocketAddress(pinned, (Integer) port))));
+      }
+      var response =
+          http.singleRequest(request, http.defaultClientHttpsContext(), pool, system.log())
+              .toCompletableFuture()
+              .get(REQUEST_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+      response.discardEntityBytes(system);
+      if (response.status().isSuccess()) return true;
+      log.debug(
+          "Push notification to [{}] answered {}", delivery.url(), response.status().intValue());
       return false;
-    } catch (RuntimeException e) {
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      return false;
+    } catch (Exception e) {
       log.debug("Push notification to [{}] failed", delivery.url(), e);
       return false;
     }

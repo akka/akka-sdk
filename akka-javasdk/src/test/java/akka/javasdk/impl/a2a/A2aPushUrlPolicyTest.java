@@ -4,12 +4,14 @@
 
 package akka.javasdk.impl.a2a;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -84,5 +86,16 @@ class A2aPushUrlPolicyTest {
     assertNotNull(refusal(devMode, "/relative/hook"));
     assertNotNull(refusal(devMode, ""));
     assertNotNull(refusal(devMode, "https://unknown.invalid/hook"));
+  }
+
+  @Test
+  void returnsTheAddressesItChecked() throws Exception {
+    var check = production.check("https://public.example.com/hook", resolver);
+    assertNull(check.refusal());
+    assertEquals(List.of(InetAddress.getByName("93.184.216.34")), check.addresses());
+    var allowed = new A2aPushUrlPolicy(true, Set.of("rebound.example.com"));
+    assertEquals(List.of(), allowed.check("http://rebound.example.com/hook", resolver).addresses());
+    assertEquals(
+        List.of(), production.check("https://internal.example.com/hook", resolver).addresses());
   }
 }
