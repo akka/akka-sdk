@@ -24,6 +24,7 @@ public class A2aValidations {
   private static final String A2A_SKILLS_ANNOTATION = "akka.javasdk.annotations.a2a.A2aSkills";
   private static final String ABSTRACT_A2A_ENDPOINT = "akka.javasdk.a2a.AbstractA2aEndpoint";
   private static final String AGENT = "akka.javasdk.agent.Agent";
+  private static final String AUTONOMOUS_AGENT = "akka.javasdk.agent.autonomous.AutonomousAgent";
 
   private static final Pattern SKILL_ID = Pattern.compile("[A-Za-z0-9_.-]{1,64}");
 
@@ -82,6 +83,13 @@ public class A2aValidations {
     var skills = skills(typeDef);
     if (skills.isEmpty()) {
       return Validation.Valid.instance();
+    }
+    if (typeDef.extendsType(AUTONOMOUS_AGENT)) {
+      return Validation.of(
+          Validations.errorMessage(
+              typeDef,
+              "@A2aSkill is not allowed on an autonomous agent. Autonomous agents take no part in"
+                  + " A2A. Publish a request-based agent that extends Agent."));
     }
     if (!typeDef.extendsType(AGENT)) {
       return Validation.of(

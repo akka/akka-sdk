@@ -60,5 +60,11 @@ abstract class AbstractA2aValidationSpec(val validationMode: ValidationMode)
     "reject @A2aSkill on a class that is not an agent" in {
       assertInvalid("invalid/A2aSkillOnEntity.java", "@A2aSkill is only allowed on classes that extend Agent.")
     }
+
+    "reject @A2aSkill on an autonomous agent" in {
+      assertInvalid(
+        "invalid/A2aSkillOnAutonomousAgent.java",
+        "@A2aSkill is not allowed on an autonomous agent. Autonomous agents take no part in A2A.")
+    }
   }
 }
