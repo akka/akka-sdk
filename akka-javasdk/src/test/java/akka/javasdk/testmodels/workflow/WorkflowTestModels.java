@@ -189,5 +189,10 @@ public class WorkflowTestModels {
     private StepEffect namedStep(String input) {
       return null;
     }
+
+    // Returns StepEffect, but no transition can pass two inputs.
+    private StepEffect twoInputs(String first, String second) {
+      return null;
+    }
   }
 }

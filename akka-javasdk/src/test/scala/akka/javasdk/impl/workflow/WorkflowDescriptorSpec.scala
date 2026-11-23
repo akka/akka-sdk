@@ -36,7 +36,7 @@ class WorkflowDescriptorSpec extends AnyWordSpec with OptionValues with Matchers
       WorkflowDescriptor.stepNames(classOf[WorkflowTestModels.WorkflowHierarchy]) shouldBe Seq("processStep")
     }
 
-    "list an overridden step once and leave out generated methods" in {
+    "list an overridden step once and leave out generated methods and methods with two inputs" in {
       WorkflowDescriptor.stepNames(classOf[WorkflowTestModels.OverridingStepsWorkflow]) shouldBe Seq(
         "named",
         "sharedStep")

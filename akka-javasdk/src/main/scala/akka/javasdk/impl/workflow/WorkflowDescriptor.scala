@@ -30,14 +30,18 @@ object WorkflowDescriptor {
 
   /**
    * The names of the steps of a workflow class, each once, sorted. The list leaves out methods that the compiler
-   * generates, such as the body of a lambda.
+   * generates, such as the body of a lambda, and methods with more than one parameter, which cannot be a step.
    */
   def stepNames(workflowClass: Class[_]): Seq[String] =
-    stepMethods(workflowClass).filterNot(_.isSynthetic).map(stepMethodName).distinct.sorted
+    stepMethods(workflowClass)
+      .filter(m => !m.isSynthetic && m.getParameterCount <= 1)
+      .map(stepMethodName)
+      .distinct
+      .sorted
 
   // The methods that return StepEffect in the class, its super classes and its interfaces.
-  // The lookup stops at Object. Dispatch uses this list as is, synthetic methods included,
-  // so stepNames leaves them out itself.
+  // The lookup stops at Object. Dispatch uses this list as is, synthetic methods and methods
+  // with more than one parameter included, so stepNames leaves them out itself.
   private def stepMethods(workflowClass: Class[_]): Seq[Method] = {
     def allMethods(c: Class[_]): Seq[Method] = {
       if (c == null || c == classOf[Object]) Seq.empty
