@@ -3,6 +3,14 @@
   "sdk": {
     "releases": [
       {
+        "version": "3.7.3",
+        "releasedAt": "2026-11-23T13:18:11Z",
+        "releaseNotesUrl": "https://doc.akka.io/reference/release-notes.html",
+        "requiredRuntime": "1.7.7",
+        "protocolVersion": "1.1",
+        "notifyAt": "2026-12-03T13:18:11Z"
+      },
+      {
         "version": "3.7.2",
         "releasedAt": "2026-11-16T15:13:40Z",
         "releaseNotesUrl": "https://doc.akka.io/reference/release-notes.html#sdk-3-7-2",
