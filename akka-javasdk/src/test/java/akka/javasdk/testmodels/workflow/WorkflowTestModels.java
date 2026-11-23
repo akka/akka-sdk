@@ -9,6 +9,7 @@ import akka.javasdk.annotations.StepName;
 import akka.javasdk.workflow.Workflow;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.util.function.Supplier;
 
 public class WorkflowTestModels {
 
@@ -167,4 +168,31 @@ public class WorkflowTestModels {
 
   @Component(id = "workflow-inherited")
   public static class WorkflowHierarchy extends MyWorkflow {}
+
+  public abstract static class BaseStepsWorkflow extends Workflow<WorkflowState> {
+
+    public StepEffect sharedStep() {
+      return null;
+    }
+  }
+
+  public static class OverridingStepsWorkflow extends BaseStepsWorkflow {
+
+    // The lambda body is a synthetic method that returns StepEffect.
+    @Override
+    public StepEffect sharedStep() {
+      Supplier<StepEffect> end = () -> stepEffects().thenEnd();
+      return end.get();
+    }
+
+    @StepName("named")
+    private StepEffect namedStep(String input) {
+      return null;
+    }
+
+    // Returns StepEffect, but no transition can pass two inputs.
+    private StepEffect twoInputs(String first, String second) {
+      return null;
+    }
+  }
 }
