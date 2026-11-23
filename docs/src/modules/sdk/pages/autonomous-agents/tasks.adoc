@@ -141,7 +141,7 @@ include::example$autonomous-agent-playground/src/test/java/demo/docs/ClientApiSa
 [#task-retention]
 == Task retention
 
-Akka stores a task until it is deleted or expires. Set `expireAfter` on a task definition, a task template or a task to delete the task that long after it completes, fails or is cancelled. A task that has not ended does not expire.
+Akka stores a task until it is deleted or expires. Set `expireAfter` on a task definition or a task template to delete the task that long after it completes, fails or is cancelled. A task that has not ended does not expire.
 
 [source,java,indent=0]
 .{sample-base-url}/autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[ClientApiSample.java]
@@ -163,7 +163,7 @@ Only a task that has ended can be deleted. Deleting a task that does not exist, 
 
 After a delete or an expiry, the task reads as a task that does not exist: `get`, `result`, `assign`, `complete`, `fail` and `cancel` fail with `TaskException.NotFound`. A consumer of task events gets a `TaskEvent.TaskDeleted` event for a delete and no event for an expiry. Akka removes the stored data of the task after `akka.javasdk.entity.cleanup-deleted-after`, 7 days by default. That setting applies to all entities, see xref:sdk:event-sourced-entities.adoc#_deleting_an_entity[Deleting an entity].
 
-A delete or an expiry removes only the task. An agent that worked on the task keeps its instructions and its result in the session memory of the agent, whose session id is the instance id of the agent. A coordinator that delegated the task keeps the result in its own session memory. Delete a session memory with the `delete` command of `SessionMemoryEntity`, see xref:sdk:agents/memory.adoc#_accessing_session_memory[Accessing session memory]. Interactions that the xref:sdk:evaluators.adoc#_the_ledger_client[ledger] recorded keep that content too.
+A delete or an expiry removes only the task. The agents that worked on the task or delegated it keep copies of its instructions, its result and the messages that clients sent for it, in their stored state and in their session memory. The interactions that the xref:sdk:evaluators.adoc#_the_ledger_client[ledger] recorded keep them too.
 
 Cancel or fail a task that the application gives up on, with `cancel(...)` or `fail(...)`, so that the task ends and its expiry applies.
 

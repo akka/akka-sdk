@@ -205,7 +205,8 @@ public interface TaskClient {
    *
    * <p>The returned CompletionStage fails with {@link
    * akka.javasdk.agent.task.TaskException.TypeMismatch} if the task's name or result type does not
-   * match {@code taskDefinition}.
+   * match {@code taskDefinition}, or {@link akka.javasdk.agent.task.TaskException.NotFound} if the
+   * task does not exist.
    *
    * @param taskDefinition the task definition, used for typed result deserialization
    * @param <R> the result type of the task
@@ -244,8 +245,9 @@ public interface TaskClient {
    *
    * <p>The returned CompletionStage fails with {@link akka.javasdk.agent.task.TaskException.Failed}
    * if the task failed, {@link akka.javasdk.agent.task.TaskException.Cancelled} if it was
-   * cancelled, or {@link akka.javasdk.agent.task.TaskException.TypeMismatch} if the task's name or
-   * result type does not match {@code taskDefinition}.
+   * cancelled, {@link akka.javasdk.agent.task.TaskException.TypeMismatch} if the task's name or
+   * result type does not match {@code taskDefinition}, or {@link
+   * akka.javasdk.agent.task.TaskException.NotFound} if the task does not exist.
    *
    * @param taskDefinition the task definition, used for typed result deserialization
    * @param <R> the result type of the task
