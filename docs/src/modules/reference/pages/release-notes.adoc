@@ -12,6 +12,17 @@ Current versions
 
 == November 2026
 
+* [[sdk-3-7-3]]https://github.com/akka/akka-sdk/releases/tag/v3.7.3[Akka SDK 3.7.3,window="new"]
+- Runtime 1.7.7
+- **Breaking change**: A service stream producer enforces its class-level `@Acl`, and `@Acl` on a method of the producer fails compilation, see xref:reference:migration-guide.adoc#acl-on-service-streams[@Acl on service streams]
+- `AutonomousAgentClient` sends a message to a running autonomous agent, see xref:sdk:autonomous-agents/client.adoc#send-message[Sending a message to a running agent]
+- OpenAI provider for decision models, see xref:sdk:decision-models.adoc#_openai_decision_models[OpenAI decision models]
+- `TestKit.Settings.withDependencyOverride` replaces single dependencies in a test, see xref:sdk:setup-and-dependency-injection.adoc#_replacing_single_dependencies[Replacing single dependencies]
+- The ledger client fetches the record of a classification, see xref:sdk:agents/classifiers.adoc#_invoking_a_classifier[Invoking a classifier]
+- Custom spans and trace context fields in the logs of evaluators, see xref:sdk:evaluators.adoc#_implementing_an_evaluator[Implementing an evaluator]
+- Compilation and startup fail when two components have the same component id.
+- New page about how services communicate, see xref:sdk:integrations/choosing-how-services-communicate.adoc[Choosing how services communicate]
+
 * xref:release-notes/runtime/1.7.7.adoc[Akka Runtime 1.7.7]
 - Enforced ACL for service stream producers.
 - Fixes for autonomous agents.
