@@ -45,7 +45,7 @@ The Akka libraries now depend on the Jackson 2.21 long-term-support line. Jackso
 
 Akka requires a license key for use in production.
 
-Read about the motivation in the blog post https://akka.io/blog/akka-license-keys-and-no-spam-promise[Akka License Keys && a No SPAM Promise].
+Read about the motivation in the blog post https://akka.io/blog/akka-license-keys-and-no-spam-promise[Akka License Keys & a No SPAM Promise].
 
 Obtain a free key at https://akka.io/key.
 
