@@ -84,6 +84,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -272,6 +273,7 @@ public class TestKit {
             TEST_BROKER,
             MockedEventing.EMPTY,
             Optional.empty(),
+            Map.of(),
             ConfigFactory.empty(),
             Set.of(),
             false,
@@ -301,6 +303,12 @@ public class TestKit {
     public final Config additionalConfig;
 
     public final Optional<DependencyProvider> dependencyProvider;
+
+    /**
+     * Map from dependency class to the instance that replaces it in the test, see {@link
+     * #withDependencyOverride(Class, Object)}.
+     */
+    public final Map<Class<?>, Object> dependencyOverrides;
 
     public final Set<Class<?>> disabledComponents;
 
@@ -360,6 +368,7 @@ public class TestKit {
         EventingSupport eventingSupport,
         MockedEventing mockedEventing,
         Optional<DependencyProvider> dependencyProvider,
+        Map<Class<?>, Object> dependencyOverrides,
         Config additionalConfig,
         Set<Class<?>> disabledComponents,
         boolean overrideDisabledComponents,
@@ -374,6 +383,7 @@ public class TestKit {
       this.eventingSupport = eventingSupport;
       this.mockedEventing = mockedEventing;
       this.dependencyProvider = dependencyProvider;
+      this.dependencyOverrides = dependencyOverrides;
       this.additionalConfig = additionalConfig;
       this.disabledComponents = disabledComponents;
       this.overrideDisabledComponents = overrideDisabledComponents;
@@ -401,6 +411,7 @@ public class TestKit {
           eventingSupport,
           mockedEventing,
           dependencyProvider,
+          dependencyOverrides,
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
@@ -424,6 +435,7 @@ public class TestKit {
           eventingSupport,
           mockedEventing,
           dependencyProvider,
+          dependencyOverrides,
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
@@ -447,6 +459,7 @@ public class TestKit {
           eventingSupport,
           mockedEventing,
           dependencyProvider,
+          dependencyOverrides,
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
@@ -486,6 +499,7 @@ public class TestKit {
           eventingSupport,
           mockedEventing,
           dependencyProvider,
+          dependencyOverrides,
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
@@ -507,6 +521,7 @@ public class TestKit {
           eventingSupport,
           mockedEventing.withKeyValueEntityIncomingMessages(componentId),
           dependencyProvider,
+          dependencyOverrides,
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
@@ -528,6 +543,7 @@ public class TestKit {
           eventingSupport,
           mockedEventing.withEventSourcedIncomingMessages(componentId),
           dependencyProvider,
+          dependencyOverrides,
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
@@ -548,6 +564,7 @@ public class TestKit {
           eventingSupport,
           mockedEventing.withWorkflowIncomingMessages(componentId),
           dependencyProvider,
+          dependencyOverrides,
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
@@ -569,6 +586,7 @@ public class TestKit {
           eventingSupport,
           mockedEventing.withStreamIncomingMessages(service, streamId),
           dependencyProvider,
+          dependencyOverrides,
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
@@ -588,6 +606,7 @@ public class TestKit {
           eventingSupport,
           mockedEventing.withTopicIncomingMessages(topic),
           dependencyProvider,
+          dependencyOverrides,
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
@@ -607,6 +626,7 @@ public class TestKit {
           eventingSupport,
           mockedEventing.withTopicOutgoingMessages(topic),
           dependencyProvider,
+          dependencyOverrides,
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
@@ -629,6 +649,7 @@ public class TestKit {
           eventingSupport,
           mockedEventing.withStreamOutgoingMessages(service, streamId),
           dependencyProvider,
+          dependencyOverrides,
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
@@ -647,6 +668,7 @@ public class TestKit {
           eventingSupport,
           mockedEventing,
           dependencyProvider,
+          dependencyOverrides,
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
@@ -669,6 +691,7 @@ public class TestKit {
           eventingSupport,
           mockedEventing,
           dependencyProvider,
+          dependencyOverrides,
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
@@ -691,6 +714,10 @@ public class TestKit {
     /**
      * Set a dependency provider that will be used for looking up arbitrary dependencies, useful to
      * provide mocks for production dependencies in tests rather than calling the real thing.
+     *
+     * <p>This provider replaces the provider from {@code ServiceSetup#createDependencyProvider()}.
+     * To replace single dependencies and keep the rest, use {@link #withDependencyOverride(Class,
+     * Object)}.
      */
     public Settings withDependencyProvider(DependencyProvider dependencyProvider) {
       return new Settings(
@@ -699,6 +726,50 @@ public class TestKit {
           eventingSupport,
           mockedEventing,
           Optional.of(dependencyProvider),
+          dependencyOverrides,
+          additionalConfig,
+          disabledComponents,
+          overrideDisabledComponents,
+          modelProvidersByAgentId,
+          httpMocks,
+          grpcMocks,
+          objectStorageBuckets,
+          ephemeralPort,
+          decisionModelProvider);
+    }
+
+    /**
+     * Replace one dependency in the test and keep all other dependencies.
+     *
+     * <p>The service still creates its provider through {@code
+     * ServiceSetup#createDependencyProvider()}. A lookup of {@code dependencyClass} returns {@code
+     * instance}. A lookup of any other class goes to the provider of the service, or to the
+     * provider set with {@link #withDependencyProvider(DependencyProvider)}. Without such a
+     * provider, the overrides are the only dependencies.
+     *
+     * <p>The override matches the exact class that a component asks for, which is the type of the
+     * constructor parameter. Call this method once per dependency to replace. A second call for the
+     * same class replaces the first.
+     *
+     * <p>{@code ServiceSetup#createDependencyProvider()} may still create the real instance of an
+     * overridden dependency.
+     *
+     * @param dependencyClass The class that components declare as constructor parameter.
+     * @param instance The instance to inject. It must be safe to use concurrently.
+     * @return The updated settings.
+     */
+    public <T> Settings withDependencyOverride(Class<T> dependencyClass, T instance) {
+      Objects.requireNonNull(dependencyClass, "dependencyClass");
+      Objects.requireNonNull(instance, "instance");
+      var newDependencyOverrides = new HashMap<>(dependencyOverrides);
+      newDependencyOverrides.put(dependencyClass, instance);
+      return new Settings(
+          serviceName,
+          aclEnabled,
+          eventingSupport,
+          mockedEventing,
+          dependencyProvider,
+          Map.copyOf(newDependencyOverrides),
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
@@ -721,6 +792,7 @@ public class TestKit {
           eventingSupport,
           mockedEventing,
           dependencyProvider,
+          dependencyOverrides,
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
@@ -744,6 +816,7 @@ public class TestKit {
           eventingSupport,
           mockedEventing,
           dependencyProvider,
+          dependencyOverrides,
           additionalConfig,
           disabledComponents,
           true,
@@ -769,6 +842,7 @@ public class TestKit {
           eventingSupport,
           mockedEventing,
           dependencyProvider,
+          dependencyOverrides,
           additionalConfig,
           Set.of(),
           true,
@@ -794,6 +868,7 @@ public class TestKit {
           eventingSupport,
           mockedEventing,
           dependencyProvider,
+          dependencyOverrides,
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
@@ -817,6 +892,7 @@ public class TestKit {
           eventingSupport,
           mockedEventing,
           dependencyProvider,
+          dependencyOverrides,
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
@@ -857,6 +933,7 @@ public class TestKit {
           eventingSupport,
           mockedEventing,
           dependencyProvider,
+          dependencyOverrides,
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
@@ -884,6 +961,7 @@ public class TestKit {
           eventingSupport,
           mockedEventing,
           dependencyProvider,
+          dependencyOverrides,
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
@@ -931,6 +1009,7 @@ public class TestKit {
           eventingSupport,
           mockedEventing,
           dependencyProvider,
+          dependencyOverrides,
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
@@ -1080,6 +1159,7 @@ public class TestKit {
       SdkRunner runner =
           new SdkRunner(
               settings.dependencyProvider,
+              settings.dependencyOverrides,
               settings.disabledComponents,
               settings.overrideDisabledComponents,
               name -> mockedHttpServices.lookup(name),
@@ -1860,9 +1940,10 @@ public class TestKit {
   }
 
   /**
-   * @return The custom dependency provider used in this test, if one is defined, when overriding
-   *     the dependency provided through {@link Settings#withDependencyProvider(DependencyProvider)}
-   *     the overridden provider is returned.
+   * @return The dependency provider used in this test, if one is defined. It is the provider from
+   *     {@link Settings#withDependencyProvider(DependencyProvider)} when the test sets one, and the
+   *     provider of the service otherwise. It returns the instances from {@link
+   *     Settings#withDependencyOverride(Class, Object)} for their classes.
    */
   public Optional<DependencyProvider> getDependencyProvider() {
     return dependencyProvider;
