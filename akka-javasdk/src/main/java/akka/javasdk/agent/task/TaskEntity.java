@@ -295,7 +295,7 @@ public final class TaskEntity extends EventSourcedEntity<TaskState, TaskEvent> {
   }
 
   // Persists the event that ends the task, with the TTL of the task. The TTL counts from this
-  // persist. Only a delete persists after it.
+  // persist. The entity persists only a delete after it.
   private Effect.OnSuccessBuilder<TaskState> persistEnd(TaskEvent event) {
     var persist = effects().persist(event);
     return currentState().expireAfter().map(persist::expireAfter).orElse(persist);
