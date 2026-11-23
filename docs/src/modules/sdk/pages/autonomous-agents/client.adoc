@@ -143,6 +143,7 @@ The `status()` of the acknowledgement is one of the records of `MessageStatus`:
 | `Consumed` | The agent stored the outcome of the model call that saw the message.
 | `Dropped` | The task ended before the agent consumed the message.
 | `Rejected` | The agent did not store the message. `reason()` says why.
+| `Unknown` | A newer runtime reported a status that this version of the SDK does not know. The agent may have stored the message.
 |===
 
 The agent rejects a message when:

@@ -50,4 +50,10 @@ public sealed interface MessageStatus {
    * @param reason why the agent rejected the message
    */
   record Rejected(String reason) implements MessageStatus {}
+
+  /**
+   * A newer runtime reported a status that this version of the SDK does not know. The agent may
+   * have stored the message.
+   */
+  record Unknown() implements MessageStatus {}
 }

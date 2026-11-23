@@ -12,6 +12,7 @@ import java.util.Optional
 
 import akka.javasdk.agent.MessageContent
 import akka.javasdk.agent.autonomous.AgentMessage
+import akka.javasdk.agent.autonomous.MessageAcknowledgement
 import akka.javasdk.agent.autonomous.MessageState
 import akka.javasdk.agent.autonomous.MessageStatus
 import akka.runtime.sdk.spi.SpiAgent
@@ -40,22 +41,22 @@ class AutonomousAgentClientImplSpec extends AnyWordSpec with Matchers {
 
     "convert each runtime status with its values" in {
       AutonomousAgentClientImpl.toMessageStatus(new SpiAutonomousAgent.MessageStatus.ForCurrentTask("t1")) shouldBe
-      Some(new MessageStatus.ForCurrentTask("t1"))
+      new MessageStatus.ForCurrentTask("t1")
       AutonomousAgentClientImpl.toMessageStatus(new SpiAutonomousAgent.MessageStatus.Held(Some("t2"))) shouldBe
-      Some(new MessageStatus.Held(Optional.of("t2")))
+      new MessageStatus.Held(Optional.of("t2"))
       AutonomousAgentClientImpl.toMessageStatus(new SpiAutonomousAgent.MessageStatus.Held(None)) shouldBe
-      Some(new MessageStatus.Held(Optional.empty()))
+      new MessageStatus.Held(Optional.empty())
       AutonomousAgentClientImpl.toMessageStatus(new SpiAutonomousAgent.MessageStatus.Consumed("t3", "i3")) shouldBe
-      Some(new MessageStatus.Consumed("t3", "i3"))
+      new MessageStatus.Consumed("t3", "i3")
       AutonomousAgentClientImpl.toMessageStatus(new SpiAutonomousAgent.MessageStatus.Dropped("t4")) shouldBe
-      Some(new MessageStatus.Dropped("t4"))
+      new MessageStatus.Dropped("t4")
       AutonomousAgentClientImpl.toMessageStatus(new SpiAutonomousAgent.MessageStatus.Rejected("too many")) shouldBe
-      Some(new MessageStatus.Rejected("too many"))
+      new MessageStatus.Rejected("too many")
     }
 
-    "read a status that the SDK does not know, and a null status, as None" in {
-      AutonomousAgentClientImpl.toMessageStatus(unknownStatus) shouldBe None
-      AutonomousAgentClientImpl.toMessageStatus(null) shouldBe None
+    "read a status that the SDK does not know, and a null status, as Unknown" in {
+      AutonomousAgentClientImpl.toMessageStatus(unknownStatus) shouldBe new MessageStatus.Unknown()
+      AutonomousAgentClientImpl.toMessageStatus(null) shouldBe new MessageStatus.Unknown()
     }
   }
 
@@ -111,11 +112,10 @@ class AutonomousAgentClientImplSpec extends AnyWordSpec with Matchers {
         .duplicate shouldBe false
     }
 
-    "fail with the message id for a status that the SDK does not know" in {
-      val exception = the[IllegalStateException] thrownBy AutonomousAgentClientImpl.toAcknowledgement(
-        new SpiAutonomousAgent.MessageAcknowledgement("m1", unknownStatus, duplicate = false))
-      exception.getMessage should include("[m1]")
-      exception.getMessage should include("unknown MessageStatus")
+    "acknowledge a status that the SDK does not know as Unknown" in {
+      val acknowledgement = AutonomousAgentClientImpl.toAcknowledgement(
+        new SpiAutonomousAgent.MessageAcknowledgement("m1", unknownStatus, duplicate = true))
+      acknowledgement shouldBe new MessageAcknowledgement("m1", new MessageStatus.Unknown(), true)
     }
   }
 
@@ -133,7 +133,7 @@ class AutonomousAgentClientImplSpec extends AnyWordSpec with Matchers {
         new MessageState("m3", new MessageStatus.Held(Optional.of("t2"))))
     }
 
-    "leave out a message with a status that the SDK does not know" in {
+    "keep a message with a status that the SDK does not know as Unknown" in {
       val states = AutonomousAgentClientImpl.toMessageStates(
         Seq(
           new SpiAutonomousAgent.MessageState("m1", new SpiAutonomousAgent.MessageStatus.Held(None)),
@@ -142,6 +142,8 @@ class AutonomousAgentClientImplSpec extends AnyWordSpec with Matchers {
           new SpiAutonomousAgent.MessageState("m4", new SpiAutonomousAgent.MessageStatus.ForCurrentTask("t1"))))
       states shouldBe java.util.List.of(
         new MessageState("m1", new MessageStatus.Held(Optional.empty())),
+        new MessageState("m2", new MessageStatus.Unknown()),
+        new MessageState("m3", new MessageStatus.Unknown()),
         new MessageState("m4", new MessageStatus.ForCurrentTask("t1")))
     }
   }

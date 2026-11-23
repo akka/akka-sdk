@@ -106,7 +106,7 @@ public final class AgentState {
    * The messages that clients sent with {@link
    * akka.javasdk.client.AutonomousAgentClient#sendMessage(AgentMessage)} and that wait for the
    * model, in arrival order. The status is {@link MessageStatus.ForCurrentTask} or {@link
-   * MessageStatus.Held}.
+   * MessageStatus.Held}, or {@link MessageStatus.Unknown} for a status from a newer runtime.
    */
   public List<MessageState> pendingMessages() {
     return pendingMessages;
@@ -116,7 +116,8 @@ public final class AgentState {
    * The most recent messages that clients sent with {@link
    * akka.javasdk.client.AutonomousAgentClient#sendMessage(AgentMessage)} and that the agent
    * consumed or dropped, oldest first. The status is {@link MessageStatus.Consumed} or {@link
-   * MessageStatus.Dropped}. A retry with one of these ids gets this status.
+   * MessageStatus.Dropped}, or {@link MessageStatus.Unknown} for a status from a newer runtime. A
+   * retry with one of these ids gets this status.
    */
   public List<MessageState> recentMessages() {
     return recentMessages;

@@ -119,6 +119,7 @@ class ClientApiSample {
       case MessageStatus.Consumed s -> log.info("Seen in {}", s.interactionId());
       case MessageStatus.Dropped s -> log.info("Dropped, task {} ended", s.taskId());
       case MessageStatus.Rejected s -> log.info("Rejected: {}", s.reason());
+      case MessageStatus.Unknown s -> log.warn("Status from a newer runtime");
     }
     // end::send-message[]
   }
