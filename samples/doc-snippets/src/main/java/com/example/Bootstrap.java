@@ -27,12 +27,19 @@ public class Bootstrap implements ServiceSetup {
     final var myAppSettings = new MyAppSettings(
       appConfig.getBoolean("my-app.some-feature-flag")
     ); // <2>
+    // end::pojo-dependency-injection[]
+    final PaymentGateway paymentGateway = orderId -> "payment-" + orderId;
+    // tag::pojo-dependency-injection[]
 
     return new DependencyProvider() { // <3>
       @Override
       public <T> T getDependency(Class<T> clazz) {
         if (clazz == MyAppSettings.class) {
           return (T) myAppSettings;
+          // end::pojo-dependency-injection[]
+        } else if (clazz == PaymentGateway.class) {
+          return (T) paymentGateway;
+          // tag::pojo-dependency-injection[]
         } else {
           throw new RuntimeException("No such dependency found: " + clazz);
         }

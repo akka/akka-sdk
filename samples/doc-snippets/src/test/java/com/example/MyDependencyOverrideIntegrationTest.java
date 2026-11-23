@@ -1,5 +1,6 @@
 package com.example;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 import akka.javasdk.testkit.TestKit;
@@ -9,17 +10,25 @@ import org.junit.jupiter.api.Test;
 // tag::test-di-override[]
 public class MyDependencyOverrideIntegrationTest extends TestKitSupport {
 
-  private static final MyAppSettings testSettings = new MyAppSettings(true); // <1>
+  private static final PaymentGateway fakePaymentGateway = orderId -> "test-payment"; // <1>
 
   @Override
   protected TestKit.Settings testKitSettings() {
-    return TestKit.Settings.DEFAULT.withDependencyOverride(MyAppSettings.class, testSettings); // <2>
+    return TestKit.Settings.DEFAULT.withDependencyOverride(
+      PaymentGateway.class,
+      fakePaymentGateway
+    ); // <2>
   }
 
   // end::test-di-override[]
 
   @Test
   public void testThatOverrideIsUsed() {
-    assertSame(testSettings, getDependency(MyAppSettings.class));
+    assertSame(fakePaymentGateway, getDependency(PaymentGateway.class));
+  }
+
+  @Test
+  public void testThatOtherDependenciesAreKept() {
+    assertFalse(getDependency(MyAppSettings.class).someFeatureFlag());
   }
 }

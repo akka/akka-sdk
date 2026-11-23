@@ -33,6 +33,13 @@ public class DependencyOverrideTest extends TestKitSupport {
   }
 
   @Test
+  public void shouldInjectTheDependencyOfTheServiceIntoTheSameComponent() {
+    var response =
+        httpClient.GET("/dependency-override/other-name").responseBodyAs(String.class).invoke();
+    assertThat(response.body()).isEqualTo("service");
+  }
+
+  @Test
   public void shouldInjectTheOverrideIntoAClassifierCreatedAtStartup() {
     var result =
         getClassifierClient().classifyWithResult("dependency-override-test-classifier", "anything");

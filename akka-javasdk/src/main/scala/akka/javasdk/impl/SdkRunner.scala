@@ -564,16 +564,17 @@ private[javasdk] final class OverridingDependencyProvider(
     delegate: Option[DependencyProvider])
     extends DependencyProvider {
 
+  /** True when a lookup of the class reaches an override or the delegate. */
+  def canProvide(clazz: Class[_]): Boolean =
+    overrides.contains(clazz) || delegate.nonEmpty
+
   override def getDependency[T](clazz: Class[T]): T =
     overrides.get(clazz) match {
       case Some(instance) => instance.asInstanceOf[T]
       case None =>
         delegate match {
           case Some(provider) => provider.getDependency(clazz)
-          case None =>
-            throw new IllegalStateException(
-              s"Could not provide dependency [${clazz.getName}] as the test has no dependency override for it " +
-              "and no DependencyProvider was configured.")
+          case None           => throw new IllegalStateException(Sdk.missingDependencyProviderMessage(clazz, None))
         }
     }
 }
@@ -605,6 +606,13 @@ private[javasdk] object Sdk {
       // here for the testkit, which awaits it from the thread that started the testkit. Nothing in the SDK
       // awaits it, because the runtime binds the endpoint only after preStart has returned.
       httpEndpointBound: Future[InetSocketAddress])
+
+  def missingDependencyProviderMessage(dependency: Class[_], requiredBy: Option[Class[_]]): String =
+    s"Could not inject dependency [${dependency.getName}] " +
+    requiredBy.map(component => s"required by [${component.getName}] ").getOrElse("") +
+    "as no DependencyProvider was configured. " +
+    "Please provide a DependencyProvider to supply dependencies. " +
+    "See https://doc.akka.io/sdk/setup-and-dependency-injection.html#_custom_dependency_injection"
 
   private val platformManagedDependency = Set[Class[_]](
     classOf[ComponentClient],
@@ -1568,6 +1576,10 @@ private final class Sdk(
         .filterNot(isDisabled(combinedDisabledComponents))
 
     val preStart = { (system: ActorSystem[_]) =>
+      if (dependencyOverrides.nonEmpty)
+        logger.info(
+          "Service configured with TestKit dependency overrides for [{}]",
+          dependencyOverrides.keys.map(_.getName).toSeq.sorted.mkString(", "))
       serviceSetup match {
         case None =>
           validateClassifiers()
@@ -1851,13 +1863,14 @@ private final class Sdk(
               // if we allow for a given dependency, we should cover it in the partial function for the component
               throw new IllegalArgumentException(
                 s"[${constructor.getDeclaringClass.getName}] are not allowed to have a dependency on [${anyOther.getName}]");
+            case Some(overriding: OverridingDependencyProvider) if !overriding.canProvide(anyOther) =>
+              throw new IllegalStateException(
+                missingDependencyProviderMessage(anyOther, Some(constructor.getDeclaringClass)))
             case Some(dependencyProvider) =>
               dependencyProvider.getDependency(anyOther)
             case None =>
               throw new IllegalStateException(
-                s"Could not inject dependency [${anyOther.getName}] required by [${constructor.getDeclaringClass.getName}] as no DependencyProvider was configured. " +
-                "Please provide a DependencyProvider to supply dependencies. " +
-                "See https://doc.akka.io/sdk/setup-and-dependency-injection.html#_custom_dependency_injection");
+                missingDependencyProviderMessage(anyOther, Some(constructor.getDeclaringClass)))
           }
 
       }

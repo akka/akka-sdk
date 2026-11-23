@@ -65,6 +65,8 @@ public class Bootstrap implements ServiceSetup {
           return (T) eagerlyCreatedGrpcClient;
         } else if (clazz == OverridableDependency.class) {
           return (T) new OverridableDependency("service");
+        } else if (clazz == OtherDependency.class) {
+          return (T) new OtherDependency("service");
         } else {
           throw new IllegalArgumentException("Unknown dependency type " + clazz.getName());
         }

@@ -302,8 +302,8 @@ A test can replace single dependencies and keep all other dependencies of the se
 ----
 include::example$doc-snippets/src/test/java/com/example/MyDependencyOverrideIntegrationTest.java[tag=test-di-override]
 ----
-<1> Create the instance to use in the test.
-<2> Configure the TestKit to inject it for the class `MyAppSettings`.
+<1> Create the instance to use in the test, in this case a fake of a `PaymentGateway` that the service provides.
+<2> Configure the TestKit to inject it for the class `PaymentGateway`.
 
 The service creates its `DependencyProvider` through `createDependencyProvider` as usual. A lookup of a class with an
 override returns the override instance. A lookup of any other class goes to the `DependencyProvider` of the service.
