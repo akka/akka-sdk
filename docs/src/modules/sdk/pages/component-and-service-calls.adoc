@@ -72,7 +72,7 @@ If you do need explicit control over futures, such as creating streams from asyn
 Calling other Akka services within the same project is done by invoking them using an HTTP or a gRPC client, depending on what type
 of endpoints the service provides.
 
-When several services or agents depend on the same service, see xref:sdk:integrations/common-services.adoc[] to choose between a call, a service-to-service event stream and an MCP tool.
+To choose between a call, a service-to-service event stream, a function tool and an MCP tool, see xref:sdk:integrations/choosing-how-services-communicate.adoc[].
 
 === Calling Akka services over HTTP
 The service is identified by the name it has been deployed with. Akka takes care of routing requests to the service and keeping the data safe by encrypting the connection and handling authentication for you.
