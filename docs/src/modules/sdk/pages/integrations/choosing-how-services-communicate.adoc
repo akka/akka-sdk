@@ -101,11 +101,13 @@ See xref:sdk:consuming-producing.adoc[] and xref:concepts:delivery-guarantees.ad
 
 === Function tool
 
-An agent does not need an MCP endpoint to use another service. Annotate a method of the agent, or of a class that the agent registers, with `@FunctionTool`. The method calls the other service with an HTTP or gRPC client. The calling service decides which operations the agent can request, and the descriptions of the method and its parameters tell the model when to use it.
+An agent can use another service through a method annotated with `@FunctionTool`. Put the method on the agent, or on a class that the agent registers. The method calls the other service with an HTTP or gRPC client. The calling service decides which operations the agent can request, and the descriptions of the method and its parameters tell the model when to use it.
 
 * Each tool method is one operation, so the agent can request only what you expose as a tool.
 * The tool uses the contract of the underlying call, and the same project and network rules apply.
 * Keep write operations in tools only where the agent is meant to change data.
+
+An MCP tool is also a function tool to the agent, but a remote MCP server provides it. See <<_mcp_tool,MCP tool>>.
 
 See xref:sdk:agents/extending.adoc[].
 
