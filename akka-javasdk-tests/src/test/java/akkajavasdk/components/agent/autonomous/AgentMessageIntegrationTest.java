@@ -28,7 +28,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import kalix.runtime.agent.autonomous.AutonomousAgentSupport;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -230,14 +229,15 @@ public class AgentMessageIntegrationTest extends TestKitSupport {
 
   @Test
   public void aMessageToAnInstanceThatDoesNotExistFails() {
-    var agentClient =
-        componentClient.forAutonomousAgent(TestAutonomousAgent.class, UUID.randomUUID().toString());
+    var agentId = UUID.randomUUID().toString();
+    var agentClient = componentClient.forAutonomousAgent(TestAutonomousAgent.class, agentId);
 
     assertThatThrownBy(
             () ->
                 agentClient.sendMessage(
                     AgentMessage.of("Use metric units.").messageId(UUID.randomUUID().toString())))
-        .isInstanceOf(AutonomousAgentSupport.InstanceNotFoundException.class)
+        .isInstanceOf(RuntimeException.class)
+        .hasMessageContaining(agentId)
         .hasMessageContaining("not found");
   }
 
