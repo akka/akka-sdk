@@ -26,6 +26,9 @@ public class CompactionAgent extends Agent {
 
     Note that AI messages may contain TOOL_CALL_REQUEST(S) and
     be followed by TOOL_CALL_RESPONSE(S).
+    A failed tool call is marked as TOOL_CALL_ERROR instead of TOOL_CALL_RESPONSE.
+    Make sure the generated ai message says that the tool call failed,
+    and does not present the error text as tool data.
     Make sure to keep this information in the generated ai message.
     Do not keep it as structured tool calls, but make sure to extract
     the relevant context.
@@ -87,7 +90,9 @@ public class CompactionAgent extends Agent {
                 String::concat
               );
           }
-          case SessionMessage.ToolCallResponse toolRes -> "\n\nTOOL_CALL_RESPONSE:\n" +
+          case SessionMessage.ToolCallResponse toolRes -> (toolRes.isError() // <4>
+              ? "\n\nTOOL_CALL_ERROR:\n"
+              : "\n\nTOOL_CALL_RESPONSE:\n") +
           toolRes.text();
           // end::compaction[]
           case SessionMessage.MultimodalToolCallResponse multimodalToolRes -> multimodalToolRes
@@ -100,14 +105,22 @@ public class CompactionAgent extends Agent {
                 case MessageContent.PdfUriMessageContent pdf -> "pdf from " + pdf.uri();
                 case MessageContent.TextMessageContent text -> text.text();
               })
-            .reduce("", (acc, text) -> "\n\nTOOL_CALL_RESPONSE:\n" + text, String::concat);
+            .reduce(
+              "",
+              (acc, text) ->
+                (multimodalToolRes.isError()
+                    ? "\n\nTOOL_CALL_ERROR:\n"
+                    : "\n\nTOOL_CALL_RESPONSE:\n") +
+                text,
+              String::concat
+            );
           // tag::compaction[]
         };
       })
       .collect(Collectors.joining()); // <3>
 
     return effects()
-      .memory(MemoryProvider.none()) // <4>
+      .memory(MemoryProvider.none()) // <5>
       .model(
         ModelProvider.openAi()
           .withModelName("gpt-4o-mini")
