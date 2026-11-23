@@ -115,7 +115,10 @@ class ClientApiSample {
 
     switch (acknowledgement.status()) {
       case MessageStatus.ForCurrentTask s -> log.info("For task {}", s.taskId());
-      case MessageStatus.Held s -> log.info("Held for task {}", s.taskId());
+      case MessageStatus.Held s -> log.info(
+        "Held until {} starts",
+        s.taskId().orElse("the next task")
+      );
       case MessageStatus.Consumed s -> log.info("Seen in {}", s.interactionId());
       case MessageStatus.Dropped s -> log.info("Dropped, task {} ended", s.taskId());
       case MessageStatus.Rejected s -> log.info("Rejected: {}", s.reason());
