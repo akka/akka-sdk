@@ -147,15 +147,15 @@ private[javasdk] final class LedgerClientImpl(spiLedgerClient: SpiLedgerClient, 
       .map(LedgerClientImpl.toFlowPage)
       .asJava
 
-  override def getCorrelationRecords(correlationId: String): util.List[FlowRecord] =
-    try getCorrelationRecordsAsync(correlationId).toCompletableFuture.join()
+  override def getExternalIdRecords(externalId: String): util.List[FlowRecord] =
+    try getExternalIdRecordsAsync(externalId).toCompletableFuture.join()
     catch {
       case e: CompletionException => throw ErrorHandling.unwrapCompletionException(e)
     }
 
-  override def getCorrelationRecordsAsync(correlationId: String): CompletionStage[util.List[FlowRecord]] =
+  override def getExternalIdRecordsAsync(externalId: String): CompletionStage[util.List[FlowRecord]] =
     spiLedgerClient
-      .getCorrelationRecords(correlationId, from = None, limit = LedgerClientImpl.ListLimit)
+      .getExternalIdRecords(externalId, from = None, limit = LedgerClientImpl.ListLimit)
       .map(_.flatMap(LedgerClientImpl.toFlowRecord).asJava)
       .asJava
 }

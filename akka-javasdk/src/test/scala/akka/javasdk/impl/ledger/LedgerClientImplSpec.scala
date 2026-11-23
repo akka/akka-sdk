@@ -38,8 +38,8 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
       page
     }
 
-    override def getCorrelationRecords(
-        correlationId: String,
+    override def getExternalIdRecords(
+        externalId: String,
         from: Option[Instant],
         limit: Int): Future[Seq[SpiLedger.FlowRecord]] = unexpected
 
@@ -182,8 +182,8 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
     override def getFlowRecords(flowId: String, fromPosition: Long, limit: Int): Future[SpiLedger.FlowPage] =
       Future.successful(new SpiLedger.FlowPage(Seq.empty, fromPosition, hasMore = false))
 
-    override def getCorrelationRecords(
-        correlationId: String,
+    override def getExternalIdRecords(
+        externalId: String,
         from: Option[Instant],
         limit: Int): Future[Seq[SpiLedger.FlowRecord]] =
       Future.successful(Seq.empty)
@@ -451,7 +451,7 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
     }
   }
 
-  "Reading the records of a correlation id" should {
+  "Reading the records of an external id" should {
 
     "map each kind to the public records, in order, and ask for a limit of 100 without a from time" in {
       val interaction = spiInteractionRecord()
@@ -459,11 +459,11 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
       val decision = spiGuardrailDecisionRecord(controlId = None, toolCall = None)
       val reads = mutable.ArrayBuffer.empty[(String, Option[Instant], Int)]
       val spiClient = new EmptySpiLedgerClient {
-        override def getCorrelationRecords(
-            correlationId: String,
+        override def getExternalIdRecords(
+            externalId: String,
             from: Option[Instant],
             limit: Int): Future[Seq[SpiLedger.FlowRecord]] = {
-          reads += ((correlationId, from, limit))
+          reads += ((externalId, from, limit))
           Future.successful(Seq(decision, activity, interaction))
         }
       }
@@ -473,8 +473,8 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
         LedgerClientImpl.toGuardrailDecisionRecord(decision),
         LedgerClientImpl.toActivityRecord(activity),
         LedgerClientImpl.toInteractionRecord(interaction))
-      client.getCorrelationRecords("call-1").asScala.toSeq shouldEqual expected
-      client.getCorrelationRecordsAsync("call-2").toCompletableFuture.get().asScala.toSeq shouldEqual expected
+      client.getExternalIdRecords("call-1").asScala.toSeq shouldEqual expected
+      client.getExternalIdRecordsAsync("call-2").toCompletableFuture.get().asScala.toSeq shouldEqual expected
       reads.toSeq shouldEqual Seq(("call-1", None, 100), ("call-2", None, 100))
     }
   }

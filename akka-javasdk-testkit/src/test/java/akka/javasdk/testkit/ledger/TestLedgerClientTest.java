@@ -307,7 +307,7 @@ public class TestLedgerClientTest {
   }
 
   @Test
-  public void listsTheRecordsOfACorrelationIdNewestFirst() {
+  public void listsTheRecordsOfAnExternalIdNewestFirst() {
     var t0 = Instant.parse("2026-01-01T00:00:00Z");
     var interaction = interaction("interaction-1", "support-agent", "session-1", t0);
     var decision = decision("decision-1", "interaction-1", "session-1", t0.plusSeconds(1));
@@ -320,17 +320,17 @@ public class TestLedgerClientTest {
             .seed("call-2", interaction("interaction-2", "support-agent", "session-2", t0))
             .seed(interaction("interaction-3", "support-agent", "session-3", t0));
 
-    assertEquals(List.of(activity, decision, interaction), ledger.getCorrelationRecords("call-1"));
+    assertEquals(List.of(activity, decision, interaction), ledger.getExternalIdRecords("call-1"));
     assertEquals(
         List.of(activity, decision, interaction),
-        ledger.getCorrelationRecordsAsync("call-1").toCompletableFuture().join());
-    assertTrue(ledger.getCorrelationRecords("unknown").isEmpty());
-    // a record seeded with a correlation id is also read by its own id
+        ledger.getExternalIdRecordsAsync("call-1").toCompletableFuture().join());
+    assertTrue(ledger.getExternalIdRecords("unknown").isEmpty());
+    // a record seeded with an external id is also read by its own id
     assertEquals(interaction, ledger.getInteraction("interaction-1"));
   }
 
   @Test
-  public void rejectsAnEvaluationRecordWithACorrelationId() {
+  public void rejectsAnEvaluationRecordWithAnExternalId() {
     var evaluation = interactionEvaluation("evaluation-1", "interaction-1", Instant.EPOCH);
     assertThrows(
         IllegalArgumentException.class, () -> TestLedgerClient.create().seed("call-1", evaluation));

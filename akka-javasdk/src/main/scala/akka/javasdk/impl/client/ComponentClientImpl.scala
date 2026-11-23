@@ -39,11 +39,11 @@ import io.opentelemetry.context.{ Context => OtelContext }
 @InternalApi
 private[javasdk] object ComponentClientImpl {
 
-  /** The baggage key that carries the correlation id to the runtime. */
-  val CorrelationIdBaggageKey = "akka.correlation.id"
+  /** The baggage key that carries the external id to the runtime. */
+  val ExternalIdBaggageKey = "akka.external.id"
 
-  /** The longest correlation id that the runtime lists ledger records by. */
-  val MaxCorrelationIdLength = 256
+  /** The longest external id that the runtime lists ledger records by. */
+  val MaxExternalIdLength = 256
 }
 
 /**
@@ -130,18 +130,18 @@ private[javasdk] final case class ComponentClientImpl(
     new EvaluatorClientImpl(evaluatorComponentId, evaluationClient, telemetryContext)
   }
 
-  override def withCorrelationId(correlationId: String): ComponentClient = {
-    if (correlationId eq null) throw new NullPointerException("Correlation id is null")
-    if (correlationId.isEmpty) throw new IllegalArgumentException("Empty correlation id not allowed")
-    if (correlationId.length > ComponentClientImpl.MaxCorrelationIdLength)
+  override def withExternalId(externalId: String): ComponentClient = {
+    if (externalId eq null) throw new NullPointerException("External id is null")
+    if (externalId.isEmpty) throw new IllegalArgumentException("Empty external id not allowed")
+    if (externalId.length > ComponentClientImpl.MaxExternalIdLength)
       throw new IllegalArgumentException(
-        s"Correlation id is longer than ${ComponentClientImpl.MaxCorrelationIdLength} characters")
+        s"External id is longer than ${ComponentClientImpl.MaxExternalIdLength} characters")
     val context = telemetryContext.getOrElse(OtelContext.root())
     val baggage = Baggage.fromContext(context)
-    if (baggage.getEntryValue(ComponentClientImpl.CorrelationIdBaggageKey) ne null) this
+    if (baggage.getEntryValue(ComponentClientImpl.ExternalIdBaggageKey) ne null) this
     else
       copy(telemetryContext =
-        Some(context.`with`(baggage.toBuilder.put(ComponentClientImpl.CorrelationIdBaggageKey, correlationId).build())))
+        Some(context.`with`(baggage.toBuilder.put(ComponentClientImpl.ExternalIdBaggageKey, externalId).build())))
   }
 
 }

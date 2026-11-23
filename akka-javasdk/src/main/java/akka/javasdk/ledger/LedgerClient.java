@@ -245,25 +245,25 @@ public interface LedgerClient {
   CompletionStage<FlowPage> getFlowRecordsAsync(String flowId, long fromPosition);
 
   /**
-   * Fetch the records that carry the given {@code correlationId}, newest first. The records are the
+   * Fetch the records that carry the given {@code externalId}, newest first. The records are the
    * {@link InteractionRecord}s, the {@link ActivityRecord}s and the {@link
    * GuardrailDecisionRecord}s of the runs that a caller started with {@link
-   * akka.javasdk.client.ComponentClient#withCorrelationId(String)}. No other kind of record is
+   * akka.javasdk.client.ComponentClient#withExternalId(String)}. No other kind of record is
    * returned. At most the 100 newest records are returned.
    *
    * <p>Blocks the calling thread until the records have been fetched. Safe to call on a virtual
-   * thread. Use {@link #getCorrelationRecordsAsync(String)} for the non-blocking variant.
+   * thread. Use {@link #getExternalIdRecordsAsync(String)} for the non-blocking variant.
    *
-   * @param correlationId the correlation id that the caller of the runs set
-   * @return the newest records with that correlation id, or an empty list when none are recorded
+   * @param externalId the external id that the caller of the runs set
+   * @return the newest records with that external id, or an empty list when none are recorded
    */
-  List<FlowRecord> getCorrelationRecords(String correlationId);
+  List<FlowRecord> getExternalIdRecords(String externalId);
 
   /**
-   * Async variant of {@link #getCorrelationRecords(String)}.
+   * Async variant of {@link #getExternalIdRecords(String)}.
    *
-   * @param correlationId the correlation id that the caller of the runs set
-   * @return a stage that completes with the records with that correlation id
+   * @param externalId the external id that the caller of the runs set
+   * @return a stage that completes with the records with that external id
    */
-  CompletionStage<List<FlowRecord>> getCorrelationRecordsAsync(String correlationId);
+  CompletionStage<List<FlowRecord>> getExternalIdRecordsAsync(String externalId);
 }

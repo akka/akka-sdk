@@ -54,21 +54,21 @@ public class LedgerUsage {
   }
 
   String summarizeForCall(ComponentClient componentClient, String callId, String document) {
-    // tag::correlation-call[]
+    // tag::external-id-call[]
     String summary = componentClient
-      .withCorrelationId(callId) // <1>
+      .withExternalId(callId) // <1>
       .forAgent()
       .inSession(callId)
       .method(DocumentSummarizer::summarize)
       .invoke(new DocumentSummarizer.Request(document, ""));
-    // end::correlation-call[]
+    // end::external-id-call[]
     return summary;
   }
 
   List<FlowRecord> recordsOfCall(String callId) {
-    // tag::correlation-read[]
-    List<FlowRecord> records = ledger.getCorrelationRecords(callId); // <1>
-    // end::correlation-read[]
+    // tag::external-id-read[]
+    List<FlowRecord> records = ledger.getExternalIdRecords(callId); // <1>
+    // end::external-id-read[]
     return records;
   }
 }

@@ -94,20 +94,20 @@ public interface ComponentClient {
   EvaluatorClient forEvaluator(Class<?> evaluatorClass);
 
   /**
-   * Set the correlation id of the calls that the returned client makes. Use an id of another
-   * system, such as the id of a phone call, to find the records of a run later.
+   * Set the external id of the calls that the returned client makes. Use an id of another system,
+   * such as the id of a phone call, to find the records of a run later.
    *
-   * <p>The runtime writes the correlation id on the ledger records of the agents that run in the
-   * call, and on the records of the calls that those agents make. Read the records with {@link
-   * akka.javasdk.ledger.LedgerClient#getCorrelationRecords(String)}.
+   * <p>The runtime writes the external id on the ledger records of the agents that run in the call,
+   * and on the records of the calls that those agents make. Read the records with {@link
+   * akka.javasdk.ledger.LedgerClient#getExternalIdRecords(String)}.
    *
-   * <p>A correlation id that the incoming request already carries stays in place. The returned
-   * client then makes its calls with that id.
+   * <p>An external id that the incoming request already carries stays in place. The returned client
+   * then makes its calls with that id.
    *
-   * @param correlationId the correlation id, at most 256 characters
-   * @return a client that makes its calls with the correlation id
-   * @throws IllegalArgumentException if the correlation id is empty or longer than 256 characters
-   * @throws NullPointerException if {@code correlationId} is null
+   * @param externalId the external id, at most 256 characters
+   * @return a client that makes its calls with the external id
+   * @throws IllegalArgumentException if the external id is empty or longer than 256 characters
+   * @throws NullPointerException if {@code externalId} is null
    */
-  ComponentClient withCorrelationId(String correlationId);
+  ComponentClient withExternalId(String externalId);
 }

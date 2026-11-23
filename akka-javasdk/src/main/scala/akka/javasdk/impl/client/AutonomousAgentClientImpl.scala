@@ -51,14 +51,14 @@ private[javasdk] final class AutonomousAgentClientImpl(
     telemetryContext: Option[OtelContext])(implicit ec: ExecutionContext, system: ActorSystem[_])
     extends AutonomousAgentClient {
 
-  // The trace context of the call, with the correlation id of the call as its only baggage.
+  // The trace context of the call, with the external id of the call as its only baggage.
   private val runtimeContext: Option[OtelContext] = {
     val traceContext = callMetadata.flatMap(_.asInstanceOf[MetadataImpl].context)
-    val correlationId = telemetryContext.flatMap { context =>
-      Option(Baggage.fromContext(context).getEntryValue(ComponentClientImpl.CorrelationIdBaggageKey))
+    val externalId = telemetryContext.flatMap { context =>
+      Option(Baggage.fromContext(context).getEntryValue(ComponentClientImpl.ExternalIdBaggageKey))
     }
-    correlationId.fold(traceContext) { id =>
-      val baggage = Baggage.builder().put(ComponentClientImpl.CorrelationIdBaggageKey, id).build()
+    externalId.fold(traceContext) { id =>
+      val baggage = Baggage.builder().put(ComponentClientImpl.ExternalIdBaggageKey, id).build()
       Some(traceContext.getOrElse(OtelContext.root()).`with`(baggage))
     }
   }

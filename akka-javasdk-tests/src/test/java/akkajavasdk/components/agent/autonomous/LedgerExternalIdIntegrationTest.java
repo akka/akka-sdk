@@ -21,8 +21,8 @@ import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
-/** Reads the records of the calls that carry a correlation id from the ledger. */
-public class LedgerCorrelationIntegrationTest extends TestKitSupport {
+/** Reads the records of the calls that carry an external id from the ledger. */
+public class LedgerExternalIdIntegrationTest extends TestKitSupport {
 
   private final TestModelProvider coordinatorModel = new TestModelProvider();
   private final TestModelProvider workerModel = new TestModelProvider();
@@ -38,19 +38,19 @@ public class LedgerCorrelationIntegrationTest extends TestKitSupport {
   }
 
   @Test
-  public void readsTheInteractionOfARequestBasedAgentCallWithACorrelationId() {
+  public void readsTheInteractionOfARequestBasedAgentCallWithAnExternalId() {
     someAgentModel.fixedResponse("hi");
-    var correlationId = "call-" + UUID.randomUUID();
+    var externalId = "call-" + UUID.randomUUID();
 
-    var correlated =
+    var withExternalId =
         componentClient
-            .withCorrelationId(correlationId)
+            .withExternalId(externalId)
             .forAgent()
             .inSession(UUID.randomUUID().toString())
             .method(SomeAgent::mapLlmResponse)
             .withDetailedReply()
             .invoke("hello");
-    // a call without the correlation id
+    // a call without the external id
     componentClient
         .forAgent()
         .inSession(UUID.randomUUID().toString())
@@ -61,13 +61,13 @@ public class LedgerCorrelationIntegrationTest extends TestKitSupport {
         .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
-                assertThat(interactions(getLedgerClient().getCorrelationRecords(correlationId)))
+                assertThat(interactions(getLedgerClient().getExternalIdRecords(externalId)))
                     .extracting(InteractionRecord::interactionId)
-                    .containsExactly(correlated.interactionId().orElseThrow()));
+                    .containsExactly(withExternalId.interactionId().orElseThrow()));
   }
 
   @Test
-  public void readsTheRecordsOfADelegatingAutonomousAgentStartedWithACorrelationId() {
+  public void readsTheRecordsOfADelegatingAutonomousAgentStartedWithAnExternalId() {
     coordinatorModel
         .whenMessage(msg -> msg.contains("quantum"))
         .reply(
@@ -86,10 +86,10 @@ public class LedgerCorrelationIntegrationTest extends TestKitSupport {
                 new TestTasks.ResearchResult(
                     "Quantum Computing Summary", "Qubits enable parallel computation.")));
 
-    var correlationId = "call-" + UUID.randomUUID();
+    var externalId = "call-" + UUID.randomUUID();
     var taskId =
         componentClient
-            .withCorrelationId(correlationId)
+            .withExternalId(externalId)
             .forAutonomousAgent(CoordinatorAgent.class, UUID.randomUUID().toString())
             .runSingleTask(TestTasks.RESEARCH.instructions("Research quantum computing"));
 
@@ -106,7 +106,7 @@ public class LedgerCorrelationIntegrationTest extends TestKitSupport {
         .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () -> {
-              var records = getLedgerClient().getCorrelationRecords(correlationId);
+              var records = getLedgerClient().getExternalIdRecords(externalId);
 
               // the worker runs in the flow of the coordinator, so its records carry the id too
               assertThat(interactions(records))

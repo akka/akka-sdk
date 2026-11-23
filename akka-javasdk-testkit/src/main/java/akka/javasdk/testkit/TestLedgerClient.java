@@ -69,8 +69,8 @@ public final class TestLedgerClient implements LedgerClient {
   private final Map<FlowRecord, Long> seedOrder =
       Collections.synchronizedMap(new IdentityHashMap<>());
 
-  // The correlation id of each record that was seeded with one.
-  private final Map<FlowRecord, String> correlationIds =
+  // The external id of each record that was seeded with one.
+  private final Map<FlowRecord, String> externalIds =
       Collections.synchronizedMap(new IdentityHashMap<>());
 
   /** Create an empty in-memory ledger client. */
@@ -269,45 +269,45 @@ public final class TestLedgerClient implements LedgerClient {
   /**
    * Seed an interaction, a guardrail decision or an activity record, as {@link
    * #seed(InteractionRecord)}, {@link #seed(GuardrailDecisionRecord)} or {@link
-   * #seed(ActivityRecord)} does, and give it a correlation id. {@link
-   * #getCorrelationRecords(String)} returns the record for that id.
+   * #seed(ActivityRecord)} does, and give it an external id. {@link #getExternalIdRecords(String)}
+   * returns the record for that id.
    *
-   * @param correlationId the correlation id of the record
+   * @param externalId the external id of the record
    * @param record the record to seed
    * @return this client, for chaining
    * @throws IllegalArgumentException if the record is an evaluation record, which carries no
-   *     correlation id
+   *     external id
    */
-  public TestLedgerClient seed(String correlationId, FlowRecord record) {
+  public TestLedgerClient seed(String externalId, FlowRecord record) {
     switch (record) {
       case InteractionRecord interaction -> seed(interaction);
       case GuardrailDecisionRecord decision -> seed(decision);
       case ActivityRecord activity -> seed(activity);
       case EvaluationRecord ignored ->
-          throw new IllegalArgumentException("An evaluation record carries no correlation id");
+          throw new IllegalArgumentException("An evaluation record carries no external id");
     }
-    correlationIds.put(record, correlationId);
+    externalIds.put(record, externalId);
     return this;
   }
 
   /**
-   * The seeded records with the given correlation id, newest first by their timestamp. See {@link
+   * The seeded records with the given external id, newest first by their timestamp. See {@link
    * #seed(String, FlowRecord)}.
    */
   @Override
-  public List<FlowRecord> getCorrelationRecords(String correlationId) {
+  public List<FlowRecord> getExternalIdRecords(String externalId) {
     List<FlowRecord> seeded = new ArrayList<>(records.values());
     seeded.addAll(guardrailDecisions.values());
     seeded.addAll(activities.values());
     return seeded.stream()
-        .filter(record -> correlationId.equals(correlationIds.get(record)))
+        .filter(record -> externalId.equals(externalIds.get(record)))
         .sorted(Comparator.comparing(FlowRecord::timestamp).reversed())
         .toList();
   }
 
   @Override
-  public CompletionStage<List<FlowRecord>> getCorrelationRecordsAsync(String correlationId) {
-    return CompletableFuture.completedFuture(getCorrelationRecords(correlationId));
+  public CompletionStage<List<FlowRecord>> getExternalIdRecordsAsync(String externalId) {
+    return CompletableFuture.completedFuture(getExternalIdRecords(externalId));
   }
 
   @Override

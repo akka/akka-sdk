@@ -26,44 +26,44 @@ class ComponentClientImplSpec extends AnyWordSpec with Matchers with OptionValue
       .telemetryContext
       .flatMap(context => MetadataImpl.Empty.withTelemetryContext(context).getScala("baggage"))
 
-  "ComponentClient.withCorrelationId" should {
+  "ComponentClient.withExternalId" should {
 
-    "send the correlation id in the baggage of its calls" in {
-      val client = componentClient(None).withCorrelationId("call-1")
+    "send the external id in the baggage of its calls" in {
+      val client = componentClient(None).withExternalId("call-1")
 
-      baggageHeader(client).value shouldBe "akka.correlation.id=call-1"
+      baggageHeader(client).value shouldBe "akka.external.id=call-1"
     }
 
     "keep the other baggage of the telemetry context" in {
       val context = OtelContext.root().`with`(Baggage.builder().put("akka.flow.id", "flow-1").build())
 
-      val client = componentClient(Some(context)).withCorrelationId("call-1")
+      val client = componentClient(Some(context)).withExternalId("call-1")
 
-      baggageHeader(client).value.split(',').toSet shouldBe Set("akka.flow.id=flow-1", "akka.correlation.id=call-1")
+      baggageHeader(client).value.split(',').toSet shouldBe Set("akka.flow.id=flow-1", "akka.external.id=call-1")
     }
 
-    "keep a correlation id that the telemetry context already carries" in {
-      val context = OtelContext.root().`with`(Baggage.builder().put("akka.correlation.id", "call-1").build())
+    "keep an external id that the telemetry context already carries" in {
+      val context = OtelContext.root().`with`(Baggage.builder().put("akka.external.id", "call-1").build())
 
-      val client = componentClient(Some(context)).withCorrelationId("call-2")
+      val client = componentClient(Some(context)).withExternalId("call-2")
 
-      baggageHeader(client).value shouldBe "akka.correlation.id=call-1"
+      baggageHeader(client).value shouldBe "akka.external.id=call-1"
     }
 
-    "leave the client it is called on without a correlation id" in {
+    "leave the client it is called on without an external id" in {
       val client = componentClient(None)
-      client.withCorrelationId("call-1")
+      client.withExternalId("call-1")
 
       baggageHeader(client) shouldBe None
     }
 
-    "reject a null, empty or too long correlation id" in {
+    "reject a null, empty or too long external id" in {
       val client = componentClient(None)
 
-      intercept[NullPointerException](client.withCorrelationId(null))
-      intercept[IllegalArgumentException](client.withCorrelationId(""))
-      intercept[IllegalArgumentException](client.withCorrelationId("x" * 257))
-      client.withCorrelationId("x" * 256)
+      intercept[NullPointerException](client.withExternalId(null))
+      intercept[IllegalArgumentException](client.withExternalId(""))
+      intercept[IllegalArgumentException](client.withExternalId("x" * 257))
+      client.withExternalId("x" * 256)
     }
   }
 }

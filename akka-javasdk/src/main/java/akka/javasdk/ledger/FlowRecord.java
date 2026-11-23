@@ -12,8 +12,8 @@ import java.util.Map;
 
 /**
  * A record of a flow, as {@link LedgerClient#getFlowRecords(String)} returns it, or a record with a
- * correlation id, as {@link LedgerClient#getCorrelationRecords(String)} returns it. A later SDK
- * version can add kinds of records.
+ * external id, as {@link LedgerClient#getExternalIdRecords(String)} returns it. A later SDK version
+ * can add kinds of records.
  *
  * <p>Not for user extension.
  */
