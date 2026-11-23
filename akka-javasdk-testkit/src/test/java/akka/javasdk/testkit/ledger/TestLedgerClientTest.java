@@ -6,11 +6,13 @@ package akka.javasdk.testkit.ledger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import akka.javasdk.evaluation.Evaluation;
 import akka.javasdk.ledger.ActivityRecord;
+import akka.javasdk.ledger.ClassificationRecord;
 import akka.javasdk.ledger.EvaluationRecord;
 import akka.javasdk.ledger.FlowPage;
 import akka.javasdk.ledger.FlowRecord;
@@ -24,6 +26,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.CompletionException;
 import org.junit.jupiter.api.Test;
@@ -301,5 +304,30 @@ public class TestLedgerClientTest {
             CompletionException.class,
             () -> ledger.getFlowRecordsAsync("flow-1", -1).toCompletableFuture().join());
     assertTrue(asyncNegative.getCause() instanceof IllegalArgumentException);
+  }
+
+  @Test
+  public void fetchesASeededClassificationById() {
+    var classification =
+        new ClassificationRecord(
+            "c1",
+            "sentiment-classifier",
+            Optional.of(0.9),
+            Optional.of("positive"),
+            Optional.of(0.8),
+            Map.of("source", "judge"),
+            Optional.of("flow-1"),
+            Optional.of("evaluation-1"),
+            Instant.ofEpochSecond(1));
+    var ledger = TestLedgerClient.create().seed(classification);
+
+    assertEquals(classification, ledger.getClassification("c1"));
+    assertEquals(classification, ledger.getClassificationAsync("c1").toCompletableFuture().join());
+    assertThrows(NoSuchElementException.class, () -> ledger.getClassification("c2"));
+    var asyncFailure =
+        assertThrows(
+            CompletionException.class,
+            () -> ledger.getClassificationAsync("c2").toCompletableFuture().join());
+    assertInstanceOf(NoSuchElementException.class, asyncFailure.getCause());
   }
 }

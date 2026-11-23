@@ -66,6 +66,8 @@ public class AgentLifecycleIntegrationTest extends TestKitSupport {
     assertThat(state.totalTokenUsage()).isNotNull();
     assertThat(state.currentTask()).isEmpty();
     assertThat(state.pendingTaskIds()).isEmpty();
+    assertThat(state.pendingMessages()).isEmpty();
+    assertThat(state.recentMessages()).isEmpty();
   }
 
   @Test

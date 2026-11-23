@@ -10,10 +10,11 @@ import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.Produce;
 import akka.javasdk.consumer.Consumer;
 
+// @Acl on a method of a Consumer with @Produce.ServiceStream - should fail, the ACL is per stream
 @Component(id = "service-stream-method-acl")
 @Consume.FromKeyValueEntity(SimpleKeyValueEntity.class)
 @Produce.ServiceStream(id = "my_stream")
-public class ValidConsumerWithServiceStreamAndMethodAcl extends Consumer {
+public class AclOnMethodOfServiceStreamConsumer extends Consumer {
 
   @Acl(allow = @Acl.Matcher(service = "some-service"))
   public Effect onMessage(Integer message) {

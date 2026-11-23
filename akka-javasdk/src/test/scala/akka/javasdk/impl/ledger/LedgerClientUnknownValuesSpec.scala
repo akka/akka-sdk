@@ -228,7 +228,8 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
           name = "calc",
           arguments = """{"expr":"2+2"}""",
           response = "4",
-          status = toolCallStatus)))
+          status = toolCallStatus)),
+      addedInput = Seq.empty)
 
   private def spiEvaluationRecord(
       trigger: SpiLedger.EvaluationTrigger,
@@ -335,7 +336,7 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
       forAll(failureReasons) { (spiReason, publicReason) =>
         val record =
           LedgerClientImpl.toInteractionRecord(
-            spiInteractionRecord(failure = Some(new SpiLedger.Failure(spiReason, "failed"))))
+            spiInteractionRecord(failure = Some(new SpiLedger.Failure(spiReason, "failed", Seq.empty))))
         record.failure().get().reason() shouldBe publicReason
       }
     }
@@ -432,14 +433,15 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
       forAll(failureReasons) { (known, _) => unknown should not be known }
 
       val record = LedgerClientImpl.toInteractionRecord(
-        spiInteractionRecord(failure = Some(new SpiLedger.Failure(unknown, "a reason from a newer runtime"))))
+        spiInteractionRecord(failure =
+          Some(new SpiLedger.Failure(unknown, "a reason from a newer runtime", Seq.empty))))
 
       val failure = record.failure().get()
       failure.reason() shouldBe Failure.FailureReason.UNSPECIFIED
       failure.description() shouldBe "a reason from a newer runtime"
       record shouldBe LedgerClientImpl.toInteractionRecord(
         spiInteractionRecord(failure =
-          Some(new SpiLedger.Failure(SpiLedger.FailureReason.Unspecified, "a reason from a newer runtime"))))
+          Some(new SpiLedger.Failure(SpiLedger.FailureReason.Unspecified, "a reason from a newer runtime", Seq.empty))))
     }
 
     "read a finish reason that the SDK does not know as unspecified" in {
@@ -636,7 +638,7 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
       val client = ledgerClient(
         spiInteractionRecord(
           finishReason = unknownValue[SpiLedger.FinishReason],
-          failure = Some(new SpiLedger.Failure(unknownValue[SpiLedger.FailureReason], "failed")),
+          failure = Some(new SpiLedger.Failure(unknownValue[SpiLedger.FailureReason], "failed", Seq.empty)),
           modelResponses = Seq(spiModelResponse(unknownValue[SpiLedger.ToolCallStatus]))),
         Seq(spiEvaluationRecord(unknownValue[SpiLedger.EvaluationTrigger])))
 

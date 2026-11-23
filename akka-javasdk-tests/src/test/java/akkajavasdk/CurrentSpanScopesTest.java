@@ -6,6 +6,7 @@ package akkajavasdk;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import akka.javasdk.evaluation.Subject;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
@@ -13,10 +14,13 @@ import akka.javasdk.testkit.TestModelProvider.AiResponse;
 import akka.javasdk.testkit.TestModelProvider.ToolInvocationRequest;
 import akkajavasdk.components.tracing.SpanRecorder;
 import akkajavasdk.components.tracing.SpanRecordingAgent;
+import akkajavasdk.components.tracing.SpanRecordingDurableEvaluator;
 import akkajavasdk.components.tracing.SpanRecordingEntity;
+import akkajavasdk.components.tracing.SpanRecordingEvaluator;
 import akkajavasdk.components.tracing.SpanRecordingWorkflow;
 import io.opentelemetry.api.trace.SpanContext;
 import io.opentelemetry.sdk.trace.data.SpanData;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.awaitility.Awaitility;
@@ -55,6 +59,21 @@ public class CurrentSpanScopesTest extends TestKitSupport {
                                 && span.getSpanId().equals(recorded.getSpanId()))
                     .extracting(SpanData::getName)
                     .containsExactly(expectedName));
+  }
+
+  // a span with the given name is exported as a child of the recorded span
+  private void assertChildSpanNamed(SpanContext recorded, String childName) {
+    Awaitility.await()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () ->
+                assertThat(testKit.getInMemorySpanExporter().getFinishedSpanItems())
+                    .filteredOn(
+                        span ->
+                            span.getTraceId().equals(recorded.getTraceId())
+                                && span.getName().equals(childName))
+                    .extracting(SpanData::getParentSpanId)
+                    .containsExactly(recorded.getSpanId()));
   }
 
   @Test
@@ -112,5 +131,34 @@ public class CurrentSpanScopesTest extends TestKitSupport {
         .invoke(question);
 
     assertCurrentSpanNamed(awaitRecorded("agent-tool"), "Tool call: SpanRecordingAgent_recordSpan");
+  }
+
+  @Test
+  public void evaluatorHasTheCurrentSpan() {
+    var key = UUID.randomUUID().toString();
+    componentClient
+        .forEvaluator(SpanRecordingEvaluator.class)
+        .startEvaluation(new Subject.Workflow(key, "span-recording-workflow"), Map.of("key", key));
+
+    var recorded = awaitRecorded("evaluator:" + key);
+    assertCurrentSpanNamed(recorded, "Evaluation: span-recording-evaluator");
+    assertChildSpanNamed(recorded, SpanRecordingEvaluator.CUSTOM_SPAN);
+  }
+
+  @Test
+  public void durableEvaluatorStartAndStepHaveTheCurrentSpan() {
+    var key = UUID.randomUUID().toString();
+    componentClient
+        .forEvaluator(SpanRecordingDurableEvaluator.class)
+        .startEvaluation(new Subject.Workflow(key, "span-recording-workflow"), Map.of("key", key));
+
+    var start = awaitRecorded("durable-evaluator-start:" + key);
+    assertCurrentSpanNamed(start, "Workflow: span-recording-durable-evaluator _evaluation-start");
+    assertChildSpanNamed(start, SpanRecordingDurableEvaluator.CUSTOM_START_SPAN);
+
+    var step = awaitRecorded("durable-evaluator-step:" + key);
+    assertCurrentSpanNamed(step, "Workflow: span-recording-durable-evaluator recordStep");
+    assertChildSpanNamed(step, SpanRecordingDurableEvaluator.CUSTOM_STEP_SPAN);
+    assertThat(step.getTraceId()).isEqualTo(start.getTraceId());
   }
 }

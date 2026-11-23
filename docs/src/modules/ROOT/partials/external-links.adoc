@@ -138,6 +138,9 @@
 :url-typesafe-jev: https://docs.typesafe.ai/introduction
 :url-typesafe-jev-api: https://docs.typesafe.ai
 
+// -- openai decision models --
+:url-openai-decisions: https://developers.openai.com/api/docs/guides/decisions
+
 // -- external / model providers --
 :url-ext-anthropic-pricing: https://platform.claude.com/docs/en/about-claude/pricing
 :url-ext-openai-pricing: https://developers.openai.com/api/docs/pricing

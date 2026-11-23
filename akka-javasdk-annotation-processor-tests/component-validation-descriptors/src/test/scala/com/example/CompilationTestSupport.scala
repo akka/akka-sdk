@@ -14,6 +14,7 @@ import scala.jdk.CollectionConverters._
 import scala.util.Using
 
 import akka.javasdk.tooling.validation.Validation
+import akka.javasdk.tooling.validation.Validations
 import akka.javasdk.validation.ast.runtime.RuntimeTypeDef
 import com.example.CompilationTestSupport.CompileTimeValidation
 import com.example.CompilationTestSupport.RuntimeValidation
@@ -61,11 +62,15 @@ trait CompilationTestSupport extends Matchers {
    *
    * @param relativePath
    *   path to the test source file relative to src/test/resources/test-sources
+   * @param classOutputFiles
+   *   contents of the files written to the class output before compiling, keyed by file name
    * @return
    *   CompilationResult containing success status and diagnostics
    */
-  private def compileTestSource(relativePath: String): CompilationResult = {
-    compileWithProcessor(relativePath, "akka.javasdk.tooling.processor.ComponentValidationProcessor")
+  private def compileTestSource(
+      relativePath: String,
+      classOutputFiles: Map[String, String] = Map.empty): CompilationResult = {
+    compileWithProcessor(relativePath, "akka.javasdk.tooling.processor.ComponentValidationProcessor", classOutputFiles)
   }
 
   /**
@@ -75,10 +80,15 @@ trait CompilationTestSupport extends Matchers {
    *   path to the test source file relative to src/test/resources/test-sources
    * @param processorClass
    *   fully qualified class name of the annotation processor to use
+   * @param classOutputFiles
+   *   contents of the files written to the class output before compiling, keyed by file name
    * @return
    *   CompilationResult containing success status and diagnostics
    */
-  private def compileWithProcessor(relativePath: String, processorClass: String): CompilationResult = {
+  private def compileWithProcessor(
+      relativePath: String,
+      processorClass: String,
+      classOutputFiles: Map[String, String]): CompilationResult = {
     val compiler = ToolProvider.getSystemJavaCompiler
     require(compiler != null, "Java compiler not available. Make sure you're running on a JDK, not a JRE.")
 
@@ -110,6 +120,10 @@ trait CompilationTestSupport extends Matchers {
     // Create output directory for compiled classes
     val outputDir = Files.createTempDirectory("component-validation-test")
     outputDir.toFile.deleteOnExit()
+
+    classOutputFiles.foreach { case (fileName, content) =>
+      Files.writeString(outputDir.resolve(fileName), content)
+    }
 
     // Set up compiler options
     val options = List(
@@ -357,6 +371,105 @@ trait CompilationTestSupport extends Matchers {
         validation match {
           case _: Validation.Valid =>
             fail(s"Expected validation errors but got Valid. Expected: ${expectedMessages.mkString(", ")}")
+          case invalid: Validation.Invalid =>
+            val allMessages = invalid.messages().asScala.mkString(" ")
+            val missingMessages = expectedMessages.filterNot(allMessages.contains)
+            if (missingMessages.nonEmpty) {
+              fail(s"Not all expected errors were found. Missing: ${missingMessages.mkString(", ")}. Got: $allMessages")
+            }
+        }
+    }
+  }
+
+  // ==================== Unique Component Id Support ====================
+
+  /**
+   * Compiles a test source file without annotation processing and loads its top-level class and its nested classes.
+   */
+  protected def loadRuntimeClasses(relativePath: String): Seq[Class[_]] = {
+    val runtimeResult = compileTestSourceForRuntime(relativePath)
+    val topLevelClass = loadCompiledClass(runtimeResult, classNameFromPath(relativePath))
+    topLevelClass +: topLevelClass.getDeclaredClasses.toSeq
+  }
+
+  /**
+   * Compiles a test source file with the ComponentValidationProcessor and returns its error messages.
+   */
+  protected def compileTimeErrorMessages(relativePath: String): List[String] = {
+    compileTestSource(relativePath).diagnostics
+      .filter(_.getKind == Diagnostic.Kind.ERROR)
+      .map(_.getMessage(null))
+  }
+
+  /**
+   * Runs the unique component id check over the classes of a test source file.
+   */
+  private def runtimeUniqueIdsValidation(relativePath: String): Validation = {
+    val typeDefs = loadRuntimeClasses(relativePath).map(new RuntimeTypeDef(_))
+    Validations.uniqueComponentIds(typeDefs.asJava, false)
+  }
+
+  /**
+   * Asserts that a test source file compiles with the ComponentValidationProcessor when the class output holds the
+   * given application.conf.
+   */
+  protected def assertCompilesWithApplicationConf(relativePath: String, applicationConf: String): Unit = {
+    assertCompilesWithClassOutputFiles(relativePath, Map("application.conf" -> applicationConf))
+  }
+
+  /**
+   * Asserts that a test source file compiles with the ComponentValidationProcessor when the class output holds the
+   * given files, keyed by file name.
+   */
+  protected def assertCompilesWithClassOutputFiles(
+      relativePath: String,
+      classOutputFiles: Map[String, String]): Unit = {
+    val compileResult = compileTestSource(relativePath, classOutputFiles)
+    assertCompilationSuccess(compileResult)
+  }
+
+  /**
+   * Asserts that a test source file fails to compile with the expected messages when the class output holds the given
+   * application.conf.
+   */
+  protected def assertCompilationFailsWithApplicationConf(
+      relativePath: String,
+      applicationConf: String,
+      expectedMessages: String*): Unit = {
+    val compileResult = compileTestSource(relativePath, Map("application.conf" -> applicationConf))
+    assertCompilationFailure(compileResult, expectedMessages: _*)
+  }
+
+  /**
+   * Asserts that the classes of a test source file pass the unique component id check.
+   */
+  protected def assertUniqueIdsValid(relativePath: String): Unit = {
+    validationMode match {
+      case CompileTimeValidation =>
+        val compileResult = compileTestSource(relativePath)
+        assertCompilationSuccess(compileResult)
+      case RuntimeValidation =>
+        runtimeUniqueIdsValidation(relativePath) match {
+          case _: Validation.Valid =>
+            () // success
+          case invalid: Validation.Invalid =>
+            fail(s"Unique id validation failed: ${invalid.messages().asScala.mkString(", ")}")
+        }
+    }
+  }
+
+  /**
+   * Asserts that the classes of a test source file fail the unique component id check with the expected messages.
+   */
+  protected def assertUniqueIdsInvalid(relativePath: String, expectedMessages: String*): Unit = {
+    validationMode match {
+      case CompileTimeValidation =>
+        val compileResult = compileTestSource(relativePath)
+        assertCompilationFailure(compileResult, expectedMessages: _*)
+      case RuntimeValidation =>
+        runtimeUniqueIdsValidation(relativePath) match {
+          case _: Validation.Valid =>
+            fail(s"Expected unique id errors but got Valid. Expected: ${expectedMessages.mkString(", ")}")
           case invalid: Validation.Invalid =>
             val allMessages = invalid.messages().asScala.mkString(" ")
             val missingMessages = expectedMessages.filterNot(allMessages.contains)

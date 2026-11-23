@@ -11,4 +11,5 @@ record Inventory(
     String groupId,
     String artifactId,
     boolean componentLibrary,
-    List<InventoryComponent> components) {}
+    List<InventoryComponent> components,
+    List<InventoryRoute> routes) {}

@@ -292,6 +292,32 @@ Any component injection happening during the test will now use the custom `Depen
 The test specific `DependencyProvider` must be able to provide all custom dependencies used by
 all components that the test interacts with.
 
+=== Replacing single dependencies
+
+A test can replace single dependencies and keep all other dependencies of the service with
+`TestKit.Settings#withDependencyOverride(dependencyClass, instance)`.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/MyDependencyOverrideIntegrationTest.java[MyDependencyOverrideIntegrationTest.java]
+----
+include::example$doc-snippets/src/test/java/com/example/MyDependencyOverrideIntegrationTest.java[tag=test-di-override]
+----
+<1> Create the instance to use in the test, in this case a fake of a `PaymentGateway` that the service provides.
+<2> Configure the TestKit to inject it for the class `PaymentGateway`.
+
+The service creates its `DependencyProvider` through `createDependencyProvider` as usual. A lookup of a class with an
+override returns the override instance. A lookup of any other class goes to the `DependencyProvider` of the service.
+
+* Call `withDependencyOverride` once for each dependency to replace. A second call for the same class replaces the first.
+* The override matches the exact class of the constructor parameter. An override for an implementation class does not
+  apply to a constructor parameter of its interface type.
+* `TestKitSupport#getDependency(dependencyClass)` returns the override instance, so the test can assert on it.
+* When the test also sets `withDependencyProvider`, a lookup of a class without an override goes to that provider.
+
+NOTE: `createDependencyProvider` still runs. If it creates the real dependency eagerly, for example by opening a
+connection to an external service, the override does not prevent that. Create such dependencies lazily inside the
+`DependencyProvider`.
+
 == Configuration
 
 Configuration properties for the service, or adjustments to the Akka default configuration, can be defined in `src/main/resources/application.conf` in https://github.com/lightbend/config/blob/main/HOCON.md[HOCON format, window="new"].
