@@ -10,7 +10,7 @@ runs:
     - uses: actions/checkout@v6
       with:
         repository: akka/akka-optimize
-        ref: v0.11.0
+        ref: v0.12.0
         path: akka-optimize
         fetch-depth: 0
         sparse-checkout: |
