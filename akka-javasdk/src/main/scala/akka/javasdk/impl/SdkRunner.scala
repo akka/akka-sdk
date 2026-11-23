@@ -124,8 +124,8 @@ import akka.javasdk.impl.timedaction.TimedActionImpl
 import akka.javasdk.impl.timer.TimerSchedulerImpl
 import akka.javasdk.impl.view.ViewDescriptorFactory
 import akka.javasdk.impl.workflow.WorkflowContextImpl
+import akka.javasdk.impl.workflow.WorkflowDescriptor
 import akka.javasdk.impl.workflow.WorkflowImpl
-import akka.javasdk.impl.workflow.{ WorkflowDescriptor => SdkWorkflowDescriptor }
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.keyvalueentity.KeyValueEntityContext
 import akka.javasdk.ledger.LedgerClient
@@ -197,11 +197,11 @@ import akka.runtime.sdk.spi.StartContext
 import akka.runtime.sdk.spi.TimedActionDescriptor
 import akka.runtime.sdk.spi.UserFunctionError
 import akka.runtime.sdk.spi.ViewDescriptor
-import akka.runtime.sdk.spi.WorkflowDescriptor
 import akka.runtime.sdk.spi.WorkflowEvaluatorDescriptor
 import akka.runtime.sdk.spi.WorkflowType
 import akka.runtime.sdk.spi.tracing.InMemorySpanExporter
 import akka.runtime.sdk.spi.{ LedgerClient => SpiLedgerClient }
+import akka.runtime.sdk.spi.{ WorkflowDescriptor => SpiWorkflowDescriptor }
 import akka.stream.Materializer
 import akka.stream.SystemMaterializer
 import com.typesafe.config.Config
@@ -960,7 +960,7 @@ private final class Sdk(
 
   private var eventSourcedEntityDescriptors = Vector.empty[EventSourcedEntityDescriptor]
   private var keyValueEntityDescriptors = Vector.empty[EventSourcedEntityDescriptor]
-  private var workflowDescriptors = Vector.empty[WorkflowDescriptor]
+  private var workflowDescriptors = Vector.empty[SpiWorkflowDescriptor]
   private var timedActionDescriptors = Vector.empty[TimedActionDescriptor]
   private var consumerDescriptors = Vector.empty[ConsumerDescriptor]
   private var viewDescriptors = Vector.empty[ViewDescriptor]
@@ -1182,7 +1182,7 @@ private final class Sdk(
           }.toSet
 
         workflowDescriptors :+=
-          new WorkflowDescriptor(
+          new SpiWorkflowDescriptor(
             componentId,
             clz.getName,
             readOnlyCommandNames,
@@ -1192,7 +1192,7 @@ private final class Sdk(
             provided = false,
             protobufDescriptors = protobufDescriptors.toVector,
             componentType = WorkflowType,
-            stepNames = SdkWorkflowDescriptor.stepNames(clz))
+            stepNames = WorkflowDescriptor.stepNames(clz))
 
       case clz if Reflect.isTimedAction(clz) =>
         val componentId = Reflect.readComponentId(clz)

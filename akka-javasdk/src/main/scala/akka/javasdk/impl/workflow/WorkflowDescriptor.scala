@@ -6,12 +6,17 @@ package akka.javasdk.impl.workflow
 
 import java.lang.reflect.Method
 
+import akka.annotation.InternalApi
 import akka.javasdk.annotations.StepName
 import akka.javasdk.impl.workflow.WorkflowDescriptor.stepMethodName
 import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.Workflow.StepEffect
 import akka.javasdk.workflow.Workflow.StepMethod
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 object WorkflowDescriptor {
 
   def stepMethodName(method: Method): String = {
@@ -43,6 +48,10 @@ object WorkflowDescriptor {
   }
 }
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 class WorkflowDescriptor(workflow: Workflow[_]) {
 
   private val stepMethods =
