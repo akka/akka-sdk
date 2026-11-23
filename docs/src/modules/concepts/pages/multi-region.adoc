@@ -62,6 +62,8 @@ Later writes in Los Angeles are handled locally. Alice's entity continues accept
 
 Replication resumes from recorded progress after an interruption. A surviving region can serve only the writes it has received. Failover can lose writes that never reached a surviving replica; returning regions can also contain conflicting changes that must be resolved.
 
+For illustrated failure cases, see xref:multi-region-errors.adoc[Multi-region error scenarios].
+
 Replication filters constrain where entity data is copied. They help enforce residency requirements, but do not replace choosing appropriate project regions or following the supported primary-transition procedure.
 
 anchor:_replicated_reads_and_the_primary_region[]
