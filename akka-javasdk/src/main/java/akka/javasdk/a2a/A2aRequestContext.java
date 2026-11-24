@@ -58,8 +58,8 @@ public interface A2aRequestContext {
   Optional<String> callerId();
 
   /**
-   * The context id of the conversation. This is the context id of the message. The SDK generates
-   * one for the first message of a conversation, and sends it to the caller in the reply.
+   * The context id of the conversation. This is the context id of the message. The runtime
+   * generates one for the first message of a conversation, and sends it to the caller in the reply.
    */
   String contextId();
 

@@ -6,7 +6,7 @@ image:ROOT:endpoint.png[Endpoint,width=100,float=left] An A2A endpoint makes you
 
 An A2A endpoint is a class that you write. It receives the messages for the agent and translates between A2A messages and your components. Akka does not expose components to A2A callers directly.
 
-Akka serves the protocol. The service supports version 1.0 of the protocol with the JSON-RPC binding. The endpoint answers a message with a message. It does not support tasks, streaming, or push notifications.
+Akka serves the protocol. The service supports version 1.0 of the protocol with the JSON-RPC binding. A request for another version gets the JSON-RPC error `VersionNotSupportedError`. The endpoint answers a message with a message. It does not support tasks, streaming, or push notifications.
 
 == A2A endpoint class
 
@@ -38,15 +38,15 @@ A2A has no way for a caller to choose a skill. The endpoint gets all messages an
 
 === Messages and replies
 
-`A2aMessage` has the id of the message, the context id, the parts, and the metadata. A part is text, structured data, or a file. `message.text()` joins the text parts.
+`A2aMessage` has the id of the message, the context id, the parts, and the metadata. A part has content of one kind: text, a JSON value, a file given by URL, or a file given by its content. A part can also have a media type, a file name, and metadata. `message.text()` joins the text parts.
 
-`A2aReply` has the parts and the metadata of the answer. `A2aReply.text` and `A2aReply.data` create a reply with one part.
+`A2aReply` has the parts and the metadata of the answer. `A2aReply.text` and `A2aReply.data` create a reply with one part. `A2aPart` has methods to create parts of each kind.
 
 An exception from `onMessage` gives the caller an internal error without details. The runtime logs the exception.
 
 == Access control
 
-Use `@Acl` and `@JWT` on the class. They apply to the Agent Card and to all calls. Without an `@Acl`, the runtime denies requests from callers outside the service.
+Use `@Acl` and `@JWT` on the class. They apply to the Agent Card and to all calls, so a caller that needs a JWT for the calls also needs it to fetch the card. The card does not declare security schemes. Without an `@Acl`, the runtime denies requests from callers outside the service.
 
 == Conversations and sessions
 
@@ -54,6 +54,6 @@ A caller groups the messages of a conversation with a context id. The caller cho
 
 `requestContext()` has these values:
 
-* `contextId()` is the context id of the message. For the first message of a conversation, the SDK generates one and sends it to the caller in the reply.
+* `contextId()` is the context id of the message. For the first message of a conversation, the runtime generates one and sends it to the caller in the reply.
 * `callerId()` is the identity of the caller. It is the issuer and subject of the JWT when the request has a JWT with a subject. Otherwise it is the name of the calling service. It is empty for an anonymous caller.
 * `sessionId()` is a session id for an agent. It depends on the caller and the context id, so one caller cannot use the session of another caller by sending the same context id. An anonymous caller has no identity to scope by, so every request of an anonymous caller gets a new session id.

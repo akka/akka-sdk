@@ -115,16 +115,21 @@ public class A2aEndpointTest extends TestKitSupport {
   }
 
   @Test
-  public void rejectUnsupportedVersion() {
+  public void rejectUnsupportedVersionWithJsonRpcError() throws Exception {
+    var body =
+        "{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"SendMessage\",\"params\":{\"message\":"
+            + "{\"messageId\":\"m1\",\"role\":\"ROLE_USER\",\"parts\":[{\"text\":\"hi\"}]}}}";
     var response =
         httpClient
             .POST("/a2a/test")
             .addHeader("A2A-Version", "0.3")
-            .withRequestBody(
-                ContentTypes.APPLICATION_JSON,
-                "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"SendMessage\"}"
-                    .getBytes(StandardCharsets.UTF_8))
+            .withRequestBody(ContentTypes.APPLICATION_JSON, body.getBytes(StandardCharsets.UTF_8))
             .invoke();
-    assertThat(response.status()).isEqualTo(StatusCodes.BAD_REQUEST);
+    assertThat(response.status()).isEqualTo(StatusCodes.OK);
+    var node = mapper.readTree(response.body().utf8String());
+    assertThat(node.get("id").asInt()).isEqualTo(3);
+    assertThat(node.get("error").get("code").asInt()).isEqualTo(-32009);
+    assertThat(node.get("error").get("data").get("supportedVersions").get(0).asText())
+        .isEqualTo("1.0");
   }
 }

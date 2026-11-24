@@ -16,12 +16,16 @@ public record A2aReply(List<A2aPart> parts, Map<String, Object> metadata) {
 
   /** A reply with one text part. */
   public static A2aReply text(String text) {
-    return new A2aReply(List.of(new A2aPart.TextPart(text)), Map.of());
+    return of(A2aPart.text(text));
   }
 
-  /** A reply with one data part. */
-  public static A2aReply data(Map<String, Object> data) {
-    return new A2aReply(List.of(new A2aPart.DataPart(data)), Map.of());
+  /**
+   * A reply with one data part.
+   *
+   * @param value plain JSON values: strings, numbers, booleans, null, and maps and lists of those
+   */
+  public static A2aReply data(Object value) {
+    return of(A2aPart.data(value));
   }
 
   /** A reply with the given parts. */

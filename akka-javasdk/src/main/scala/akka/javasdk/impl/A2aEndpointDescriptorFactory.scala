@@ -27,12 +27,14 @@ import akka.javasdk.impl.telemetry.Telemetry
 import akka.runtime.sdk.spi.A2aEndpointConstructionContext
 import akka.runtime.sdk.spi.A2aEndpointDescriptor
 import akka.runtime.sdk.spi.A2aEndpointDescriptor.Card
-import akka.runtime.sdk.spi.A2aEndpointDescriptor.DataPart
-import akka.runtime.sdk.spi.A2aEndpointDescriptor.FilePart
+import akka.runtime.sdk.spi.A2aEndpointDescriptor.DataContent
+import akka.runtime.sdk.spi.A2aEndpointDescriptor.PartContent
 import akka.runtime.sdk.spi.A2aEndpointDescriptor.Provider
+import akka.runtime.sdk.spi.A2aEndpointDescriptor.RawContent
 import akka.runtime.sdk.spi.A2aEndpointDescriptor.Reply
 import akka.runtime.sdk.spi.A2aEndpointDescriptor.Skill
-import akka.runtime.sdk.spi.A2aEndpointDescriptor.TextPart
+import akka.runtime.sdk.spi.A2aEndpointDescriptor.TextContent
+import akka.runtime.sdk.spi.A2aEndpointDescriptor.UrlContent
 import akka.runtime.sdk.spi.ComponentOptions
 
 /**
@@ -44,13 +46,12 @@ object A2aEndpointDescriptorFactory {
   /** What the SDK derives from the call for the request context of the endpoint. */
   final case class CallContext(callerId: Option[String], contextId: String, sessionId: String)
 
-  def callContext(context: A2aEndpointConstructionContext, messageContextId: Option[String]): CallContext = {
+  def callContext(context: A2aEndpointConstructionContext, contextId: String): CallContext = {
     val callerId = context.jwt
       .flatMap { claims =>
         claims.getStringClaim("sub").map(subject => s"jwt:${claims.getStringClaim("iss").getOrElse("")}:$subject")
       }
       .orElse(context.principal.service.map(service => s"service:$service"))
-    val contextId = messageContextId.getOrElse(UUID.randomUUID().toString)
     // The caller picks the context id, so only a caller with an identity can have a session that lasts.
     val sessionId = callerId match {
       case Some(id) => sessionIdFor(id, contextId)
@@ -94,7 +95,7 @@ object A2aEndpointDescriptorFactory {
           if (reply == null)
             throw new IllegalStateException(
               s"A2A endpoint [${endpointClass.getName}] returned null from onMessage, it must return a reply")
-          toSpiReply(reply, call.contextId)
+          toSpiReply(reply)
         }
       }
 
@@ -112,24 +113,57 @@ object A2aEndpointDescriptorFactory {
   private def toSdkMessage(message: A2aEndpointDescriptor.Message): A2aMessage =
     new A2aMessage(
       message.messageId,
-      message.contextId.toJava,
+      message.contextId,
       message.parts.map(toSdkPart).asJava,
       message.metadata.asJava.asInstanceOf[java.util.Map[String, Object]])
 
-  private def toSdkPart(part: A2aEndpointDescriptor.Part): A2aPart = part match {
-    case text: TextPart => new A2aPart.TextPart(text.text)
-    case data: DataPart => new A2aPart.DataPart(data.data.asJava.asInstanceOf[java.util.Map[String, Object]])
-    case file: FilePart =>
-      new A2aPart.FilePart(file.uri.toJava, file.bytes.toJava, file.mediaType.toJava, file.filename.toJava)
+  private def toSdkPart(part: A2aEndpointDescriptor.Part): A2aPart = {
+    val content = part.content match {
+      case text: TextContent => new A2aPart.Content.Text(text.text)
+      case data: DataContent => new A2aPart.Content.Data(toJava(data.value))
+      case url: UrlContent   => new A2aPart.Content.Url(url.url)
+      case raw: RawContent   => new A2aPart.Content.Raw(raw.base64)
+    }
+    new A2aPart(
+      content,
+      part.mediaType.toJava,
+      part.filename.toJava,
+      part.metadata.asJava.asInstanceOf[java.util.Map[String, Object]])
   }
 
-  private def toSpiReply(reply: A2aReply, contextId: String): Reply =
-    new Reply(reply.parts().asScala.toSeq.map(toSpiPart), reply.metadata().asScala.toMap[String, Any], Some(contextId))
+  // JSON values from the runtime are Scala maps and sequences
+  private def toJava(value: Any): AnyRef = value match {
+    case map: scala.collection.Map[_, _] =>
+      val result = new java.util.LinkedHashMap[String, AnyRef]()
+      map.foreach { case (key, v) => result.put(key.toString, toJava(v)) }
+      result
+    case seq: scala.collection.Iterable[_] =>
+      val result = new java.util.ArrayList[AnyRef]()
+      seq.foreach(v => result.add(toJava(v)))
+      result
+    case other => other.asInstanceOf[AnyRef]
+  }
 
-  private def toSpiPart(part: A2aPart): A2aEndpointDescriptor.Part = part match {
-    case text: A2aPart.TextPart => new TextPart(text.text())
-    case data: A2aPart.DataPart => new DataPart(data.data().asScala.toMap[String, Any])
-    case file: A2aPart.FilePart =>
-      new FilePart(file.uri().toScala, file.bytes().toScala, file.mediaType().toScala, file.filename().toScala)
+  private def toScala(value: Any): Any = value match {
+    case map: java.util.Map[_, _]      => map.asScala.map { case (key, v) => key.toString -> toScala(v) }.toMap
+    case list: java.util.Collection[_] => list.asScala.map(toScala).toVector
+    case other                         => other
+  }
+
+  private def toSpiReply(reply: A2aReply): Reply =
+    new Reply(reply.parts().asScala.toSeq.map(toSpiPart), reply.metadata().asScala.toMap[String, Any])
+
+  private def toSpiPart(part: A2aPart): A2aEndpointDescriptor.Part = {
+    val content: PartContent = part.content() match {
+      case text: A2aPart.Content.Text => new TextContent(text.text())
+      case data: A2aPart.Content.Data => new DataContent(toScala(data.value()))
+      case url: A2aPart.Content.Url   => new UrlContent(url.url())
+      case raw: A2aPart.Content.Raw   => new RawContent(raw.base64())
+    }
+    new A2aEndpointDescriptor.Part(
+      content,
+      part.mediaType().toScala,
+      part.filename().toScala,
+      part.metadata().asScala.toMap[String, Any])
   }
 }

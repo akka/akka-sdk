@@ -9,8 +9,10 @@ import scala.concurrent.ExecutionContext
 import akka.javasdk.impl.a2a.TestA2aEndpoints
 import akka.runtime.sdk.spi.A2aEndpointConstructionContext
 import akka.runtime.sdk.spi.A2aEndpointDescriptor
-import akka.runtime.sdk.spi.A2aEndpointDescriptor.DataPart
-import akka.runtime.sdk.spi.A2aEndpointDescriptor.TextPart
+import akka.runtime.sdk.spi.A2aEndpointDescriptor.DataContent
+import akka.runtime.sdk.spi.A2aEndpointDescriptor.Part
+import akka.runtime.sdk.spi.A2aEndpointDescriptor.TextContent
+import akka.runtime.sdk.spi.A2aEndpointDescriptor.UrlContent
 import akka.runtime.sdk.spi.HttpRequestHeaders
 import akka.runtime.sdk.spi.JwtClaims
 import akka.runtime.sdk.spi.RequestPrincipal
@@ -49,8 +51,11 @@ class A2aEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers with Sc
       override def spiffeContext: Option[SpiSpiffeContext] = None
     }
 
-  private def message(contextId: Option[String], text: String = "hello") =
-    new A2aEndpointDescriptor.Message("m1", contextId, None, Seq(new TextPart(text)), Map.empty)
+  private def message(contextId: String, text: String = "hello") =
+    new A2aEndpointDescriptor.Message("m1", contextId, None, Seq(new Part(new TextContent(text))), Map.empty)
+
+  private def textOf(reply: A2aEndpointDescriptor.Reply): String =
+    reply.parts.head.content.asInstanceOf[TextContent].text
 
   private lazy val claimsDescriptor = A2aEndpointDescriptorFactory(
     classOf[TestA2aEndpoints.ClaimsEndpoint],
@@ -61,7 +66,7 @@ class A2aEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers with Sc
     })
 
   private def reply(context: A2aEndpointConstructionContext, message: A2aEndpointDescriptor.Message): String =
-    claimsDescriptor.handler(context, message).futureValue.parts.head.asInstanceOf[TextPart].text
+    textOf(claimsDescriptor.handler(context, message).futureValue)
 
   "The A2A endpoint descriptor factory" should {
 
@@ -102,25 +107,16 @@ class A2aEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers with Sc
       exception.getMessage should include("same")
     }
 
-    "give the endpoint the text of the message and send the context id in the reply" in {
+    "give the endpoint the text and the context id of the message" in {
       val jwt = Some(claims(Map("iss" -> "https://issuer.example.com", "sub" -> "alice")))
-      val response = claimsDescriptor.handler(context(jwt), message(Some("ctx-1"))).futureValue
-      response.contextId shouldBe Some("ctx-1")
-      val text = response.parts.head.asInstanceOf[TextPart].text
+      val text = textOf(claimsDescriptor.handler(context(jwt), message("ctx-1")).futureValue)
       text should include("context=ctx-1")
       text should include("text=hello")
     }
 
-    "generate a context id for the first message and send it in the reply" in {
-      val response = claimsDescriptor.handler(context(), message(None)).futureValue
-      val generated = response.contextId.get
-      generated should not be empty
-      response.parts.head.asInstanceOf[TextPart].text should include(s"context=$generated")
-    }
-
     "scope the session by caller and context id" in {
       def session(jwt: Map[String, String], contextId: String) =
-        reply(context(Some(claims(jwt))), message(Some(contextId))).split(",").head
+        reply(context(Some(claims(jwt))), message(contextId)).split(",").head
 
       val alice = Map("iss" -> "https://issuer.example.com", "sub" -> "alice")
       val bob = Map("iss" -> "https://issuer.example.com", "sub" -> "bob")
@@ -133,36 +129,50 @@ class A2aEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers with Sc
     }
 
     "scope the session of a calling service by its name" in {
-      def session(service: String) = reply(context(service = Some(service)), message(Some("ctx-1"))).split(",").head
+      def session(service: String) = reply(context(service = Some(service)), message("ctx-1")).split(",").head
       session("billing") shouldBe session("billing")
       session("billing") should not be session("shipping")
     }
 
     "give an anonymous caller a new session for each request" in {
-      def session() = reply(context(), message(Some("ctx-1"))).split(",").head
+      def session() = reply(context(), message("ctx-1")).split(",").head
       session() should not be session()
     }
 
-    "convert structured parts and metadata" in {
+    "convert structured parts and metadata in both directions" in {
       val descriptor = A2aEndpointDescriptorFactory(
         classOf[TestA2aEndpoints.RootEndpoint],
         (_: A2aEndpointConstructionContext, _: A2aEndpointDescriptorFactory.CallContext) => {
           new TestA2aEndpoints.RootEndpoint {
             override def onMessage(message: akka.javasdk.a2a.A2aMessage): akka.javasdk.a2a.A2aReply = {
-              message.parts().get(1) shouldBe an[akka.javasdk.a2a.A2aPart.DataPart]
+              val parts = message.parts()
+              parts.get(0).metadata().get("k") shouldBe "v"
+              parts.get(1).content() shouldBe new akka.javasdk.a2a.A2aPart.Content.Data(
+                java.util.List.of(Integer.valueOf(1), Integer.valueOf(2)))
+              parts.get(2).content() shouldBe new akka.javasdk.a2a.A2aPart.Content.Url("https://x/f.txt")
+              parts.get(2).mediaType().get() shouldBe "text/plain"
+              parts.get(2).filename().get() shouldBe "f.txt"
               message.metadata().get("skillId") shouldBe "status"
-              akka.javasdk.a2a.A2aReply.data(java.util.Map.of("answer", Integer.valueOf(42)))
+              akka.javasdk.a2a.A2aReply.of(
+                akka.javasdk.a2a.A2aPart.data(java.util.Map.of("answer", java.util.List.of(Integer.valueOf(42)))),
+                akka.javasdk.a2a.A2aPart.url("https://x/g.txt").withMediaType("text/plain").withFilename("g.txt"))
             }
           }
         })
       val input = new A2aEndpointDescriptor.Message(
         "m1",
+        "ctx-1",
         None,
-        None,
-        Seq(new TextPart("a"), new DataPart(Map("k" -> "v"))),
+        Seq(
+          new Part(new TextContent("a"), None, None, Map("k" -> "v")),
+          new Part(new DataContent(Vector(1, 2))),
+          new Part(new UrlContent("https://x/f.txt"), Some("text/plain"), Some("f.txt"), Map.empty)),
         Map("skillId" -> "status"))
       val response = descriptor.handler(context(), input).futureValue
-      response.parts.head.asInstanceOf[DataPart].data shouldBe Map("answer" -> 42)
+      response.parts.head.content.asInstanceOf[DataContent].value shouldBe Map("answer" -> Vector(42))
+      val file = response.parts(1)
+      file.content.asInstanceOf[UrlContent].url shouldBe "https://x/g.txt"
+      (file.mediaType, file.filename) shouldBe ((Some("text/plain"), Some("g.txt")))
     }
 
     "fail when the endpoint returns null" in {
@@ -170,7 +180,7 @@ class A2aEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers with Sc
         classOf[TestA2aEndpoints.RootEndpoint],
         (_: A2aEndpointConstructionContext, _: A2aEndpointDescriptorFactory.CallContext) =>
           new TestA2aEndpoints.RootEndpoint)
-      descriptor.handler(context(), message(None)).failed.futureValue shouldBe an[IllegalStateException]
+      descriptor.handler(context(), message("ctx-1")).failed.futureValue shouldBe an[IllegalStateException]
     }
   }
 }
