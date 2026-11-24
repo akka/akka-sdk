@@ -930,8 +930,8 @@ private[impl] final class AgentImpl(
                 responseGuardrails = guardrails.legacyModelResponseGuardrails,
                 guardrails = guardrails.guardrails,
                 contentLoader = spiContentLoader,
-                callToolFunction = callToolFunction)
-                .withA2aAgentDescriptors(a2aAgentDescriptors)
+                callToolFunction = callToolFunction,
+                a2aAgentDescriptors = a2aAgentDescriptors)
             else
               new SpiAgent.RequestModelEffect(
                 modelProvider = spiModelProvider,
@@ -948,8 +948,8 @@ private[impl] final class AgentImpl(
                 onSuccessAsSent = onSuccessAsSent,
                 guardrails = guardrails.guardrails,
                 contentLoader = spiContentLoader,
-                callToolFunction = callToolFunction)
-                .withA2aAgentDescriptors(a2aAgentDescriptors)
+                callToolFunction = callToolFunction,
+                a2aAgentDescriptors = a2aAgentDescriptors)
 
           case NoPrimaryEffect =>
             errorOrReply match {
