@@ -264,13 +264,35 @@ Events and state changes persisted before the start point are not delivered, als
 The start point is recorded when the consumer is first deployed and is permanent. The consumer never receives events from before it.
 
 * A consumer that is already deployed and gets `@Consume.StartFrom` skips the events from before the start point that it has not yet processed.
-* Clearing the offsets of the consumer makes it process everything since the start point again, not the whole history. A consumer that sends notifications sends them again for all events since the start point.
+* Clearing the offsets of the consumer makes it process everything since the start point again, not the whole history. A consumer that sends notifications sends them again for all events since the start point. See <<reset-consumer-offset>> for how to clear the offsets.
 * A consumer that is added again with an old component id reuses its recorded start point and stored offsets.
 * Changing a timestamp to `latest = true` is accepted and keeps the recorded timestamp. Changing `latest = true` to a timestamp is refused.
 
 WARNING: Removing `@Consume.StartFrom` or changing it to another timestamp after the consumer has been deployed is not supported, the service refuses to start. This also applies when you roll back to a version of the service without the annotation. To start over from a different point, give the consumer a new component id. That discards the processing progress of the consumer. To change a recorded start point, contact support.
 
 In development mode and in tests nothing is recorded. `latest = true` is then the time of each start of the service, and events that are written while the service is stopped are not delivered. Messages that a test publishes through the test kit do not go through the start point. A timestamp in the future delivers nothing until that time, and the service logs a warning.
+
+[#reset-consumer-offset]
+== Reprocessing a consumer from the beginning
+
+To make a consumer process its source from the beginning again, reset its offset. Do this, for example, after you fix a defect in the consumer or when a new external system needs all events. A consumer that starts from snapshots restarts from its snapshots. Events from before the start point of the consumer or of the service are still skipped, see <<_starting_from_the_latest_events_or_a_timestamp>>.
+
+WARNING: The consumer receives its events again, so side effects such as publishing to a topic or calling an external system happen again. A reset cannot be undone.
+
+[source, command line]
+----
+akka services components consumers reset-offset my-service my-consumer  # <1>
+----
+
+<1> Replace `my-service` with your service name and `my-consumer` with the component id of the consumer.
+
+To reset a consumer of a service that runs locally, use `akka local services components consumers reset-offset`. See xref:reference:cli/akka-cli/index.adoc[the CLI reference] for all options.
+
+* The command asks for confirmation. Pass `--force` to skip the question.
+* A reset applies to the region that handles the request, not to other regions. In a project with more than one region, pass `--region` to reset one region or `--all-regions` to reset every region.
+* A paused consumer is reset and stays paused.
+* The command returns when the offset is reset, not when the consumer has processed the events. Use `akka services components check-progress` to follow the progress.
+* Resetting is not supported for Views, for consumers of a message broker topic, or for consumers that produce a service stream. A broker keeps the offset of a topic consumer. To rebuild an inactive View, drop its data with `akka services views drop`.
 
 == Metadata
 
