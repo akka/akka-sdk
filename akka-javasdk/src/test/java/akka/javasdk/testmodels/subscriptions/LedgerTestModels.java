@@ -7,11 +7,49 @@ package akka.javasdk.testmodels.subscriptions;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.consumer.Consumer;
 import akka.javasdk.consumer.MessageContext;
+import akka.javasdk.ledger.ActivityRecord;
+import akka.javasdk.ledger.ClassificationRecord;
+import akka.javasdk.ledger.EvaluationRecord;
 import akka.javasdk.ledger.FlowRecord;
 import akka.javasdk.ledger.GuardrailDecisionRecord;
 import akka.javasdk.ledger.InteractionRecord;
 
 public class LedgerTestModels {
+
+  @Consume.FromLedger
+  public static class InteractionConsumer extends Consumer {
+    public Effect onInteraction(InteractionRecord record) {
+      return effects().done();
+    }
+  }
+
+  @Consume.FromLedger
+  public static class ActivityConsumer extends Consumer {
+    public Effect onActivity(ActivityRecord record) {
+      return effects().done();
+    }
+  }
+
+  @Consume.FromLedger
+  public static class GuardrailDecisionConsumer extends Consumer {
+    public Effect onGuardrailDecision(GuardrailDecisionRecord record) {
+      return effects().done();
+    }
+  }
+
+  @Consume.FromLedger
+  public static class EvaluationConsumer extends Consumer {
+    public Effect onEvaluation(EvaluationRecord record) {
+      return effects().done();
+    }
+  }
+
+  @Consume.FromLedger
+  public static class ClassificationConsumer extends Consumer {
+    public Effect onClassification(ClassificationRecord record) {
+      return effects().done();
+    }
+  }
 
   @Consume.FromLedger
   public static class InteractionAndGuardrailConsumer extends Consumer {

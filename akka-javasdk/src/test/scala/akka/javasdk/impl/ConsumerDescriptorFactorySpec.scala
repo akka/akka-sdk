@@ -7,9 +7,20 @@ package akka.javasdk.impl
 import java.time.Instant
 
 import akka.javasdk.impl.serialization.Serializer
+import akka.javasdk.ledger.ActivityRecord
+import akka.javasdk.ledger.ClassificationRecord
+import akka.javasdk.ledger.EvaluationRecord
+import akka.javasdk.ledger.FlowRecord
+import akka.javasdk.ledger.GuardrailDecisionRecord
+import akka.javasdk.ledger.InteractionRecord
 import akka.javasdk.testmodels.keyvalueentity.CounterState
+import akka.javasdk.testmodels.subscriptions.LedgerTestModels.ActivityConsumer
 import akka.javasdk.testmodels.subscriptions.LedgerTestModels.AllRecordsConsumer
+import akka.javasdk.testmodels.subscriptions.LedgerTestModels.ClassificationConsumer
+import akka.javasdk.testmodels.subscriptions.LedgerTestModels.EvaluationConsumer
+import akka.javasdk.testmodels.subscriptions.LedgerTestModels.GuardrailDecisionConsumer
 import akka.javasdk.testmodels.subscriptions.LedgerTestModels.InteractionAndGuardrailConsumer
+import akka.javasdk.testmodels.subscriptions.LedgerTestModels.InteractionConsumer
 import akka.javasdk.testmodels.subscriptions.LedgerTestModels.StartFromLatestLedgerConsumer
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.AclEventStreamPublishingConsumer
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.DenyAclEventStreamPublishingConsumer
@@ -35,10 +46,19 @@ import akka.runtime.sdk.spi.ServiceNamePattern
 import akka.runtime.sdk.spi.SpiLedger
 import akka.runtime.sdk.spi.SpiffePattern
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.wordspec.AnyWordSpec
 import protoconsumer.EventsForConsumer
 
-class ConsumerDescriptorFactorySpec extends AnyWordSpec with Matchers {
+class ConsumerDescriptorFactorySpec extends AnyWordSpec with Matchers with TableDrivenPropertyChecks {
+
+  private val ledgerConsumers = Table[Class[_], Class[_], SpiLedger.RecordType](
+    ("record class", "consumer", "record type"),
+    (classOf[InteractionRecord], classOf[InteractionConsumer], SpiLedger.RecordType.Interaction),
+    (classOf[ActivityRecord], classOf[ActivityConsumer], SpiLedger.RecordType.Activity),
+    (classOf[GuardrailDecisionRecord], classOf[GuardrailDecisionConsumer], SpiLedger.RecordType.GuardrailDecision),
+    (classOf[EvaluationRecord], classOf[EvaluationConsumer], SpiLedger.RecordType.Evaluation),
+    (classOf[ClassificationRecord], classOf[ClassificationConsumer], SpiLedger.RecordType.Classification))
 
   "Consumer descriptor factory" should {
 
@@ -188,6 +208,15 @@ class ConsumerDescriptorFactorySpec extends AnyWordSpec with Matchers {
           SpiLedger.RecordType.GuardrailDecision,
           SpiLedger.RecordType.Evaluation,
           SpiLedger.RecordType.Classification))
+    }
+
+    "create a ledger source with only the record type of each record class" in {
+      ledgerConsumers.map(_._1).toSet shouldBe classOf[FlowRecord].getPermittedSubclasses.toSet
+      ledgerConsumers.map(_._3).toSet should have size ledgerConsumers.size
+      forAll(ledgerConsumers) { (recordClass, consumer, recordType) =>
+        consumer.getMethods.exists(_.getParameterTypes.sameElements(Array(recordClass))) shouldBe true
+        ComponentDescriptorFactory.consumerSource(consumer) shouldBe new ConsumerSource.LedgerSource(Set(recordType))
+      }
     }
 
     "read the start point of a ledger consumer from @Consume.StartFrom" in {
