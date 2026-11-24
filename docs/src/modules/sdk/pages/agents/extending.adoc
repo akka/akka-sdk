@@ -242,6 +242,8 @@ The runtime applies these rules:
 
 The tool name that the model sees is the logical name of the remote agent and the skill id, joined with a double underscore, for example `claims__lookup-claim`. The runtime replaces characters that models do not accept, and adds a short hash to the name when two skills would get the same name.
 
+To test an agent that uses a remote A2A agent, see xref:sdk:agents/testing.adoc#mocking_a2a_agents[Mocking a remote A2A agent].
+
 To allow or deny calls to a skill through configuration, use a `ToolCallGuardrail`. The guardrail context has the origin `RemoteA2a` with the name of the remote agent and the skill id. See xref:sdk:agents/guardrails.adoc[Guardrails].
 
 [#configuring_tool_call_limits]

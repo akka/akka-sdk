@@ -41,6 +41,7 @@ import akka.javasdk.impl.timer.TimerSchedulerImpl;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akka.javasdk.ledger.LedgerClient;
 import akka.javasdk.testkit.EventingTestKit.IncomingMessages;
+import akka.javasdk.testkit.impl.MockedA2aAgentsServer;
 import akka.javasdk.testkit.impl.MockedGrpcServicesImpl;
 import akka.javasdk.testkit.impl.MockedHttpServicesImpl;
 import akka.javasdk.testkit.impl.SseRouteTesterImpl;
@@ -282,7 +283,8 @@ public class TestKit {
             new HashMap<>(),
             Collections.emptyList(),
             false,
-            Optional.empty());
+            Optional.empty(),
+            Collections.emptyList());
 
     /** The name of this service when deployed. */
     public final String serviceName;
@@ -340,6 +342,9 @@ public class TestKit {
      */
     public final Optional<DecisionModelProvider> decisionModelProvider;
 
+    /** The mocked remote A2A agents, see {@link #withMockedA2aAgent(MockA2aAgent)}. */
+    public final List<MockA2aAgent> a2aMocks;
+
     public enum EventingSupport {
       /**
        * This is the default type used and allows the testing eventing integrations without an
@@ -377,7 +382,8 @@ public class TestKit {
         Map<String, Map<Class<? extends AkkaGrpcClient>, AkkaGrpcClient>> grpcMocks,
         List<ObjectStorageBucketConfig> objectStorageBuckets,
         boolean ephemeralPort,
-        Optional<DecisionModelProvider> decisionModelProvider) {
+        Optional<DecisionModelProvider> decisionModelProvider,
+        List<MockA2aAgent> a2aMocks) {
       this.serviceName = serviceName;
       this.aclEnabled = aclEnabled;
       this.eventingSupport = eventingSupport;
@@ -393,6 +399,7 @@ public class TestKit {
       this.objectStorageBuckets = objectStorageBuckets;
       this.ephemeralPort = ephemeralPort;
       this.decisionModelProvider = decisionModelProvider;
+      this.a2aMocks = a2aMocks;
     }
 
     /**
@@ -420,7 +427,8 @@ public class TestKit {
           grpcMocks,
           objectStorageBuckets,
           ephemeralPort,
-          decisionModelProvider);
+          decisionModelProvider,
+          a2aMocks);
     }
 
     /**
@@ -444,7 +452,8 @@ public class TestKit {
           grpcMocks,
           objectStorageBuckets,
           ephemeralPort,
-          decisionModelProvider);
+          decisionModelProvider,
+          a2aMocks);
     }
 
     /**
@@ -468,7 +477,8 @@ public class TestKit {
           grpcMocks,
           objectStorageBuckets,
           ephemeralPort,
-          decisionModelProvider);
+          decisionModelProvider,
+          a2aMocks);
     }
 
     /**
@@ -508,7 +518,8 @@ public class TestKit {
           grpcMocks,
           objectStorageBuckets,
           true,
-          decisionModelProvider);
+          decisionModelProvider,
+          a2aMocks);
     }
 
     /** Mock the incoming messages flow from a KeyValueEntity. */
@@ -530,7 +541,8 @@ public class TestKit {
           grpcMocks,
           objectStorageBuckets,
           ephemeralPort,
-          decisionModelProvider);
+          decisionModelProvider,
+          a2aMocks);
     }
 
     /** Mock the incoming events flow from an EventSourcedEntity. */
@@ -552,7 +564,8 @@ public class TestKit {
           grpcMocks,
           objectStorageBuckets,
           ephemeralPort,
-          decisionModelProvider);
+          decisionModelProvider,
+          a2aMocks);
     }
 
     /** Mock the incoming state updates flow from a Workflow. */
@@ -573,7 +586,8 @@ public class TestKit {
           grpcMocks,
           objectStorageBuckets,
           ephemeralPort,
-          decisionModelProvider);
+          decisionModelProvider,
+          a2aMocks);
     }
 
     /**
@@ -595,7 +609,8 @@ public class TestKit {
           grpcMocks,
           objectStorageBuckets,
           ephemeralPort,
-          decisionModelProvider);
+          decisionModelProvider,
+          a2aMocks);
     }
 
     /** Mock the incoming events flow from a Topic. */
@@ -615,7 +630,8 @@ public class TestKit {
           grpcMocks,
           objectStorageBuckets,
           ephemeralPort,
-          decisionModelProvider);
+          decisionModelProvider,
+          a2aMocks);
     }
 
     /** Mock the outgoing events flow for a Topic. */
@@ -635,7 +651,8 @@ public class TestKit {
           grpcMocks,
           objectStorageBuckets,
           ephemeralPort,
-          decisionModelProvider);
+          decisionModelProvider,
+          a2aMocks);
     }
 
     /**
@@ -658,7 +675,8 @@ public class TestKit {
           grpcMocks,
           objectStorageBuckets,
           ephemeralPort,
-          decisionModelProvider);
+          decisionModelProvider,
+          a2aMocks);
     }
 
     public Settings withEventingSupport(EventingSupport eventingSupport) {
@@ -677,7 +695,8 @@ public class TestKit {
           grpcMocks,
           objectStorageBuckets,
           ephemeralPort,
-          decisionModelProvider);
+          decisionModelProvider,
+          a2aMocks);
     }
 
     /**
@@ -700,7 +719,8 @@ public class TestKit {
           grpcMocks,
           objectStorageBuckets,
           ephemeralPort,
-          decisionModelProvider);
+          decisionModelProvider,
+          a2aMocks);
     }
 
     /**
@@ -778,7 +798,8 @@ public class TestKit {
           grpcMocks,
           objectStorageBuckets,
           ephemeralPort,
-          decisionModelProvider);
+          decisionModelProvider,
+          a2aMocks);
     }
 
     /**
@@ -801,7 +822,8 @@ public class TestKit {
           grpcMocks,
           objectStorageBuckets,
           ephemeralPort,
-          decisionModelProvider);
+          decisionModelProvider,
+          a2aMocks);
     }
 
     /**
@@ -825,7 +847,8 @@ public class TestKit {
           grpcMocks,
           objectStorageBuckets,
           ephemeralPort,
-          decisionModelProvider);
+          decisionModelProvider,
+          a2aMocks);
     }
 
     /**
@@ -851,7 +874,8 @@ public class TestKit {
           grpcMocks,
           objectStorageBuckets,
           ephemeralPort,
-          decisionModelProvider);
+          decisionModelProvider,
+          a2aMocks);
     }
 
     /**
@@ -877,7 +901,8 @@ public class TestKit {
           grpcMocks,
           objectStorageBuckets,
           ephemeralPort,
-          decisionModelProvider);
+          decisionModelProvider,
+          a2aMocks);
     }
 
     /**
@@ -901,7 +926,36 @@ public class TestKit {
           grpcMocks,
           objectStorageBuckets,
           ephemeralPort,
-          Optional.of(decisionModelProvider));
+          Optional.of(decisionModelProvider),
+          a2aMocks);
+    }
+
+    /**
+     * Mock a remote A2A agent. The testkit serves its agent card and answers calls to its skills,
+     * and configures the agent name so that {@code RemoteA2aAgent.named(name)} reaches the mock.
+     *
+     * @param mock The mocked remote agent.
+     * @return The updated settings.
+     */
+    public Settings withMockedA2aAgent(MockA2aAgent mock) {
+      var newMocks = new ArrayList<>(a2aMocks);
+      newMocks.add(mock);
+      return new Settings(
+          serviceName,
+          aclEnabled,
+          eventingSupport,
+          mockedEventing,
+          dependencyProvider,
+          additionalConfig,
+          disabledComponents,
+          overrideDisabledComponents,
+          modelProvidersByAgentId,
+          httpMocks,
+          grpcMocks,
+          objectStorageBuckets,
+          ephemeralPort,
+          decisionModelProvider,
+          List.copyOf(newMocks));
     }
 
     /**
@@ -942,7 +996,8 @@ public class TestKit {
           grpcMocks,
           objectStorageBuckets,
           ephemeralPort,
-          decisionModelProvider);
+          decisionModelProvider,
+          a2aMocks);
     }
 
     /**
@@ -970,7 +1025,8 @@ public class TestKit {
           grpcMocks,
           newBuckets,
           ephemeralPort,
-          decisionModelProvider);
+          decisionModelProvider,
+          a2aMocks);
     }
 
     /**
@@ -1018,7 +1074,8 @@ public class TestKit {
           newGrpcMocks,
           objectStorageBuckets,
           ephemeralPort,
-          decisionModelProvider);
+          decisionModelProvider,
+          a2aMocks);
     }
 
     @Override
@@ -1082,6 +1139,7 @@ public class TestKit {
   private GrpcClientProviderImpl grpcClientProvider;
   private MockedHttpServicesImpl mockedHttpServices;
   private MockedGrpcServicesImpl mockedGrpcServices;
+  private MockedA2aAgentsServer a2aMockServer;
   private HttpClient selfHttpClient;
   private TimerScheduler timerScheduler;
   private Optional<DependencyProvider> dependencyProvider;
@@ -1122,7 +1180,15 @@ public class TestKit {
     if (started) throw new IllegalStateException("Testkit already started");
 
     eventingTestKitPort = availableEventingTestKitPort();
-    startRuntime(settings.additionalConfig);
+    if (!settings.a2aMocks.isEmpty()) {
+      a2aMockServer = MockedA2aAgentsServer.start(settings.a2aMocks);
+    }
+    try {
+      startRuntime(settings.additionalConfig);
+    } catch (RuntimeException e) {
+      stopA2aMocks();
+      throw e;
+    }
     started = true;
 
     if (log.isDebugEnabled())
@@ -1243,7 +1309,8 @@ public class TestKit {
 
       applicationConfig = runner.applicationConfig();
 
-      Config runtimeConfig = ConfigFactory.empty();
+      // the settings of the runtime itself, apart from the application configuration
+      Config runtimeConfig = a2aMockServer == null ? ConfigFactory.empty() : a2aMockServer.config();
       runtimeActorSystem = AkkaRuntimeMain.start(Some.apply(runtimeConfig), runner);
       // wait for SDK to get on start callback (or fail starting), we need it to set up the
       // component client
@@ -1874,7 +1941,15 @@ public class TestKit {
       throw new IllegalStateException(
           "TestKit runtime failed to terminate. Port [" + port + "]", e);
     } finally {
+      stopA2aMocks();
       started = false;
+    }
+  }
+
+  private void stopA2aMocks() {
+    if (a2aMockServer != null) {
+      a2aMockServer.stop();
+      a2aMockServer = null;
     }
   }
 

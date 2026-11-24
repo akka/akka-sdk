@@ -28,6 +28,30 @@ To test how an agent handles an error result, use an `@McpTool` method that thro
 
 You can also use `whenMessage(predicate).reply(response)` for conditional text responses that vary based on the user message. Invoke the agent through the `componentClient` and assert on the result as in any other integration test.
 
+[#mocking_a2a_agents]
+== Mocking a remote A2A agent
+
+To test an agent that uses xref:sdk:agents/extending.adoc#a2a_agents[skills of a remote A2A agent], register a `MockA2aAgent` in the testkit settings. The testkit serves an agent card with the skills of the mock and answers calls to them. It also sets the configuration for the agent name, so `RemoteA2aAgent.named("claims")` in the agent reaches the mock without other configuration.
+
+[source,java,indent=0]
+----
+@Override
+protected TestKit.Settings testKitSettings() {
+  return TestKit.Settings.DEFAULT
+      .withModelProvider(ClaimsAgent.class, testModelProvider)
+      .withMockedA2aAgent(
+          MockA2aAgent.named("claims")
+              .withSkill(
+                  "lookup-claim", // <1>
+                  "Looks up a claim by id",
+                  message -> "Claim 42 is open")); // <2>
+}
+----
+<1> The skill id. The model sees the tool as `claims__lookup-claim`.
+<2> The handler maps the text of the message from the agent to the text of the reply. If the handler throws, the agent gets an error result.
+
+The handler can run concurrently, so state that it shares with the test must be thread-safe. Drive the model with a `TestModelProvider` and a `ToolInvocationRequest` for `claims__lookup-claim`, as for any other tool.
+
 == Mocked model in a deployed service
 
 In some scenarios it can be useful to run the service deployed but without interacting with an actual agent. For example,
