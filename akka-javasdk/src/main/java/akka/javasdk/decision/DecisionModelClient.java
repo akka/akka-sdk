@@ -41,8 +41,8 @@ import java.util.concurrent.CompletionStage;
  *   <li>{@link akka.javasdk.agent.ModelTimeoutException} when a request to the model API times out.
  *   <li>{@link akka.javasdk.agent.InternalServerException} when the model API answers with a server
  *       error status (5xx) after the configured retries.
- *   <li>{@link akka.javasdk.agent.ModelException} for other failures, such as a rejected request or
- *       an unusable response.
+ *   <li>{@link akka.javasdk.agent.ModelException} for other failures, such as a rejected request,
+ *       an unusable response, or a model that refuses to answer a question.
  *   <li>The unchanged exception of a {@link DecisionModelProvider.Custom} provider, when one is
  *       used.
  * </ul>

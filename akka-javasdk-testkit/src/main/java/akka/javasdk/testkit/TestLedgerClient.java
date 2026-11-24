@@ -5,6 +5,7 @@
 package akka.javasdk.testkit;
 
 import akka.javasdk.ledger.ActivityRecord;
+import akka.javasdk.ledger.ClassificationRecord;
 import akka.javasdk.ledger.EvaluationRecord;
 import akka.javasdk.ledger.FlowPage;
 import akka.javasdk.ledger.FlowRecord;
@@ -30,8 +31,9 @@ import java.util.stream.Collectors;
  * An in-memory {@link LedgerClient} for unit tests.
  *
  * <p>Seed it with {@link InteractionRecord}s via {@link #seed(InteractionRecord)}, with {@link
- * EvaluationRecord}s via {@link #seed(EvaluationRecord)}, with {@link GuardrailDecisionRecord}s via
- * {@link #seed(GuardrailDecisionRecord)}, or with {@link ActivityRecord}s via {@link
+ * EvaluationRecord}s via {@link #seed(EvaluationRecord)}, with {@link ClassificationRecord}s via
+ * {@link #seed(ClassificationRecord)}, with {@link GuardrailDecisionRecord}s via {@link
+ * #seed(GuardrailDecisionRecord)}, or with {@link ActivityRecord}s via {@link
  * #seed(ActivityRecord)}, and pass it to the component under test (for example an {@link
  * akka.javasdk.evaluation.Evaluator} constructed by an {@link EvaluatorTestKit}) to assert it
  * fetches and uses them, with no database.
@@ -53,6 +55,8 @@ public final class TestLedgerClient implements LedgerClient {
 
   private final ConcurrentMap<String, InteractionRecord> records = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, EvaluationRecord> evaluations = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, ClassificationRecord> classifications =
+      new ConcurrentHashMap<>();
   private final ConcurrentMap<String, GuardrailDecisionRecord> guardrailDecisions =
       new ConcurrentHashMap<>();
   private final ConcurrentMap<String, ActivityRecord> activities = new ConcurrentHashMap<>();
@@ -130,6 +134,37 @@ public final class TestLedgerClient implements LedgerClient {
     if (record == null) {
       return CompletableFuture.failedFuture(
           new NoSuchElementException("No evaluation with id [" + evaluationId + "]"));
+    }
+    return CompletableFuture.completedFuture(record);
+  }
+
+  /**
+   * Seed a classification record, keyed by its {@link ClassificationRecord#classificationId()}.
+   * Replaces any existing record with the same id.
+   *
+   * @param record the record to seed
+   * @return this client, for chaining
+   */
+  public TestLedgerClient seed(ClassificationRecord record) {
+    classifications.put(record.classificationId(), record);
+    return this;
+  }
+
+  @Override
+  public ClassificationRecord getClassification(String classificationId) {
+    var record = classifications.get(classificationId);
+    if (record == null) {
+      throw new NoSuchElementException("No classification with id [" + classificationId + "]");
+    }
+    return record;
+  }
+
+  @Override
+  public CompletionStage<ClassificationRecord> getClassificationAsync(String classificationId) {
+    var record = classifications.get(classificationId);
+    if (record == null) {
+      return CompletableFuture.failedFuture(
+          new NoSuchElementException("No classification with id [" + classificationId + "]"));
     }
     return CompletableFuture.completedFuture(record);
   }

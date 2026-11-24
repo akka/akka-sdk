@@ -4,7 +4,32 @@
 
 package com.example.inventory;
 
+import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.GrpcEndpoint;
+import akka.javasdk.annotations.JWT;
 
 @GrpcEndpoint
-public class ShopGrpcEndpoint {}
+@Acl(allow = @Acl.Matcher(service = "*"))
+@JWT(validate = JWT.JwtMethodMode.BEARER_TOKEN, bearerTokenIssuers = "grpc-issuer")
+public class ShopGrpcEndpoint implements ShopGrpcService {
+
+  @Override
+  public String getItem(String id) {
+    return id;
+  }
+
+  @Override
+  @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL), denyCode = 5)
+  @JWT(
+      validate = JWT.JwtMethodMode.BEARER_TOKEN,
+      staticClaims = @JWT.StaticClaim(claim = "sub", pattern = "^user-.*$"))
+  public String listItems(String filter) {
+    return filter;
+  }
+
+  @Override
+  @JWT(validate = JWT.JwtMethodMode.BEARER_TOKEN, bearerTokenIssuers = "admin-issuer")
+  public String removeItem(String id) {
+    return id;
+  }
+}

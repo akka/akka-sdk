@@ -6,6 +6,7 @@ package akka.javasdk.impl.evaluation
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
+import scala.jdk.OptionConverters._
 
 import akka.javasdk.evaluation.EvaluationContext
 import akka.javasdk.evaluation.Evaluator
@@ -14,6 +15,12 @@ import akka.javasdk.testmodels.evaluation.EvaluatorTestModels.SomeEvaluator
 import akka.runtime.sdk.spi.SpiEvaluator
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
+import io.opentelemetry.api.OpenTelemetry
+import io.opentelemetry.api.trace.Span
+import io.opentelemetry.api.trace.SpanContext
+import io.opentelemetry.api.trace.TraceFlags
+import io.opentelemetry.api.trace.TraceState
+import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.ContextKey
 import io.opentelemetry.context.{ Context => OtelContext }
 import org.scalatest.matchers.should.Matchers
@@ -33,11 +40,40 @@ class EvaluatorImplSpec extends AnyWordSpec with Matchers {
           new SomeEvaluator
         },
         classOf[SomeEvaluator],
-        _ => ConfigFactory.empty())
+        _ => ConfigFactory.empty(),
+        tracerFactory)
 
       Await.result(impl.evaluate(new SpiEvaluator.EvaluationContext(trigger, telemetryContext)), 3.seconds)
 
       factoryContext.map(_.get(key)) shouldBe Some("evaluation-1")
+    }
+
+    "make the span of the evaluation current and the parent span of the tracing" in {
+      val evaluationSpan = Span.wrap(
+        SpanContext
+          .create("0af7651916cd43dd8448eb211c80319c", "b7ad6b7169203331", TraceFlags.getSampled, TraceState.getDefault))
+      var current: Option[SpanContext] = None
+      var tracingParent: Option[SpanContext] = None
+      val impl = new EvaluatorImpl[Evaluator](
+        _ =>
+          new Evaluator {
+            override def evaluate(context: EvaluationContext): Evaluator.Effect = {
+              current = Some(Span.current().getSpanContext)
+              tracingParent = context.tracing().parentSpan().toScala.map(_.getSpanContext)
+              effects().inconclusive("spans seen")
+            }
+          },
+        classOf[Evaluator],
+        _ => ConfigFactory.empty(),
+        tracerFactory)
+
+      Await.result(
+        impl.evaluate(new SpiEvaluator.EvaluationContext(trigger, OtelContext.root().`with`(evaluationSpan))),
+        3.seconds)
+
+      current shouldBe Some(evaluationSpan.getSpanContext)
+      tracingParent shouldBe Some(evaluationSpan.getSpanContext)
+      Span.current().getSpanContext.isValid shouldBe false
     }
 
     "pass the config for the evaluated agent on the context" in {
@@ -55,7 +91,8 @@ class EvaluatorImplSpec extends AnyWordSpec with Matchers {
           case interaction: Subject.Interaction =>
             ConfigFactory.parseString(s"""agent = "${interaction.agentComponentId()}" """)
           case _: Subject.Workflow => ConfigFactory.empty()
-        })
+        },
+        tracerFactory)
 
       Await.result(impl.evaluate(new SpiEvaluator.EvaluationContext(trigger, OtelContext.root())), 3.seconds)
 
@@ -76,7 +113,8 @@ class EvaluatorImplSpec extends AnyWordSpec with Matchers {
         {
           case _: Subject.Interaction => ConfigFactory.empty()
           case _: Subject.Workflow    => ConfigFactory.parseString("""entry = "evaluator" """)
-        })
+        },
+        tracerFactory)
       val manualTrigger = new SpiEvaluator.Trigger(
         "evaluation-2",
         SpiEvaluator.TriggerSource.Manual,
@@ -99,7 +137,8 @@ class EvaluatorImplSpec extends AnyWordSpec with Matchers {
               effects().notApplicable("no tool call")
           },
         classOf[Evaluator],
-        _ => ConfigFactory.empty())
+        _ => ConfigFactory.empty(),
+        tracerFactory)
 
       val effect =
         Await.result(impl.evaluate(new SpiEvaluator.EvaluationContext(trigger, OtelContext.root())), 3.seconds)
@@ -111,12 +150,15 @@ class EvaluatorImplSpec extends AnyWordSpec with Matchers {
       val impl = new EvaluatorImpl[SomeEvaluator](
         _ => new SomeEvaluator,
         classOf[SomeEvaluator],
-        _ => throw new IllegalStateException("no config"))
+        _ => throw new IllegalStateException("no config"),
+        tracerFactory)
 
       val failure = impl.evaluate(new SpiEvaluator.EvaluationContext(trigger, OtelContext.root())).failed
       Await.result(failure, 3.seconds).getMessage shouldBe "no config"
     }
   }
+
+  private val tracerFactory: () => Tracer = () => OpenTelemetry.noop().getTracer("test")
 
   private def trigger = new SpiEvaluator.Trigger(
     "evaluation-1",

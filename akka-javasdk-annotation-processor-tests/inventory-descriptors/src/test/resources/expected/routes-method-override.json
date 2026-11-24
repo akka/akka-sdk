@@ -1,0 +1,32 @@
+{
+  "formatVersion": 1,
+  "groupId": "com.example",
+  "artifactId": "shop",
+  "componentLibrary": false,
+  "components": [
+    {
+      "kind": "http-endpoint",
+      "class": "com.example.shop.OrderEndpoint"
+    }
+  ],
+  "routes": [
+    {
+      "protocol": "http",
+      "class": "com.example.shop.OrderEndpoint",
+      "method": "cancelOrder",
+      "httpMethod": "DELETE",
+      "path": "/orders/{id}",
+      "acl": { "deny": [{ "principal": "INTERNET" }], "denyCode": 403 },
+      "jwt": { "bearerToken": false }
+    },
+    {
+      "protocol": "http",
+      "class": "com.example.shop.OrderEndpoint",
+      "method": "getOrder",
+      "httpMethod": "GET",
+      "path": "/orders/{id}",
+      "acl": { "allow": [{ "service": "frontend" }], "denyCode": 401 },
+      "jwt": { "bearerToken": true, "issuers": ["issuer-a", "issuer-b"], "staticClaims": [{ "claim": "tenant", "values": ["acme"] }, { "claim": "role", "pattern": "^ops-\\d+$" }] }
+    }
+  ]
+}

@@ -10,9 +10,14 @@ import akka.javasdk.validation.ast.TypeDef;
 import akka.javasdk.validation.ast.TypeRefDef;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Contains validation logic for component classes. This class encapsulates all validation rules
@@ -201,18 +206,29 @@ public class Validations {
    * Validates that @Acl annotation is not used on non-endpoint components.
    *
    * <p>@Acl is only allowed on classes annotated with @HttpEndpoint, @GrpcEndpoint, @McpEndpoint,
-   * or @Produce.ServiceStream, and on methods within such classes.
+   * or @Produce.ServiceStream, and on methods within such classes. For @Produce.ServiceStream it is
+   * only allowed on the class.
    *
    * @param typeDef the component class to validate
    * @return a Validation result indicating success or failure
    */
   public static Validation aclValidation(TypeDef typeDef) {
-    // @Acl is also allowed on consumers with @Produce.ServiceStream
-    if (typeDef.hasAnnotation("akka.javasdk.annotations.Produce.ServiceStream")) {
-      return Validation.Valid.instance();
-    }
-
     List<String> errors = new ArrayList<>();
+
+    // @Acl is allowed on the class of consumers with @Produce.ServiceStream, the ACL is per stream
+    if (typeDef.hasAnnotation("akka.javasdk.annotations.Produce.ServiceStream")) {
+      for (MethodDef method : typeDef.getMethods()) {
+        if (method.hasAnnotation(ACL_ANNOTATION)) {
+          errors.add(
+              errorMessage(
+                  method,
+                  "@Acl annotation is not allowed on methods of classes annotated with"
+                      + " @Produce.ServiceStream, the ACL applies to the whole stream and is"
+                      + " declared on the class."));
+        }
+      }
+      return Validation.of(errors);
+    }
 
     if (typeDef.hasAnnotation(ACL_ANNOTATION)) {
       errors.add(
@@ -495,7 +511,7 @@ public class Validations {
       return Validation.Valid.instance();
     }
 
-    // @Acl is allowed on methods of consumers with @Produce.ServiceStream
+    // method-level @Acl on consumers with @Produce.ServiceStream is rejected by aclValidation
     if (typeDef.hasAnnotation("akka.javasdk.annotations.Produce.ServiceStream")) {
       return Validation.Valid.instance();
     }
@@ -971,6 +987,79 @@ public class Validations {
       // A missing annotation means that the component is disabled
       return Validation.Valid.instance();
     }
+  }
+
+  /**
+   * Returns one error per class that shares its {@code @Component} id with another class.
+   *
+   * <p>The map key is the qualified class name. Entries are ordered by id, then by class name.
+   * Classes without {@code @Component} or with a blank id are ignored.
+   *
+   * @param typeDefs the component classes to check
+   * @param allowDuplicates when true, the method returns an empty map
+   * @return the error message for each class with a duplicate id
+   */
+  public static Map<String, String> duplicateComponentIdErrors(
+      Collection<? extends TypeDef> typeDefs, boolean allowDuplicates) {
+    if (allowDuplicates) {
+      return Map.of();
+    }
+
+    Map<String, Map<String, TypeDef>> classesById = new TreeMap<>();
+
+    for (TypeDef typeDef : typeDefs) {
+      typeDef
+          .findAnnotation("akka.javasdk.annotations.Component")
+          .flatMap(componentAnn -> componentAnn.getStringValue("id"))
+          .filter(id -> !id.isBlank())
+          .ifPresent(
+              id ->
+                  classesById
+                      .computeIfAbsent(id, key -> new TreeMap<>())
+                      .putIfAbsent(typeDef.getQualifiedName(), typeDef));
+    }
+
+    Map<String, String> errors = new LinkedHashMap<>();
+
+    for (Map.Entry<String, Map<String, TypeDef>> entry : classesById.entrySet()) {
+      String id = entry.getKey();
+      Map<String, TypeDef> classes = entry.getValue();
+
+      if (classes.size() > 1) {
+        for (TypeDef typeDef : classes.values()) {
+          String className = typeDef.getQualifiedName();
+          String otherClassNames =
+              classes.keySet().stream()
+                  .filter(name -> !name.equals(className))
+                  .collect(Collectors.joining(", "));
+
+          errors.put(
+              className,
+              errorMessage(
+                  typeDef,
+                  "@Component id ["
+                      + id
+                      + "] is not unique. It is also used by ["
+                      + otherClassNames
+                      + "]."));
+        }
+      }
+    }
+
+    return errors;
+  }
+
+  /**
+   * Validates that no two classes share a {@code @Component} id.
+   *
+   * @param typeDefs the component classes to check
+   * @param allowDuplicates when true, the method returns {@code Valid}
+   * @return a Validation result with one error per class with a duplicate id
+   */
+  public static Validation uniqueComponentIds(
+      Collection<? extends TypeDef> typeDefs, boolean allowDuplicates) {
+    return Validation.of(
+        new ArrayList<>(duplicateComponentIdErrors(typeDefs, allowDuplicates).values()));
   }
 
   /**

@@ -124,6 +124,7 @@ import akka.javasdk.impl.timedaction.TimedActionImpl
 import akka.javasdk.impl.timer.TimerSchedulerImpl
 import akka.javasdk.impl.view.ViewDescriptorFactory
 import akka.javasdk.impl.workflow.WorkflowContextImpl
+import akka.javasdk.impl.workflow.WorkflowDescriptor
 import akka.javasdk.impl.workflow.WorkflowImpl
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.keyvalueentity.KeyValueEntityContext
@@ -196,10 +197,11 @@ import akka.runtime.sdk.spi.StartContext
 import akka.runtime.sdk.spi.TimedActionDescriptor
 import akka.runtime.sdk.spi.UserFunctionError
 import akka.runtime.sdk.spi.ViewDescriptor
-import akka.runtime.sdk.spi.WorkflowDescriptor
 import akka.runtime.sdk.spi.WorkflowEvaluatorDescriptor
+import akka.runtime.sdk.spi.WorkflowType
 import akka.runtime.sdk.spi.tracing.InMemorySpanExporter
 import akka.runtime.sdk.spi.{ LedgerClient => SpiLedgerClient }
+import akka.runtime.sdk.spi.{ WorkflowDescriptor => SpiWorkflowDescriptor }
 import akka.stream.Materializer
 import akka.stream.SystemMaterializer
 import com.typesafe.config.Config
@@ -433,6 +435,7 @@ object SdkRunner {
 @InternalApi
 class SdkRunner private (
     dependencyProvider: Option[DependencyProvider],
+    dependencyOverrides: Map[Class[_], Any],
     disabledComponents: Set[Class[_]],
     overrideDisabledComponents: Boolean,
     httpMockLookup: String => Option[
@@ -442,19 +445,26 @@ class SdkRunner private (
   private val startedPromise = Promise[StartupContext]()
 
   // default constructor for runtime creation
-  def this() = this(None, Set.empty[Class[_]], false, _ => None, _ => None)
+  def this() = this(None, Map.empty[Class[_], Any], Set.empty[Class[_]], false, _ => None, _ => None)
 
   // constructor for testkit without mocks
   def this(
       dependencyProvider: java.util.Optional[DependencyProvider],
       disabledComponents: java.util.Set[Class[_]],
       overrideDisabledComponents: Boolean) =
-    this(dependencyProvider.toScala, disabledComponents.asScala.toSet, overrideDisabledComponents, _ => None, _ => None)
+    this(
+      dependencyProvider.toScala,
+      Map.empty[Class[_], Any],
+      disabledComponents.asScala.toSet,
+      overrideDisabledComponents,
+      _ => None,
+      _ => None)
 
   // constructor for testkit with mock lookups — only the testkit passes non-empty lookups here;
   // the default no-arg constructor used in prod/dev passes no-op lookups and mocks cannot fire.
   def this(
       dependencyProvider: java.util.Optional[DependencyProvider],
+      dependencyOverrides: java.util.Map[Class[_], AnyRef],
       disabledComponents: java.util.Set[Class[_]],
       overrideDisabledComponents: Boolean,
       httpMockLookup: java.util.function.Function[
@@ -466,6 +476,7 @@ class SdkRunner private (
         java.util.Optional[AkkaGrpcClient]]) =
     this(
       dependencyProvider.toScala,
+      dependencyOverrides.asScala.toMap[Class[_], Any],
       disabledComponents.asScala.toSet,
       overrideDisabledComponents,
       (name: String) => httpMockLookup.apply(name).toScala,
@@ -496,6 +507,7 @@ class SdkRunner private (
         startContext.regionInfo,
         startContext.deploymentInfo,
         dependencyProvider,
+        dependencyOverrides,
         disabledComponents,
         overrideDisabledComponents,
         startedPromise,
@@ -545,6 +557,32 @@ private object ComponentType {
 
 /**
  * INTERNAL API
+ *
+ * Returns the override instance for a class that has one, and asks the delegate for every other class.
+ */
+@InternalApi
+private[javasdk] final class OverridingDependencyProvider(
+    overrides: Map[Class[_], Any],
+    delegate: Option[DependencyProvider])
+    extends DependencyProvider {
+
+  /** True when a lookup of the class reaches an override or the delegate. */
+  def canProvide(clazz: Class[_]): Boolean =
+    overrides.contains(clazz) || delegate.nonEmpty
+
+  override def getDependency[T](clazz: Class[T]): T =
+    overrides.get(clazz) match {
+      case Some(instance) => instance.asInstanceOf[T]
+      case None =>
+        delegate match {
+          case Some(provider) => provider.getDependency(clazz)
+          case None           => throw new IllegalStateException(Sdk.missingDependencyProviderMessage(clazz, None))
+        }
+    }
+}
+
+/**
+ * INTERNAL API
  */
 @InternalApi
 private[javasdk] object Sdk {
@@ -570,6 +608,13 @@ private[javasdk] object Sdk {
       // here for the testkit, which awaits it from the thread that started the testkit. Nothing in the SDK
       // awaits it, because the runtime binds the endpoint only after preStart has returned.
       httpEndpointBound: Future[InetSocketAddress])
+
+  def missingDependencyProviderMessage(dependency: Class[_], requiredBy: Option[Class[_]]): String =
+    s"Could not inject dependency [${dependency.getName}] " +
+    requiredBy.map(component => s"required by [${component.getName}] ").getOrElse("") +
+    "as no DependencyProvider was configured. " +
+    "Please provide a DependencyProvider to supply dependencies. " +
+    "See https://doc.akka.io/sdk/setup-and-dependency-injection.html#_custom_dependency_injection"
 
   private val platformManagedDependency = Set[Class[_]](
     classOf[ComponentClient],
@@ -636,6 +681,7 @@ private final class Sdk(
     regionInfo: RegionInfo,
     deploymentInfo: DeploymentInfo,
     dependencyProviderOverride: Option[DependencyProvider],
+    dependencyOverrides: Map[Class[_], Any],
     disabledComponents: Set[Class[_]],
     overrideDisabledComponents: Boolean,
     startedPromise: Promise[StartupContext],
@@ -656,12 +702,18 @@ private final class Sdk(
   private lazy val retries = new RetriesImpl(system.classicSystem)
   private val ComponentLocator.LocatedClasses(componentClasses, maybeServiceClass) =
     ComponentLocator.locateUserComponents(system)
-  @volatile private var dependencyProviderOpt: Option[DependencyProvider] = dependencyProviderOverride
+  @volatile private var dependencyProviderOpt: Option[DependencyProvider] =
+    withDependencyOverrides(dependencyProviderOverride)
+
+  private def withDependencyOverrides(provider: Option[DependencyProvider]): Option[DependencyProvider] =
+    if (dependencyOverrides.isEmpty) provider
+    else Some(new OverridingDependencyProvider(dependencyOverrides, provider))
 
   private val applicationConfig = ApplicationConfig(system).getConfig
   private val evaluationClient: SpiEvaluationClient =
     new GuardedEvaluationClient(spiEvaluationClient, applicationConfig)
-  private val sdkSettings = Settings(applicationConfig.getConfig("akka.javasdk"), spiSettings)
+  private val sdkConfig = applicationConfig.getConfig("akka.javasdk")
+  private val sdkSettings = Settings(sdkConfig, spiSettings)
 
   spiSettings.devMode.foreach { devMode =>
     if (devMode.backoffice.refreshToken.nonEmpty) {
@@ -693,10 +745,9 @@ private final class Sdk(
   private lazy val userServiceConfig = {
     // hiding these paths from the config provided to user
     val sensitivePaths = List("akka", "kalix.meta", "kalix.proxy", "kalix.runtime", "system")
-    val sdkConfig = applicationConfig.getObject("akka.javasdk")
     sensitivePaths
       .foldLeft(applicationConfig) { (conf, toHide) => conf.withoutPath(toHide) }
-      .withValue("akka.javasdk", sdkConfig)
+      .withValue("akka.javasdk", sdkConfig.root())
   }
 
   private lazy val grpcClientProvider = new GrpcClientProviderImpl(
@@ -708,16 +759,18 @@ private final class Sdk(
     grpcMockLookup)
 
   private lazy val overrideModelProvider = new OverrideModelProvider
-
   private lazy val overrideDecisionModelProvider = new OverrideDecisionModelProvider
+  private val allowDuplicateComponentIds = sdkConfig.getBoolean("allow-duplicate-component-ids")
 
   // validate service classes before instantiating
-  private val validation = componentClasses.foldLeft(Valid.instance().asInstanceOf[Validation]) {
-    case (validations, cls) =>
+  private val validation = componentClasses
+    .foldLeft(Valid.instance().asInstanceOf[Validation]) { case (validations, cls) =>
       val typeDef = new RuntimeTypeDef(cls)
       val componentValidation = Validations.validate(typeDef)
       validations.combine(componentValidation)
-  }
+    }
+    .combine(
+      Validations.uniqueComponentIds(componentClasses.map(new RuntimeTypeDef(_)).asJava, allowDuplicateComponentIds))
 
   validation match { // if any invalid component, log and throw
     case _: Valid => ()
@@ -907,7 +960,7 @@ private final class Sdk(
 
   private var eventSourcedEntityDescriptors = Vector.empty[EventSourcedEntityDescriptor]
   private var keyValueEntityDescriptors = Vector.empty[EventSourcedEntityDescriptor]
-  private var workflowDescriptors = Vector.empty[WorkflowDescriptor]
+  private var workflowDescriptors = Vector.empty[SpiWorkflowDescriptor]
   private var timedActionDescriptors = Vector.empty[TimedActionDescriptor]
   private var consumerDescriptors = Vector.empty[ConsumerDescriptor]
   private var viewDescriptors = Vector.empty[ViewDescriptor]
@@ -1129,7 +1182,7 @@ private final class Sdk(
           }.toSet
 
         workflowDescriptors :+=
-          new WorkflowDescriptor(
+          new SpiWorkflowDescriptor(
             componentId,
             clz.getName,
             readOnlyCommandNames,
@@ -1137,7 +1190,9 @@ private final class Sdk(
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
             provided = false,
-            protobufDescriptors = protobufDescriptors.toVector)
+            protobufDescriptors = protobufDescriptors.toVector,
+            componentType = WorkflowType,
+            stepNames = WorkflowDescriptor.stepNames(clz))
 
       case clz if Reflect.isTimedAction(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -1378,7 +1433,8 @@ private final class Sdk(
             telemetryContext =>
               wiredInstance("Evaluator", evaluatorClass)(sideEffectingComponentInjects(telemetryContext, callerSpiffe)),
             evaluatorClass,
-            configured.configFor)
+            configured.configFor,
+            sdkTracerFactory)
         }
 
         evaluatorDescriptors :+=
@@ -1416,7 +1472,8 @@ private final class Sdk(
                 factoryContext.recorder,
                 serializer,
                 sdkExecutionContext,
-                configured.configFor)
+                configured.configFor,
+                sdkTracerFactory)
             },
             provided = false)
 
@@ -1523,6 +1580,10 @@ private final class Sdk(
         .filterNot(isDisabled(combinedDisabledComponents))
 
     val preStart = { (system: ActorSystem[_]) =>
+      if (dependencyOverrides.nonEmpty)
+        logger.info(
+          "Service configured with TestKit dependency overrides for [{}]",
+          dependencyOverrides.keys.map(_.getName).toSeq.sorted.mkString(", "))
       serviceSetup match {
         case None =>
           validateClassifiers()
@@ -1531,7 +1592,7 @@ private final class Sdk(
             StartupContext(
               runtimeComponentClients,
               eventLogClient,
-              None,
+              dependencyProviderOpt,
               httpClientProvider,
               grpcClientProvider,
               agentRegistry,
@@ -1548,12 +1609,13 @@ private final class Sdk(
               httpEndpointBound))
           Future.successful(Done)
         case Some(setup) =>
-          if (dependencyProviderOpt.nonEmpty) {
+          if (dependencyProviderOverride.nonEmpty) {
             logger.info("Service configured with TestKit DependencyProvider")
           } else {
             runUserCallback(setup, "createDependencyProvider()") {
-              dependencyProviderOpt = Option(setup.createDependencyProvider())
-              dependencyProviderOpt.foreach(_ => logger.info("Service configured with DependencyProvider"))
+              val serviceProvider = Option(setup.createDependencyProvider())
+              serviceProvider.foreach(_ => logger.info("Service configured with DependencyProvider"))
+              dependencyProviderOpt = withDependencyOverrides(serviceProvider)
             }
           }
           validateClassifiers()
@@ -1805,13 +1867,14 @@ private final class Sdk(
               // if we allow for a given dependency, we should cover it in the partial function for the component
               throw new IllegalArgumentException(
                 s"[${constructor.getDeclaringClass.getName}] are not allowed to have a dependency on [${anyOther.getName}]");
+            case Some(overriding: OverridingDependencyProvider) if !overriding.canProvide(anyOther) =>
+              throw new IllegalStateException(
+                missingDependencyProviderMessage(anyOther, Some(constructor.getDeclaringClass)))
             case Some(dependencyProvider) =>
               dependencyProvider.getDependency(anyOther)
             case None =>
               throw new IllegalStateException(
-                s"Could not inject dependency [${anyOther.getName}] required by [${constructor.getDeclaringClass.getName}] as no DependencyProvider was configured. " +
-                "Please provide a DependencyProvider to supply dependencies. " +
-                "See https://doc.akka.io/sdk/setup-and-dependency-injection.html#_custom_dependency_injection");
+                missingDependencyProviderMessage(anyOther, Some(constructor.getDeclaringClass)))
           }
 
       }

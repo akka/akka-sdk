@@ -6,7 +6,12 @@ package akka.javasdk.annotations;
 
 import java.lang.annotation.*;
 
-/** Defines ACL configuration for a resource. Can be defined on endpoint class and methods. */
+/**
+ * Defines ACL configuration for a resource. Can be defined on endpoint class and methods.
+ *
+ * <p>On a Consumer annotated with {@link Produce.ServiceStream}, it can only be defined on the
+ * class, and applies to the whole stream.
+ */
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
@@ -30,6 +35,8 @@ public @interface Acl {
    * <p>By default, this will be '403 Forbidden' for HTTP endpoints and 'PERMISSION DENIED (7)' for
    * gRPC endpoints. If set at class-level, it will automatically be inherited by all methods in the
    * class that are not annotated with their own @Acl definition.
+   *
+   * <p>On a {@link Produce.ServiceStream} Consumer, the value is a gRPC status code.
    *
    * <p>For HTTP, common used values are between 400 and 599, see exhaustive list at
    * https://www.rfc-editor.org/rfc/rfc9110.html#name-status-codes
