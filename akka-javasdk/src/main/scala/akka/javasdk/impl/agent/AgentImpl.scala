@@ -281,7 +281,10 @@ private[impl] object AgentImpl {
             identityHeaders),
           thinkingBudgetTokens = p.thinkingBudgetTokens,
           cacheSystemMessages = p.cacheSystemMessages,
-          cacheTools = p.cacheTools)
+          cacheTools = p.cacheTools,
+          // FIXME pass adaptiveThinking and effort from ModelProvider.Anthropic, https://github.com/akka/akka-sdk/pull/2217
+          adaptiveThinking = false,
+          effort = "")
       case p: ModelProvider.GoogleAIGemini =>
         new SpiAgent.ModelProvider.GoogleAIGemini(
           p.apiKey(),
