@@ -31,8 +31,8 @@ import akka.javasdk.annotations.Consume
 import akka.javasdk.annotations.EnableReplicationFilter
 import akka.javasdk.annotations.GrpcEndpoint
 import akka.javasdk.annotations.ProtoEventTypes
-import akka.javasdk.annotations.http.HttpEndpoint
 import akka.javasdk.annotations.a2a.A2aEndpoint
+import akka.javasdk.annotations.http.HttpEndpoint
 import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.consumer.Consumer

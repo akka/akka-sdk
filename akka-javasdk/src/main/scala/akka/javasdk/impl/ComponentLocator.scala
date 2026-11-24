@@ -28,8 +28,8 @@ import akka.javasdk.agent.evaluator.ToxicityEvaluator
 import akka.javasdk.agent.task.TaskEntity
 import akka.javasdk.annotations.Component
 import akka.javasdk.annotations.GrpcEndpoint
-import akka.javasdk.annotations.http.HttpEndpoint
 import akka.javasdk.annotations.a2a.A2aEndpoint
+import akka.javasdk.annotations.http.HttpEndpoint
 import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.evaluation.DurableEvaluator

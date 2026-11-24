@@ -52,6 +52,8 @@ import akka.javasdk.TextSanitizer
 import akka.javasdk.Tracing
 import akka.javasdk.UnhandledExceptionContext
 import akka.javasdk.UnhandledExceptionHandler
+import akka.javasdk.a2a.A2aRequestContext
+import akka.javasdk.a2a.AbstractA2aEndpoint
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.AgentContext
 import akka.javasdk.agent.AgentRegistry
@@ -62,8 +64,8 @@ import akka.javasdk.agent.ModelProvider
 import akka.javasdk.agent.autonomous.AutonomousAgent
 import akka.javasdk.annotations.Component
 import akka.javasdk.annotations.GrpcEndpoint
-import akka.javasdk.annotations.http.HttpEndpoint
 import akka.javasdk.annotations.a2a.A2aEndpoint
+import akka.javasdk.annotations.http.HttpEndpoint
 import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.consumer.Consumer
@@ -130,8 +132,6 @@ import akka.javasdk.impl.workflow.WorkflowImpl
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.keyvalueentity.KeyValueEntityContext
 import akka.javasdk.ledger.LedgerClient
-import akka.javasdk.a2a.A2aRequestContext
-import akka.javasdk.a2a.AbstractA2aEndpoint
 import akka.javasdk.mcp.AbstractMcpEndpoint
 import akka.javasdk.mcp.McpRequestContext
 import akka.javasdk.objectstorage.ObjectStorageProvider
@@ -145,6 +145,7 @@ import akka.javasdk.validation.ast.runtime.RuntimeTypeDef
 import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.WorkflowContext
 import akka.runtime.sdk.spi
+import akka.runtime.sdk.spi.A2aEndpointConstructionContext
 import akka.runtime.sdk.spi.AgentDescriptor
 import akka.runtime.sdk.spi.AutonomousAgentDescriptor
 import akka.runtime.sdk.spi.ComponentClients
@@ -155,7 +156,6 @@ import akka.runtime.sdk.spi.EventLogClient
 import akka.runtime.sdk.spi.EventSourcedEntityDescriptor
 import akka.runtime.sdk.spi.GrpcEndpointRequestConstructionContext
 import akka.runtime.sdk.spi.HttpEndpointConstructionContext
-import akka.runtime.sdk.spi.A2aEndpointConstructionContext
 import akka.runtime.sdk.spi.McpEndpointConstructionContext
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.RemoteIdentification
