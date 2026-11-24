@@ -213,7 +213,7 @@ include::example$doc-snippets/src/main/java/com/example/application/RemoteA2aCla
 <2> Optional. Only the skills with these ids from the agent card become tools. By default all skills do.
 <3> Optional. The longest time that a call to the remote agent may take. The default is the `request-timeout` in the configuration.
 
-Configure each remote agent by its logical name in the `application.conf` of your service. Use `${?ENV_VAR}` to set values per environment. Set a token from an environment variable, as in the example, so that it is not in your source. The runtime does not log the configuration of remote agents.
+Configure each remote agent by its logical name in the `application.conf` of your service. Use `${?ENV_VAR}` to set values per environment. Set a token from an environment variable, as in the example, so that it is not in your source. The runtime does not log the configuration of remote agents. A request-based agent fails its request when a remote agent has no `card-url`. For an autonomous agent, the service does not start.
 
 [source,hocon,indent=0]
 .application.conf
