@@ -87,7 +87,7 @@ A consumer with xref:sdk:consuming-producing.adoc#_starting_from_the_latest_even
 
 A consumer with a start point must set a consumer group with `@Consume.FromTopic(value = "...", consumerGroup = "...")`, and the consumer group must exist in Azure. Without it the service refuses to start. Consumers without a consumer group share the `$Default` consumer group and its checkpoints, so Akka cannot tie a start point to the consumer.
 
-Event Hubs keeps events for the retention time of the event hub. A start point before the oldest event in a partition starts at the oldest event.
+Event Hubs keeps events for the retention time of the event hub. Akka cannot deliver events that Event Hubs no longer holds, also when the start point is earlier.
 
 == Delivery characteristics
 
