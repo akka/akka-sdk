@@ -15,8 +15,8 @@ import java.util.function.Predicate;
  * remote agent becomes a tool of the agent that uses it.
  *
  * <p>Only the logical name is in code. The runtime reads the card URL, the authentication and the
- * allowed hosts from its configuration under {@code akka.runtime.agent.a2a-client.agents.<name>},
- * so they can differ per environment.
+ * allowed hosts from the configuration of the service under {@code
+ * akka.javasdk.agent.a2a-client.agents.<name>}, so they can differ per environment.
  *
  * <p><strong>Security:</strong> Credentials are only sent over HTTPS. The runtime only sends
  * requests to the host and port of the agent card, or to hosts in the {@code allowed-hosts}
@@ -30,7 +30,7 @@ public interface RemoteA2aAgent {
 
   /**
    * @param name The logical name of the remote agent, as it is configured under {@code
-   *     akka.runtime.agent.a2a-client.agents}
+   *     akka.javasdk.agent.a2a-client.agents}
    */
   static RemoteA2aAgent named(String name) {
     return new RemoteA2aAgentImpl(name);
@@ -63,7 +63,7 @@ public interface RemoteA2aAgent {
 
   /**
    * @param timeout A max time a call to the remote agent may take before it is failed. If not
-   *     specified, the {@code request-timeout} of the agent in the runtime configuration applies.
+   *     specified, the {@code request-timeout} of the agent in the configuration applies.
    */
   RemoteA2aAgent withTimeout(Duration timeout);
 }

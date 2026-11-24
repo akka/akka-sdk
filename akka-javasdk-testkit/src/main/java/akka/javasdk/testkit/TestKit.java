@@ -1183,8 +1183,13 @@ public class TestKit {
     if (!settings.a2aMocks.isEmpty()) {
       a2aMockServer = MockedA2aAgentsServer.start(settings.a2aMocks);
     }
+    // what the service says in its own configuration wins over the mocks
+    var config =
+        a2aMockServer == null
+            ? settings.additionalConfig
+            : settings.additionalConfig.withFallback(a2aMockServer.config());
     try {
-      startRuntime(settings.additionalConfig);
+      startRuntime(config);
     } catch (RuntimeException e) {
       stopA2aMocks();
       throw e;
@@ -1309,8 +1314,7 @@ public class TestKit {
 
       applicationConfig = runner.applicationConfig();
 
-      // the settings of the runtime itself, apart from the application configuration
-      Config runtimeConfig = a2aMockServer == null ? ConfigFactory.empty() : a2aMockServer.config();
+      Config runtimeConfig = ConfigFactory.empty();
       runtimeActorSystem = AkkaRuntimeMain.start(Some.apply(runtimeConfig), runner);
       // wait for SDK to get on start callback (or fail starting), we need it to set up the
       // component client

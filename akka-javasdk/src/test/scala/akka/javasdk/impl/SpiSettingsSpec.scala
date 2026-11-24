@@ -43,6 +43,37 @@ class SpiSettingsSpec extends AnyWordSpec with Matchers with OptionValues {
   }
 
   "The SDK settings" should {
+    "pass the remote A2A agents of the service on to the runtime, with a token from the environment" in {
+      // `${?A2A_TEST_TOKEN}` is the form the docs use, it takes a system property here in place of an env var
+      System.setProperty("A2A_TEST_TOKEN", "from-the-environment")
+      try {
+        ConfigFactory.invalidateCaches()
+        val config = ConfigFactory
+          .parseString("""
+            akka.javasdk.agent.a2a-client {
+              request-timeout = 7s
+              agents.claims {
+                card-url = "https://claims.example.com/card"
+                auth { type = bearer, token = ${?A2A_TEST_TOKEN} }
+              }
+            }
+            """)
+          .withFallback(ConfigFactory.load())
+          .resolve()
+        val a2a = SdkRunner.extractSpiSettings(config).a2aClientConfig
+        a2a.getString("agents.claims.card-url") shouldBe "https://claims.example.com/card"
+        a2a.getString("agents.claims.auth.token") shouldBe "from-the-environment"
+        a2a.getDuration("request-timeout") shouldBe Duration.ofSeconds(7)
+      } finally {
+        System.clearProperty("A2A_TEST_TOKEN")
+        ConfigFactory.invalidateCaches()
+      }
+    }
+
+    "have no remote A2A agents by default" in {
+      SdkRunner.extractSpiSettings(ConfigFactory.load()).a2aClientConfig.getConfig("agents").isEmpty shouldBe true
+    }
+
     "parse all valid google pub sub modes" in {
       val modes = Seq(
         "automatic" -> SpiDeployedEventingSettings.Automatic,

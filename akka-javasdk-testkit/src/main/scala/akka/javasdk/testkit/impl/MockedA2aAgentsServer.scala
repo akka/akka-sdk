@@ -33,11 +33,11 @@ final class MockedA2aAgentsServer private (server: HttpServer, agents: Seq[MockA
   private val port = server.getAddress.getPort
   private def baseUrl(name: String) = s"http://localhost:$port/$name"
 
-  /** Settings that point each agent name at its mock. */
+  /** Application configuration that points each agent name at its mock. */
   val config: Config =
     ConfigFactory.parseMap(
       agents
-        .map(a => s"akka.runtime.agent.a2a-client.agents.\"${a.name}\".card-url" -> s"${baseUrl(a.name)}/card")
+        .map(a => s"akka.javasdk.agent.a2a-client.agents.\"${a.name}\".card-url" -> s"${baseUrl(a.name)}/card")
         .toMap
         .asJava)
 
