@@ -242,6 +242,8 @@ The runtime applies these rules:
 * A card is not trusted. The runtime keeps at most 100 skills of a card, cuts the name and the description of a skill to 1000 characters, and ignores a skill with an id of more than 128 characters or with control characters.
 * The runtime sends the trace context to the remote agent, but not the baggage of the request.
 
+NOTE: The A2A protocol has no field that selects a skill. The runtime sends the skill id as metadata of the message, and a remote agent can ignore it. A skill filter and a guardrail on a skill id choose which skills the model sees and which calls your service allows. They do not limit what the remote agent does with a message. Any request that the model sends through an allowed skill can reach any function of the remote agent. Restrict the remote agent itself, with the credentials that you give it.
+
 The tool name that the model sees is the logical name of the remote agent and the skill id, joined with a double underscore, for example `claims__lookup-claim`. The runtime replaces characters that models do not accept, and adds a short hash to the name when two skills would get the same name.
 
 To test an agent that uses a remote A2A agent, see xref:sdk:agents/testing.adoc#mocking_a2a_agents[Mocking a remote A2A agent].

@@ -34,21 +34,14 @@ You can also use `whenMessage(predicate).reply(response)` for conditional text r
 To test an agent that uses xref:sdk:agents/extending.adoc#a2a_agents[skills of a remote A2A agent], register a `MockA2aAgent` in the testkit settings. The testkit serves an agent card with the skills of the mock and answers calls to them. It also sets the configuration for the agent name, so `RemoteA2aAgent.named("claims")` in the agent reaches the mock without other configuration.
 
 [source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/application/RemoteA2aClaimsAgentIntegrationTest.java[RemoteA2aClaimsAgentIntegrationTest.java]
 ----
-@Override
-protected TestKit.Settings testKitSettings() {
-  return TestKit.Settings.DEFAULT
-      .withModelProvider(ClaimsAgent.class, testModelProvider)
-      .withMockedA2aAgent(
-          MockA2aAgent.named("claims")
-              .withSkill(
-                  "lookup-claim", // <1>
-                  "Looks up a claim by id",
-                  message -> "Claim 42 is open")); // <2>
-}
+include::example$doc-snippets/src/test/java/com/example/application/RemoteA2aClaimsAgentIntegrationTest.java[tag=mock-a2a-agent]
 ----
-<1> The skill id. The model sees the tool as `claims__lookup-claim`.
-<2> The handler maps the text of the message from the agent to the text of the reply. If the handler throws, the agent gets an error result.
+<1> Register the mock in the testkit settings.
+<2> The logical name of the remote agent, as in `RemoteA2aAgent.named`. For this name, the testkit replaces the authentication and the allowed hosts that the configuration of your service has.
+<3> The skill id. The model sees the tool as `claims__lookup-claim`.
+<4> The handler maps the text of the message from the agent to the text of the reply. If the handler throws, the agent gets an error result.
 
 The handler can run concurrently, so state that it shares with the test must be thread-safe. Drive the model with a `TestModelProvider` and a `ToolInvocationRequest` for `claims__lookup-claim`, as for any other tool.
 

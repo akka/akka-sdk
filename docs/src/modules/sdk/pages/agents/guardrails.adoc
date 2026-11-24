@@ -29,7 +29,7 @@ A guardrail implements one of three interfaces. The interface sets where the run
 
 * link:{attachmentsdir}/api/akka/javasdk/agent/ModelCallGuardrail.html[`ModelCallGuardrail`] evaluates the input to each model call. The runtime evaluates it before the first model call. It evaluates the guardrail again before each later call that sends tool results back to the model.
 * link:{attachmentsdir}/api/akka/javasdk/agent/AgentResponseGuardrail.html[`AgentResponseGuardrail`] evaluates the agent's final reply, once per interaction. On an autonomous agent, it also evaluates the message of each `broadcast`, `direct`, and `submit_turn` tool call.
-* link:{attachmentsdir}/api/akka/javasdk/agent/ToolCallGuardrail.html[`ToolCallGuardrail`] evaluates a function tool call or an MCP tool call before the runtime runs the tool. It sees the tool name and the raw JSON arguments.
+* link:{attachmentsdir}/api/akka/javasdk/agent/ToolCallGuardrail.html[`ToolCallGuardrail`] evaluates a function tool call, an MCP tool call or a skill call of a remote A2A agent before the runtime runs the tool. It sees the tool name and the raw JSON arguments.
 
 A guardrail class implements exactly one of these interfaces.
 To check several points, write one class per interface.
@@ -116,7 +116,7 @@ include::example$doc-snippets/src/main/java/com/example/guardrail/ToolResultInje
 
 == Implementing a tool call guardrail
 
-A `ToolCallGuardrail` evaluates a function tool call or an MCP tool call before the runtime runs the tool.
+A `ToolCallGuardrail` evaluates a function tool call, an MCP tool call or a skill call of a remote A2A agent before the runtime runs the tool.
 `CallContext` exposes `agentId()`, `sessionId()`, `toolName()`, `toolCallId()`, `origin()`, and `arguments()`.
 `arguments()` returns the raw JSON of the tool call:
 

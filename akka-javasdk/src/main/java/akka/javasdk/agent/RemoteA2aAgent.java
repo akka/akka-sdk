@@ -41,6 +41,10 @@ public interface RemoteA2aAgent {
    * filter gets the skill id from the agent card. Skills that are filtered are not described to the
    * model and do not allow calls. Will override a previous call to {@link #withAllowedSkills(Set)}.
    *
+   * <p>The A2A protocol has no field that selects a skill. The runtime sends the skill id as
+   * metadata of the message, and the remote agent can ignore it. The filter chooses what the model
+   * sees. It does not limit what the remote agent does with a message.
+   *
    * <p>By default, all skills are allowed.
    */
   RemoteA2aAgent withSkillFilter(Predicate<String> skillFilter);

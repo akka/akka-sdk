@@ -28,6 +28,10 @@ public non-sealed interface ToolCallGuardrail extends Guardrail {
   /**
    * Where the called tool runs: {@link FunctionTool}, {@link RemoteMcp}, {@link RemoteA2a} or
    * {@link Unknown}.
+   *
+   * <p>A later SDK version can add kinds. A {@code switch} over the origin needs a {@code default}
+   * case, as a guardrail compiled against an earlier version fails with a {@code MatchException} on
+   * a kind that it does not know.
    */
   sealed interface ToolOrigin {
 
