@@ -475,7 +475,12 @@ private[impl] object AgentImpl {
 
   private[impl] def toSpiA2aAgents(
       remoteA2aAgents: Seq[RemoteA2aAgent],
-      guardrails: AgentGuardrails): Seq[SpiAgent.A2aAgentDescriptor] =
+      guardrails: AgentGuardrails): Seq[SpiAgent.A2aAgentDescriptor] = {
+    remoteA2aAgents
+      .collect { case a: RemoteA2aAgentImpl => a.name }
+      .groupBy(identity)
+      .collectFirst { case (name, names) if names.size > 1 => name }
+      .foreach(name => throw new IllegalArgumentException(s"The remote A2A agent [$name] is added more than once"))
     remoteA2aAgents.map {
       case remoteA2a: RemoteA2aAgentImpl =>
         new SpiAgent.A2aAgentDescriptor(
@@ -491,6 +496,7 @@ private[impl] object AgentImpl {
             else Some(remoteA2a.timeout))
       case other => throw new IllegalArgumentException(s"Unsupported remote A2A agent impl $other")
     }
+  }
 
   // The runtime calls the hooks with the tool name on the MCP server.
   private final class McpToolCallHooksAdapter(javaInterceptor: RemoteMcpTools.ToolInterceptor)

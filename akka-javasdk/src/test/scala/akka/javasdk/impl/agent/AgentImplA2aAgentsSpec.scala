@@ -68,11 +68,22 @@ class AgentImplA2aAgentsSpec extends AnyWordSpec with Matchers {
         .map(_.name)
       names shouldBe Seq("b", "a")
     }
+
+    "reject the same agent name twice" in {
+      val e = the[IllegalArgumentException] thrownBy AgentImpl.toSpiA2aAgents(
+        Seq(RemoteA2aAgent.named("claims"), RemoteA2aAgent.named("claims").withAllowedSkills("a")),
+        noGuardrails)
+      e.getMessage should include("claims")
+    }
   }
 
   "RemoteA2aAgent.named" should {
     "reject an empty name" in {
       an[IllegalArgumentException] should be thrownBy RemoteA2aAgent.named("")
+    }
+
+    "reject a negative timeout" in {
+      an[IllegalArgumentException] should be thrownBy RemoteA2aAgent.named("claims").withTimeout(Duration.ofSeconds(-1))
     }
   }
 }

@@ -39,6 +39,8 @@ final case class RemoteA2aAgentImpl(name: String, skillFilter: Option[Predicate[
     copy(skillFilter = Some(skills.contains(_)))
   }
 
-  override def withTimeout(timeout: JDuration): RemoteA2aAgent =
+  override def withTimeout(timeout: JDuration): RemoteA2aAgent = {
+    require(!timeout.isNegative, "The timeout of a remote A2A agent must not be negative")
     copy(timeout = timeout.toScala)
+  }
 }
