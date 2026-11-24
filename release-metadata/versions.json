@@ -5,7 +5,7 @@
       {
         "version": "3.7.3",
         "releasedAt": "2026-11-23T13:18:11Z",
-        "releaseNotesUrl": "https://doc.akka.io/reference/release-notes.html",
+        "releaseNotesUrl": "https://doc.akka.io/reference/release-notes.html#sdk-3-7-3",
         "requiredRuntime": "1.7.7",
         "protocolVersion": "1.1",
         "notifyAt": "2026-12-03T13:18:11Z"
