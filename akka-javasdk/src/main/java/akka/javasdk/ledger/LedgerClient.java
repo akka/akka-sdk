@@ -182,9 +182,9 @@ public interface LedgerClient {
   /**
    * Read the first page of the records of the flow with the given {@code flowId}, in the order they
    * were recorded. The records are the {@link InteractionRecord}s of the agents in the flow, the
-   * {@link ActivityRecord}s of its autonomous agents, the {@link GuardrailDecisionRecord}s of its
-   * interactions and the {@link EvaluationRecord}s of its interactions. No other kind of record is
-   * returned. A page holds at most 100 records.
+   * {@link ActivityRecord}s of its autonomous agents, the {@link GuardrailDecisionRecord}s and
+   * {@link EvaluationRecord}s of its interactions, and the {@link ClassificationRecord}s of the
+   * flow. No other kind of record is returned. A page holds at most 100 records.
    *
    * <p>The client leaves two kinds of record out of a page: a record of a class that this version
    * of the SDK does not know, and an evaluation of a subject that is not an interaction, such as a

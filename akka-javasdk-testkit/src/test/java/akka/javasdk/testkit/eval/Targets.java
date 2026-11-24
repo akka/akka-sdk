@@ -194,7 +194,8 @@ final class Targets {
         new EvaluationRecord.Subject.Interaction(interactionId, AGENT),
         Map.of(),
         outcome,
-        STARTED.plusSeconds(1));
+        STARTED.plusSeconds(1),
+        Optional.empty());
   }
 
   /**

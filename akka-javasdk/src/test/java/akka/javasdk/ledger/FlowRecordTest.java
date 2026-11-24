@@ -160,7 +160,8 @@ public class FlowRecordTest {
                 coordinator.interactionId(), "coordinator-agent"),
             Map.of(),
             new EvaluationRecord.Outcome.Verdict(Evaluation.of(false, "verdict of another judge")),
-            Instant.EPOCH);
+            Instant.EPOCH,
+            Optional.empty());
     var delegation =
         activity(
             new ActivityRecord.Event.DelegationStarted(
@@ -190,6 +191,25 @@ public class FlowRecordTest {
             Input: Research quantum computing fundamentals
             Response: Qubits enable parallel computation.
             """);
+  }
+
+  @Test
+  public void transcriptLeavesClassificationsOut() {
+    var interaction = interaction("agent-a", "S1", "first");
+    var classification =
+        new ClassificationRecord(
+            "classification-1",
+            "sentiment-classifier",
+            Optional.of(0.9),
+            Optional.of("positive"),
+            Optional.of(0.8),
+            Map.of(),
+            Optional.of("flow-1"),
+            Optional.empty(),
+            Instant.EPOCH);
+
+    assertThat(FlowRecord.transcript(List.of(interaction, classification)))
+        .isEqualTo(FlowRecord.transcript(List.of(interaction)));
   }
 
   @Test

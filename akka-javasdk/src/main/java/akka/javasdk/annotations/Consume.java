@@ -187,6 +187,55 @@ public @interface Consume {
   }
 
   /**
+   * Annotation for a {@link akka.javasdk.consumer.Consumer} that consumes the records of the ledger
+   * of its own service.
+   *
+   * <p>The parameter types of the handler methods select the kinds of records that the consumer
+   * receives. A handler for {@link akka.javasdk.ledger.FlowRecord} selects all record types. These
+   * are {@link akka.javasdk.ledger.InteractionRecord}, {@link akka.javasdk.ledger.ActivityRecord},
+   * {@link akka.javasdk.ledger.GuardrailDecisionRecord}, {@link
+   * akka.javasdk.ledger.EvaluationRecord} and {@link akka.javasdk.ledger.ClassificationRecord}.
+   *
+   * <p>The metadata of a record carries these keys:
+   *
+   * <ul>
+   *   <li>{@code ce-type} holds the record type: {@code interaction}, {@code activity}, {@code
+   *       guardrail-decision}, {@code evaluation} or {@code classification}.
+   *   <li>{@code ce-source} names the producer of the record. For an interaction or an activity, it
+   *       is the component id of the agent. For a guardrail decision, it is the guardrail name. For
+   *       an evaluation, it is the component id of the evaluator. For a classification, it is the
+   *       classifier name.
+   *   <li>{@code flow-id} holds the id of the flow of the record. It is absent for a record outside
+   *       a flow. An evaluation of a workflow run is outside a flow.
+   * </ul>
+   *
+   * <p>The ledger consumer has these delivery guarantees:
+   *
+   * <ul>
+   *   <li>Delivery is at least once.
+   *   <li>The runtime writes the records of one flow in order. Records outside a flow have no order
+   *       guarantee.
+   *   <li>A guardrail decision or an activity record can arrive before its interaction. The runtime
+   *       writes an interaction when it ends.
+   *   <li>The consumer receives only the records of its own service.
+   *   <li>In a multi-region service, the consumer in every region receives the records of every
+   *       region. {@code messageContext().originRegion()} names the region that wrote the record.
+   *   <li>A new consumer receives every record the ledger still holds. {@link StartFrom} can set a
+   *       later start. Records dropped by retention never arrive.
+   *   <li>A handler added later receives only the records after the current offset. The consumer
+   *       does not receive the earlier records of its kind.
+   *   <li>The consumer receives allow decisions of guardrails, unless the service turns off allow
+   *       records.
+   *   <li>The consumer receives no records when {@code akka.javasdk.agent.ledger.enabled} is {@code
+   *       false}.
+   * </ul>
+   */
+  @Target(ElementType.TYPE)
+  @Retention(RetentionPolicy.RUNTIME)
+  @Documented
+  @interface FromLedger {}
+
+  /**
    * Where a {@link akka.javasdk.consumer.Consumer} starts when it is deployed for the first time.
    *
    * <p>Without this annotation a new consumer processes the whole history of its source. With
@@ -194,8 +243,8 @@ public @interface Consume {
    * starts from the given point in time. Exactly one of the two must be set. Events and state
    * changes from before the start point are not consumed.
    *
-   * <p>Supported for consumers of Event Sourced Entities, Key Value Entities, Workflows and service
-   * to service event streams. Not supported for consumers of message broker topics.
+   * <p>Supported for consumers of Event Sourced Entities, Key Value Entities, Workflows, service to
+   * service event streams and the ledger. Not supported for consumers of message broker topics.
    *
    * <p>The start point is recorded on the first deployment and is permanent. The service refuses to
    * start if it is removed or changed, except that a timestamp can change to {@code latest}. To

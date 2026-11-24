@@ -326,6 +326,11 @@ public class Validations {
     return typeDef.hasAnnotation("akka.javasdk.annotations.Consume.FromServiceStream");
   }
 
+  /** Checks if a component has @Consume.FromLedger. */
+  public static boolean hasLedgerSubscription(TypeDef typeDef) {
+    return typeDef.hasAnnotation("akka.javasdk.annotations.Consume.FromLedger");
+  }
+
   /**
    * Checks if a component does not have any subscription annotation.
    *

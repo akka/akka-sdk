@@ -92,7 +92,8 @@ class ConsumerImplSpec
     Some(new BytesPayload(ByteString("some bytes"), BytesPrimitive.fullName)),
     None,
     akka.runtime.sdk.spi.SpiMetadata.empty,
-    io.opentelemetry.context.Context.root())
+    io.opentelemetry.context.Context.root(),
+    None)
 
   "The consumer service" should {
 
