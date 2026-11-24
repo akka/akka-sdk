@@ -290,6 +290,20 @@ public abstract class Agent implements AgentDelegationWorker {
       Builder mcpTools(List<RemoteMcpTools> tools);
 
       /**
+       * Adds the skills of one or more remote A2A agents as tools.
+       *
+       * <p>Construct instances using {@link RemoteA2aAgent#named(String)}
+       */
+      Builder a2aAgents(RemoteA2aAgent agent, RemoteA2aAgent... moreAgents);
+
+      /**
+       * Adds the skills of one or more remote A2A agents as tools.
+       *
+       * <p>Construct instances using {@link RemoteA2aAgent#named(String)}
+       */
+      Builder a2aAgents(List<RemoteA2aAgent> agents);
+
+      /**
        * Sets a custom content loader.
        *
        * <p>When multimodal messages contain image, PDF references, they are normally automatically
@@ -651,6 +665,20 @@ public abstract class Agent implements AgentDelegationWorker {
        * <p>Construct instances using {@link RemoteMcpTools#fromServer(String)}
        */
       Builder mcpTools(List<RemoteMcpTools> tools);
+
+      /**
+       * Adds the skills of one or more remote A2A agents as tools.
+       *
+       * <p>Construct instances using {@link RemoteA2aAgent#named(String)}
+       */
+      Builder a2aAgents(RemoteA2aAgent agent, RemoteA2aAgent... moreAgents);
+
+      /**
+       * Adds the skills of one or more remote A2A agents as tools.
+       *
+       * <p>Construct instances using {@link RemoteA2aAgent#named(String)}
+       */
+      Builder a2aAgents(List<RemoteA2aAgent> agents);
 
       /**
        * Sets a custom content loader.

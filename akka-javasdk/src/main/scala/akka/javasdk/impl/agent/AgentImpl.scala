@@ -473,6 +473,25 @@ private[impl] object AgentImpl {
       case other => throw new IllegalArgumentException(s"Unsupported remote mcp tools impl $other")
     }
 
+  private[impl] def toSpiA2aAgents(
+      remoteA2aAgents: Seq[RemoteA2aAgent],
+      guardrails: AgentGuardrails): Seq[SpiAgent.A2aAgentDescriptor] =
+    remoteA2aAgents.map {
+      case remoteA2a: RemoteA2aAgentImpl =>
+        new SpiAgent.A2aAgentDescriptor(
+          name = remoteA2a.name,
+          skillFilter = remoteA2a.skillFilter match {
+            case Some(predicate) => predicate.test
+            case None            => (_: String) => true
+          },
+          // the tool-call guardrails of a skill are looked up by its skill id
+          toolCallGuardrails = guardrails.toolCallGuardrails,
+          toolTimeout =
+            if (remoteA2a.timeout == Duration.Zero) None
+            else Some(remoteA2a.timeout))
+      case other => throw new IllegalArgumentException(s"Unsupported remote A2A agent impl $other")
+    }
+
   // The runtime calls the hooks with the tool name on the MCP server.
   private final class McpToolCallHooksAdapter(javaInterceptor: RemoteMcpTools.ToolInterceptor)
       extends SpiAgent.McpToolCallHooks {
@@ -826,6 +845,7 @@ private[impl] final class AgentImpl(
             val sessionMemoryClient = deriveSessionMemoryClient(req.memoryProvider, telemetryContext)
             val additionalContext = toSpiContextMessages(sessionMemoryClient.getHistory(sessionId))
             val mcpToolEndpoints = toSpiMcpEndpoints(req.mcpTools)
+            val a2aAgentDescriptors = AgentImpl.toSpiA2aAgents(req.a2aAgents, guardrails)
 
             val allToolClasses =
               agent.getClass +: req.toolInstancesOrClasses.map {
@@ -889,6 +909,8 @@ private[impl] final class AgentImpl(
                 guardrails = guardrails.guardrails,
                 contentLoader = spiContentLoader,
                 callToolFunction = callToolFunction)
+                .withA2aAgentDescriptors(a2aAgentDescriptors)
+                .withA2aAgentDescriptors(a2aAgentDescriptors)
             else
               new SpiAgent.RequestModelEffect(
                 modelProvider = spiModelProvider,

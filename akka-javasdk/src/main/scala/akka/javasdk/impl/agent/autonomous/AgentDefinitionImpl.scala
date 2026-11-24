@@ -10,6 +10,7 @@ import akka.annotation.InternalApi
 import akka.javasdk.agent.ContentLoader
 import akka.javasdk.agent.Guardrail
 import akka.javasdk.agent.ModelProvider
+import akka.javasdk.agent.RemoteA2aAgent
 import akka.javasdk.agent.RemoteMcpTools
 import akka.javasdk.agent.autonomous.AgentDefinition
 import akka.javasdk.agent.autonomous.capability.AgentCapability
@@ -23,6 +24,7 @@ final case class AgentDefinitionImpl(
     modelProvider: ModelProvider,
     toolInstancesOrClasses: util.List[AnyRef],
     mcpTools: util.List[RemoteMcpTools],
+    a2aAgents: util.List[RemoteA2aAgent],
     requestGuardrailClassNames: util.List[String],
     responseGuardrailClassNames: util.List[String],
     capabilities: util.List[AgentCapability],
@@ -43,6 +45,9 @@ final case class AgentDefinitionImpl(
 
   override def mcpTools(tools: RemoteMcpTools*): AgentDefinition =
     copy(mcpTools = concat(mcpTools, tools))
+
+  override def a2aAgents(agents: RemoteA2aAgent*): AgentDefinition =
+    copy(a2aAgents = concat(a2aAgents, agents))
 
   override def requestGuardrails(guardrails: Class[_ <: Guardrail]*): AgentDefinition =
     copy(requestGuardrailClassNames = concat(requestGuardrailClassNames, guardrails.map(_.getName)))
@@ -71,6 +76,7 @@ object AgentDefinitionImpl {
       modelProvider = null,
       toolInstancesOrClasses = util.List.of(),
       mcpTools = util.List.of(),
+      a2aAgents = util.List.of(),
       requestGuardrailClassNames = util.List.of(),
       responseGuardrailClassNames = util.List.of(),
       capabilities = util.List.of(),

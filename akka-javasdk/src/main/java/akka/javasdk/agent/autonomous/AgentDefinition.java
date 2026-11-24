@@ -7,6 +7,7 @@ package akka.javasdk.agent.autonomous;
 import akka.javasdk.agent.ContentLoader;
 import akka.javasdk.agent.Guardrail;
 import akka.javasdk.agent.ModelProvider;
+import akka.javasdk.agent.RemoteA2aAgent;
 import akka.javasdk.agent.RemoteMcpTools;
 import akka.javasdk.agent.autonomous.capability.AgentCapability;
 
@@ -72,6 +73,9 @@ public interface AgentDefinition {
 
   /** Remote MCP tool endpoints available to the agent. */
   AgentDefinition mcpTools(RemoteMcpTools... mcpTools);
+
+  /** Remote A2A agents whose skills are tools of the agent. */
+  AgentDefinition a2aAgents(RemoteA2aAgent... a2aAgents);
 
   /** Guardrails evaluated on requests before they are sent to the LLM. */
   @SuppressWarnings("unchecked")

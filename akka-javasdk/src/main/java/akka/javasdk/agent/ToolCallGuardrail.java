@@ -25,7 +25,10 @@ import java.util.concurrent.CompletionStage;
  */
 public non-sealed interface ToolCallGuardrail extends Guardrail {
 
-  /** Where the called tool runs: {@link FunctionTool}, {@link RemoteMcp} or {@link Unknown}. */
+  /**
+   * Where the called tool runs: {@link FunctionTool}, {@link RemoteMcp}, {@link RemoteA2a} or
+   * {@link Unknown}.
+   */
   sealed interface ToolOrigin {
 
     /** A function tool of the agent. */
@@ -75,6 +78,20 @@ public non-sealed interface ToolCallGuardrail extends Guardrail {
 
       private static String rawPath(URI uri) {
         return uri.getRawPath() == null ? "" : uri.getRawPath();
+      }
+    }
+
+    /**
+     * A skill of a remote A2A agent.
+     *
+     * @param agentName the logical name of the remote agent, as you pass it to {@link
+     *     RemoteA2aAgent#named}
+     * @param skillId the id of the skill in the agent card of the remote agent
+     */
+    record RemoteA2a(String agentName, String skillId) implements ToolOrigin {
+      public RemoteA2a {
+        Objects.requireNonNull(agentName, "agentName");
+        Objects.requireNonNull(skillId, "skillId");
       }
     }
 

@@ -136,6 +136,8 @@ For a function tool, it returns a `ToolOrigin.FunctionTool`.
 For an MCP tool, it returns a `ToolOrigin.RemoteMcp` that holds the `endpoint()` of the MCP server.
 Some MCP servers take credentials in the URI, for example as a query parameter. In that case, `endpoint()` returns
 the credentials too.
+For a skill of a remote A2A agent, it returns a `ToolOrigin.RemoteA2a` that holds the `agentName()` and the `skillId()`.
+For such a skill, `toolName()` returns the skill id, also when the model uses another name for the tool.
 
 For an MCP tool, `toolName()` returns the name of the tool on the MCP server.
 If the `RemoteMcpTools` has a `ToolInterceptor`, the runtime evaluates the guardrail after `interceptRequest`.
@@ -181,7 +183,7 @@ akka.javasdk.agent.guardrails {
 <6> If the guardrail denies or fails, the runtime either aborts the interaction or lets it continue. With `report-only = true`, the runtime lets it continue, regardless of `fail-mode`. In every case, the runtime records the result in the ledger and reports it in logs, metrics, and traces.
 <7> Sets what happens when the evaluation fails with `Decision.Fail`. `fail-closed` aborts the interaction. `fail-open` lets it continue. The default is `fail-closed`. The setting applies only when `report-only` is false.
 <8> An application-specific property, read by the guardrail from its `GuardrailContext`.
-<9> Optional, for a `ToolCallGuardrail` only. Restricts the guardrail to the named tools. Without it, the guardrail sees every tool call on the selected agents. For a function tool, use `ClassName_methodName`, or the `name` set in `@FunctionTool`. For an MCP tool, use the name on the MCP server. The filter matches by name only, so it also matches a tool with the same name from another origin. Use `origin()` to tell them apart.
+<9> Optional, for a `ToolCallGuardrail` only. Restricts the guardrail to the named tools. Without it, the guardrail sees every tool call on the selected agents. For a function tool, use `ClassName_methodName`, or the `name` set in `@FunctionTool`. For an MCP tool, use the name on the MCP server. For a skill of a remote A2A agent, use the skill id. The filter matches by name only, so it also matches a tool with the same name from another origin. Use `origin()` to tell them apart.
 
 The `class` property sets the implementation class. The class must implement `ModelCallGuardrail`, `AgentResponseGuardrail`, or `ToolCallGuardrail`, be public, and have a public constructor. The constructor may take a link:{attachmentsdir}/api/akka/javasdk/agent/GuardrailContext.html[`GuardrailContext`] parameter, which holds the name and the config section of the guardrail. The `ProfanityResponseGuard` example reads its `search-for` property this way.
 

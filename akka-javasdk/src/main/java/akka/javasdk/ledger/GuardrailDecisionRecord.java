@@ -103,6 +103,19 @@ public record GuardrailDecisionRecord(
         if (endpoint == null) throw new IllegalArgumentException("endpoint required");
       }
     }
+
+    /**
+     * A skill of a remote A2A agent.
+     *
+     * @param agentName the logical name of the remote agent
+     * @param skillId the id of the skill in the agent card of the remote agent
+     */
+    record RemoteA2a(String agentName, String skillId) implements ToolOrigin {
+      public RemoteA2a {
+        if (agentName == null) throw new IllegalArgumentException("agentName required");
+        if (skillId == null) throw new IllegalArgumentException("skillId required");
+      }
+    }
   }
 
   /**

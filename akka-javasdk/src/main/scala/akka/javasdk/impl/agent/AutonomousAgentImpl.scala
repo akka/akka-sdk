@@ -95,6 +95,9 @@ private[impl] final class AutonomousAgentImpl(
 
   override val guardrails: SpiAgentGuardrails = agentGuardrails.guardrails
 
+  override val a2aAgentDescriptors: Seq[SpiAgent.A2aAgentDescriptor] =
+    toSpiA2aAgents(agentDefinition.a2aAgents.asScala.toSeq, agentGuardrails)
+
   @nowarn("cat=deprecation")
   override def requestGuardrails: Seq[SpiAgent.Guardrail] = agentGuardrails.legacyModelRequestGuardrails
 

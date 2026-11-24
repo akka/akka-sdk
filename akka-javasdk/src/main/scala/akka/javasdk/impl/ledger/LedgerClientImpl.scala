@@ -328,6 +328,8 @@ private[ledger] object LedgerClientImpl {
         case SpiLedger.ToolOrigin.Unspecified       => new GuardrailDecisionRecord.ToolOrigin.Unspecified()
         case SpiLedger.ToolOrigin.FunctionTool      => new GuardrailDecisionRecord.ToolOrigin.FunctionTool()
         case remote: SpiLedger.ToolOrigin.RemoteMcp => new GuardrailDecisionRecord.ToolOrigin.RemoteMcp(remote.endpoint)
+        case a2a: SpiLedger.ToolOrigin.RemoteA2a =>
+          new GuardrailDecisionRecord.ToolOrigin.RemoteA2a(a2a.agentName, a2a.skillId)
       }
     }
 
