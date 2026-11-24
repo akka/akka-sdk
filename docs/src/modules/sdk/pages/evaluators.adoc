@@ -338,6 +338,7 @@ include::example$doc-snippets/src/main/java/com/example/evaluator/LedgerUsage.ja
 
 The runtime writes the external id on the records of the agents that run in the call, and on the records of the calls that those agents make.
 An autonomous agent keeps the external id of the call that starts its flow. The agents that it delegates to or hands off to write the same id.
+A later call does not change the external id of the agent. An agent whose flow started without an external id stays without one.
 An external id that the incoming request already carries stays in place, so a nested call cannot replace it.
 
 `getExternalIdRecords` returns the records with the external id, newest first:
