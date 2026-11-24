@@ -32,6 +32,7 @@ import akka.javasdk.annotations.EnableReplicationFilter
 import akka.javasdk.annotations.GrpcEndpoint
 import akka.javasdk.annotations.ProtoEventTypes
 import akka.javasdk.annotations.http.HttpEndpoint
+import akka.javasdk.annotations.a2a.A2aEndpoint
 import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.consumer.Consumer
@@ -142,6 +143,9 @@ private[impl] object Reflect {
 
   def isMcpEndpoint(cls: Class[_]): Boolean =
     cls.getAnnotation(classOf[McpEndpoint]) != null
+
+  def isA2aEndpoint(cls: Class[_]): Boolean =
+    cls.getAnnotation(classOf[A2aEndpoint]) != null
 
   def isEventSourcedEntity(cls: Class[_]): Boolean =
     classOf[EventSourcedEntity[_, _]].isAssignableFrom(cls)

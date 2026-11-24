@@ -63,19 +63,19 @@ abstract class AbstractAclAnnotationValidationSpec(val validationMode: Validatio
     "reject @Acl on a Consumer without @Produce.ServiceStream" in {
       assertInvalid(
         "invalid/AclOnConsumer.java",
-        "@Acl annotation is only allowed on classes annotated with @HttpEndpoint, @GrpcEndpoint, @McpEndpoint or @Produce.ServiceStream")
+        "@Acl annotation is only allowed on classes annotated with @HttpEndpoint, @GrpcEndpoint, @McpEndpoint, @A2aEndpoint or @Produce.ServiceStream")
     }
 
     "reject @Acl on a non-endpoint component class" in {
       assertInvalid(
         "invalid/AclOnComponent.java",
-        "@Acl annotation is only allowed on classes annotated with @HttpEndpoint, @GrpcEndpoint, @McpEndpoint or @Produce.ServiceStream")
+        "@Acl annotation is only allowed on classes annotated with @HttpEndpoint, @GrpcEndpoint, @McpEndpoint, @A2aEndpoint or @Produce.ServiceStream")
     }
 
     "reject @Acl on a method of a non-endpoint component" in {
       assertInvalid(
         "invalid/AclOnComponentMethod.java",
-        "@Acl annotation is only allowed on methods of classes annotated with @HttpEndpoint, @GrpcEndpoint, @McpEndpoint or @Produce.ServiceStream")
+        "@Acl annotation is only allowed on methods of classes annotated with @HttpEndpoint, @GrpcEndpoint, @McpEndpoint, @A2aEndpoint or @Produce.ServiceStream")
     }
 
     "accept @JWT on class and method of HttpEndpoint" in {
@@ -89,13 +89,13 @@ abstract class AbstractAclAnnotationValidationSpec(val validationMode: Validatio
     "reject @JWT on a non-endpoint component class" in {
       assertInvalid(
         "invalid/JwtOnComponent.java",
-        "@JWT annotation is only allowed on classes annotated with @HttpEndpoint, @GrpcEndpoint or @McpEndpoint")
+        "@JWT annotation is only allowed on classes annotated with @HttpEndpoint, @GrpcEndpoint, @McpEndpoint or @A2aEndpoint")
     }
 
     "reject @JWT on a method of a non-endpoint component" in {
       assertInvalid(
         "invalid/JwtOnComponentMethod.java",
-        "@JWT annotation is only allowed on methods of classes annotated with @HttpEndpoint, @GrpcEndpoint or @McpEndpoint")
+        "@JWT annotation is only allowed on methods of classes annotated with @HttpEndpoint, @GrpcEndpoint, @McpEndpoint or @A2aEndpoint")
     }
   }
 }

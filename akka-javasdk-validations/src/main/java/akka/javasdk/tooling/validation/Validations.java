@@ -32,6 +32,8 @@ public class Validations {
 
   private static final String MCP_ENDPOINT_ANNOTATION = "akka.javasdk.annotations.mcp.McpEndpoint";
 
+  private static final String A2A_ENDPOINT_ANNOTATION = "akka.javasdk.annotations.a2a.A2aEndpoint";
+
   private static final String ACL_ANNOTATION = "akka.javasdk.annotations.Acl";
   static final String START_FROM = "akka.javasdk.annotations.Consume.StartFrom";
 
@@ -55,9 +57,72 @@ public class Validations {
     } else if (typeDef.hasAnnotation(MCP_ENDPOINT_ANNOTATION)) {
       // no specific validations for mcp endpoint beyond ACL patterns
       return aclPatterns;
+    } else if (typeDef.hasAnnotation(A2A_ENDPOINT_ANNOTATION)) {
+      return validateA2aEndpoint(typeDef).combine(aclPatterns);
     } else {
       return validateComponent(typeDef).combine(aclPatterns);
     }
+  }
+
+  private static Validation validateA2aEndpoint(TypeDef typeDef) {
+    if (!typeDef.extendsType("akka.javasdk.a2a.AbstractA2aEndpoint")) {
+      return Validation.of(
+          errorMessage(
+              typeDef,
+              "A class annotated with @A2aEndpoint must extend"
+                  + " akka.javasdk.a2a.AbstractA2aEndpoint."));
+    }
+    return Validation.Valid.instance();
+  }
+
+  /**
+   * Finds the A2A endpoints that share a path. The root path can be written as "/" or as an empty
+   * string, and a trailing "/" does not matter.
+   *
+   * @param typeDefs the classes to check, those without {@code @A2aEndpoint} are ignored
+   * @return the error message for each class that shares its path with another class
+   */
+  public static Map<String, String> duplicateA2aPathErrors(Collection<? extends TypeDef> typeDefs) {
+    Map<String, Map<String, TypeDef>> classesByPath = new TreeMap<>();
+
+    for (TypeDef typeDef : typeDefs) {
+      typeDef
+          .findAnnotation(A2A_ENDPOINT_ANNOTATION)
+          .ifPresent(
+              endpoint -> {
+                String path = endpoint.getStringValue("path").orElse("/").trim();
+                String normalized =
+                    path.endsWith("/") ? path.substring(0, path.length() - 1) : path;
+                classesByPath
+                    .computeIfAbsent(
+                        normalized.isEmpty() ? "/" : normalized, key -> new TreeMap<>())
+                    .putIfAbsent(typeDef.getQualifiedName(), typeDef);
+              });
+    }
+
+    Map<String, String> errors = new LinkedHashMap<>();
+    for (Map.Entry<String, Map<String, TypeDef>> entry : classesByPath.entrySet()) {
+      Map<String, TypeDef> classes = entry.getValue();
+      if (classes.size() > 1) {
+        for (TypeDef typeDef : classes.values()) {
+          String className = typeDef.getQualifiedName();
+          String otherClassNames =
+              classes.keySet().stream()
+                  .filter(name -> !name.equals(className))
+                  .collect(Collectors.joining(", "));
+          errors.put(
+              className,
+              errorMessage(
+                  typeDef,
+                  "@A2aEndpoint path ["
+                      + entry.getKey()
+                      + "] is not unique. It is also used by ["
+                      + otherClassNames
+                      + "]."));
+        }
+      }
+    }
+    return errors;
   }
 
   /**
@@ -205,9 +270,9 @@ public class Validations {
   /**
    * Validates that @Acl annotation is not used on non-endpoint components.
    *
-   * <p>@Acl is only allowed on classes annotated with @HttpEndpoint, @GrpcEndpoint, @McpEndpoint,
-   * or @Produce.ServiceStream, and on methods within such classes. For @Produce.ServiceStream it is
-   * only allowed on the class.
+   * <p>@Acl is only allowed on classes annotated
+   * with @HttpEndpoint, @GrpcEndpoint, @McpEndpoint, @A2aEndpoint or @Produce.ServiceStream, and on
+   * methods within such classes. For @Produce.ServiceStream it is only allowed on the class.
    *
    * @param typeDef the component class to validate
    * @return a Validation result indicating success or failure
@@ -235,7 +300,7 @@ public class Validations {
           errorMessage(
               typeDef,
               "@Acl annotation is only allowed on classes annotated with @HttpEndpoint,"
-                  + " @GrpcEndpoint, @McpEndpoint or @Produce.ServiceStream."));
+                  + " @GrpcEndpoint, @McpEndpoint, @A2aEndpoint or @Produce.ServiceStream."));
     }
 
     for (MethodDef method : typeDef.getMethods()) {
@@ -244,7 +309,8 @@ public class Validations {
             errorMessage(
                 method,
                 "@Acl annotation is only allowed on methods of classes annotated with"
-                    + " @HttpEndpoint, @GrpcEndpoint, @McpEndpoint or @Produce.ServiceStream."));
+                    + " @HttpEndpoint, @GrpcEndpoint, @McpEndpoint, @A2aEndpoint or"
+                    + " @Produce.ServiceStream."));
       }
     }
 
@@ -268,7 +334,7 @@ public class Validations {
           errorMessage(
               typeDef,
               "@JWT annotation is only allowed on classes annotated with @HttpEndpoint,"
-                  + " @GrpcEndpoint or @McpEndpoint."));
+                  + " @GrpcEndpoint, @McpEndpoint or @A2aEndpoint."));
     }
 
     for (MethodDef method : typeDef.getMethods()) {
@@ -277,7 +343,7 @@ public class Validations {
             errorMessage(
                 method,
                 "@JWT annotation is only allowed on methods of classes annotated with"
-                    + " @HttpEndpoint, @GrpcEndpoint or @McpEndpoint."));
+                    + " @HttpEndpoint, @GrpcEndpoint, @McpEndpoint or @A2aEndpoint."));
       }
     }
 

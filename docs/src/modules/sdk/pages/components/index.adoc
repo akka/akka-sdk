@@ -22,6 +22,8 @@ xref:sdk:grpc-endpoints.adoc[image:ROOT:endpoint.png[width=40] gRPC Endpoints]
 
 xref:sdk:mcp-endpoints.adoc[image:ROOT:endpoint.png[width=40] MCP Endpoints]
 
+xref:sdk:a2a-endpoints.adoc[image:ROOT:endpoint.png[width=40] A2A Endpoints]
+
 xref:sdk:views.adoc[image:ROOT:view.png[width=40] Views]
 
 xref:sdk:workflows.adoc[image:ROOT:workflow.png[width=40] Workflows]
@@ -85,6 +87,10 @@ Component selection is the decision of which Akka component implements each part
 | To expose tools, resources, or prompts to LLM clients
 | xref:sdk:mcp-endpoints.adoc[MCP Endpoint]
 | An MCP endpoint for human or programmatic clients; that is what HTTP and gRPC endpoints are for
+
+| To make your service an agent that other agents call over the A2A protocol
+| xref:sdk:a2a-endpoints.adoc[A2A Endpoint]
+| An A2A endpoint for clients that are not agents; that is what HTTP and gRPC endpoints are for
 
 | Validation, calculation, transformation: logic with no state of its own
 | A plain Java class in the `domain` package
@@ -195,13 +201,14 @@ This decision is covered in depth in xref:sdk:agents.adoc[Agents] ("When to use"
 * No language understanding or generation involved: no agent at all. Entities, workflows, and plain code do not need a model to move data around.
 
 [#cs7-endpoint-type]
-=== HTTP, gRPC, or MCP endpoint
+=== HTTP, gRPC, MCP, or A2A endpoint
 
 Endpoints are the API layer; pick by who calls you:
 
 * Browsers, webhooks, server-sent events, WebSockets, or a served UI: *HTTP Endpoint*. See xref:sdk:web-applications.adoc[] for when to serve the front-end from the service versus hosting it separately.
 * Everything that is not a browser: *gRPC Endpoint* is the default, for your own services, other teams' services, and external clients alike. The explicit protocol definition and schema evolution benefit any non-browser consumer; use HTTP when the consumer can only work with REST and JSON.
 * LLM clients that discover and call tools: *MCP Endpoint*. It serves agents in other services and external MCP clients; an agent in the same service uses regular function tools instead. It is for models, not people; do not route human or programmatic API traffic through it, and do not expose MCP tools that merely duplicate your HTTP API unless agents actually need them.
+* Other agents that call your service with the A2A protocol, for example agents built with the Google Agent Development Kit: *A2A Endpoint*. The endpoint is the agent. It translates between A2A messages and your components.
 
 One service can expose several endpoint types over the same application layer. The endpoint should stay thin either way: request and response types of its own, `ComponentClient` calls inward, no business logic.
 

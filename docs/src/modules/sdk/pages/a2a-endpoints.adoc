@@ -1,0 +1,59 @@
+= Designing A2A Endpoints
+
+include::ROOT:partial$include.adoc[]
+
+image:ROOT:endpoint.png[Endpoint,width=100,float=left] An A2A endpoint makes your service available as an agent that follows the link:https://a2a-protocol.org[Agent2Agent (A2A) protocol]. Other agents, for example agents built with the Google Agent Development Kit (ADK), can discover the agent from its Agent Card and send it messages.
+
+An A2A endpoint is a class that you write. It receives the messages for the agent and translates between A2A messages and your components. Akka does not expose components to A2A callers directly.
+
+Akka serves the protocol. The service supports version 1.0 of the protocol with the JSON-RPC binding. The endpoint answers a message with a message. It does not support tasks, streaming, or push notifications.
+
+== A2A endpoint class
+
+To create an A2A endpoint, annotate a class with `@A2aEndpoint` and an `@Acl`. The class extends `AbstractA2aEndpoint` and implements `onMessage`.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleA2aEndpoint.java[ExampleA2aEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/api/ExampleA2aEndpoint.java[tag=endpoint]
+----
+<1> The path of the endpoint. The default is the root path.
+<2> A skill that the Agent Card lists. A skill only describes what the agent can do.
+<3> The endpoint receives every message for the agent.
+<4> A session id for the agent that is scoped by the caller and the conversation.
+
+The constructor accepts the same types as the constructor of an xref:sdk:mcp-endpoints.adoc[MCP endpoint], and `A2aRequestContext`.
+
+=== Agent Card and paths
+
+The runtime serves the Agent Card at `<path>/.well-known/agent-card.json`. The endpoint at the root path also serves the card at `/.well-known/agent-card.json`. The card has the name, description, version, provider, and skills from the annotation.
+
+A service can have several A2A endpoints. Each endpoint has its own path, and at most one endpoint is at the root path. Callers of an endpoint that is not at the root need the full URL of its card. The build fails when two A2A endpoints use the same path. The deployment of a service fails when two endpoints of any kind use the same path, including the card path of an A2A endpoint.
+
+The interface URL in the card comes from the host of the request. It uses the `X-Forwarded-Proto` header for the scheme when the header is present.
+
+=== Skills
+
+A2A has no way for a caller to choose a skill. The endpoint gets all messages and decides what handles each one. Use the text of the message, or your own convention in the message metadata, to route a message to a component.
+
+=== Messages and replies
+
+`A2aMessage` has the id of the message, the context id, the parts, and the metadata. A part is text, structured data, or a file. `message.text()` joins the text parts.
+
+`A2aReply` has the parts and the metadata of the answer. `A2aReply.text` and `A2aReply.data` create a reply with one part.
+
+An exception from `onMessage` gives the caller an internal error without details. The runtime logs the exception.
+
+== Access control
+
+Use `@Acl` and `@JWT` on the class. They apply to the Agent Card and to all calls. Without an `@Acl`, the runtime denies requests from callers outside the service.
+
+== Conversations and sessions
+
+A caller groups the messages of a conversation with a context id. The caller chooses the context id, so the SDK does not use it alone to find the session of an agent.
+
+`requestContext()` has these values:
+
+* `contextId()` is the context id of the message. For the first message of a conversation, the SDK generates one and sends it to the caller in the reply.
+* `callerId()` is the identity of the caller. It is the issuer and subject of the JWT when the request has a JWT with a subject. Otherwise it is the name of the calling service. It is empty for an anonymous caller.
+* `sessionId()` is a session id for an agent. It depends on the caller and the context id, so one caller cannot use the session of another caller by sending the same context id. An anonymous caller has no identity to scope by, so every request of an anonymous caller gets a new session id.

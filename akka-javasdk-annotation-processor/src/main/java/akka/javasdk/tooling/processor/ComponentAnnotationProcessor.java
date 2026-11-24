@@ -32,6 +32,7 @@ import javax.tools.StandardLocation;
   "akka.javasdk.annotations.http.HttpEndpoint",
   "akka.javasdk.annotations.GrpcEndpoint",
   "akka.javasdk.annotations.mcp.McpEndpoint",
+  "akka.javasdk.annotations.a2a.A2aEndpoint",
   // all components will have this
   "akka.javasdk.annotations.Component",
   // central config/lifecycle class
@@ -66,6 +67,7 @@ public class ComponentAnnotationProcessor extends BaseAkkaProcessor {
           ComponentKinds.HTTP_ENDPOINT,
           ComponentKinds.GRPC_ENDPOINT,
           ComponentKinds.MCP_ENDPOINT,
+          ComponentKinds.A2A_ENDPOINT,
           ComponentKinds.EVENT_SOURCED_ENTITY,
           ComponentKinds.KEY_VALUE_ENTITY,
           ComponentKinds.TIMED_ACTION,
