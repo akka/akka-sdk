@@ -33,13 +33,23 @@ final class MockedA2aAgentsServer private (server: HttpServer, agents: Seq[MockA
   private val port = server.getAddress.getPort
   private def baseUrl(name: String) = s"http://localhost:$port/$name"
 
-  /** Application configuration that points each agent name at its mock. */
-  val config: Config =
+  /**
+   * Application configuration that points each agent name at its mock. It replaces the credentials and the allowed
+   * hosts that the service has for the agent, as the mock is plain HTTP and has no use for them.
+   */
+  val config: Config = {
+    def key(a: MockA2aAgent, setting: String) = s"akka.javasdk.agent.a2a-client.agents.\"${a.name}\".$setting"
     ConfigFactory.parseMap(
       agents
-        .map(a => s"akka.javasdk.agent.a2a-client.agents.\"${a.name}\".card-url" -> s"${baseUrl(a.name)}/card")
+        .flatMap { a =>
+          Seq(
+            key(a, "card-url") -> s"${baseUrl(a.name)}/card",
+            key(a, "auth.type") -> "none",
+            key(a, "allowed-hosts") -> java.util.List.of[String]())
+        }
         .toMap
         .asJava)
+  }
 
   private def start(): Unit = {
     agents.foreach { agent =>
@@ -72,6 +82,9 @@ final class MockedA2aAgentsServer private (server: HttpServer, agents: Seq[MockA
     node.put("preferredTransport", "JSONRPC")
     node.put("protocolVersion", "0.3.0")
     node.put("version", "1.0.0")
+    node.putObject("capabilities")
+    node.putArray("defaultInputModes").add("text/plain")
+    node.putArray("defaultOutputModes").add("text/plain")
     val skills = node.putArray("skills")
     agent.skills.asScala.foreach { s =>
       val skill = skills.addObject()

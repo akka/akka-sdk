@@ -4,6 +4,7 @@
 
 package akka.javasdk.testkit;
 
+import akka.annotation.InternalApi;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -15,7 +16,13 @@ import java.util.function.Function;
  *
  * <p>The testkit serves an agent card with the skills of the mock and answers calls to them. It
  * also sets the configuration of the agent name, so {@code RemoteA2aAgent.named(name)} in the
- * service under test reaches the mock, without any other configuration.
+ * service under test reaches the mock, without any other configuration. For the name of the mock,
+ * the testkit replaces the authentication and the allowed hosts that the configuration of the
+ * service has, as the mock is plain HTTP.
+ *
+ * <p>The mock picks the skill from the {@code skillId} in the metadata of the message, which the
+ * runtime sends. The A2A protocol has no field to select a skill, so a real remote agent can ignore
+ * it, and the mock does not show that.
  *
  * <p>A skill handler receives the text of the message from the agent under test and returns the
  * text of the reply. When the handler throws, the remote agent reports a failed task, which the
@@ -24,7 +31,8 @@ import java.util.function.Function;
  */
 public final class MockA2aAgent {
 
-  /** A skill of the mock. */
+  /** INTERNAL API: A skill of the mock. */
+  @InternalApi
   public record Skill(String id, String description, Function<String, String> handler) {}
 
   private final String name;
@@ -59,12 +67,14 @@ public final class MockA2aAgent {
     return new MockA2aAgent(name, Collections.unmodifiableList(updated));
   }
 
-  /** The logical name of the remote agent. */
+  /** INTERNAL API */
+  @InternalApi
   public String name() {
     return name;
   }
 
-  /** The skills of the mock. */
+  /** INTERNAL API */
+  @InternalApi
   public List<Skill> skills() {
     return skills;
   }

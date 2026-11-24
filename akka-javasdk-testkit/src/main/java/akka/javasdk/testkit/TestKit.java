@@ -755,7 +755,8 @@ public class TestKit {
           grpcMocks,
           objectStorageBuckets,
           ephemeralPort,
-          decisionModelProvider);
+          decisionModelProvider,
+          a2aMocks);
     }
 
     /**
@@ -946,6 +947,7 @@ public class TestKit {
           eventingSupport,
           mockedEventing,
           dependencyProvider,
+          dependencyOverrides,
           additionalConfig,
           disabledComponents,
           overrideDisabledComponents,
@@ -1183,7 +1185,8 @@ public class TestKit {
     if (!settings.a2aMocks.isEmpty()) {
       a2aMockServer = MockedA2aAgentsServer.start(settings.a2aMocks);
     }
-    // what the service says in its own configuration wins over the mocks
+    // The mock replaces the credentials of the service for the same agent. withAdditionalConfig
+    // wins.
     var config =
         a2aMockServer == null
             ? settings.additionalConfig
