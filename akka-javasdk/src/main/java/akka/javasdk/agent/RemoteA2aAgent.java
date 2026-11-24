@@ -14,6 +14,9 @@ import java.util.function.Predicate;
  * A remote agent that speaks the Agent2Agent (A2A) protocol. Each skill in the agent card of the
  * remote agent becomes a tool of the agent that uses it.
  *
+ * <p>The runtime speaks A2A version 1.0 over JSON-RPC. The card of the remote agent must list a
+ * JSON-RPC interface with protocol version 1.0.
+ *
  * <p>Only the logical name is in code. The runtime reads the card URL, the authentication and the
  * allowed hosts from the configuration of the service under {@code
  * akka.javasdk.agent.a2a-client.agents.<name>}, so they can differ per environment.

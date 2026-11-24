@@ -200,6 +200,8 @@ Only some model providers accept multimodal tool results (currently Anthropic, B
 
 Use this only when you must call an agent outside Akka that speaks the https://a2a-protocol.org[Agent2Agent (A2A)^] protocol. To call an agent in the same service, use the component client. To call an Akka agent in another service, expose it through an xref:sdk:http-endpoints.adoc[HTTP endpoint] or an xref:sdk:mcp-endpoints.adoc[MCP endpoint].
 
+The runtime speaks A2A version 1.0 over JSON-RPC, and no other version or transport. The card of the remote agent must list a JSON-RPC interface with protocol version 1.0 in `supportedInterfaces`. For a card that does not, for example a card of version 0.3 or a card with only a gRPC interface, the call fails with a message that names the versions and transports that the card offers.
+
 An agent can call such a remote agent. Each skill in the agent card of the remote agent becomes a tool of your agent. The model calls a skill with a text message, and the answer of the remote agent comes back as the result of the tool call.
 
 In code you only give the logical name of the remote agent. The runtime reads the connection settings from its configuration, so they can differ per environment.

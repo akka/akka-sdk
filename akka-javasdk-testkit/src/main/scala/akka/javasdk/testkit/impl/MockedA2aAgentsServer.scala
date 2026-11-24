@@ -78,10 +78,11 @@ final class MockedA2aAgentsServer private (server: HttpServer, agents: Seq[MockA
     val node = mapper.createObjectNode()
     node.put("name", agent.name)
     node.put("description", s"Mock of ${agent.name}")
-    node.put("url", s"${baseUrl(agent.name)}/rpc")
-    node.put("preferredTransport", "JSONRPC")
-    node.put("protocolVersion", "0.3.0")
     node.put("version", "1.0.0")
+    val anInterface = node.putArray("supportedInterfaces").addObject()
+    anInterface.put("url", s"${baseUrl(agent.name)}/rpc")
+    anInterface.put("protocolBinding", "JSONRPC")
+    anInterface.put("protocolVersion", "1.0")
     node.putObject("capabilities")
     node.putArray("defaultInputModes").add("text/plain")
     node.putArray("defaultOutputModes").add("text/plain")
@@ -96,43 +97,50 @@ final class MockedA2aAgentsServer private (server: HttpServer, agents: Seq[MockA
     node
   }
 
+  private def textMessage(node: ObjectNode, role: String, text: String): Unit = {
+    node.put("messageId", java.util.UUID.randomUUID().toString)
+    node.put("role", role)
+    node.putArray("parts").addObject().put("text", text)
+  }
+
+  // Like an A2A 1.0 server: the version header is required, and a request without it is read as version 0.3.
   private def rpc(exchange: HttpExchange, agent: MockA2aAgent): Unit = {
     val request = mapper.readTree(exchange.getRequestBody.readAllBytes())
     val message = request.path("params").path("message")
     val skillId = message.path("metadata").path("skillId").asText("")
     val text = message.path("parts").elements().asScala.map(_.path("text").asText("")).mkString("\n")
+    val version = Option(exchange.getRequestHeaders.getFirst("A2A-Version")).getOrElse("")
 
     val response = mapper.createObjectNode()
     response.put("jsonrpc", "2.0")
     response.set[JsonNode]("id", request.path("id"))
-    agent.skills.asScala.find(_.id == skillId) match {
-      case None =>
-        val error = response.putObject("error")
-        error.put("code", -32602)
-        error.put("message", s"Mock agent [${agent.name}] has no skill [$skillId]")
-      case Some(skill) =>
-        try {
-          val result = response.putObject("result")
-          result.put("kind", "message")
-          result.put("role", "agent")
-          result.put("messageId", java.util.UUID.randomUUID().toString)
-          result.putArray("parts").addObject().put("kind", "text").put("text", skill.handler.apply(text))
-        } catch {
-          case NonFatal(e) =>
-            response.remove("result")
-            val result = response.putObject("result")
-            result.put("kind", "task")
-            result.put("id", java.util.UUID.randomUUID().toString)
-            result.put("contextId", java.util.UUID.randomUUID().toString)
-            val status = result.putObject("status")
-            status.put("state", "failed")
-            val failure = status.putObject("message")
-            failure.put("kind", "message")
-            failure.put("role", "agent")
-            failure.put("messageId", java.util.UUID.randomUUID().toString)
-            failure.putArray("parts").addObject().put("kind", "text").put("text", String.valueOf(e.getMessage))
-        }
+    def error(code: Int, text: String): Unit = {
+      val e = response.putObject("error")
+      e.put("code", code)
+      e.put("message", text)
     }
+    if (version != "1.0" && !version.startsWith("1."))
+      error(
+        -32009,
+        s"A2A version '${if (version.isEmpty) "0.3" else version}' is not supported by this mock. Expected version '1.0'.")
+    else if (request.path("method").asText("") != "SendMessage") error(-32601, "Method not found")
+    else
+      agent.skills.asScala.find(_.id == skillId) match {
+        case None => error(-32602, s"Mock agent [${agent.name}] has no skill [$skillId]")
+        case Some(skill) =>
+          try {
+            textMessage(response.putObject("result").putObject("message"), "ROLE_AGENT", skill.handler.apply(text))
+          } catch {
+            case NonFatal(e) =>
+              response.remove("result")
+              val task = response.putObject("result").putObject("task")
+              task.put("id", java.util.UUID.randomUUID().toString)
+              task.put("contextId", java.util.UUID.randomUUID().toString)
+              val status = task.putObject("status")
+              status.put("state", "TASK_STATE_FAILED")
+              textMessage(status.putObject("message"), "ROLE_AGENT", String.valueOf(e.getMessage))
+          }
+      }
     reply(exchange, 200, response)
   }
 

@@ -20,6 +20,9 @@ import java.util.function.Function;
  * the testkit replaces the authentication and the allowed hosts that the configuration of the
  * service has, as the mock is plain HTTP.
  *
+ * <p>The mock speaks A2A version 1.0 over JSON-RPC, as the runtime does. Like a 1.0 server, it
+ * rejects a request that does not have the {@code A2A-Version} header.
+ *
  * <p>The mock picks the skill from the {@code skillId} in the metadata of the message, which the
  * runtime sends. The A2A protocol has no field to select a skill, so a real remote agent can ignore
  * it, and the mock does not show that.
