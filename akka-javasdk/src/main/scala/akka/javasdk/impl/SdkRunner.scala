@@ -1296,6 +1296,8 @@ private final class Sdk(
           }
         }
 
+        AgentImpl.validateA2aAgentsConfigured(agentDefinition.a2aAgents.asScala.toSeq, applicationConfig, componentId)
+
         val allSpiTaskDefinitions: Seq[SpiTask.SpiTaskDefinition] =
           agentDefinition.capabilities.asScala.toSeq
             .collect { case ta: TaskAcceptanceImpl => ta }

@@ -9,6 +9,7 @@ import java.util.Set
 
 import akka.javasdk.agent.RemoteA2aAgent
 import akka.javasdk.impl.agent.GuardrailProvider.AgentGuardrails
+import com.typesafe.config.ConfigFactory
 import io.opentelemetry.api.OpenTelemetry
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -74,6 +75,39 @@ class AgentImplA2aAgentsSpec extends AnyWordSpec with Matchers {
         Seq(RemoteA2aAgent.named("claims"), RemoteA2aAgent.named("claims").withAllowedSkills("a")),
         noGuardrails)
       e.getMessage should include("claims")
+    }
+  }
+
+  "AgentImpl.validateA2aAgentsConfigured" should {
+    val config = ConfigFactory.parseString("""
+      akka.javasdk.agent.a2a-client.agents {
+        claims.card-url = "https://claims.example.com/card"
+        "odd.name".card-url = "https://odd.example.com/card"
+        nourl.auth.type = none
+      }""")
+
+    "accept agents that have a card url, also with a dot in the name" in {
+      AgentImpl.validateA2aAgentsConfigured(
+        Seq(RemoteA2aAgent.named("claims"), RemoteA2aAgent.named("odd.name")),
+        config,
+        "my-agent")
+    }
+
+    "fail for an agent without a card url, naming the agent and the key" in {
+      val e = the[IllegalArgumentException] thrownBy AgentImpl.validateA2aAgentsConfigured(
+        Seq(RemoteA2aAgent.named("claims"), RemoteA2aAgent.named("nourl")),
+        config,
+        "my-agent")
+      e.getMessage should include("my-agent")
+      e.getMessage should include("nourl")
+      e.getMessage should include("card-url")
+    }
+
+    "fail for an agent that is not configured" in {
+      an[IllegalArgumentException] should be thrownBy AgentImpl.validateA2aAgentsConfigured(
+        Seq(RemoteA2aAgent.named("unknown")),
+        config,
+        "my-agent")
     }
   }
 

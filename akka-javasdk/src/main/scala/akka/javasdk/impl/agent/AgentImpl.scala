@@ -89,6 +89,7 @@ import akka.stream.SystemMaterializer
 import akka.util.ByteString
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigException
+import com.typesafe.config.ConfigUtil
 import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.LoggerFactory
@@ -471,6 +472,21 @@ private[impl] object AgentImpl {
           responseGuardrails = guardrails.legacyMcpToolResponseGuardrails,
           toolCallGuardrails = guardrails.toolCallGuardrails)
       case other => throw new IllegalArgumentException(s"Unsupported remote mcp tools impl $other")
+    }
+
+  /** Fails when a remote A2A agent has no card URL in the configuration of the service. */
+  private[impl] def validateA2aAgentsConfigured(
+      remoteA2aAgents: Seq[RemoteA2aAgent],
+      applicationConfig: Config,
+      componentId: String): Unit =
+    remoteA2aAgents.foreach {
+      case remoteA2a: RemoteA2aAgentImpl =>
+        val path = ConfigUtil.joinPath("akka", "javasdk", "agent", "a2a-client", "agents", remoteA2a.name, "card-url")
+        if (!applicationConfig.hasPath(path))
+          throw new IllegalArgumentException(
+            s"Agent [$componentId] uses the remote A2A agent [${remoteA2a.name}], which has no card-url configured. " +
+            s"Set [$path] in the configuration of the service.")
+      case _ => ()
     }
 
   private[impl] def toSpiA2aAgents(
