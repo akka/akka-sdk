@@ -6,6 +6,7 @@ package akka.javasdk.mcp;
 
 import akka.annotation.DoNotInherit;
 import akka.http.javadsl.model.HttpHeader;
+import akka.javasdk.Context;
 import akka.javasdk.JwtClaims;
 import akka.javasdk.Principals;
 import akka.javasdk.SpiffeContext;
@@ -37,7 +38,7 @@ import java.util.Optional;
  * <p>Not for user extension, implementation provided by the SDK.
  */
 @DoNotInherit
-public interface McpRequestContext {
+public interface McpRequestContext extends Context {
   /**
    * Get the principals associated with this request.
    *

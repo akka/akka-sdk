@@ -56,6 +56,14 @@ public class TestMcpEndpoint extends AbstractMcpEndpoint {
   @McpTool(description = "A tool returning nothing")
   public void ping() {}
 
+  @McpTool(description = "A tool returning the regions of the request context")
+  public String regions() {
+    return "self: "
+        + requestContext().selfRegion()
+        + ", downed: "
+        + requestContext().downedRegions();
+  }
+
   @McpResource(
       name = "example text",
       uri = "file:///example.txt",
