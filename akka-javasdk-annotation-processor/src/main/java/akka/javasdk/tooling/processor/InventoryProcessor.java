@@ -4,8 +4,10 @@
 
 package akka.javasdk.tooling.processor;
 
+import com.typesafe.config.Config;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -14,13 +16,15 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.ElementFilter;
+import javax.tools.FileObject;
 import javax.tools.StandardLocation;
 
 /**
  * Writes {@code META-INF/akka-javasdk-inventory_<groupId>_<artifactId>.json}, listing the
- * components, endpoints and endpoint routes in the sources of the compile. Writes nothing when the
- * compile has no component or endpoint, or when an annotation processor reports an error in the
- * same compile.
+ * components, endpoints and endpoint routes in the sources of the compile and the guardrails that
+ * the config on the compile classpath enables. Writes nothing unless the compiler option {@code
+ * akka.javasdk.inventory} is {@code true}, when the compile has no component or endpoint, or when
+ * an annotation processor reports an error in the same compile.
  */
 @SupportedAnnotationTypes({
   "akka.javasdk.annotations.Component",
@@ -31,6 +35,8 @@ import javax.tools.StandardLocation;
 })
 public class InventoryProcessor extends BaseAkkaProcessor {
 
+  private static final String OPTION_INVENTORY = "akka.javasdk.inventory";
+  private static final String OPTION_CLASSPATH = "akka.javasdk.inventory.classpath";
   private static final String OPTION_GROUP_ID = "akka.javasdk.groupId";
   private static final String OPTION_ARTIFACT_ID = "akka.javasdk.artifactId";
   private static final String OPTION_COMPONENT_LIBRARY = "akka.javasdk.componentLibrary";
@@ -47,19 +53,30 @@ public class InventoryProcessor extends BaseAkkaProcessor {
   private boolean alreadyRan = false;
   private String groupId;
   private String artifactId;
+  private String classpathOption;
 
   @Override
   public Set<String> getSupportedOptions() {
-    return Set.of(OPTION_GROUP_ID, OPTION_ARTIFACT_ID, OPTION_COMPONENT_LIBRARY);
+    return Set.of(
+        OPTION_INVENTORY,
+        OPTION_CLASSPATH,
+        OPTION_GROUP_ID,
+        OPTION_ARTIFACT_ID,
+        OPTION_COMPONENT_LIBRARY);
   }
 
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+    if (!Boolean.parseBoolean(processingEnv.getOptions().get(OPTION_INVENTORY))) {
+      return true;
+    }
+
     if (!alreadyRan) {
       alreadyRan = true;
       groupId = requiredOption(OPTION_GROUP_ID);
       artifactId = requiredOption(OPTION_ARTIFACT_ID);
-      if (groupId != null && artifactId != null) {
+      classpathOption = requiredOption(OPTION_CLASSPATH);
+      if (groupId != null && artifactId != null && classpathOption != null) {
         collectComponents(annotations, roundEnv);
       }
     }
@@ -120,7 +137,18 @@ public class InventoryProcessor extends BaseAkkaProcessor {
     var path = INVENTORY_FILE_PREFIX + groupId + "_" + artifactId + INVENTORY_FILE_SUFFIX;
     var componentLibrary =
         Boolean.parseBoolean(processingEnv.getOptions().get(OPTION_COMPONENT_LIBRARY));
-    var inventory = new Inventory(groupId, artifactId, componentLibrary, components, routes);
+
+    List<InventoryGuardrail> guardrails;
+    try {
+      var classpath = InventoryClasspath.parse(OPTION_CLASSPATH, classpathOption);
+      guardrails = GuardrailReader.read(readConfig(classpath), this::warning);
+    } catch (InventoryException ex) {
+      error(ex.getMessage());
+      return;
+    }
+
+    var inventory =
+        new Inventory(groupId, artifactId, componentLibrary, components, routes, guardrails);
 
     try {
       var resource =
@@ -136,5 +164,21 @@ public class InventoryProcessor extends BaseAkkaProcessor {
               + ": "
               + ex.getMessage());
     }
+  }
+
+  private Config readConfig(List<Path> classpath) throws InventoryException {
+    try (var loader = InventoryClasspath.classLoader(outputDirectory(), classpath)) {
+      return InventoryConfig.load(loader);
+    } catch (IOException ex) {
+      throw new InventoryException(
+          "Akka SDK annotation processor cannot read the config: " + ex.getMessage(), ex);
+    }
+  }
+
+  private Optional<Path> outputDirectory() throws IOException {
+    return existingOutputResource(InventoryConfig.APPLICATION_CONF)
+        .map(FileObject::toUri)
+        .filter(uri -> "file".equals(uri.getScheme()))
+        .map(uri -> Path.of(uri).getParent());
   }
 }

@@ -74,6 +74,9 @@
         <skip.deploy>true</skip.deploy>
         <non-akka-service>false</non-akka-service>
 
+        <!-- Set to true to write the service inventory on compilation. -->
+        <akka.javasdk.inventory>false</akka.javasdk.inventory>
+
         <!-- plugin versions -->
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <protobuf-maven-plugin.version>0.6.1</protobuf-maven-plugin.version>
@@ -112,6 +115,8 @@
                             <arg>-Aakka.javasdk.groupId=${project.groupId}</arg>
                             <arg>-Aakka.javasdk.artifactId=${project.artifactId}</arg>
                             <arg>-Aakka.javasdk.componentLibrary=${non-akka-service}</arg>
+                            <arg>-Aakka.javasdk.inventory=${akka.javasdk.inventory}</arg>
+                            <arg>-Aakka.javasdk.inventory.classpath=${project.compileClasspathElements}</arg>
                         </compilerArgs>
                         <annotationProcessors>
                             <annotationProcessor>
@@ -549,9 +554,11 @@
         </profile>
         <!-- Clean build output with a stale component descriptor or inventory: a service without a
              descriptor, a descriptor with a service marker that does not match non-akka-service, a
-             descriptor or inventory that another tool wrote after the last Maven compile, or a descriptor
-             with components but no inventory, as build output from an earlier SDK has. This happens with
+             descriptor or inventory that another tool wrote after the last Maven compile. This happens with
              build output from an earlier SDK version, after a change of non-akka-service, or after an IDE build.
+             When akka.javasdk.inventory is true, also clean a descriptor with components but no inventory.
+             When akka.javasdk.inventory is true, also clean target/classes when a config file in src/main/resources changed since the last Maven compile.
+             When akka.javasdk.inventory is false, also clean build output that holds an inventory.
              Maven profile file-based activation does not support wildcards or ${project.*}
              properties, so we use antrun instead. The profile only
              activates when target/classes already exists (previous build output present). -->
@@ -584,24 +591,36 @@
                                         <condition property="descriptor.marker.expected" value="false" else="true">
                                             <istrue value="${non-akka-service}"/>
                                         </condition>
+                                        <condition property="inventory.enabled">
+                                            <istrue value="${akka.javasdk.inventory}"/>
+                                        </condition>
                                         <macrodef name="clean-on-stale-descriptor">
                                             <attribute name="dir"/>
                                             <attribute name="status-file"/>
                                             <attribute name="clean-when-missing"/>
+                                            <attribute name="config-dir" default="target/no-config-dir"/>
                                             <sequential>
                                                 <local name="descriptor.present"/>
                                                 <local name="descriptor.marked"/>
                                                 <local name="status.present"/>
                                                 <local name="status.uptodate"/>
+                                                <local name="config.present"/>
+                                                <local name="config.uptodate"/>
                                                 <local name="descriptor.components"/>
                                                 <local name="inventory.present"/>
                                                 <local name="descriptor.stale"/>
                                                 <available property="descriptor.present" file="@{dir}/${descriptor.file}"/>
                                                 <available property="status.present" file="@{status-file}"/>
                                                 <available property="inventory.present" file="@{dir}/${inventory.file}"/>
+                                                <available property="config.present" file="@{config-dir}" type="dir"/>
                                                 <uptodate property="status.uptodate" targetfile="@{status-file}">
                                                     <srcfiles dir="@{dir}" includes="${descriptor.file},${inventory.file}"
                                                               erroronmissingdir="false"/>
+                                                </uptodate>
+                                                <uptodate property="config.uptodate" targetfile="@{status-file}"
+                                                          if:set="config.present">
+                                                    <srcfiles dir="@{config-dir}"
+                                                              includes="**/*.conf,**/*.json,**/*.properties"/>
                                                 </uptodate>
                                                 <condition property="descriptor.marked" value="true" else="false">
                                                     <resourcecount when="greater" count="0">
@@ -632,8 +651,19 @@
                                                             <not><isset property="status.uptodate"/></not>
                                                         </and>
                                                         <and>
+                                                            <isset property="inventory.enabled"/>
+                                                            <isset property="config.present"/>
+                                                            <isset property="status.present"/>
+                                                            <not><isset property="config.uptodate"/></not>
+                                                        </and>
+                                                        <and>
+                                                            <isset property="inventory.enabled"/>
                                                             <isset property="descriptor.components"/>
                                                             <not><isset property="inventory.present"/></not>
+                                                        </and>
+                                                        <and>
+                                                            <not><isset property="inventory.enabled"/></not>
+                                                            <isset property="inventory.present"/>
                                                         </and>
                                                     </or>
                                                 </condition>
@@ -642,7 +672,8 @@
                                         </macrodef>
                                         <clean-on-stale-descriptor dir="target/classes"
                                                                    status-file="target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst"
-                                                                   clean-when-missing="${descriptor.marker.expected}"/>
+                                                                   clean-when-missing="${descriptor.marker.expected}"
+                                                                   config-dir="src/main/resources"/>
                                         <clean-on-stale-descriptor dir="target/test-classes"
                                                                    status-file="target/maven-status/maven-compiler-plugin/testCompile/default-testCompile/createdFiles.lst"
                                                                    clean-when-missing="false"/>

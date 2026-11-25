@@ -474,10 +474,43 @@ jobs:
           DIR: ${{ matrix.sample }}
         run: |-
           cd samples/${DIR}
+          if ls target/classes/META-INF/akka-javasdk-inventory_*.json 2>/dev/null; then
+            echo "${DIR} wrote a service inventory without akka.javasdk.inventory"
+            exit 1
+          fi
+          mvn compile -Dakka.javasdk.inventory=true --no-transfer-progress
           if ! ls target/classes/META-INF/akka-javasdk-inventory_*.json; then
             echo "${DIR} wrote no service inventory"
             exit 1
           fi
+
+      - name: ${{ matrix.sample }} inventory guardrails
+        if: matrix.sample == 'doc-snippets'
+        env:
+          DIR: ${{ matrix.sample }}
+        run: |-
+          cd samples/${DIR}
+          inventory=$(ls target/classes/META-INF/akka-javasdk-inventory_*.json)
+          if ! grep -qF '"name": "refund-limit"' "${inventory}" || ! grep -qF '"tools": ["issueRefund"]' "${inventory}"; then
+            echo "the service inventory does not list the refund-limit guardrail"
+            exit 1
+          fi
+
+      - name: ${{ matrix.sample }} inventory after a config edit
+        if: matrix.sample == 'doc-snippets'
+        env:
+          DIR: ${{ matrix.sample }}
+        run: |-
+          cd samples/${DIR}
+          inventory=$(ls target/classes/META-INF/akka-javasdk-inventory_*.json)
+          sleep 2
+          echo 'akka.javasdk.agent.guardrails."default model-call jailbreak".agents = ["*"]' >> src/main/resources/application.conf
+          mvn compile -Dakka.javasdk.inventory=true --no-transfer-progress
+          if ! grep -qF '"name": "default model-call jailbreak"' "${inventory}"; then
+            echo "mvn compile kept an inventory without the application.conf edit"
+            exit 1
+          fi
+          git checkout -- src/main/resources/application.conf
 
       - name: ${{ matrix.sample }} regenerate after another tool
         if: matrix.sample == 'helloworld-agent'
@@ -488,7 +521,7 @@ jobs:
           inventory=$(ls target/classes/META-INF/akka-javasdk-inventory_*.json)
           sleep 2
           echo '{}' > "${inventory}"
-          mvn compile --no-transfer-progress
+          mvn compile -Dakka.javasdk.inventory=true --no-transfer-progress
           if ! grep -q '"components"' "${inventory}"; then
             echo "mvn compile kept an inventory that another tool wrote"
             exit 1
@@ -502,9 +535,22 @@ jobs:
           cd samples/${DIR}
           inventory=$(ls target/classes/META-INF/akka-javasdk-inventory_*.json)
           rm "${inventory}"
-          mvn compile --no-transfer-progress
+          mvn compile -Dakka.javasdk.inventory=true --no-transfer-progress
           if ! test -f "${inventory}"; then
             echo "mvn compile did not write the missing inventory"
+            exit 1
+          fi
+
+      - name: ${{ matrix.sample }} remove the inventory without the flag
+        if: matrix.sample == 'helloworld-agent'
+        env:
+          DIR: ${{ matrix.sample }}
+        run: |-
+          cd samples/${DIR}
+          inventory=$(ls target/classes/META-INF/akka-javasdk-inventory_*.json)
+          mvn compile --no-transfer-progress
+          if test -f "${inventory}"; then
+            echo "mvn compile kept an inventory without akka.javasdk.inventory"
             exit 1
           fi
 

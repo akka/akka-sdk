@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 /** Renders an {@link Inventory} as JSON. */
 final class InventoryJson {
@@ -16,6 +17,8 @@ final class InventoryJson {
 
   private static final String ENTRY_INDENT = "    ";
   private static final String FIELD_INDENT = "      ";
+
+  private static final String UNKNOWN = "unknown";
 
   private InventoryJson() {}
 
@@ -51,6 +54,9 @@ final class InventoryJson {
     json.append(",\n");
 
     renderArray(json, "routes", routes, InventoryJson::renderRoute);
+    json.append(",\n");
+
+    renderArray(json, "guardrails", inventory.guardrails(), InventoryJson::renderGuardrail);
     json.append("\n");
 
     json.append("}\n");
@@ -97,6 +103,35 @@ final class InventoryJson {
     }
     fields.add(jsonField("acl", acl(route.acl())));
     route.jwt().ifPresent(jwt -> fields.add(jsonField("jwt", jwt(jwt))));
+
+    renderEntry(json, fields);
+  }
+
+  private static void renderGuardrail(StringBuilder json, InventoryGuardrail guardrail) {
+    List<String> fields = new ArrayList<>();
+    fields.add(field("name", guardrail.name()));
+    fields.add(
+        guardrailField(guardrail, "class", "class", key -> field(key, guardrail.className())));
+    fields.add(
+        guardrailField(guardrail, "category", "category", key -> field(key, guardrail.category())));
+    fields.add(
+        guardrailField(
+            guardrail, "report-only", "reportOnly", key -> field(key, guardrail.reportOnly())));
+    fields.add(
+        guardrailField(
+            guardrail, "fail-mode", "failMode", key -> field(key, guardrail.failMode())));
+    fields.add(
+        guardrailField(guardrail, "agents", "agents", key -> field(key, guardrail.agents())));
+    fields.add(
+        guardrailField(
+            guardrail, "agent-roles", "agentRoles", key -> field(key, guardrail.agentRoles())));
+    fields.add(guardrailField(guardrail, "tools", "tools", key -> field(key, guardrail.tools())));
+
+    if (guardrail.unknownKeys().contains("control-id")) {
+      fields.add(field("controlId", UNKNOWN));
+    } else {
+      guardrail.controlId().ifPresent(controlId -> fields.add(field("controlId", controlId)));
+    }
 
     renderEntry(json, fields);
   }
@@ -156,8 +191,28 @@ final class InventoryJson {
     return object(entries);
   }
 
+  /** Renders the field as {@code "unknown"} when {@code configKey} is unresolved. */
+  private static String guardrailField(
+      InventoryGuardrail guardrail,
+      String configKey,
+      String jsonKey,
+      Function<String, String> known) {
+    if (guardrail.unknownKeys().contains(configKey)) {
+      return field(jsonKey, UNKNOWN);
+    }
+    return known.apply(jsonKey);
+  }
+
   private static String field(String key, String value) {
     return jsonField(key, quote(value));
+  }
+
+  private static String field(String key, boolean value) {
+    return jsonField(key, String.valueOf(value));
+  }
+
+  private static String field(String key, List<String> values) {
+    return jsonField(key, strings(values));
   }
 
   private static String jsonField(String key, String json) {
