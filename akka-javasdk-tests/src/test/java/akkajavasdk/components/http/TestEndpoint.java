@@ -68,6 +68,14 @@ public class TestEndpoint extends AbstractHttpEndpoint {
     return "name: " + name + ", a: " + a + ", b: " + b + ", c: " + c;
   }
 
+  @Get("/regions")
+  public String getRegions() {
+    return "self: "
+        + requestContext().selfRegion()
+        + ", downed: "
+        + requestContext().downedRegions();
+  }
+
   public record SomeRecord(String text, int number) {}
 
   @Post("/list-body")

@@ -14,5 +14,6 @@ final class TestKitEventSourcedEntityEventContext extends EventContext {
   override def entityId = "testkit-entity-id"
   override def sequenceNumber = 0L
   override def selfRegion: String = ""
+  override def downedRegions(): java.util.Set[String] = java.util.Collections.emptySet()
   override def metadata: Metadata = Metadata.EMPTY
 }

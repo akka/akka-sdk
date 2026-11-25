@@ -102,11 +102,11 @@ private[impl] object AgentImpl {
 
   private[impl] class AgentContextImpl(
       override val sessionId: String,
-      override val selfRegion: String,
+      regionInfo: RegionInfo,
       override val metadata: Metadata,
       val telemetryContext: Option[OtelContext],
       tracerFactory: () => Tracer)
-      extends AbstractContext
+      extends AbstractContext(regionInfo)
       with AgentContext {
     override def tracing(): Tracing = new SpanTracingImpl(telemetryContext, tracerFactory)
   }
@@ -779,7 +779,7 @@ private[impl] final class AgentImpl(
       val cmdPayload = command.payload.getOrElse(BytesPayload.empty)
       val metadata: Metadata = MetadataImpl.of(command.metadata)
       val agentContext =
-        new AgentContextImpl(sessionId, regionInfo.selfRegion, metadata, telemetryContext, tracerFactory)
+        new AgentContextImpl(sessionId, regionInfo, metadata, telemetryContext, tracerFactory)
 
       val traceScope = Telemetry.makeCurrent(telemetryContext)
       try {

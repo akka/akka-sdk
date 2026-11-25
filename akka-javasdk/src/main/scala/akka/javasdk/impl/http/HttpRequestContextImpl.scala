@@ -8,6 +8,7 @@ import java.util
 import java.util.Optional
 
 import scala.jdk.CollectionConverters.SeqHasAsJava
+import scala.jdk.CollectionConverters.SetHasAsJava
 import scala.jdk.OptionConverters.RichOption
 
 import akka.annotation.InternalApi
@@ -69,6 +70,8 @@ private[akka] final class HttpRequestContextImpl(
     context.requestHeaders.header("Last-Event-ID").map(_.value()).toJava
 
   override def selfRegion(): String = regionInfo.selfRegion
+
+  override def downedRegions(): java.util.Set[String] = regionInfo.downedRegions().asJava
 
   override def getSpiffeContext(): Optional[SpiffeContext] =
     SpiffeContextImpl.fromSpiOpt(context.spiffeContext)

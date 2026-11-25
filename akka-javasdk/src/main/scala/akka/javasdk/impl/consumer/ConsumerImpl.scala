@@ -105,7 +105,7 @@ private[impl] final class ConsumerImpl[C <: Consumer](
           timerClient,
           tracerFactory,
           telemetryContext,
-          regionInfo.selfRegion,
+          regionInfo,
           message.originRegion.toJava)
 
       val consumer = factory(messageContext)
@@ -190,9 +190,9 @@ private[impl] final class MessageContextImpl(
     timerClient: TimerClient,
     tracerFactory: () => Tracer,
     val telemetryContext: Option[OtelContext],
-    override val selfRegion: String,
+    regionInfo: RegionInfo,
     override val originRegion: Optional[String])
-    extends AbstractContext
+    extends AbstractContext(regionInfo)
     with MessageContext {
 
   val timers: TimerScheduler = new TimerSchedulerImpl(timerClient, componentCallMetadata)

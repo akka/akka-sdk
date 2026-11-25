@@ -47,17 +47,17 @@ private[impl] object KeyValueEntityImpl {
   private class CommandContextImpl(
       override val entityId: String,
       override val commandName: String,
-      override val selfRegion: String,
+      regionInfo: RegionInfo,
       override val metadata: Metadata,
       telemetryContext: Option[OtelContext],
       tracerFactory: () => Tracer)
-      extends AbstractContext
+      extends AbstractContext(regionInfo)
       with CommandContext {
     override def tracing(): Tracing = new SpanTracingImpl(telemetryContext, tracerFactory)
   }
 
-  private class KeyValueEntityContextImpl(override final val entityId: String, override val selfRegion: String)
-      extends AbstractContext
+  private class KeyValueEntityContextImpl(override final val entityId: String, regionInfo: RegionInfo)
+      extends AbstractContext(regionInfo)
       with KeyValueEntityContext
 
 }
@@ -81,7 +81,7 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
   import KeyValueEntityImpl._
 
   private val router: ReflectiveKeyValueEntityRouter[AnyRef, KeyValueEntity[AnyRef]] = {
-    val context = new KeyValueEntityContextImpl(entityId, regionInfo.selfRegion)
+    val context = new KeyValueEntityContextImpl(entityId, regionInfo)
     new ReflectiveKeyValueEntityRouter[S, KV](factory(context), componentDescriptor.methodInvokers, serializer)
       .asInstanceOf[ReflectiveKeyValueEntityRouter[AnyRef, KeyValueEntity[AnyRef]]]
   }
@@ -102,7 +102,7 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
     val cmdPayload = command.payload.getOrElse(BytesPayload.empty)
     val metadata: Metadata = MetadataImpl.of(command.metadata)
     val cmdContext =
-      new CommandContextImpl(entityId, command.name, regionInfo.selfRegion, metadata, telemetryContext, tracerFactory)
+      new CommandContextImpl(entityId, command.name, regionInfo, metadata, telemetryContext, tracerFactory)
 
     val traceScope = Telemetry.makeCurrent(telemetryContext)
     try {

@@ -4,8 +4,11 @@
 
 package akka.javasdk.impl.consumer
 
+import java.util.concurrent.atomic.AtomicReference
+
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.jdk.CollectionConverters._
 
 import akka.Done
 import akka.actor.testkit.typed.scaladsl.LogCapturing
@@ -56,6 +59,13 @@ class ConsumerImplSpec
       throw new IllegalStateException("spike-16304: deliberate exception from consumer onEvent")
   }
 
+  final class RegionsConsumer(seen: AtomicReference[(String, java.util.Set[String])]) extends Consumer {
+    def onBytes(bytes: Array[Byte]): Consumer.Effect = {
+      seen.set((messageContext().selfRegion(), messageContext().downedRegions()))
+      effects().done()
+    }
+  }
+
   final class NullReturningConsumer extends Consumer {
     def onBytes(bytes: Array[Byte]): Consumer.Effect = null
   }
@@ -72,6 +82,14 @@ class ConsumerImplSpec
       consumerClass: Class[C],
       newConsumer: () => C,
       unhandledExceptionReporter: () => Option[UnhandledExceptionReporting.Reporter]): ConsumerImpl[C] =
+    create(componentId, consumerClass, newConsumer, unhandledExceptionReporter, new RegionInfo("", () => Set.empty))
+
+  def create[C <: Consumer](
+      componentId: String,
+      consumerClass: Class[C],
+      newConsumer: () => C,
+      unhandledExceptionReporter: () => Option[UnhandledExceptionReporting.Reporter],
+      regionInfo: RegionInfo): ConsumerImpl[C] =
     new ConsumerImpl(
       componentId,
       _ => newConsumer(),
@@ -85,7 +103,7 @@ class ConsumerImplSpec
       serializer,
       ignoreUnknown = false,
       bytesDescriptor(consumerClass),
-      new RegionInfo(""),
+      regionInfo,
       unhandledExceptionReporter)
 
   private def throwingMessage = new SpiConsumer.Message(
@@ -130,6 +148,23 @@ class ConsumerImplSpec
           }
 
       reply.error.description should startWith("Unexpected error")
+    }
+
+    "give the region info to the message context" in {
+      val seen = new AtomicReference[(String, java.util.Set[String])]()
+      val service = create(
+        "regions-consumer",
+        classOf[RegionsConsumer],
+        () => new RegionsConsumer(seen),
+        () => None,
+        new RegionInfo("a", () => Set("b")))
+
+      val reply = service.handleMessage(throwingMessage).futureValue
+
+      reply should not be a[SpiConsumer.ErrorEffect]
+      val (selfRegion, downedRegions) = seen.get()
+      selfRegion shouldBe "a"
+      downedRegions.asScala shouldBe Set("b")
     }
 
     "report an unhandled exception thrown by the user's onEvent method to the unhandled exception reporter" in {

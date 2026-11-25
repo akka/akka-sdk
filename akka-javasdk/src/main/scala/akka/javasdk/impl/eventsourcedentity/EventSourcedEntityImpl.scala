@@ -52,25 +52,25 @@ private[impl] object EventSourcedEntityImpl {
       override val sequenceNumber: Long,
       override val commandName: String,
       override val isDeleted: Boolean,
-      override val selfRegion: String,
+      regionInfo: RegionInfo,
       override val metadata: Metadata,
       telemetryContext: Option[OtelContext],
       tracerFactory: () => Tracer)
-      extends AbstractContext
+      extends AbstractContext(regionInfo)
       with CommandContext {
     override def tracing(): Tracing = new SpanTracingImpl(telemetryContext, tracerFactory)
   }
 
-  private class EventSourcedEntityContextImpl(override final val entityId: String, override val selfRegion: String)
-      extends AbstractContext
+  private class EventSourcedEntityContextImpl(override final val entityId: String, regionInfo: RegionInfo)
+      extends AbstractContext(regionInfo)
       with EventSourcedEntityContext
 
   private final class EventContextImpl(
       entityId: String,
       override val sequenceNumber: Long,
-      override val selfRegion: String,
+      regionInfo: RegionInfo,
       override val metadata: Metadata)
-      extends EventSourcedEntityContextImpl(entityId, selfRegion)
+      extends EventSourcedEntityContextImpl(entityId, regionInfo)
       with EventContext
 
 }
@@ -93,7 +93,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
   import EventSourcedEntityImpl._
 
   private val router: ReflectiveEventSourcedEntityRouter[AnyRef, AnyRef, EventSourcedEntity[AnyRef, AnyRef]] = {
-    val context = new EventSourcedEntityContextImpl(entityId, regionInfo.selfRegion)
+    val context = new EventSourcedEntityContextImpl(entityId, regionInfo)
     new ReflectiveEventSourcedEntityRouter[S, E, ES](factory(context), componentDescriptor.methodInvokers, serializer)
       .asInstanceOf[ReflectiveEventSourcedEntityRouter[AnyRef, AnyRef, EventSourcedEntity[AnyRef, AnyRef]]]
   }
@@ -136,7 +136,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
         command.sequenceNumber,
         command.name,
         command.isDeleted,
-        regionInfo.selfRegion,
+        regionInfo,
         metadata,
         telemetryContext,
         tracerFactory)
@@ -266,7 +266,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
       event: AnyRef,
       eventMetadata: Metadata,
       sequenceNumber: Long): SpiEventSourcedEntity.State = {
-    val eventContext = new EventContextImpl(entityId, sequenceNumber, regionInfo.selfRegion, eventMetadata)
+    val eventContext = new EventContextImpl(entityId, sequenceNumber, regionInfo, eventMetadata)
     entity._internalSetEventContext(Optional.of(eventContext))
     val clearState = entity._internalSetCurrentState(state, false)
     try {

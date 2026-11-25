@@ -122,7 +122,7 @@ private[impl] final class AutonomousAgentImpl(
 
   private lazy val toolExecutor: ToolExecutor = {
     val agentContext =
-      new AgentContextImpl(instanceId, regionInfo.selfRegion, Metadata.EMPTY, telemetryContext = None, tracerFactory)
+      new AgentContextImpl(instanceId, regionInfo, Metadata.EMPTY, telemetryContext = None, tracerFactory)
     val agentInstance = factory(agentContext)
 
     // Agent's own @FunctionTool methods

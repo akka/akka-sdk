@@ -24,6 +24,8 @@ final class TestKitEventSourcedEntityCommandContext(
     this(metadata = metadata, commandName = "stubCommandName", entityId = entityId, sequenceNumber = sequenceNumber)
   }
 
+  override def downedRegions(): java.util.Set[String] = java.util.Collections.emptySet()
+
   override def tracing(): Tracing = TestKitTracing
 
 }

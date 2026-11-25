@@ -41,6 +41,13 @@ public class HttpEndpointTest extends TestKitSupport {
   }
 
   @Test
+  public void shouldGetRegions() {
+    var response = httpClient.GET("/regions").responseBodyAs(String.class).invoke();
+    assertThat(response.status()).isEqualTo(StatusCodes.OK);
+    assertThat(response.body()).isEqualTo("self: , downed: []");
+  }
+
+  @Test
   public void shouldRetryComponentClientCall() {
     var response =
         await(httpClient.POST("/retry/retry1").responseBodyAs(Integer.class).invokeAsync());

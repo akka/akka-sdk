@@ -84,7 +84,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
       evaluationClient)
 
   override def configuration: SpiWorkflow.WorkflowConfig = {
-    val workflowContext = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, None, tracerFactory)
+    val workflowContext = new WorkflowContextImpl(workflowId, regionInfo, None, tracerFactory)
     val workflow = instanceFactory(workflowContext)
     val workflowConfig = workflow.settings()
 
@@ -135,7 +135,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
   }
 
   private def commandContext(commandName: String, telemetryContext: Option[OtelContext], metadata: Metadata) =
-    new CommandContextImpl(workflowId, commandName, regionInfo.selfRegion, metadata, telemetryContext, tracerFactory)
+    new CommandContextImpl(workflowId, commandName, regionInfo, metadata, telemetryContext, tracerFactory)
 
   override def handleCommand(
       userState: Option[SpiWorkflow.State],
@@ -143,7 +143,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
 
     val telemetryContext = Option(command.telemetryContext)
 
-    val workflowContext = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, telemetryContext, tracerFactory)
+    val workflowContext = new WorkflowContextImpl(workflowId, regionInfo, telemetryContext, tracerFactory)
 
     val metadata = MetadataImpl.of(command.metadata)
     val context = commandContext(command.name, telemetryContext, metadata)
@@ -186,7 +186,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
 
     val stepName = stepCommand.stepName
     val telemetryContext = Option(stepCommand.telemetryContext)
-    val workflowContext = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, telemetryContext, tracerFactory)
+    val workflowContext = new WorkflowContextImpl(workflowId, regionInfo, telemetryContext, tracerFactory)
 
     val context = commandContext(stepName, telemetryContext, MetadataImpl.of(stepCommand.metadata))
     val timerScheduler =
@@ -255,11 +255,11 @@ class WorkflowImpl[S, W <: Workflow[S]](
 private[akka] final class CommandContextImpl(
     override val workflowId: String,
     override val commandName: String,
-    override val selfRegion: String,
+    regionInfo: RegionInfo,
     override val metadata: Metadata,
     telemetryContext: Option[OtelContext],
     tracerFactory: () => Tracer)
-    extends AbstractContext
+    extends AbstractContext(regionInfo)
     with CommandContext {
 
   override def tracing(): Tracing =
@@ -272,10 +272,10 @@ private[akka] final class CommandContextImpl(
 @InternalApi
 private[akka] final class WorkflowContextImpl(
     override val workflowId: String,
-    override val selfRegion: String,
+    regionInfo: RegionInfo,
     val telemetryContext: Option[OtelContext],
     tracerFactory: () => Tracer)
-    extends AbstractContext
+    extends AbstractContext(regionInfo)
     with WorkflowContext {
 
   override def tracing(): Tracing = new SpanTracingImpl(telemetryContext, tracerFactory)

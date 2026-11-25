@@ -45,12 +45,12 @@ object TimedActionImpl {
    * INTERNAL API
    */
   class CommandContextImpl(
-      override val selfRegion: String,
+      regionInfo: RegionInfo,
       override val metadata: Metadata,
       timerClient: TimerClient,
       val telemetryContext: Option[OtelContext],
       tracerFactory: () => Tracer)
-      extends AbstractContext
+      extends AbstractContext(regionInfo)
       with CommandContext {
 
     val timers: TimerScheduler = new TimerSchedulerImpl(timerClient, componentCallMetadata)
@@ -96,7 +96,7 @@ private[impl] final class TimedActionImpl[TA <: TimedAction](
     val traceScope = Telemetry.makeCurrent(telemetryContext)
     try {
       val commandContext =
-        new CommandContextImpl(regionInfo.selfRegion, metadata, timerClient, telemetryContext, tracerFactory)
+        new CommandContextImpl(regionInfo, metadata, timerClient, telemetryContext, tracerFactory)
 
       val timedAction = factory(commandContext)
 

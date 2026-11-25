@@ -1767,6 +1767,8 @@ private final class Sdk(
 
         override def selfRegion(): String = regionInfo.selfRegion
 
+        override def downedRegions(): java.util.Set[String] = regionInfo.downedRegions().asJava
+
         override def getSpiffeContext(): java.util.Optional[SpiffeContext] =
           SpiffeContextImpl.fromSpiOpt(context.spiffeContext)
       }

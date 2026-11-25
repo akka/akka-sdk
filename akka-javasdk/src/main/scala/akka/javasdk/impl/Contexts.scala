@@ -4,8 +4,11 @@
 
 package akka.javasdk.impl
 
+import scala.jdk.CollectionConverters._
+
 import akka.annotation.InternalApi
 import akka.javasdk.Context
+import akka.runtime.sdk.spi.RegionInfo
 
 /**
  * INTERNAL API
@@ -25,4 +28,9 @@ private[akka] trait InternalContext {
  * INTERNAL API
  */
 @InternalApi
-abstract class AbstractContext extends Context with InternalContext {}
+abstract class AbstractContext(regionInfo: RegionInfo) extends Context with InternalContext {
+  override final def selfRegion(): String = regionInfo.selfRegion
+
+  // reads the region info on each call: an entity can keep the context from its constructor while regions go down
+  override final def downedRegions(): java.util.Set[String] = regionInfo.downedRegions().asJava
+}

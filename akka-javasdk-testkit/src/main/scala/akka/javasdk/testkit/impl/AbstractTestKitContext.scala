@@ -21,4 +21,6 @@ class AbstractTestKitContext(mockRegistry: MockRegistry) extends Context with In
         s"Could not find mock for component of type $serviceClass. Hint: use ${classOf[MockRegistry].getName} to provide an instance when testing services calling other components."))
 
   override def selfRegion(): String = ""
+
+  override def downedRegions(): java.util.Set[String] = java.util.Collections.emptySet()
 }
