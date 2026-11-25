@@ -4,6 +4,7 @@
 
 package akka.javasdk.testkit.impl
 
+import java.util.Collections
 import java.util.Optional
 
 import akka.javasdk.Metadata
@@ -27,7 +28,7 @@ final class TestKitMessageContext(val metadata: Metadata) extends MessageContext
 
   override def selfRegion(): String = ""
 
-  override def downedRegions(): java.util.Set[String] = java.util.Collections.emptySet()
+  override def downedRegions(): java.util.Set[String] = Collections.emptySet()
 
   override def tracing(): Tracing = TestKitTracing
 }

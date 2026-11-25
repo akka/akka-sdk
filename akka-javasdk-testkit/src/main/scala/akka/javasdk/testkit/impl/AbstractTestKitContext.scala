@@ -4,6 +4,8 @@
 
 package akka.javasdk.testkit.impl
 
+import java.util.Collections
+
 import scala.jdk.OptionConverters.RichOptional
 
 import akka.javasdk.Context
@@ -22,5 +24,5 @@ class AbstractTestKitContext(mockRegistry: MockRegistry) extends Context with In
 
   override def selfRegion(): String = ""
 
-  override def downedRegions(): java.util.Set[String] = java.util.Collections.emptySet()
+  override def downedRegions(): java.util.Set[String] = Collections.emptySet()
 }
