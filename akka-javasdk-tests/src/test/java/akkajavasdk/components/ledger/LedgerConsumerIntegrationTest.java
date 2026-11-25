@@ -19,6 +19,7 @@ import akkajavasdk.components.agent.AgentResponseGuardrailTestAgent;
 import akkajavasdk.components.agent.autonomous.GuardedAutonomousAgent;
 import akkajavasdk.components.agent.autonomous.TestTasks;
 import akkajavasdk.components.evaluation.ClassifyingEvaluator;
+import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -107,12 +108,14 @@ public class LedgerConsumerIntegrationTest extends TestKitSupport {
 
     assertThat(decision.agentComponentId()).isEqualTo("model-guardrail-test-agent");
     assertThat(decision.decision()).isEqualTo(GuardrailDecisionRecord.Decision.DENY);
+    assertThat(decision.name()).isEqualTo("test model guard");
     assertThat(decision.flowId()).isEmpty();
 
-    assertThat(received.eventSubject()).contains(decision.recordId());
-    assertThat(received.metadata().get("ce-type")).contains("guardrail-decision");
-    assertThat(received.metadata().get("ce-source")).contains("test model guard");
-    assertThat(received.metadata().get("flow-id")).isEmpty();
+    var cloudEvent = received.metadata().asCloudEvent();
+    assertThat(cloudEvent.id()).isEqualTo(decision.recordId());
+    assertThat(cloudEvent.source()).isEqualTo(URI.create("test%20model%20guard"));
+    assertThat(cloudEvent.source().getPath()).isEqualTo("test model guard");
+    assertThat(received.eventSubject()).isEmpty();
   }
 
   @Test
@@ -130,11 +133,12 @@ public class LedgerConsumerIntegrationTest extends TestKitSupport {
 
     assertThat(decision.agentComponentId()).isEqualTo("guarded-autonomous-agent");
     assertThat(decision.decision()).isEqualTo(GuardrailDecisionRecord.Decision.DENY);
+    assertThat(decision.name()).isEqualTo("autonomous model call guard");
     assertThat(decision.flowId()).isPresent();
 
-    assertThat(received.eventSubject()).contains(decision.recordId());
-    assertThat(received.metadata().get("ce-type")).contains("guardrail-decision");
-    assertThat(received.metadata().get("ce-source")).contains("autonomous model call guard");
-    assertThat(received.metadata().get("flow-id")).isEqualTo(decision.flowId());
+    var cloudEvent = received.metadata().asCloudEvent();
+    assertThat(cloudEvent.id()).isEqualTo(decision.recordId());
+    assertThat(cloudEvent.source()).isEqualTo(URI.create("autonomous%20model%20call%20guard"));
+    assertThat(received.eventSubject()).isEqualTo(decision.flowId());
   }
 }

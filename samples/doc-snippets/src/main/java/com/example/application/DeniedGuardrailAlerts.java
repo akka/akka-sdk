@@ -23,7 +23,7 @@ public class DeniedGuardrailAlerts extends Consumer {
       "Guardrail [{}] denied content of agent [{}], record [{}]",
       decision.name(),
       decision.agentComponentId(),
-      messageContext().eventSubject().orElseThrow() // <4>
+      decision.recordId() // <4>
     );
     return effects().done();
   }

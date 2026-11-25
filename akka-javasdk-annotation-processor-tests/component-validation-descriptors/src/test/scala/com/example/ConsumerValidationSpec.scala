@@ -277,6 +277,12 @@ abstract class AbstractConsumerValidationSpec(val validationMode: ValidationMode
         "@Produce.ServiceStream is not supported for a Consumer with @Consume.FromLedger.")
     }
 
+    "reject Consumer from the ledger with a delete handler" in {
+      assertInvalid(
+        "invalid/ConsumerFromLedgerDeleteHandler.java",
+        "@DeleteHandler is not supported for a Consumer with @Consume.FromLedger.")
+    }
+
     "reject TableUpdater from the ledger" in {
       assertInvalid("invalid/TableUpdaterFromLedger.java", "@Consume.FromLedger is not supported on a TableUpdater.")
     }

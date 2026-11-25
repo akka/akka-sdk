@@ -13,6 +13,7 @@ import java.util.Optional
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.reflect.ClassTag
 
 import akka.Done
 import akka.actor.testkit.typed.scaladsl.LogCapturing
@@ -67,12 +68,12 @@ class LedgerConsumerRouterSpec extends ScalaTestWithActorTestKit with LogCapturi
     SpiLedger.RecordType.Evaluation,
     SpiLedger.RecordType.Classification)
 
-  private def spiInteractionRecord(flowId: Option[String] = None): SpiLedger.InteractionRecord =
+  private def spiInteractionRecord: SpiLedger.InteractionRecord =
     new SpiLedger.InteractionRecord(
       interactionId = "interaction-1",
       sessionId = "session-1",
       agentComponentId = "support-agent",
-      flowId = flowId,
+      flowId = None,
       metadata = new SpiLedger.InteractionMetadata(
         modelConfig = new SpiLedger.ModelConfig(
           providerName = "openai",
@@ -94,15 +95,13 @@ class LedgerConsumerRouterSpec extends ScalaTestWithActorTestKit with LogCapturi
       failure = None,
       timestamp = Instant.EPOCH)
 
-  private def spiGuardrailDecisionRecord: SpiLedger.GuardrailDecisionRecord = spiGuardrailDecisionRecord(None)
-
-  private def spiGuardrailDecisionRecord(flowId: Option[String]): SpiLedger.GuardrailDecisionRecord =
+  private def spiGuardrailDecisionRecord: SpiLedger.GuardrailDecisionRecord =
     new SpiLedger.GuardrailDecisionRecord(
       recordId = "guardrail-1",
       agentComponentId = "support-agent",
       interactionId = "interaction-1",
       sessionId = "session-1",
-      flowId = flowId,
+      flowId = None,
       name = "no-refunds",
       controlId = None,
       category = "policy",
@@ -147,38 +146,39 @@ class LedgerConsumerRouterSpec extends ScalaTestWithActorTestKit with LogCapturi
       timestamp = Instant.EPOCH,
       attributes = Map.empty)
 
-  private def spiClassificationRecord: SpiLedger.ClassificationRecord =
-    new SpiLedger.ClassificationRecord(
-      classificationId = "classification-1",
-      classifierComponentId = "sentiment-classifier",
-      label = Some("positive"),
-      score = None,
-      confidence = None,
-      attributes = Map.empty,
-      flowId = Some("flow-3"),
-      evaluationId = None,
-      timestamp = Instant.EPOCH)
+  private def spiUnknownSubjectEvaluationRecord: SpiLedger.EvaluationRecord =
+    new SpiLedger.EvaluationRecord(
+      evaluationId = "evaluation-3",
+      evaluatorComponentId = "quality-evaluator",
+      controlId = None,
+      trigger = SpiLedger.EvaluationTrigger.Manual,
+      subject = unknownSpiValue[SpiLedger.EvaluationSubject],
+      outcome = new SpiLedger.EvaluationInconclusive("no verdict"),
+      flowId = None,
+      timestamp = Instant.EPOCH,
+      attributes = Map.empty)
 
-  private def interactionRecord: InteractionRecord = LedgerClientImpl.toInteractionRecord(spiInteractionRecord())
+  private def interactionRecord: InteractionRecord = LedgerClientImpl.toInteractionRecord(spiInteractionRecord)
 
   private def guardrailDecisionRecord: GuardrailDecisionRecord =
     LedgerClientImpl.toGuardrailDecisionRecord(spiGuardrailDecisionRecord)
 
   private def activityRecord: ActivityRecord = LedgerClientImpl.toActivityRecord(spiActivityRecord)
 
-  // Builds an SPI record of a class this SDK does not know.
-  private def unknownSpiRecord: SpiLedger.FlowRecord = {
+  // Builds an SPI value of a class this SDK does not know.
+  private def unknownSpiValue[T <: AnyRef](implicit tag: ClassTag[T]): T = {
+    val name = s"unknown ${tag.runtimeClass.getSimpleName}"
     val handler: InvocationHandler = (proxy: AnyRef, method: Method, args: Array[AnyRef]) =>
       method.getName match {
         case "equals"   => Boolean.box(proxy eq args(0))
         case "hashCode" => Int.box(System.identityHashCode(proxy))
-        case "toString" => "unknown FlowRecord"
+        case "toString" => name
         case other      => throw new UnsupportedOperationException(other)
       }
-    Proxy
-      .newProxyInstance(classOf[SpiLedger.FlowRecord].getClassLoader, Array(classOf[SpiLedger.FlowRecord]), handler)
-      .asInstanceOf[SpiLedger.FlowRecord]
+    Proxy.newProxyInstance(tag.runtimeClass.getClassLoader, Array(tag.runtimeClass), handler).asInstanceOf[T]
   }
+
+  private def unknownSpiRecord: SpiLedger.FlowRecord = unknownSpiValue[SpiLedger.FlowRecord]
 
   private def messageContext = new MessageContextImpl(MetadataImpl.Empty, timerClient, null, None, "", Optional.empty())
 
@@ -261,54 +261,14 @@ class LedgerConsumerRouterSpec extends ScalaTestWithActorTestKit with LogCapturi
       evaluation.subject shouldBe new EvaluationRecord.Subject.Workflow("order-1", "order-workflow")
     }
 
-    "set the event subject to the record id" in {
-      val consumer = new AllRecordsConsumer
-
-      consumerImpl(classOf[AllRecordsConsumer], consumer)
-        .handleMessage(ledgerMessage(spiInteractionRecord(flowId = Some("flow-1"))))
-        .futureValue shouldBe SpiConsumer.ConsumedEffect
-
-      consumer.context.eventSubject() shouldBe Optional.of("interaction-1")
-      val metadata = consumer.context.metadata()
-      metadata.get("ce-id") shouldBe Optional.of("interaction-1")
-      metadata.get("ce-type") shouldBe Optional.of("interaction")
-      metadata.get("ce-source") shouldBe Optional.of("support-agent")
-      metadata.get("flow-id") shouldBe Optional.of("flow-1")
-    }
-
-    "set the type, source and flow id of each record kind" in {
-      val cases = Seq(
-        (spiInteractionRecord(), "interaction-1", "interaction", "support-agent", None),
-        (spiActivityRecord, "activity-1", "activity", "coordinator-agent", Some("flow-1")),
-        (spiGuardrailDecisionRecord(Some("flow-2")), "guardrail-1", "guardrail-decision", "no-refunds", Some("flow-2")),
-        (spiWorkflowEvaluationRecord, "evaluation-1", "evaluation", "order-evaluator", None),
-        (spiClassificationRecord, "classification-1", "classification", "sentiment-classifier", Some("flow-3")))
-
-      cases.foreach { case (spiRecord, recordId, recordType, source, flowId) =>
-        withClue(s"$recordType: ") {
-          val consumer = new AllRecordsConsumer
-
-          consumerImpl(classOf[AllRecordsConsumer], consumer)
-            .handleMessage(ledgerMessage(spiRecord))
-            .futureValue shouldBe SpiConsumer.ConsumedEffect
-
-          val metadata = consumer.context.metadata()
-          metadata.get("ce-id") shouldBe Optional.of(recordId)
-          metadata.get("ce-type") shouldBe Optional.of(recordType)
-          metadata.get("ce-source") shouldBe Optional.of(source)
-          metadata.get("flow-id") shouldBe Optional.ofNullable(flowId.orNull)
-        }
-      }
-    }
-
-    "set the flow id of an evaluation of an interaction" in {
+    "pass the flow id of an evaluation of an interaction" in {
       val consumer = new AllRecordsConsumer
 
       consumerImpl(classOf[AllRecordsConsumer], consumer)
         .handleMessage(ledgerMessage(spiInteractionEvaluationRecord))
         .futureValue shouldBe SpiConsumer.ConsumedEffect
 
-      consumer.context.metadata().get(ConsumerImpl.FlowIdKey) shouldBe Optional.of("flow-1")
+      consumer.record.asInstanceOf[EvaluationRecord].flowId shouldBe Optional.of("flow-1")
     }
 
     "ignore a record of an unknown class" in {
@@ -319,6 +279,42 @@ class LedgerConsumerRouterSpec extends ScalaTestWithActorTestKit with LogCapturi
         .futureValue shouldBe SpiConsumer.ConsumedEffect
 
       consumer.record shouldBe null
+    }
+
+    "ignore an evaluation of a subject of an unknown class" in {
+      val consumer = new AllRecordsConsumer
+
+      consumerImpl(classOf[AllRecordsConsumer], consumer)
+        .handleMessage(ledgerMessage(spiUnknownSubjectEvaluationRecord))
+        .futureValue shouldBe SpiConsumer.ConsumedEffect
+
+      consumer.record shouldBe null
+    }
+
+    "log the first record of an unknown class at info, once" in {
+      val consumer = consumerImpl(classOf[AllRecordsConsumer], new AllRecordsConsumer)
+
+      LoggingTestKit
+        .info("skipped a ledger record of class")
+        .withOccurrences(1)
+        .expect {
+          consumer.handleMessage(ledgerMessage(unknownSpiRecord)).futureValue shouldBe SpiConsumer.ConsumedEffect
+          consumer.handleMessage(ledgerMessage(unknownSpiRecord)).futureValue shouldBe SpiConsumer.ConsumedEffect
+        }
+    }
+
+    "log the subject class of the first evaluation of an unknown subject at info, once" in {
+      val consumer = consumerImpl(classOf[AllRecordsConsumer], new AllRecordsConsumer)
+      val evaluation = spiUnknownSubjectEvaluationRecord
+      val subjectClass = evaluation.subject.getClass.getName
+
+      LoggingTestKit
+        .info(s"skipped an evaluation with a subject of class [$subjectClass]")
+        .withOccurrences(1)
+        .expect {
+          consumer.handleMessage(ledgerMessage(evaluation)).futureValue shouldBe SpiConsumer.ConsumedEffect
+          consumer.handleMessage(ledgerMessage(evaluation)).futureValue shouldBe SpiConsumer.ConsumedEffect
+        }
     }
 
     "fail a message without record" in {

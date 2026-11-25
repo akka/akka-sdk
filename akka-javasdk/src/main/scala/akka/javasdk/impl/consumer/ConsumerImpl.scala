@@ -5,6 +5,7 @@
 package akka.javasdk.impl.consumer
 
 import java.util.Optional
+import java.util.concurrent.atomic.AtomicBoolean
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -33,12 +34,6 @@ import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.impl.timer.TimerSchedulerImpl
-import akka.javasdk.ledger.ActivityRecord
-import akka.javasdk.ledger.ClassificationRecord
-import akka.javasdk.ledger.EvaluationRecord
-import akka.javasdk.ledger.FlowRecord
-import akka.javasdk.ledger.GuardrailDecisionRecord
-import akka.javasdk.ledger.InteractionRecord
 import akka.javasdk.timer.TimerScheduler
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.ConsumerDestination
@@ -50,6 +45,7 @@ import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiConsumer
 import akka.runtime.sdk.spi.SpiConsumer.Effect
 import akka.runtime.sdk.spi.SpiConsumer.Message
+import akka.runtime.sdk.spi.SpiLedger
 import akka.runtime.sdk.spi.TimerClient
 import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.{ Context => OtelContext }
@@ -94,6 +90,8 @@ private[impl] final class ConsumerImpl[C <: Consumer](
       consumesFromTopic = consumerSource.isInstanceOf[TopicSource])
 
   private lazy val ledgerHandlers = LedgerConsumerRouter.handlers(consumerClass)
+
+  private val unknownRecordLogged = new AtomicBoolean(false)
 
   override def handleMessage(message: Message): Future[Effect] = {
     val metadata = {
@@ -140,42 +138,31 @@ private[impl] final class ConsumerImpl[C <: Consumer](
 
     LedgerClientImpl.toLedgerRecord(spiRecord) match {
       case None =>
-        log.debug("Consumer [{}] ignored a ledger record of a class this SDK does not know", componentId)
+        val skipped = spiRecord match {
+          case evaluation: SpiLedger.EvaluationRecord =>
+            s"an evaluation with a subject of class [${evaluation.subject.getClass.getName}]"
+          case _ =>
+            s"a ledger record of class [${spiRecord.getClass.getName}]"
+        }
+
+        if (unknownRecordLogged.compareAndSet(false, true))
+          log.info(
+            "Consumer [{}] skipped {}, which this SDK version does not know. Later skips are logged at debug level.",
+            componentId,
+            skipped)
+        else
+          log.debug("Consumer [{}] skipped {}, which this SDK version does not know.", componentId, skipped)
+
         Future.successful(SpiConsumer.ConsumedEffect)
 
       case Some(record) =>
-        val messageContext = newMessageContext(message, withRecordAttributes(metadata, record), telemetryContext)
+        val messageContext = newMessageContext(message, metadata, telemetryContext)
 
         val consumer = factory(messageContext)
 
         val effect = new LedgerConsumerRouter(consumer, ledgerHandlers).handleRecord(record, messageContext)
         toSpiEffect(message, effect)
     }
-  }
-
-  // Sets the CloudEvent attributes of a ledger record. Also sets the flow id when the record has one.
-  private def withRecordAttributes(metadata: MetadataImpl, record: FlowRecord): MetadataImpl = {
-    val (recordType, sourceId, flowId) = record match {
-      case interaction: InteractionRecord =>
-        ("interaction", interaction.agentComponentId, interaction.flowId.toScala)
-      case activity: ActivityRecord =>
-        ("activity", activity.agentComponentId, Some(activity.flowId))
-      case decision: GuardrailDecisionRecord =>
-        ("guardrail-decision", decision.name, decision.flowId.toScala)
-      case evaluation: EvaluationRecord =>
-        ("evaluation", evaluation.evaluatorComponentId, evaluation.flowId.toScala)
-      case classification: ClassificationRecord =>
-        ("classification", classification.classifierName, classification.flowId.toScala)
-    }
-
-    val withCloudEvent = metadata
-      .set(MetadataImpl.CeSpecversion, MetadataImpl.CeSpecversionValue)
-      .set(MetadataImpl.CeId, record.recordId)
-      .set(MetadataImpl.CeSubject, record.recordId)
-      .set(MetadataImpl.CeType, recordType)
-      .set(MetadataImpl.CeSource, sourceId)
-
-    flowId.fold(withCloudEvent)(withCloudEvent.set(ConsumerImpl.FlowIdKey, _))
   }
 
   private def newMessageContext(
@@ -240,16 +227,6 @@ private[impl] final class ConsumerImpl[C <: Consumer](
       error = new SpiConsumer.Error(s"Unexpected error [$correlationId]", correlationId = Some(correlationId)))
   }
 
-}
-
-/**
- * INTERNAL API
- */
-@InternalApi
-private[impl] object ConsumerImpl {
-
-  /** The metadata key of the flow id of a ledger record. */
-  val FlowIdKey = "flow-id"
 }
 
 /**

@@ -233,8 +233,8 @@ public class ConsumerValidations {
   }
 
   /**
-   * Validates ledger subscription-specific rules: each handler takes a ledger record type and the
-   * consumer does not produce a service stream.
+   * Validates ledger subscription-specific rules: each handler takes a ledger record type, no
+   * method has @DeleteHandler and the consumer does not produce a service stream.
    */
   private static Validation ledgerSubscriptionValidations(TypeDef typeDef, String effectTypeName) {
     if (!Validations.hasLedgerSubscription(typeDef)) {
@@ -244,6 +244,14 @@ public class ConsumerValidations {
     List<String> errors = new ArrayList<>();
 
     for (MethodDef method : typeDef.getPublicMethods()) {
+      if (Validations.hasHandleDeletes(method)) {
+        errors.add(
+            Validations.errorMessage(
+                method,
+                "@DeleteHandler is not supported for a Consumer with @Consume.FromLedger."));
+        continue;
+      }
+
       String returnTypeName = method.getReturnType().getRawQualifiedName();
       if (returnTypeName.equals(effectTypeName) && method.getParameters().size() == 1) {
         String paramType = method.getParameters().getFirst().getType().getQualifiedName();

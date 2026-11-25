@@ -12,6 +12,8 @@ import akka.javasdk.consumer.MessageContext
 import akka.javasdk.impl.ComponentDescriptorFactory
 import akka.javasdk.impl.MethodInvoker
 import akka.javasdk.ledger.FlowRecord
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  * INTERNAL API
@@ -26,7 +28,14 @@ private[impl] final class LedgerConsumerRouter[A <: Consumer](consumer: A, handl
 
     handlers.get(record.getClass).orElse(handlers.get(classOf[FlowRecord])) match {
       case Some(invoker) => invoker.invokeDirectly(consumer, record).asInstanceOf[Consumer.Effect]
-      case None          => ConsumerEffectImpl.Builder.ignore()
+
+      case None =>
+        LedgerConsumerRouter.log.debug(
+          "Consumer [{}] has no handler for a ledger record of class [{}]. The record is ignored.",
+          consumer.getClass.getName,
+          record.getClass.getName)
+
+        ConsumerEffectImpl.Builder.ignore()
     }
   }
 }
@@ -36,6 +45,8 @@ private[impl] final class LedgerConsumerRouter[A <: Consumer](consumer: A, handl
  */
 @InternalApi
 private[impl] object LedgerConsumerRouter {
+
+  private val log: Logger = LoggerFactory.getLogger(classOf[LedgerConsumerRouter[_]])
 
   /** The ledger record handlers of a consumer class, keyed by the record class they take. */
   def handlers(consumerClass: Class[_]): Map[Class[_], MethodInvoker] =

@@ -196,17 +196,16 @@ public @interface Consume {
    * {@link akka.javasdk.ledger.GuardrailDecisionRecord}, {@link
    * akka.javasdk.ledger.EvaluationRecord} and {@link akka.javasdk.ledger.ClassificationRecord}.
    *
-   * <p>The metadata of a record carries these keys:
+   * <p>The metadata of a record carries these CloudEvent attributes:
    *
    * <ul>
-   *   <li>{@code ce-type} holds the record type: {@code interaction}, {@code activity}, {@code
-   *       guardrail-decision}, {@code evaluation} or {@code classification}.
-   *   <li>{@code ce-source} names the producer of the record. For an interaction or an activity, it
-   *       is the component id of the agent. For a guardrail decision, it is the guardrail name. For
-   *       an evaluation, it is the component id of the evaluator. For a classification, it is the
-   *       classifier name.
-   *   <li>{@code flow-id} holds the id of the flow of the record. It is absent for a record outside
-   *       a flow. An evaluation of a workflow run is outside a flow.
+   *   <li>{@code ce-id} holds the record id.
+   *   <li>{@code ce-subject} holds the flow id. It is absent for a record outside a flow. {@code
+   *       messageContext().eventSubject()} returns it.
+   *   <li>{@code ce-source} names the producer of the record as a percent-encoded URI reference.
+   *       For an interaction or an activity, it is the component id of the agent. For a guardrail
+   *       decision, it is the guardrail name. For an evaluation, it is the component id of the
+   *       evaluator. For a classification, it is the classifier name.
    * </ul>
    *
    * <p>The ledger consumer has these delivery guarantees:
@@ -224,6 +223,9 @@ public @interface Consume {
    *       later start. Records dropped by retention never arrive.
    *   <li>A handler added later receives only the records after the current offset. The consumer
    *       does not receive the earlier records of its kind.
+   *   <li>The consumer skips a record that this version of the SDK does not know, such as an
+   *       evaluation of a new kind of subject. An SDK upgrade does not deliver the skipped records
+   *       again.
    *   <li>The consumer receives allow decisions of guardrails, unless the service turns off allow
    *       records.
    *   <li>The consumer receives no records when {@code akka.javasdk.agent.ledger.enabled} is {@code
