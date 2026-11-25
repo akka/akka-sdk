@@ -480,7 +480,12 @@ Compare `messageContext().selfRegion()` with the configured region to decide whe
 You can also use this approach for messages from topics or another service's event stream.
 Check that the source delivers events to the designated region.
 
-Changing the configured region does not automatically replay events already acknowledged and skipped there.
+To move processing to another region when the designated region is marked down, configure an ordered list of regions.
+Process events in the first region of the list that `messageContext().downedRegions()` does not contain.
+A region lists another region as marked down only after you send the `down-region` command to that region.
+Send the command to every region, as xref:operations:regions/setup.adoc#_downing_of_region_for_disaster_recovery[Downing of region for disaster recovery] describes.
+
+Moving processing to another region, by changing the configured region or when the designated region is marked down, does not replay the events that the new region already acknowledged and skipped.
 Define how you will recover unfinished actions when the designated region fails.
 During a transition, calls started in the previous region can still complete. Keep external actions idempotent to handle overlapping attempts and duplicate delivery.
 
