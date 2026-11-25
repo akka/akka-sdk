@@ -12,6 +12,10 @@ Current versions
 
 == November 2026
 
+* xref:release-notes/runtime/1.7.8.adoc[Akka Runtime 1.7.8]
+- Database storage metrics per table instead of per partition.
+- Fix of the deleted entities metric.
+
 * [[sdk-3-7-3]]https://github.com/akka/akka-sdk/releases/tag/v3.7.3[Akka SDK 3.7.3,window="new"]
 - Runtime 1.7.7
 - **Breaking change**: A service stream producer enforces its class-level `@Acl`, and `@Acl` on a method of the producer fails compilation, see xref:reference:migration-guide.adoc#acl-on-service-streams[@Acl on service streams]

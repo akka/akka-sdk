@@ -1,0 +1,12 @@
+= Akka Runtime 1.7.8
+:page-summary: Runtime 1.7.8 reports the database storage metrics per table instead of per partition and fixes the count of deleted entities. The agent failure mapping error has the root cause of the failure.
+
+include::ROOT:partial$include.adoc[]
+
+Released 2026-11-26.
+
+== Changes
+
+* Observability: the database storage metrics, such as `akka.db.storage.bytes`, report one series per table. A table with a partition per day, such as the agent ledger table, no longer adds new series each day. The series of the daily partitions stop receiving data. Check dashboards and alerts that use these series.
+* Entity deletion: the `akka.entity.deleted` metric counts only the entities that the runtime deleted. It no longer counts entities that the cleanup skipped.
+* Agents: when the `onFailure` handler of an agent throws an exception, the `AK-01203` error has the root cause of the original failure, and the model failure kind and HTTP status when known.
