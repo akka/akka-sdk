@@ -6,6 +6,7 @@ package akka.javasdk.impl
 
 import scala.jdk.CollectionConverters._
 
+import akka.javasdk.impl.http.HttpRequestContextImpl
 import akka.runtime.sdk.spi.RegionInfo
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -32,6 +33,20 @@ class ContextsSpec extends AnyWordSpec with Matchers {
       val context = new AbstractContext(new RegionInfo("a", () => Set("b"))) {}
 
       an[UnsupportedOperationException] should be thrownBy context.downedRegions().add("x")
+    }
+  }
+
+  "The HTTP request context" should {
+
+    "read the downed regions on each call" in {
+      var downed = Set("b")
+      val context = new HttpRequestContextImpl(null, () => null, new RegionInfo("a", () => downed))(null)
+
+      context.selfRegion() shouldBe "a"
+      context.downedRegions().asScala shouldBe Set("b")
+
+      downed = Set("b", "c")
+      context.downedRegions().asScala shouldBe Set("b", "c")
     }
   }
 }
