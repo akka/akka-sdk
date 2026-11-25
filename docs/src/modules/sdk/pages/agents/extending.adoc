@@ -239,7 +239,7 @@ The runtime applies these rules:
 * Requests only go to the host and port of the card URL and to the hosts in `allowed-hosts`. This includes the endpoint that the agent card advertises.
 * Credentials only go over HTTPS. The runtime never reads credentials from the agent card.
 * The model sees content from the remote agent only as the result of a tool call, never as a message from the user.
-* The runtime waits for the remote agent to finish in one request. If the remote agent returns a task that is not finished, for example one that needs input, your agent gets the state and the message of the task as text. A failed or rejected task is an error result.
+* The runtime waits for the remote agent to finish in one request. A task that failed, was rejected or canceled, or that waits for input or authentication, is an error result with the state and the message of the task as text. Each call is a new message, so the runtime cannot give the input that a task waits for. Any other task that is not finished gives the state and the message as text.
 * The runtime reuses a successfully fetched agent card for the time in `akka.javasdk.agent.a2a-client.card-cache-ttl`, which is five minutes by default. A failed fetch is not cached.
 * A card is not trusted. The runtime keeps at most 100 skills of a card, cuts the name and the description of a skill to 1000 characters, and ignores a skill with an id of more than 128 characters or with control characters.
 * The runtime sends the trace context to the remote agent, but not the baggage of the request.
