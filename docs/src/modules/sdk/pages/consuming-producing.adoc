@@ -484,9 +484,17 @@ To move processing to another region when the designated region is marked down, 
 Process events in the first region of the list that `messageContext().downedRegions()` does not contain.
 A region lists another region as marked down only after you send the `down-region` command to that region.
 Send the command to every region, as xref:operations:regions/setup.adoc#_downing_of_region_for_disaster_recovery[Downing of region for disaster recovery] describes.
+A designated region that does not get the command keeps processing events while its service runs, so pause the service as that section describes.
+
+When you bring the designated region up, each region changes its decision when it gets the `bring-up-region` command.
+The other regions skip events from that point.
+A designated region that got the `down-region` command lists itself as marked down, and skips events until it gets the `bring-up-region` command.
+In xref:operations:regions/setup.adoc#_bring_up_region_for_disaster_recovery[Bring up region for disaster recovery], you send the command to the designated region last.
+No region processes the events that arrive after the other regions get the command and before the designated region gets it.
+A designated region that did not get the `down-region` command also processes the events that the next region of the list processed while the designated region was marked down.
 
 Moving processing to another region, by changing the configured region or when the designated region is marked down, does not replay the events that the new region already acknowledged and skipped.
-Define how you will recover unfinished actions when the designated region fails.
+Define how you will recover unfinished actions when the designated region fails, and how you will find the events that no region processed.
 During a transition, calls started in the previous region can still complete. Keep external actions idempotent to handle overlapping attempts and duplicate delivery.
 
 ==== Processing with a shared destination
