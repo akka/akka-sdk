@@ -174,7 +174,7 @@ lazy val akkaJavaSdkEnforcer =
       Compile / javacOptions ++= Seq("-encoding", "UTF-8", "--release", "11"),
       libraryDependencies ++= Seq(
         "org.apache.maven.enforcer" % "enforcer-api" % "3.7.0" % Provided,
-        "org.apache.maven" % "maven-core" % "3.10.0" % Provided,
+        "org.apache.maven" % "maven-core" % "3.10.1" % Provided,
         "javax.inject" % "javax.inject" % "1" % Provided,
         Dependencies.junitJupiter % Test,
         Dependencies.junitPlatformLauncher % Test,
