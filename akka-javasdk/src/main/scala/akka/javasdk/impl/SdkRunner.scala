@@ -310,7 +310,7 @@ object SdkRunner {
       Some(sanitizationSettings),
       Some(spiDeployedEventingSettings),
       ledgerSettings,
-      applicationConf.getConfig("akka.javasdk.agent.a2a-client"))
+      applicationConf.getConfig("akka.javasdk.agent.a2a-client").atPath("a2a-client"))
   }
 
   private def extractDevObjectStorageBuckets(objectStorageConf: Config): Seq[SpiDevObjectStorageBucketConfig] = {

@@ -60,7 +60,7 @@ class SpiSettingsSpec extends AnyWordSpec with Matchers with OptionValues {
             """)
           .withFallback(ConfigFactory.load())
           .resolve()
-        val a2a = SdkRunner.extractSpiSettings(config).a2aClientConfig
+        val a2a = SdkRunner.extractSpiSettings(config).remoteClientsConfig.getConfig("a2a-client")
         a2a.getString("agents.claims.card-url") shouldBe "https://claims.example.com/card"
         a2a.getString("agents.claims.auth.token") shouldBe "from-the-environment"
         a2a.getDuration("request-timeout") shouldBe Duration.ofSeconds(7)
@@ -71,7 +71,11 @@ class SpiSettingsSpec extends AnyWordSpec with Matchers with OptionValues {
     }
 
     "have no remote A2A agents by default" in {
-      SdkRunner.extractSpiSettings(ConfigFactory.load()).a2aClientConfig.getConfig("agents").isEmpty shouldBe true
+      SdkRunner
+        .extractSpiSettings(ConfigFactory.load())
+        .remoteClientsConfig
+        .getConfig("a2a-client.agents")
+        .isEmpty shouldBe true
     }
 
     "parse all valid google pub sub modes" in {
