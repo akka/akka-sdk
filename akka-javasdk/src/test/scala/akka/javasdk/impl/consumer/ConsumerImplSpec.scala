@@ -85,7 +85,7 @@ class ConsumerImplSpec
       serializer,
       ignoreUnknown = false,
       bytesDescriptor(consumerClass),
-      new RegionInfo(""),
+      new RegionInfo("", () => Set.empty),
       unhandledExceptionReporter)
 
   private def throwingMessage = new SpiConsumer.Message(

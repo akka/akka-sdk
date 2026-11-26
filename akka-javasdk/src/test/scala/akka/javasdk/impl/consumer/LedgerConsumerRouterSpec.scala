@@ -208,7 +208,7 @@ class LedgerConsumerRouterSpec extends ScalaTestWithActorTestKit with LogCapturi
       serializer,
       ignoreUnknown = false,
       ComponentDescriptor.descriptorFor(consumerClass, serializer),
-      new RegionInfo(""))
+      new RegionInfo("", () => Set.empty))
   }
 
   "The ledger consumer router" should {

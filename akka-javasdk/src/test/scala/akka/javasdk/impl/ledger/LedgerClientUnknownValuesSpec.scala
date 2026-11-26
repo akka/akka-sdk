@@ -326,6 +326,12 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
 
       override def getFlowRecords(flowId: String, fromPosition: Long, limit: Int): Future[SpiLedger.FlowPage] =
         Future.successful(flowPage)
+
+      override def getExternalIdRecords(
+          externalId: String,
+          from: Option[Instant],
+          limit: Int): Future[Seq[SpiLedger.FlowRecord]] =
+        Future.successful(Seq.empty)
     }
     new LedgerClientImpl(spiLedgerClient, ExecutionContext.parasitic)
   }

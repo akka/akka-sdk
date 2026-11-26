@@ -41,24 +41,33 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
     override def getInteraction(interactionId: String): Future[SpiLedger.InteractionRecord] = unexpected
     override def getEvaluation(evaluationId: String): Future[SpiLedger.EvaluationRecord] = unexpected
     override def getClassification(classificationId: String): Future[SpiLedger.ClassificationRecord] = unexpected
+
     override def getEvaluations(
         interactionId: String,
         from: Option[Instant],
         limit: Int): Future[Seq[SpiLedger.EvaluationRecord]] = unexpected
+
     override def getWorkflowEvaluations(
         workflowComponentId: String,
         workflowId: String,
         from: Option[Instant],
         limit: Int): Future[Seq[SpiLedger.EvaluationRecord]] = unexpected
+
     override def getInteractions(
         agentComponentId: String,
         sessionId: String,
         from: Option[Instant],
         limit: Int): Future[Seq[SpiLedger.InteractionRecord]] = unexpected
+
     override def getGuardrailDecisions(
         interactionId: String,
         from: Option[Instant],
         limit: Int): Future[Seq[SpiLedger.GuardrailDecisionRecord]] = unexpected
+
+    override def getExternalIdRecords(
+        externalId: String,
+        from: Option[Instant],
+        limit: Int): Future[Seq[SpiLedger.FlowRecord]] = unexpected
 
     private def unexpected[T]: Future[T] = Future.failed(new UnsupportedOperationException("not a flow read"))
   }
@@ -180,6 +189,12 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
 
     override def getFlowRecords(flowId: String, fromPosition: Long, limit: Int): Future[SpiLedger.FlowPage] =
       Future.successful(new SpiLedger.FlowPage(Seq.empty, fromPosition, hasMore = false))
+
+    override def getExternalIdRecords(
+        externalId: String,
+        from: Option[Instant],
+        limit: Int): Future[Seq[SpiLedger.FlowRecord]] =
+      Future.successful(Seq.empty)
   }
 
   "Mapping an interaction record" should {
