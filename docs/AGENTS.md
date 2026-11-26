@@ -58,6 +58,9 @@ These patterns read as machine-generated. Don't use them:
 - Stock phrases repeated across pages ("primary consumer", the same tricolon). Vary them or cut them.
 - Slash compounds in prose ("scoring/labeling", "and/or"). Write it out.
 - The "humans forget, the runtime doesn't" trope, restated on every page.
+- Absolute words for emphasis ("receives every record", "never receives a record"). Write "receives
+  all records" and "does not receive records". Use "every" only when the statement is about each item
+  individually. Use "never" only when the statement is about time.
 
 ## Write for a global audience
 
