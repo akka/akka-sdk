@@ -12,6 +12,7 @@ import scala.concurrent.Future
 import scala.concurrent.Promise
 import scala.jdk.CollectionConverters._
 import scala.jdk.FutureConverters._
+import scala.jdk.OptionConverters._
 
 import akka.Done
 import akka.NotUsed
@@ -29,6 +30,7 @@ import akka.javasdk.agent.task.TaskStatus
 import akka.javasdk.client.TaskClient
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.agent.TaskRuleRunner
+import akka.javasdk.impl.agent.task.TaskNotFoundCommandException
 import akka.javasdk.impl.serialization.Serializer
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.EntityRequest
@@ -48,7 +50,8 @@ private[javasdk] final class TaskClientImpl(
     runtimeComponentClients: RuntimeComponentClients,
     serializer: Serializer,
     callMetadata: Option[Metadata],
-    materializer: Materializer)(implicit ec: ExecutionContext)
+    materializer: Materializer,
+    defaultExpireAfter: Option[java.time.Duration])(implicit ec: ExecutionContext)
     extends TaskClient {
 
   private val log = LoggerFactory.getLogger(classOf[TaskClientImpl])
@@ -67,6 +70,7 @@ private[javasdk] final class TaskClientImpl(
       task.resultType().getName)
     val attachments = task.attachments().asScala.map(TaskAttachment.fromMessageContent(_)).asJava
     val ruleClassNames = task.ruleClasses().asScala.map(_.getName).asJava
+    val expireAfter = task.expireAfter().toScala.orElse(defaultExpireAfter)
     val createRequest = new TaskEntity.CreateRequest(
       task.name(),
       task.description(),
@@ -74,7 +78,8 @@ private[javasdk] final class TaskClientImpl(
       task.resultType().getName,
       task.dependencyTaskIds(),
       attachments,
-      ruleClassNames)
+      ruleClassNames,
+      expireAfter.orNull)
     val createPayload = serializer.toBytes(createRequest)
     log.debug("createTask: sending Create to entity [{}], payload contentType=[{}]", taskId, createPayload.contentType)
     runtimeComponentClients.eventSourcedEntityClient
@@ -93,7 +98,7 @@ private[javasdk] final class TaskClientImpl(
       .map { reply =>
         reply.exceptionPayload match {
           case Some(exBytes) =>
-            throw serializer.json.exceptionFromBytes(exBytes)
+            throw errorReply(exBytes)
           case None =>
             val taskState = serializer.fromBytes[TaskState](classOf[TaskState], reply.payload)
             log.debug("getTask: id=[{}] status=[{}]", taskId, taskState.status())
@@ -213,7 +218,7 @@ private[javasdk] final class TaskClientImpl(
       .flatMap { reply =>
         reply.exceptionPayload match {
           case Some(exBytes) =>
-            throw serializer.json.exceptionFromBytes(exBytes)
+            throw errorReply(exBytes)
           case None =>
             val taskState = serializer.fromBytes[TaskState](classOf[TaskState], reply.payload)
             taskRuleRunner.evaluate(taskState, resultJson) match {
@@ -239,6 +244,16 @@ private[javasdk] final class TaskClientImpl(
     sendCommand("Fail", serializer.toBytes(reason))
   }
 
+  override def cancelAsync(reason: String): CompletionStage[Done] = {
+    log.debug("cancelTask: id=[{}] reason=[{}]", taskId, reason)
+    sendCommand("Cancel", serializer.toBytes(reason))
+  }
+
+  override def deleteAsync(): CompletionStage[Done] = {
+    log.debug("deleteTask: id=[{}]", taskId)
+    sendCommand("Delete", BytesPayload.empty)
+  }
+
   override def notificationStream(): Source[TaskNotification, NotUsed] = {
     log.debug("notificationStream: id=[{}]", taskId)
     val req = new EntityRequest(TaskEntityComponentId, taskId, "", BytesPayload.empty, spiMetadata)
@@ -254,12 +269,18 @@ private[javasdk] final class TaskClientImpl(
       .send(new EntityRequest(TaskEntityComponentId, taskId, methodName, payload, spiMetadata))
       .map { reply =>
         reply.exceptionPayload.foreach { exBytes =>
-          throw serializer.json.exceptionFromBytes(exBytes)
+          throw errorReply(exBytes)
         }
         Done.done()
       }
       .asJava
   }
+
+  private def errorReply(exBytes: BytesPayload): RuntimeException =
+    serializer.json.exceptionFromBytes(exBytes) match {
+      case _: TaskNotFoundCommandException => new TaskException.NotFound(taskId)
+      case other                           => other
+    }
 
   private def deserializeResult[R](taskState: TaskState, taskDefinition: TaskDefinition[R]): Optional[R] = {
     validateTaskDefinition(taskState, taskDefinition)

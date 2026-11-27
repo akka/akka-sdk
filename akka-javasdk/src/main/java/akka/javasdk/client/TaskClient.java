@@ -17,7 +17,12 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Client for creating, querying, and completing tasks, bound to a specific task entity ID.
+ * Client for creating, assigning, completing, failing, cancelling, deleting and querying a task,
+ * bound to a specific task entity ID.
+ *
+ * <p>{@link #assign}, {@link #complete}, {@link #fail}, {@link #cancel}, {@link #get} and {@link
+ * #result} fail with {@link akka.javasdk.agent.task.TaskException.NotFound} when the task does not
+ * exist, for example because it was deleted.
  *
  * <p>Not for user extension or instantiation, returned by the SDK component client.
  */
@@ -121,6 +126,53 @@ public interface TaskClient {
    */
   CompletionStage<Done> failAsync(String reason);
 
+  /**
+   * Cancel a task that has not started, with a reason. A task can be cancelled when it is {@code
+   * PENDING} or {@code ASSIGNED}. Cancelling a task that already ended succeeds without change. A
+   * task that an agent has started cannot be cancelled: fail it with {@link #fail} instead.
+   *
+   * @param reason the cancellation reason
+   */
+  default void cancel(String reason) {
+    try {
+      cancelAsync(reason).toCompletableFuture().join();
+    } catch (CompletionException e) {
+      throw ErrorHandling.unwrapCompletionException(e);
+    }
+  }
+
+  /**
+   * Async variant of {@link #cancel}.
+   *
+   * @param reason the cancellation reason
+   * @return a CompletionStage that completes when the task has been cancelled
+   */
+  CompletionStage<Done> cancelAsync(String reason);
+
+  /**
+   * Delete a task that has ended. Only a task that is {@code COMPLETED}, {@code FAILED} or {@code
+   * CANCELLED} can be deleted. Deleting a task that does not exist or was deleted succeeds.
+   *
+   * <p>After the delete, {@link #assign}, {@link #complete}, {@link #fail}, {@link #cancel}, {@link
+   * #get} and {@link #result} fail with {@link akka.javasdk.agent.task.TaskException.NotFound}. The
+   * runtime removes the stored data of the task after {@code
+   * akka.javasdk.entity.cleanup-deleted-after}.
+   */
+  default void delete() {
+    try {
+      deleteAsync().toCompletableFuture().join();
+    } catch (CompletionException e) {
+      throw ErrorHandling.unwrapCompletionException(e);
+    }
+  }
+
+  /**
+   * Async variant of {@link #delete}.
+   *
+   * @return a CompletionStage that completes when the task has been deleted
+   */
+  CompletionStage<Done> deleteAsync();
+
   // --- querying ---
 
   /**
@@ -138,6 +190,7 @@ public interface TaskClient {
    * @return the task snapshot containing status and typed result
    * @throws akka.javasdk.agent.task.TaskException.TypeMismatch if the task's name or result type
    *     does not match {@code taskDefinition}
+   * @throws akka.javasdk.agent.task.TaskException.NotFound if the task does not exist
    */
   default <R> TaskSnapshot<R> get(TaskDefinition<R> taskDefinition) {
     try {
@@ -152,7 +205,8 @@ public interface TaskClient {
    *
    * <p>The returned CompletionStage fails with {@link
    * akka.javasdk.agent.task.TaskException.TypeMismatch} if the task's name or result type does not
-   * match {@code taskDefinition}.
+   * match {@code taskDefinition}, or {@link akka.javasdk.agent.task.TaskException.NotFound} if the
+   * task does not exist.
    *
    * @param taskDefinition the task definition, used for typed result deserialization
    * @param <R> the result type of the task
@@ -176,6 +230,7 @@ public interface TaskClient {
    * @throws akka.javasdk.agent.task.TaskException.Cancelled if the task was cancelled
    * @throws akka.javasdk.agent.task.TaskException.TypeMismatch if the task's name or result type
    *     does not match {@code taskDefinition}
+   * @throws akka.javasdk.agent.task.TaskException.NotFound if the task does not exist
    */
   default <R> R result(TaskDefinition<R> taskDefinition) {
     try {
@@ -190,8 +245,9 @@ public interface TaskClient {
    *
    * <p>The returned CompletionStage fails with {@link akka.javasdk.agent.task.TaskException.Failed}
    * if the task failed, {@link akka.javasdk.agent.task.TaskException.Cancelled} if it was
-   * cancelled, or {@link akka.javasdk.agent.task.TaskException.TypeMismatch} if the task's name or
-   * result type does not match {@code taskDefinition}.
+   * cancelled, {@link akka.javasdk.agent.task.TaskException.TypeMismatch} if the task's name or
+   * result type does not match {@code taskDefinition}, or {@link
+   * akka.javasdk.agent.task.TaskException.NotFound} if the task does not exist.
    *
    * @param taskDefinition the task definition, used for typed result deserialization
    * @param <R> the result type of the task

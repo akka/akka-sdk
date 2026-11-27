@@ -28,9 +28,11 @@ import akka.javasdk.agent.autonomous.Notification
 import akka.javasdk.agent.task.Task
 import akka.javasdk.agent.task.TaskKey
 import akka.javasdk.client.AutonomousAgentClient
+import akka.javasdk.impl.ApplicationConfig
 import akka.javasdk.impl.ForwardCompat.knownOr
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.agent.AgentImpl
+import akka.javasdk.impl.agent.TaskExpiry
 import akka.javasdk.impl.agent.autonomous.AgentSetupImpl
 import akka.javasdk.impl.agent.autonomous.CapabilityConverter
 import akka.javasdk.impl.serialization.Serializer
@@ -67,7 +69,13 @@ private[javasdk] final class AutonomousAgentClientImpl(
       taskId)
 
     val taskClient =
-      new TaskClientImpl(taskId, runtimeComponentClients, serializer, callMetadata, Materializer.matFromSystem(system))
+      new TaskClientImpl(
+        taskId,
+        runtimeComponentClients,
+        serializer,
+        callMetadata,
+        Materializer.matFromSystem(system),
+        TaskExpiry.defaultExpireAfter(ApplicationConfig(system).getConfig))
 
     taskClient
       .createAsync(task)

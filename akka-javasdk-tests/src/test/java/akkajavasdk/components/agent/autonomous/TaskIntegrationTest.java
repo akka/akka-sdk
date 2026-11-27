@@ -12,6 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import akka.javasdk.agent.SessionMemoryEntity;
 import akka.javasdk.agent.SessionMessage;
+import akka.javasdk.agent.task.TaskStatus;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
@@ -386,6 +387,37 @@ public class TaskIntegrationTest extends TestKitSupport {
               var result = snapshot.result().orElseThrow();
               assertThat(result.title()).isEqualTo("Login Feature");
               assertThat(result.summary()).contains("OAuth");
+            });
+  }
+
+  @Test
+  public void shouldCancelTaskWhoseDependencyWasDeleted() {
+    var dependencyId = UUID.randomUUID().toString();
+    componentClient.forTask(dependencyId).create(TestTasks.TEST_TASK.instructions("First step."));
+    componentClient.forTask(dependencyId).assign("reviewer");
+    componentClient
+        .forTask(dependencyId)
+        .complete(TestTasks.TEST_TASK, new TestTasks.TestResult("first done", 1));
+    componentClient.forTask(dependencyId).delete();
+
+    testAgentModel.fixedResponse(completeTask(new TestTasks.TestResult("second done", 2)));
+
+    var taskId =
+        componentClient
+            .forTask(UUID.randomUUID().toString())
+            .create(TestTasks.TEST_TASK.instructions("Second step.").dependsOn(dependencyId));
+    componentClient
+        .forAutonomousAgent(TestAutonomousAgent.class, UUID.randomUUID().toString())
+        .assignTasks(taskId);
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              var snapshot = componentClient.forTask(taskId).get(TestTasks.TEST_TASK);
+              assertThat(snapshot.status()).isEqualTo(TaskStatus.CANCELLED);
+              assertThat(snapshot.failureReason().orElseThrow()).contains(dependencyId);
             });
   }
 }

@@ -6,6 +6,7 @@ package akka.javasdk.impl.agent
 
 import java.time.Instant
 import java.util.UUID
+import java.util.concurrent.CompletionException
 
 import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
@@ -40,6 +41,7 @@ import akka.javasdk.impl.agent.autonomous.AgentDefinitionImpl
 import akka.javasdk.impl.agent.task.BacklogEntity
 import akka.javasdk.impl.agent.task.BacklogNotification
 import akka.javasdk.impl.agent.task.BacklogState
+import akka.javasdk.impl.agent.task.TaskNotFoundCommandException
 import akka.javasdk.impl.client.EntityClientImpl
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.Serializer
@@ -186,7 +188,8 @@ private[impl] final class AutonomousAgentImpl(
         request.resultTypeName.orNull,
         request.dependencyTaskIds.asJava,
         attachments,
-        request.ruleClassNames.asJava)
+        request.ruleClassNames.asJava,
+        TaskExpiry.defaultExpireAfter(config).orNull)
       taskEntityClient(taskId)
         .methodRefOneArg[TaskEntity.CreateRequest, Done](taskCreateMethod)
         .withMetadata(MetadataImpl.of(context))
@@ -196,84 +199,101 @@ private[impl] final class AutonomousAgentImpl(
     }
 
     override def getTaskState(taskId: String, context: Option[TelemetryContext]): Future[SpiTask.SpiTaskState] =
-      taskEntityClient(taskId)
-        .methodRefNoArg[TaskState](taskGetStateMethod)
-        .withMetadata(MetadataImpl.of(context))
-        .invokeAsync()
-        .asScala
-        .map(toSpiTaskState)(sdkExecutionContext)
+      notFoundAsSpi(taskId) {
+        taskEntityClient(taskId)
+          .methodRefNoArg[TaskState](taskGetStateMethod)
+          .withMetadata(MetadataImpl.of(context))
+          .invokeAsync()
+          .asScala
+          .map(toSpiTaskState)(sdkExecutionContext)
+      }
 
     override def assignTask(taskId: String, assignee: String, context: Option[TelemetryContext]): Future[Done] =
-      taskEntityClient(taskId)
-        .methodRefOneArg[String, Done](taskAssignMethod)
-        .withMetadata(MetadataImpl.of(context))
-        .invokeAsync(assignee)
-        .asScala
+      notFoundAsSpi(taskId) {
+        taskEntityClient(taskId)
+          .methodRefOneArg[String, Done](taskAssignMethod)
+          .withMetadata(MetadataImpl.of(context))
+          .invokeAsync(assignee)
+          .asScala
+      }
 
     override def startTask(taskId: String, context: Option[TelemetryContext]): Future[Done] =
-      taskEntityClient(taskId)
-        .methodRefNoArg[Done](taskStartMethod)
-        .withMetadata(MetadataImpl.of(context))
-        .invokeAsync()
-        .asScala
+      notFoundAsSpi(taskId) {
+        taskEntityClient(taskId)
+          .methodRefNoArg[Done](taskStartMethod)
+          .withMetadata(MetadataImpl.of(context))
+          .invokeAsync()
+          .asScala
+      }
 
     override def completeTask(taskId: String, resultJson: String, context: Option[TelemetryContext]): Future[Done] =
-      taskEntityClient(taskId)
-        .methodRefNoArg[TaskState](taskGetStateMethod)
-        .withMetadata(MetadataImpl.of(context))
-        .invokeAsync()
-        .asScala
-        .flatMap { taskState =>
-          taskRuleRunner.evaluate(taskState, resultJson) match {
-            case TaskRuleRunner.RuleOutcome.Accepted =>
-              taskEntityClient(taskId)
-                .methodRefOneArg[String, Done](taskCompleteMethod)
-                .withMetadata(MetadataImpl.of(context))
-                .invokeAsync(resultJson)
-                .asScala
+      notFoundAsSpi(taskId) {
+        taskEntityClient(taskId)
+          .methodRefNoArg[TaskState](taskGetStateMethod)
+          .withMetadata(MetadataImpl.of(context))
+          .invokeAsync()
+          .asScala
+          .flatMap { taskState =>
+            taskRuleRunner.evaluate(taskState, resultJson) match {
+              case TaskRuleRunner.RuleOutcome.Accepted =>
+                taskEntityClient(taskId)
+                  .methodRefOneArg[String, Done](taskCompleteMethod)
+                  .withMetadata(MetadataImpl.of(context))
+                  .invokeAsync(resultJson)
+                  .asScala
 
-            case TaskRuleRunner.RuleOutcome.Rejected(ruleClassName, reason) =>
-              log.warn(
-                "Task [{}] [{}] completion rejected by rule [{}]: {}",
-                taskState.name(),
-                taskId,
-                ruleClassName,
-                reason)
-              val rejectRequest = new TaskEntity.RejectResultRequest(ruleClassName, reason)
-              taskEntityClient(taskId)
-                .methodRefOneArg[TaskEntity.RejectResultRequest, Done](taskRejectResultMethod)
-                .withMetadata(MetadataImpl.of(context))
-                .invokeAsync(rejectRequest)
-                .asScala
-                .flatMap(_ => Future.failed(new SpiTask.TaskResultRejectedException(reason)))(sdkExecutionContext)
-          }
-        }(sdkExecutionContext)
+              case TaskRuleRunner.RuleOutcome.Rejected(ruleClassName, reason) =>
+                log.warn(
+                  "Task [{}] [{}] completion rejected by rule [{}]: {}",
+                  taskState.name(),
+                  taskId,
+                  ruleClassName,
+                  reason)
+                val rejectRequest = new TaskEntity.RejectResultRequest(ruleClassName, reason)
+                taskEntityClient(taskId)
+                  .methodRefOneArg[TaskEntity.RejectResultRequest, Done](taskRejectResultMethod)
+                  .withMetadata(MetadataImpl.of(context))
+                  .invokeAsync(rejectRequest)
+                  .asScala
+                  .flatMap(_ => Future.failed(new SpiTask.TaskResultRejectedException(reason)))(sdkExecutionContext)
+            }
+          }(sdkExecutionContext)
+      }
 
     override def failTask(taskId: String, reason: String, context: Option[TelemetryContext]): Future[Done] =
-      taskEntityClient(taskId)
-        .methodRefOneArg[String, Done](taskFailMethod)
-        .withMetadata(MetadataImpl.of(context))
-        .invokeAsync(reason)
-        .asScala
+      notFoundAsSpi(taskId) {
+        taskEntityClient(taskId)
+          .methodRefOneArg[String, Done](taskFailMethod)
+          .withMetadata(MetadataImpl.of(context))
+          .invokeAsync(reason)
+          .asScala
+      }
 
     override def cancelTask(taskId: String, reason: String, context: Option[TelemetryContext]): Future[Done] =
-      taskEntityClient(taskId)
-        .methodRefOneArg[String, Done](taskCancelMethod)
-        .withMetadata(MetadataImpl.of(context))
-        .invokeAsync(reason)
-        .asScala
+      notFoundAsSpi(taskId) {
+        taskEntityClient(taskId)
+          .methodRefOneArg[String, Done](taskCancelMethod)
+          .withMetadata(MetadataImpl.of(context))
+          .invokeAsync(reason)
+          .asScala
+      }
 
     override def reassignTask(
         taskId: String,
         request: SpiTask.ReassignRequest,
         context: Option[TelemetryContext]): Future[Done] = {
       val reassignReq = new TaskEntity.ReassignRequest(request.newAgentComponentId, request.context)
-      taskEntityClient(taskId)
-        .methodRefOneArg[TaskEntity.ReassignRequest, Done](taskReassignMethod)
-        .withMetadata(MetadataImpl.of(context))
-        .invokeAsync(reassignReq)
-        .asScala
+      notFoundAsSpi(taskId) {
+        taskEntityClient(taskId)
+          .methodRefOneArg[TaskEntity.ReassignRequest, Done](taskReassignMethod)
+          .withMetadata(MetadataImpl.of(context))
+          .invokeAsync(reassignReq)
+          .asScala
+      }
     }
+
+    private def notFoundAsSpi[T](taskId: String)(call: => Future[T]): Future[T] =
+      AutonomousAgentImpl.notFoundAsSpi(taskId)(call)(sdkExecutionContext)
 
     override val taskEntityType: String = Reflect.readComponentId(classOf[TaskEntity])
 
@@ -532,4 +552,24 @@ private[impl] final class AutonomousAgentImpl(
           isError = m.isError)
     }
 
+}
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] object AutonomousAgentImpl {
+
+  /**
+   * Fails with the SPI not found exception when the entity call fails with the not found reply of the task entity.
+   */
+  def notFoundAsSpi[T](taskId: String)(call: => Future[T])(implicit ec: ExecutionContext): Future[T] =
+    // A call through the component client fails with the error reply wrapped in a CompletionException.
+    // The bare error reply is mapped too.
+    call.recoverWith {
+      case _: TaskNotFoundCommandException =>
+        Future.failed(new SpiTask.TaskNotFoundException(taskId))
+      case e: CompletionException if e.getCause.isInstanceOf[TaskNotFoundCommandException] =>
+        Future.failed(new SpiTask.TaskNotFoundException(taskId))
+    }
 }

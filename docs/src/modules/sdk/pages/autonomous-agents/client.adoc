@@ -30,7 +30,7 @@ For more control over multiple tasks, pipelines, or long-lived agents, create ta
 include::example$autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[tag=create-task]
 ----
 
-Creating a task with an id that already exists succeeds and returns that id, without an error. Akka discards the new definition, and the existing task keeps its name, description, instructions and result type. A caller that declares a different result type therefore gets the id of a task with the original result type. This makes it safe to repeat `create` with an id that you stored before the call, for example after a crash, but it also means that each id must belong to one task definition only.
+Creating a task with an id that already exists succeeds and returns that id, without an error. Akka discards the new definition, and the existing task keeps its name, description, instructions and result type. A caller that declares a different result type therefore gets the id of a task with the original result type. This makes it safe to repeat `create` with an id that you stored before the call, for example after a crash, but it also means that each id must belong to one task definition only. The same holds for the id of a deleted or expired task until Akka has removed its stored data: `create` returns the id, and the task reads as not found. See xref:sdk:autonomous-agents/tasks.adoc#task-retention[Task retention].
 
 *Assign tasks to an agent:*
 
@@ -60,7 +60,7 @@ Termination is permanent for that instance id. A stopped agent instance rejects 
 
 == Task lifecycle operations
 
-Beyond `create` and `get`, the `forTask(...)` client exposes the operations that drive a task through its lifecycle: `assign`, `complete`, and `fail`. The runtime calls these on the agent's behalf as it picks up, completes, or fails tasks during iteration. Application code calls the same operations when an external actor (typically a human) drives a task that no agent is assigned to. See xref:sdk:autonomous-agents/capabilities.adoc#external-input[External input] for the human-approval pattern that uses them end to end.
+Beyond `create` and `get`, the `forTask(...)` client exposes the operations that drive a task through its lifecycle: `assign`, `complete`, `fail`, `cancel`, and `delete`. The runtime calls `assign`, `complete`, and `fail` on the agent's behalf as it picks up, completes, or fails tasks during iteration. Application code calls the same operations when an external actor (typically a human) drives a task that no agent is assigned to. See xref:sdk:autonomous-agents/capabilities.adoc#external-input[External input] for the human-approval pattern that uses them end to end.
 
 *Assign a task to an owner:*
 
@@ -91,6 +91,26 @@ include::example$autonomous-agent-playground/src/test/java/demo/docs/ClientApiSa
 ----
 
 The task transitions to `FAILED`. Any dependents are cancelled automatically.
+
+*Cancel a task that has not started:*
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[ClientApiSample.java]
+----
+include::example$autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[tag=cancel]
+----
+
+Only a `PENDING` or `ASSIGNED` task can be cancelled, so fail a task that an agent has started instead. See xref:sdk:autonomous-agents/tasks.adoc#task-retention[Task retention] for the expiry of a cancelled task.
+
+*Delete a task that has ended:*
+
+[source,java,indent=0]
+.{sample-base-url}/autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[ClientApiSample.java]
+----
+include::example$autonomous-agent-playground/src/test/java/demo/docs/ClientApiSample.java[tag=delete]
+----
+
+Only a `COMPLETED`, `FAILED`, or `CANCELLED` task can be deleted, and after the delete the task reads as not found. See xref:sdk:autonomous-agents/tasks.adoc#task-retention[Task retention].
 
 == Suspend and resume
 
