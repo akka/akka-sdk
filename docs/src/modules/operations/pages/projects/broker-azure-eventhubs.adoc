@@ -75,6 +75,20 @@ This means that if more than one action in the same Akka service are consuming e
 
 For views, the component name of the view is used as consumer group, and must be created up front in Azure.
 
+[#start-from]
+== Starting a consumer from latest or a timestamp
+
+A consumer with xref:sdk:consuming-producing.adoc#_starting_from_the_latest_events_or_a_timestamp[`@Consume.StartFrom`] starts at the events that Event Hubs received at or after the start point.
+
+* A partition that has no checkpoint starts at the first event received at or after the start point.
+* A partition that has a checkpoint continues from the checkpoint. Akka skips the events from before the start point that Event Hubs delivers from there.
+* The time of an event is the time Event Hubs received it, not the time the producer set.
+* An event received exactly at the start point is delivered.
+
+A consumer with a start point must set a consumer group with `@Consume.FromTopic(value = "...", consumerGroup = "...")`, and the consumer group must exist in Azure. Without it the service refuses to start. Consumers without a consumer group share the `$Default` consumer group and its checkpoints, so Akka cannot tie a start point to the consumer.
+
+Event Hubs keeps events for the retention time of the event hub. Akka cannot deliver events that Event Hubs no longer holds, also when the start point is earlier.
+
 == Delivery characteristics
 
 When your application consumes messages from Azure Event Hubs, it will try to deliver messages to your service in 'at-least-once' fashion while preserving order.

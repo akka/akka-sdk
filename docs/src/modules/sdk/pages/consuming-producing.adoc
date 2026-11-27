@@ -259,9 +259,9 @@ A new consumer starts from the beginning of its source and processes the whole h
 include::example$doc-snippets/src/main/java/com/example/application/CartNotifier.java[tag=start-from-latest]
 ----
 
-Events and state changes persisted before the start point are not delivered, also not for entities that persist new events later. The start point is supported for consumers of Event Sourced Entities, Key Value Entities, Workflows and service to service event streams. It is not supported for consumers of message broker topics.
+Events and state changes persisted before the start point are not delivered, also not for entities that persist new events later. The start point is supported for consumers of Event Sourced Entities, Key Value Entities, Workflows, service to service event streams and message broker topics.
 
-The start point is recorded when the consumer is first deployed and is permanent. The consumer never receives events from before it.
+The start point is recorded when the consumer is first deployed and is permanent. The consumer does not receive events from before it, with the exceptions that the broker pages describe for topics.
 
 * A consumer that is already deployed and gets `@Consume.StartFrom` skips the events from before the start point that it has not yet processed.
 * Clearing the offsets of the consumer makes it process everything since the start point again, not the whole history. A consumer that sends notifications sends them again for all events since the start point.
@@ -270,7 +270,25 @@ The start point is recorded when the consumer is first deployed and is permanent
 
 WARNING: Removing `@Consume.StartFrom` or changing it to another timestamp after the consumer has been deployed is not supported, the service refuses to start. This also applies when you roll back to a version of the service without the annotation. To start over from a different point, give the consumer a new component id. That discards the processing progress of the consumer. To change a recorded start point, contact support.
 
-In development mode and in tests nothing is recorded. `latest = true` is then the time of each start of the service, and events that are written while the service is stopped are not delivered. Messages that a test publishes through the test kit do not go through the start point. A timestamp in the future delivers nothing until that time, and the service logs a warning.
+In development mode and in tests nothing is recorded. `latest = true` is then the time of each start of the service, and events that are written while the service is stopped are not delivered. Messages that a test publishes through the test kit to a consumer of an entity or a service stream do not go through the start point. For a topic consumer, the test kit skips a message with a `ce-time` attribute from before the start point, and delivers a message without one. A timestamp in the future delivers nothing until that time, and the service logs a warning.
+
+=== Starting a topic consumer
+
+A topic consumer compares the start point with the time of each message. The brokers keep the time in different ways, and they differ in which older messages they can still deliver.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/TopicNotifier.java[TopicNotifier.java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/TopicNotifier.java[tag=start-from-topic]
+----
+
+The topic and the consumer group identify the start point of a topic consumer. Changing either one is a new first deployment, and records a new start point. A consumer without a consumer group uses its component id as consumer group, except for Azure Event Hubs, where a consumer with a start point must set a consumer group.
+
+See the broker pages for what the start point means for each broker:
+
+* xref:operations:projects/broker-kafka.adoc#start-from[Apache Kafka]
+* xref:operations:projects/broker-azure-eventhubs.adoc#start-from[Azure Event Hubs]
+* xref:operations:projects/broker-google-pubsub.adoc#start-from[Google Cloud Pub/Sub]
 
 == Metadata
 

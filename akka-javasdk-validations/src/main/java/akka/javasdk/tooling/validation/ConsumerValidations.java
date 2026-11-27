@@ -133,8 +133,8 @@ public class ConsumerValidations {
   }
 
   /**
-   * Validates @Consume.StartFrom: exactly one of latest and timestamp is set, the timestamp parses,
-   * the source is not a topic and the consumer does not produce a service stream.
+   * Validates @Consume.StartFrom: exactly one of latest and timestamp is set, the timestamp parses
+   * and the consumer does not produce a service stream.
    *
    * @param typeDef the component class to validate
    * @return a Validation result indicating success or failure
@@ -171,12 +171,6 @@ public class ConsumerValidations {
       }
     }
 
-    if (hasTopicSubscription(typeDef)) {
-      errors.add(
-          Validations.errorMessage(
-              typeDef,
-              "@Consume.StartFrom is not supported for a Consumer with @Consume.FromTopic."));
-    }
     if (typeDef.hasAnnotation("akka.javasdk.annotations.Produce.ServiceStream")) {
       errors.add(
           Validations.errorMessage(
