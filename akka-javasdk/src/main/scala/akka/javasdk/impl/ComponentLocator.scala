@@ -70,8 +70,8 @@ private[javasdk] object ComponentLocator {
   // Set by the annotation processor in the descriptor of the deployable service, never in a library descriptor.
   // Must be kept in sync with ComponentAnnotationProcessor.java
   private val DescriptorServiceMarkerPath = "akka.javasdk.service"
-  // descriptors shipped by SDK modules, always loaded together with the service descriptor
-  private val SdkProvidedDescriptorNames = Set("akka-javasdk-components_akka-javasdk-testkit.conf")
+  // set by the TestKit
+  private val TestKitEnabledPath = "akka.javasdk.testkit.enabled"
 
   // Component type keys - these must be kept in sync with ComponentKinds.java
   // in the akka-javasdk-annotation-processor module
@@ -209,10 +209,7 @@ private[javasdk] object ComponentLocator {
     }
   }
 
-  private[impl] final case class ClassifiedDescriptors(
-      service: Seq[Descriptor],
-      sdkProvided: Seq[Descriptor],
-      library: Seq[Descriptor])
+  private[impl] final case class ClassifiedDescriptors(service: Seq[Descriptor], library: Seq[Descriptor])
 
   /**
    * The Maven coordinates of the project under test or in dev mode.
@@ -222,24 +219,24 @@ private[javasdk] object ComponentLocator {
   }
 
   /**
-   * Classifies descriptors into the ones of the service, the ones shipped by SDK modules and the ones from component
-   * libraries. The service descriptors are all descriptors with the file name of a descriptor that the annotation
-   * processor marked, so a stale descriptor from main or test classes stays with the service. When no descriptor is
-   * marked, the service descriptors are the ones with the descriptor file name of `project`. Fails on service
-   * descriptors from more than one artifact. Fails on no service descriptor unless library components are listed in
-   * config, only SDK-provided descriptors are found, or `project` is defined and library descriptors are found.
+   * Classifies descriptors into the ones of the service and the ones from component libraries. The service descriptors
+   * are all descriptors with the file name of a descriptor that the annotation processor marked, so a stale descriptor
+   * from main or test classes stays with the service. When no descriptor is marked, the service descriptors are the
+   * ones with the descriptor file name of `project`. Fails on service descriptors from more than one artifact. Fails on
+   * no service descriptor unless library components are listed in config, `testKit` is true and no descriptor is found,
+   * or `project` is defined and library descriptors are found.
    */
   private[impl] def classifyDescriptors(
       descriptors: Seq[Descriptor],
       project: Option[ProjectCoordinates],
-      libraryComponentsListed: Boolean): ClassifiedDescriptors = {
-    val (sdkProvided, others) = descriptors.partition(d => SdkProvidedDescriptorNames.contains(d.fileName))
-    val markedNames = others.filter(_.isService).map(_.fileName).toSet
+      libraryComponentsListed: Boolean,
+      testKit: Boolean): ClassifiedDescriptors = {
+    val markedNames = descriptors.filter(_.isService).map(_.fileName).toSet
     // the file name only identifies the service when nothing is marked, such as in the tests of a library
     val serviceNames =
       if (markedNames.nonEmpty) markedNames
-      else project.map(_.descriptorFileName).filter(name => others.exists(_.fileName == name)).toSet
-    val (service, library) = others.partition(d => serviceNames.contains(d.fileName))
+      else project.map(_.descriptorFileName).filter(name => descriptors.exists(_.fileName == name)).toSet
+    val (service, library) = descriptors.partition(d => serviceNames.contains(d.fileName))
     serviceNames.size match {
       case 1 =>
         if (markedNames.isEmpty)
@@ -250,14 +247,13 @@ private[javasdk] object ComponentLocator {
             service.map(_.url).mkString(", "),
             project.map(_.groupId).getOrElse(""),
             project.map(_.artifactId).getOrElse(""))
-        ClassifiedDescriptors(service, sdkProvided, library)
-      case 0 if libraryComponentsListed => ClassifiedDescriptors(Seq.empty, sdkProvided, library)
-      case 0 if library.isEmpty && sdkProvided.nonEmpty =>
+        ClassifiedDescriptors(service, library)
+      case 0 if libraryComponentsListed => ClassifiedDescriptors(Seq.empty, library)
+      case 0 if library.isEmpty && testKit =>
         logger.info(
-          "Found no component descriptor for the service, loading only the SDK components from [{}]. If you have " +
-          "components, run `mvn clean compile`.",
-          sdkProvided.map(_.url).mkString(", "))
-        ClassifiedDescriptors(Seq.empty, sdkProvided, library)
+          "Found no component descriptor for the service, loading only the SDK components. If you have components, " +
+          "run `mvn clean compile`.")
+        ClassifiedDescriptors(Seq.empty, library)
       case 0 if library.isEmpty =>
         throw new IllegalStateException(
           "Found no component descriptor for the service. If you have components, it looks like your project needs " +
@@ -268,7 +264,7 @@ private[javasdk] object ComponentLocator {
           "run `mvn clean compile`.",
           project.map(_.groupId).getOrElse(""),
           project.map(_.artifactId).getOrElse(""))
-        ClassifiedDescriptors(Seq.empty, sdkProvided, library)
+        ClassifiedDescriptors(Seq.empty, library)
       case 0 =>
         throw new IllegalStateException(
           s"Found no component descriptor for the service, only descriptors without the service marker " +
@@ -533,7 +529,7 @@ private[javasdk] object ComponentLocator {
       ComponentDescriptorPrefix,
       ComponentDescriptorSuffix: Any)
 
-    // Find all descriptor files on the classpath (service, SDK modules and library JARs)
+    // Find all descriptor files on the classpath (service and library JARs)
     val allDescriptors = findAllDescriptorFiles(dynamicAccess.classLoader)
     logger.debug("Found [{}] component descriptor file(s)", allDescriptors.size)
 
@@ -545,8 +541,13 @@ private[javasdk] object ComponentLocator {
       groupId <- nonEmptyString(ProjectGroupIdPath)
       artifactId <- nonEmptyString(ProjectArtifactIdPath)
     } yield ProjectCoordinates(groupId, artifactId)
+    val testKit = applicationConfig.getBoolean(TestKitEnabledPath)
     val classified =
-      classifyDescriptors(allDescriptors, project, libraryComponentsListed = listedLibraryClassNames.nonEmpty)
+      classifyDescriptors(
+        allDescriptors,
+        project,
+        libraryComponentsListed = listedLibraryClassNames.nonEmpty,
+        testKit = testKit)
     val logUnlisted = applicationConfig.getBoolean(LibraryLogUnlistedConfigPath)
     classified.library.filter(_.config.hasPath(DescriptorServiceSetupEntryPath)).foreach { descriptor =>
       val message = "Ignoring service setup [{}] in library component descriptor [{}]"
@@ -555,7 +556,7 @@ private[javasdk] object ComponentLocator {
       else logger.debug(message, setupClass, descriptor.url)
     }
 
-    val descriptorConfig = mergeDescriptorConfigs((classified.service ++ classified.sdkProvided).map(_.config))
+    val descriptorConfig = mergeDescriptorConfigs(classified.service.map(_.config))
     val componentConfig =
       if (descriptorConfig.hasPath(DescriptorComponentBasePath)) descriptorConfig.getConfig(DescriptorComponentBasePath)
       else ConfigFactory.empty()
@@ -589,7 +590,7 @@ private[javasdk] object ComponentLocator {
     val libraryComponents =
       loadLibraryComponents(listedLibrary, dynamicAccess, descriptorComponents.toSet)
     val components = descriptorComponents ++ libraryComponents
-    if (components.isEmpty)
+    if (components.isEmpty && !testKit)
       throw new IllegalStateException(
         "No components found. If you have any, it looks like your project needs to be recompiled. Run `mvn clean compile` and try again.")
 
@@ -600,8 +601,12 @@ private[javasdk] object ComponentLocator {
     if (hasAutonomousAgentComponents)
       logger.debug("AutonomousAgent component detected, adding autonomous agent provided components")
 
+    // the runtime does not start without components
+    val withoutComponents = components.isEmpty
+
     val withBuildInComponents =
-      (if (hasAgentComponents || hasAutonomousAgentComponents) agentProvidedComponents else Seq.empty) ++
+      (if (hasAgentComponents || hasAutonomousAgentComponents || withoutComponents) agentProvidedComponents
+       else Seq.empty) ++
       (if (hasAutonomousAgentComponents) autonomousAgentProvidedComponents else Seq.empty) ++
       components
 

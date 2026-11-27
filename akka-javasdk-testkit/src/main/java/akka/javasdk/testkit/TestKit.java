@@ -1184,6 +1184,8 @@ public class TestKit {
                   Map.of(
                       "akka.javasdk.dev-mode.enabled",
                       true,
+                      "akka.javasdk.testkit.enabled",
+                      true,
                       // used by the gRPC endpoint test client to call itself
                       grpcClientSelfConfigPrefix + ".host",
                       runtimeHost,
