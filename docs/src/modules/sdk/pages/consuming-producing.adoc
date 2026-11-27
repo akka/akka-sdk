@@ -109,7 +109,7 @@ If you need additional information about change origin, executed steps, etc., yo
 [#consume-from-ledger]
 == Consume from the ledger
 
-The xref:reference:glossary.adoc#ledger[ledger] holds the interaction, activity, guardrail decision, evaluation and classification records of a service. To receive these records as the runtime writes them, annotate the Consumer with `@Consume.FromLedger`. The handler parameter types select which kinds of records the consumer receives.
+The xref:reference:glossary.adoc#ledger[ledger] holds the trace of what happened in a service, such as model calls, tool calls and guardrail decisions. To receive the records of the ledger, annotate the Consumer with `@Consume.FromLedger`. The handler parameter types select which kinds of records the consumer receives.
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/application/DeniedGuardrailAlerts.java[DeniedGuardrailAlerts.java]
