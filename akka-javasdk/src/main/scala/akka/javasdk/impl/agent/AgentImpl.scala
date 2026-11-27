@@ -89,6 +89,7 @@ import akka.stream.SystemMaterializer
 import akka.util.ByteString
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigException
+import com.typesafe.config.ConfigUtil
 import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.LoggerFactory
@@ -473,6 +474,55 @@ private[impl] object AgentImpl {
       case other => throw new IllegalArgumentException(s"Unsupported remote mcp tools impl $other")
     }
 
+  /** Fails when a remote A2A agent has no card URL in the configuration of the service. */
+  private[impl] def validateA2aAgentsConfigured(
+      remoteA2aAgents: Seq[RemoteA2aAgent],
+      applicationConfig: Config,
+      componentId: String): Unit =
+    remoteA2aAgents.foreach {
+      case remoteA2a: RemoteA2aAgentImpl =>
+        val path = ConfigUtil.joinPath("akka", "javasdk", "agent", "a2a-client", "agents", remoteA2a.name, "card-url")
+        if (!applicationConfig.hasPath(path))
+          throw new IllegalArgumentException(
+            s"Agent [$componentId] uses the remote A2A agent [${remoteA2a.name}], which has no card-url configured. " +
+            s"Set [$path] in the configuration of the service.")
+      case _ => ()
+    }
+
+  /** The runtime has no model request with both the legacy model guardrails and remote A2A agents. */
+  private[impl] def rejectLegacyGuardrailsWithA2aAgents(
+      componentId: String,
+      a2aAgentDescriptors: Seq[SpiAgent.A2aAgentDescriptor]): Unit =
+    if (a2aAgentDescriptors.nonEmpty)
+      throw new IllegalArgumentException(
+        s"Agent [$componentId] uses a remote A2A agent and a deprecated TextGuardrail on the model request. " +
+        "Use a ModelCallGuardrail and an AgentResponseGuardrail instead of the TextGuardrail.")
+
+  private[impl] def toSpiA2aAgents(
+      remoteA2aAgents: Seq[RemoteA2aAgent],
+      guardrails: AgentGuardrails): Seq[SpiAgent.A2aAgentDescriptor] = {
+    remoteA2aAgents
+      .collect { case a: RemoteA2aAgentImpl => a.name }
+      .groupBy(identity)
+      .collectFirst { case (name, names) if names.size > 1 => name }
+      .foreach(name => throw new IllegalArgumentException(s"The remote A2A agent [$name] is added more than once"))
+    remoteA2aAgents.map {
+      case remoteA2a: RemoteA2aAgentImpl =>
+        new SpiAgent.A2aAgentDescriptor(
+          name = remoteA2a.name,
+          skillFilter = remoteA2a.skillFilter match {
+            case Some(predicate) => predicate.test
+            case None            => (_: String) => true
+          },
+          // the tool-call guardrails of a skill are looked up by its skill id
+          toolCallGuardrails = guardrails.toolCallGuardrails,
+          toolTimeout =
+            if (remoteA2a.timeout == Duration.Zero) None
+            else Some(remoteA2a.timeout))
+      case other => throw new IllegalArgumentException(s"Unsupported remote A2A agent impl $other")
+    }
+  }
+
   // The runtime calls the hooks with the tool name on the MCP server.
   private final class McpToolCallHooksAdapter(javaInterceptor: RemoteMcpTools.ToolInterceptor)
       extends SpiAgent.McpToolCallHooks {
@@ -826,6 +876,7 @@ private[impl] final class AgentImpl(
             val sessionMemoryClient = deriveSessionMemoryClient(req.memoryProvider, telemetryContext)
             val additionalContext = toSpiContextMessages(sessionMemoryClient.getHistory(sessionId))
             val mcpToolEndpoints = toSpiMcpEndpoints(req.mcpTools)
+            val a2aAgentDescriptors = AgentImpl.toSpiA2aAgents(req.a2aAgents, guardrails)
 
             val allToolClasses =
               agent.getClass +: req.toolInstancesOrClasses.map {
@@ -870,7 +921,8 @@ private[impl] final class AgentImpl(
                 Telemetry.withCurrentContext(Option(request.telemetryContext))(toolExecutor.executeMultimodal(request))
               }(sdkExecutionContext)
 
-            if (guardrails.hasLegacyModelGuardrails)
+            if (guardrails.hasLegacyModelGuardrails) {
+              AgentImpl.rejectLegacyGuardrailsWithA2aAgents(componentId, a2aAgentDescriptors)
               new SpiAgent.RequestModelEffect(
                 modelProvider = spiModelProvider,
                 systemMessage = systemMessage,
@@ -889,7 +941,7 @@ private[impl] final class AgentImpl(
                 guardrails = guardrails.guardrails,
                 contentLoader = spiContentLoader,
                 callToolFunction = callToolFunction)
-            else
+            } else
               new SpiAgent.RequestModelEffect(
                 modelProvider = spiModelProvider,
                 systemMessage = systemMessage,
@@ -905,7 +957,8 @@ private[impl] final class AgentImpl(
                 onSuccessAsSent = onSuccessAsSent,
                 guardrails = guardrails.guardrails,
                 contentLoader = spiContentLoader,
-                callToolFunction = callToolFunction)
+                callToolFunction = callToolFunction,
+                a2aAgentDescriptors = a2aAgentDescriptors)
 
           case NoPrimaryEffect =>
             errorOrReply match {

@@ -88,6 +88,7 @@ import akka.javasdk.impl.agent.AgentImpl.AgentContextImpl
 import akka.javasdk.impl.agent.AgentRegistryImpl
 import akka.javasdk.impl.agent.AutonomousAgentImpl
 import akka.javasdk.impl.agent.ClassifierProvider
+import akka.javasdk.impl.agent.RemoteA2aSettings
 import akka.javasdk.impl.agent.FunctionTools
 import akka.javasdk.impl.agent.GuardrailProvider
 import akka.javasdk.impl.agent.GuardrailProvider.AgentGuardrails
@@ -309,7 +310,8 @@ object SdkRunner {
       devModeSettings,
       Some(sanitizationSettings),
       Some(spiDeployedEventingSettings),
-      ledgerSettings)
+      ledgerSettings,
+      RemoteA2aSettings.fromConfig(applicationConf))
   }
 
   private def extractDevObjectStorageBuckets(objectStorageConf: Config): Seq[SpiDevObjectStorageBucketConfig] = {
@@ -1294,6 +1296,8 @@ private final class Sdk(
                 s"AutonomousAgent ${clz.getName} definition() must return a definition created via define(), got: $other")
           }
         }
+
+        AgentImpl.validateA2aAgentsConfigured(agentDefinition.a2aAgents.asScala.toSeq, applicationConfig, componentId)
 
         val allSpiTaskDefinitions: Seq[SpiTask.SpiTaskDefinition] =
           agentDefinition.capabilities.asScala.toSeq

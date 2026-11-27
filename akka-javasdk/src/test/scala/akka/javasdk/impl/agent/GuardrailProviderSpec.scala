@@ -654,6 +654,12 @@ class GuardrailProviderSpec
           toolCallContext("some-tool", new SpiGuardrail.ToolOrigin.RemoteMcp("http://example.com/mcp"))),
         3.seconds)
       capturedToolCallContext.origin shouldBe new ToolCallGuardrail.ToolOrigin.RemoteMcp("http://example.com/mcp")
+
+      capturedToolCallContext = null
+      Await.result(
+        spiGuardrail.decide(toolCallContext("some-tool", new SpiGuardrail.ToolOrigin.RemoteA2a("claims", "lookup"))),
+        3.seconds)
+      capturedToolCallContext.origin shouldBe new ToolCallGuardrail.ToolOrigin.RemoteA2a("claims", "lookup")
     }
 
     "give the ToolCallGuardrail an Unknown origin for an origin that the SDK does not know" in {

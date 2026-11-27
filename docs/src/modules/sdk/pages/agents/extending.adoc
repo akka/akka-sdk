@@ -195,6 +195,64 @@ Inline bytes are only supported as a function tool *return* value. To send an im
 Only some model providers accept multimodal tool results (currently Anthropic, Bedrock, and Google AI Gemini).
 ====
 
+[#a2a_agents]
+== Using skills of remote A2A agents ==
+
+Use this only when you must call an agent outside Akka that speaks the https://a2a-protocol.org[Agent2Agent (A2A)^] protocol. To call an agent in the same service, use the component client. To call an Akka agent in another service, expose it through an xref:sdk:http-endpoints.adoc[HTTP endpoint] or an xref:sdk:mcp-endpoints.adoc[MCP endpoint].
+
+The runtime speaks A2A version 1.0 over JSON-RPC, and no other version or transport. The card of the remote agent must list a JSON-RPC interface with protocol version 1.0 in `supportedInterfaces`. For a card that does not, for example a card of version 0.3 or a card with only a gRPC interface, the call fails with a message that names the versions and transports that the card offers.
+
+An agent can call such a remote agent. Each skill in the agent card of the remote agent becomes a tool of your agent. The model calls a skill with a text message, and the answer of the remote agent comes back as the result of the tool call.
+
+In code you only give the logical name of the remote agent. The SDK reads the connection settings from the configuration of your service and passes them to the runtime, so they can differ per environment.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/RemoteA2aClaimsAgent.java[RemoteA2aClaimsAgent.java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/RemoteA2aClaimsAgent.java[tag=a2a-agents]
+----
+<1> The logical name of the remote agent, as it is configured below.
+<2> Optional. Only the skills with these ids from the agent card become tools. By default all skills do.
+<3> Optional. The longest time that a call to the remote agent may take. The default is the `request-timeout` of the remote agent in the configuration, or the default of the runtime when it has none.
+
+Configure each remote agent by its logical name in the `application.conf` of your service. Use `${?ENV_VAR}` to set values per environment. Set a token from an environment variable, as in the example, so that it is not in your source. The service checks the settings of each remote agent when it starts, and does not start when a setting is not valid, for example an unknown `auth.type` or a bearer token that is not set. A remote agent without `card-url` counts as not configured. A request-based agent fails its request when a remote agent has no `card-url`. For an autonomous agent, the service does not start.
+
+[source,hocon,indent=0]
+.application.conf
+----
+akka.javasdk.agent.a2a-client.agents.claims {
+  card-url = "https://claims.example.com/.well-known/agent-card.json"
+  card-url = ${?CLAIMS_AGENT_CARD_URL}
+  auth {
+    type = bearer // <1>
+    token = ${?CLAIMS_AGENT_TOKEN}
+  }
+  allowed-hosts = [] // <2>
+  request-timeout = 30 seconds
+}
+----
+<1> `none`, `bearer`, or `header`. For `header`, set `header-name` and `header-value`.
+<2> Hosts besides the host of the card that may receive requests. An entry is `host`, for the default port of the scheme, or `host:port`.
+
+The runtime applies these rules:
+
+* Requests only go to the host and port of the card URL and to the hosts in `allowed-hosts`. This includes the endpoint that the agent card advertises.
+* Credentials only go over HTTPS. The runtime never reads credentials from the agent card.
+* The model sees content from the remote agent only as the result of a tool call, never as a message from the user.
+* A request-based agent that uses a remote A2A agent cannot also have a deprecated `TextGuardrail`. Use a `ModelCallGuardrail` and an `AgentResponseGuardrail` instead.
+* The runtime waits for the remote agent to finish in one request. A task that failed, was rejected or canceled, or that waits for input or authentication, is an error result with the state and the message of the task as text. Each call is a new message, so the runtime cannot give the input that a task waits for. Any other task that is not finished gives the state and the message as text.
+* The runtime reuses a successfully fetched agent card for a limited time, five minutes by default. A failed fetch is not cached.
+* A card is not trusted. The runtime keeps at most 100 skills of a card, cuts the name and the description of a skill to 1000 characters, and ignores a skill with an id of more than 128 characters or with control characters.
+* The runtime sends the trace context to the remote agent, but not the baggage of the request.
+
+NOTE: The A2A protocol has no field that selects a skill. The runtime sends the skill id as metadata of the message, and a remote agent can ignore it. A skill filter and a guardrail on a skill id choose which skills the model sees and which calls your service allows. They do not limit what the remote agent does with a message. Any request that the model sends through an allowed skill can reach any function of the remote agent. Restrict the remote agent itself, with the credentials that you give it.
+
+The tool name that the model sees is the logical name of the remote agent and the skill id, joined with a double underscore, for example `claims__lookup-claim`. The runtime replaces characters that models do not accept, and adds a short hash to the name when two skills would get the same name.
+
+To test an agent that uses a remote A2A agent, see xref:sdk:agents/testing.adoc#mocking_a2a_agents[Mocking a remote A2A agent].
+
+To allow or deny calls to a skill through configuration, use a `ToolCallGuardrail`. The guardrail context has the origin `RemoteA2a` with the name of the remote agent and the skill id. See xref:sdk:agents/guardrails.adoc[Guardrails].
+
 [#configuring_tool_call_limits]
 == Configuring tool call limits
 

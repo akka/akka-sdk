@@ -89,7 +89,10 @@ class LedgerClientUnknownValuesSpec extends AnyWordSpec with Matchers with Table
     (SpiLedger.ToolOrigin.FunctionTool, new GuardrailDecisionRecord.ToolOrigin.FunctionTool()),
     (
       new SpiLedger.ToolOrigin.RemoteMcp("https://mcp.example.com"),
-      new GuardrailDecisionRecord.ToolOrigin.RemoteMcp("https://mcp.example.com")))
+      new GuardrailDecisionRecord.ToolOrigin.RemoteMcp("https://mcp.example.com")),
+    (
+      new SpiLedger.ToolOrigin.RemoteA2a("claims", "lookup"),
+      new GuardrailDecisionRecord.ToolOrigin.RemoteA2a("claims", "lookup")))
 
   private val toolCallStatuses = Table[SpiLedger.ToolCallStatus, ToolCall.Status](
     ("spi", "public"),

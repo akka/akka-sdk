@@ -228,6 +228,8 @@ import org.slf4j.LoggerFactory
       origin match {
         case SpiGuardrail.ToolOrigin.FunctionTool   => new ToolCallGuardrail.ToolOrigin.FunctionTool()
         case mcp: SpiGuardrail.ToolOrigin.RemoteMcp => new ToolCallGuardrail.ToolOrigin.RemoteMcp(mcp.endpoint)
+        case a2a: SpiGuardrail.ToolOrigin.RemoteA2a =>
+          new ToolCallGuardrail.ToolOrigin.RemoteA2a(a2a.agentName, a2a.skillId)
       }
     }
 

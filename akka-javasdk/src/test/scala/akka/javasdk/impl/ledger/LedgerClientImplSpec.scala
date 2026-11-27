@@ -371,6 +371,19 @@ class LedgerClientImplSpec extends AnyWordSpec with Matchers {
       record.timestamp() shouldEqual Instant.EPOCH
     }
 
+    "carry the agent and the skill of a remote A2A agent as the tool origin" in {
+      val record = LedgerClientImpl.toGuardrailDecisionRecord(
+        spiGuardrailDecisionRecord(
+          controlId = None,
+          toolCall = Some(
+            new SpiLedger.GuardrailToolCall(
+              toolCallId = Some("call-1"),
+              toolName = "claims__lookup",
+              origin = new SpiLedger.ToolOrigin.RemoteA2a("claims", "lookup")))))
+
+      record.toolCall().get().origin() shouldEqual new GuardrailDecisionRecord.ToolOrigin.RemoteA2a("claims", "lookup")
+    }
+
     "carry empty optionals when the guardrail decided on no tool call and declares no control id" in {
       val record =
         LedgerClientImpl.toGuardrailDecisionRecord(spiGuardrailDecisionRecord(controlId = None, toolCall = None))
