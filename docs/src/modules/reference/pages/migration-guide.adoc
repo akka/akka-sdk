@@ -2,6 +2,19 @@
 
 include::ROOT:partial$include.adoc[]
 
+== SDK 3.7.4
+
+[#flow-record-changes]
+=== Changes to FlowRecord
+
+`FlowRecord` has a new kind, `ClassificationRecord`, and `EvaluationRecord` has a new component, `flowId`. This affects services that upgrade:
+
+* `LedgerClient.getFlowRecords` returns a `ClassificationRecord` for each classification of the flow.
+* A `switch` over `FlowRecord` without a `default` branch fails compilation. Add a case for `ClassificationRecord`.
+* A record pattern over `EvaluationRecord` fails compilation. Add a pattern for the `flowId` component after `timestamp`.
+
+See xref:sdk:evaluators.adoc#_the_ledger_client[The ledger client].
+
 == SDK 3.7.3
 
 [#acl-on-service-streams]

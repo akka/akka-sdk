@@ -23,6 +23,7 @@ import java.util.concurrent.CompletionStage;
  *   <li>Consume state changes from a Workflow within the same service
  *   <li>Consume events or state from an Entity or Workflow in another service using
  *       service-to-service eventing
+ *   <li>Consume the records of the ledger of the same service
  *   <li>Consume messages from Google Cloud Pub/Sub or Apache Kafka topics
  *   <li>Produce messages to Google Cloud Pub/Sub or Apache Kafka topics
  * </ul>
@@ -78,6 +79,7 @@ import java.util.concurrent.CompletionStage;
  *   <li>{@code @Consume.FromWorkflow} - to consume state changes from a Workflow
  *   <li>{@code @Consume.FromTopic} - to consume messages from a message broker topic
  *   <li>{@code @Consume.FromServiceStream} - to consume events from another Akka service
+ *   <li>{@code @Consume.FromLedger} - to consume the records of the ledger of the same service
  * </ul>
  *
  * <p>For producing messages, use {@code @Produce.ToTopic} or {@code @Produce.ServiceStream}

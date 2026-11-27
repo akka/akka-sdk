@@ -10,6 +10,7 @@ This section covers how to use a Consumer component to:
 - Consume state changes emitted by a Key Value Entity within the same service
 - Consume state changes emitted by a Workflow within the same service
 - Consume events or state from an Entity or Workflow in another service using service to service eventing 
+- Consume the records of the ledger of the same service
 - Consume messages from topics of Google Cloud Pub/Sub or Apache Kafka.
 - Produce messages to a Google Cloud Pub/Sub or Apache Kafka topic.
 
@@ -33,7 +34,7 @@ For additional details, refer to xref:concepts:components.adoc#_effects_what_the
 
 To signal that a message was not processed successfully, throw an exception from the consumer method instead of returning an Effect.
 
-If a consumer method throws an exception, or an `asyncDone`, `asyncProduce`, or `asyncEffect` Effect completes with a failure, Akka does not advance to the next message. It redelivers the same message and retries until the method processes it without throwing. This applies to every consumer source: Event Sourced Entities, Key Value Entities, Workflows, service-to-service streams, and message broker topics.
+If a consumer method throws an exception, or an `asyncDone`, `asyncProduce`, or `asyncEffect` Effect completes with a failure, Akka does not advance to the next message. It redelivers the same message and retries until the method processes it without throwing. This applies to every consumer source: Event Sourced Entities, Key Value Entities, Workflows, service-to-service streams, the ledger, and message broker topics.
 
 Because redelivery retries indefinitely, an exception that a message will always trigger, for example a bug in the handling logic or a message that can never be deserialized correctly, blocks that consumer from making progress until the underlying issue is fixed and a new version of the service is deployed.
 
@@ -104,6 +105,56 @@ include::example$transfer-workflow/src/main/java/com/example/transfer/applicatio
 <3> Add a handler when `TransferState` state is deleted. This handler is optional if the workflow is never deleted.
 
 If you need additional information about change origin, executed steps, etc., you can encode it in the state class.
+
+[#consume-from-ledger]
+== Consume from the ledger
+
+The xref:reference:glossary.adoc#ledger[ledger] holds the trace of what happened in a service, such as model calls, tool calls and guardrail decisions. To receive the records of the ledger, annotate the Consumer with `@Consume.FromLedger`. The handler parameter types select which kinds of records the consumer receives.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/DeniedGuardrailAlerts.java[DeniedGuardrailAlerts.java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/DeniedGuardrailAlerts.java[tag=ledger-consumer]
+----
+<1> Set the source to the ledger of the service.
+<2> Add a handler for `GuardrailDecisionRecord`. The consumer receives only guardrail decisions.
+<3> Return `effects().ignore()` for a decision that is not a denial.
+<4> `recordId()` returns the id of the record.
+
+Each record type implements link:{attachmentsdir}/api/akka/javasdk/ledger/FlowRecord.html[`FlowRecord`]. A handler for `FlowRecord` receives all record types. If a consumer has handlers for both `FlowRecord` and one record type, the specific handler receives that type.
+
+The ledger consumer has these delivery guarantees:
+
+* Delivery is at least once. The consumer must handle duplicated records.
+* The records of one flow arrive in the order they happened. Records outside a flow have no order guarantee.
+* A guardrail decision or an activity record can arrive before the interaction it references. The runtime writes an interaction record when the interaction ends.
+* The consumer receives only the records of its own service.
+* In a multi-region service, the consumer in every region receives the records of every region. `messageContext().originRegion()` returns the region that wrote the record.
+* A new consumer receives all records that the ledger still holds. The consumer does not receive records that retention dropped.
+* A handler that you add later receives only the records after the current offset of the consumer. The consumer does not receive the earlier records of that kind.
+* The consumer skips a record that this version of the SDK does not know, such as an evaluation of a new kind of subject. An SDK upgrade does not deliver the skipped records again.
+* The consumer receives allow decisions of guardrails by default. Set `guardrail-allow` to `false` to stop the runtime from recording and delivering them. See xref:sdk:evaluators.adoc#_optional_ledger_records[Optional ledger records].
+* The consumer receives no records when `akka.javasdk.agent.ledger.enabled` is `false`, because the runtime writes no records. The service logs a warning at startup.
+
+`@Consume.StartFrom` also works on a new ledger consumer. It sets a later start point. See xref:consuming-producing.adoc#_starting_from_the_latest_events_or_a_timestamp[Starting from the latest events or a timestamp].
+
+To read records on demand instead of consuming them, use the `LedgerClient`. See xref:sdk:evaluators.adoc#_the_ledger_client[The ledger client].
+
+The metadata of a record carries these xref:consuming-producing.adoc#_receiving_cloudevents[CloudEvent] attributes. Read them with `messageContext().metadata()`.
+
+[cols="1,3"]
+|===
+| Key | Value
+
+| `ce-id`
+| The id of the record.
+
+| `ce-subject`
+| The id of the flow of the record. It is absent for a record outside a flow. `messageContext().eventSubject()` returns it.
+
+| `ce-source`
+| The producer of the record, as a percent-encoded URI reference. For an interaction or an activity, the component id of the agent. For a guardrail decision, the guardrail name. For an evaluation, the component id of the evaluator. For a classification, the classifier name. For example, the guardrail `test model guard` gives `test%20model%20guard`.
+|===
 
 [#s2s-eventing]
 == Service to Service Eventing
@@ -259,7 +310,7 @@ A new consumer starts from the beginning of its source and processes the whole h
 include::example$doc-snippets/src/main/java/com/example/application/CartNotifier.java[tag=start-from-latest]
 ----
 
-Events and state changes persisted before the start point are not delivered, also not for entities that persist new events later. The start point is supported for consumers of Event Sourced Entities, Key Value Entities, Workflows and service to service event streams. It is not supported for consumers of message broker topics.
+Events and state changes persisted before the start point are not delivered, also not for entities that persist new events later. The start point is supported for consumers of Event Sourced Entities, Key Value Entities, Workflows, service to service event streams and the ledger. It is not supported for consumers of message broker topics.
 
 The start point is recorded when the consumer is first deployed and is permanent. The consumer never receives events from before it.
 
@@ -440,6 +491,10 @@ include::example$event-sourced-customer-registry/src/test/java/customer/api/Cust
 `OutgoingMessages` exposes the same assertions used for topic outgoing messages, such as `expectN(...)` to read several messages or `expectNone(...)` to verify that a given internal event produces no public event (for example, when the transformation uses `effects().ignore()`).
 
 Each stream message carries the id of the source entity as its `ce-subject`. Call `expectOneTyped(Class, String)` with an entity id to read the next event of that entity.
+
+=== Testing a ledger consumer
+
+The TestKit has no mocked incoming messages for the ledger. To test a xref:#consume-from-ledger[ledger consumer], run an agent with a `TestModelProvider` in the TestKit. The runtime writes the records of the agent to the ledger, and the ledger consumer receives them. See xref:sdk:agents/testing.adoc#_mocking_responses_from_the_model[Mocking responses from the model].
 
 == Multi-region replication
 

@@ -31,7 +31,12 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
   val serializer = new Serializer()
 
   def assertDescriptor[T](test: ViewDescriptor => Any)(implicit tag: ClassTag[T]): Unit = {
-    test(ViewDescriptorFactory(tag.runtimeClass, serializer, new RegionInfo(""), ExecutionContexts.global()))
+    test(
+      ViewDescriptorFactory(
+        tag.runtimeClass,
+        serializer,
+        new RegionInfo("", () => Set.empty),
+        ExecutionContexts.global()))
   }
 
   "View descriptor factory" should {

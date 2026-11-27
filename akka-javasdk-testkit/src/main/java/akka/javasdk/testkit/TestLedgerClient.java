@@ -39,15 +39,15 @@ import java.util.stream.Collectors;
  * fetches and uses them, with no database.
  *
  * <p>The records of a flow, as {@link #getFlowRecords(String)} returns them, are the seeded
- * interactions, guardrail decisions and activity records with that flow id, and the seeded
- * evaluations of the seeded interactions with that flow id. They come in the order they were
- * seeded, as the runtime returns them in the order it recorded them. The timestamps of the records
- * do not change the order. To read a flow as the runtime records it, seed a guardrail decision
- * before the interaction it was made in, and an evaluation after the interaction it evaluates. A
- * record that is seeded again with the same id moves to the end. A page holds at most 100 records.
- * Each seed takes the next position, so a read from the next position of a page also returns the
- * records seeded after that read. The ledger uses other values, so pass a position only back to
- * {@link #getFlowRecords(String, long)}.
+ * interactions, guardrail decisions, activity records and classifications with that flow id, and
+ * the seeded evaluations of the seeded interactions with that flow id. They come in the order they
+ * were seeded, as the runtime returns them in the order it recorded them. The timestamps of the
+ * records do not change the order. To read a flow as the runtime records it, seed a guardrail
+ * decision before the interaction it was made in, and an evaluation after the interaction it
+ * evaluates. A record that is seeded again with the same id moves to the end. A page holds at most
+ * 100 records. Each seed takes the next position, so a read from the next position of a page also
+ * returns the records seeded after that read. The ledger uses other values, so pass a position only
+ * back to {@link #getFlowRecords(String, long)}.
  */
 public final class TestLedgerClient implements LedgerClient {
 
@@ -146,6 +146,7 @@ public final class TestLedgerClient implements LedgerClient {
    * @return this client, for chaining
    */
   public TestLedgerClient seed(ClassificationRecord record) {
+    seedOrder.put(record, seedCount.getAndIncrement());
     classifications.put(record.classificationId(), record);
     return this;
   }
@@ -294,6 +295,9 @@ public final class TestLedgerClient implements LedgerClient {
             record ->
                 record.subject() instanceof EvaluationRecord.Subject.Interaction interaction
                     && interactionIds.contains(interaction.interactionId()))
+        .forEach(flowRecords::add);
+    classifications.values().stream()
+        .filter(record -> record.flowId().equals(inFlow))
         .forEach(flowRecords::add);
     // The position of a record is its number in the order of all seeds, starting at 1, so position
     // 0 reads from the start. The read looks up each order once, so a seed during the read cannot

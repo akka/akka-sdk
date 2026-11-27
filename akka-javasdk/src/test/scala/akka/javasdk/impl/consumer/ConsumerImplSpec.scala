@@ -85,14 +85,15 @@ class ConsumerImplSpec
       serializer,
       ignoreUnknown = false,
       bytesDescriptor(consumerClass),
-      new RegionInfo(""),
+      new RegionInfo("", () => Set.empty),
       unhandledExceptionReporter)
 
   private def throwingMessage = new SpiConsumer.Message(
     Some(new BytesPayload(ByteString("some bytes"), BytesPrimitive.fullName)),
     None,
     akka.runtime.sdk.spi.SpiMetadata.empty,
-    io.opentelemetry.context.Context.root())
+    io.opentelemetry.context.Context.root(),
+    None)
 
   "The consumer service" should {
 

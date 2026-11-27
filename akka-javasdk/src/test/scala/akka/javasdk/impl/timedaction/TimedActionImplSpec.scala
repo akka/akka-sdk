@@ -80,7 +80,7 @@ class TimedActionImplSpec
       classicSystem.dispatcher,
       () => OpenTelemetry.noop().getTracer("test"),
       serializer,
-      new RegionInfo(""),
+      new RegionInfo("", () => Set.empty),
       componentDescriptor,
       unhandledExceptionReporter)
   }

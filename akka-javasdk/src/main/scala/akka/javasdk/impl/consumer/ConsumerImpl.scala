@@ -5,10 +5,11 @@
 package akka.javasdk.impl.consumer
 
 import java.util.Optional
+import java.util.concurrent.atomic.AtomicBoolean
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.jdk.OptionConverters.RichOption
+import scala.jdk.OptionConverters._
 import scala.util.control.NonFatal
 
 import akka.actor.ActorSystem
@@ -28,6 +29,7 @@ import akka.javasdk.impl.UnhandledExceptionReporting
 import akka.javasdk.impl.consumer.ConsumerEffectImpl.AsyncEffect
 import akka.javasdk.impl.consumer.ConsumerEffectImpl.ConsumedEffect
 import akka.javasdk.impl.consumer.ConsumerEffectImpl.ProduceEffect
+import akka.javasdk.impl.ledger.LedgerClientImpl
 import akka.javasdk.impl.serialization.Serializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
@@ -37,11 +39,13 @@ import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.ConsumerDestination
 import akka.runtime.sdk.spi.ConsumerDestination.TopicDestination
 import akka.runtime.sdk.spi.ConsumerSource
+import akka.runtime.sdk.spi.ConsumerSource.LedgerSource
 import akka.runtime.sdk.spi.ConsumerSource.TopicSource
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiConsumer
 import akka.runtime.sdk.spi.SpiConsumer.Effect
 import akka.runtime.sdk.spi.SpiConsumer.Message
+import akka.runtime.sdk.spi.SpiLedger
 import akka.runtime.sdk.spi.TimerClient
 import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.{ Context => OtelContext }
@@ -85,6 +89,10 @@ private[impl] final class ConsumerImpl[C <: Consumer](
       ignoreUnknown,
       consumesFromTopic = consumerSource.isInstanceOf[TopicSource])
 
+  private lazy val ledgerHandlers = LedgerConsumerRouter.handlers(consumerClass)
+
+  private val unknownRecordLogged = new AtomicBoolean(false)
+
   override def handleMessage(message: Message): Future[Effect] = {
     val metadata = {
       val asIs = MetadataImpl.of(message.metadata)
@@ -99,21 +107,19 @@ private[impl] final class ConsumerImpl[C <: Consumer](
     val telemetryContext = Option(message.telemetryContext)
     val traceScope = Telemetry.makeCurrent(telemetryContext)
     try {
-      val messageContext =
-        new MessageContextImpl(
-          metadata,
-          timerClient,
-          tracerFactory,
-          telemetryContext,
-          regionInfo.selfRegion,
-          message.originRegion.toJava)
+      consumerSource match {
+        case _: LedgerSource => handleLedgerMessage(message, metadata, telemetryContext)
+        case _ =>
+          val messageContext = newMessageContext(message, metadata, telemetryContext)
 
-      val consumer = factory(messageContext)
+          val consumer = factory(messageContext)
 
-      val payload: BytesPayload = message.payload.getOrElse(throw new IllegalArgumentException("No message payload"))
-      val effect = createRouter(consumer)
-        .handleCommand(MessageEnvelope.of(payload, messageContext.metadata), messageContext)
-      toSpiEffect(message, effect)
+          val payload: BytesPayload =
+            message.payload.getOrElse(throw new IllegalArgumentException("No message payload"))
+          val effect = createRouter(consumer)
+            .handleCommand(MessageEnvelope.of(payload, messageContext.metadata), messageContext)
+          toSpiEffect(message, effect)
+      }
     } catch {
       case NonFatal(ex) =>
         // command handler threw an "unexpected" error, also covers HandlerNotFoundException
@@ -122,6 +128,54 @@ private[impl] final class ConsumerImpl[C <: Consumer](
       traceScope.close()
     }
   }
+
+  private def handleLedgerMessage(
+      message: Message,
+      metadata: MetadataImpl,
+      telemetryContext: Option[OtelContext]): Future[Effect] = {
+    val spiRecord = message.record.getOrElse(
+      throw new IllegalArgumentException(s"No ledger record in a message for Consumer [${consumerClass.getName}]"))
+
+    LedgerClientImpl.toLedgerRecord(spiRecord) match {
+      case None =>
+        val skipped = spiRecord match {
+          case evaluation: SpiLedger.EvaluationRecord =>
+            s"an evaluation with a subject of class [${evaluation.subject.getClass.getName}]"
+          case _ =>
+            s"a ledger record of class [${spiRecord.getClass.getName}]"
+        }
+
+        if (unknownRecordLogged.compareAndSet(false, true))
+          log.info(
+            "Consumer [{}] skipped {}, which this SDK version does not know. Later skips are logged at debug level.",
+            componentId,
+            skipped)
+        else
+          log.debug("Consumer [{}] skipped {}, which this SDK version does not know.", componentId, skipped)
+
+        Future.successful(SpiConsumer.ConsumedEffect)
+
+      case Some(record) =>
+        val messageContext = newMessageContext(message, metadata, telemetryContext)
+
+        val consumer = factory(messageContext)
+
+        val effect = new LedgerConsumerRouter(consumer, ledgerHandlers).handleRecord(record, messageContext)
+        toSpiEffect(message, effect)
+    }
+  }
+
+  private def newMessageContext(
+      message: Message,
+      metadata: MetadataImpl,
+      telemetryContext: Option[OtelContext]): MessageContextImpl =
+    new MessageContextImpl(
+      metadata,
+      timerClient,
+      tracerFactory,
+      telemetryContext,
+      regionInfo.selfRegion,
+      message.originRegion.toJava)
 
   private def toSpiEffect(message: Message, effect: Consumer.Effect): Future[Effect] = {
     effect match {

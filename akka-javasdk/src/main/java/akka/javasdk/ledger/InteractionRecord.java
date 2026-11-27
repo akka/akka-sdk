@@ -22,7 +22,8 @@ import java.util.stream.Collectors;
  * {@link #finalResponseText()}, {@link #toolCalls()}, token totals, {@link #failureSummary()}) and
  * a flattened {@link #transcript()} rendering, for use when evaluating an interaction.
  *
- * @param interactionId the globally unique id of the interaction
+ * @param interactionId the globally unique id of the interaction, and the id of the record in the
+ *     ledger
  * @param sessionId the id of the session the interaction belongs to
  * @param agentComponentId the component id of the agent that produced the interaction
  * @param flowId the id of the flow this interaction was part of, or empty for a request-based agent
@@ -51,6 +52,12 @@ public record InteractionRecord(
     Optional<Failure> failure,
     Instant timestamp)
     implements FlowRecord {
+
+  /** The id of the record in the ledger. */
+  @Override
+  public String recordId() {
+    return interactionId;
+  }
 
   /** Whether this interaction was produced by an agent running as part of a flow. */
   public boolean isFlowInteraction() {
