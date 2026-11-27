@@ -142,7 +142,7 @@ The metadata of a record carries these xref:consuming-producing.adoc#_receiving_
 The ledger consumer has these delivery guarantees:
 
 * Delivery is at least once. The consumer must handle duplicated records.
-* The records of one flow arrive in the order the runtime wrote them. Records outside a flow have no order guarantee, because the runtime spreads them over several writers.
+* The records of one flow arrive in the order they happened. Records outside a flow have no order guarantee.
 * A guardrail decision or an activity record can arrive before the interaction it references. The runtime writes an interaction record when the interaction ends.
 * The consumer receives only the records of its own service.
 * In a multi-region service, the consumer in every region receives the records of every region. `messageContext().originRegion()` returns the region that wrote the record.

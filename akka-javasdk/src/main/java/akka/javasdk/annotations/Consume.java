@@ -212,8 +212,8 @@ public @interface Consume {
    *
    * <ul>
    *   <li>Delivery is at least once.
-   *   <li>The runtime writes the records of one flow in order. Records outside a flow have no order
-   *       guarantee.
+   *   <li>The records of one flow arrive in the order they happened. Records outside a flow have no
+   *       order guarantee.
    *   <li>A guardrail decision or an activity record can arrive before its interaction. The runtime
    *       writes an interaction when it ends.
    *   <li>The consumer receives only the records of its own service.
