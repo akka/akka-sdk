@@ -1767,6 +1767,8 @@ private final class Sdk(
 
         override def selfRegion(): String = regionInfo.selfRegion
 
+        override def downedRegions(): java.util.Set[String] = regionInfo.downedRegions().asJava
+
         override def getSpiffeContext(): java.util.Optional[SpiffeContext] =
           SpiffeContextImpl.fromSpiOpt(context.spiffeContext)
       }
@@ -1802,6 +1804,10 @@ private final class Sdk(
           }
 
         override def tracing(): Tracing = new SpanTracingImpl(telemetryContext, sdkTracerFactory)
+
+        override def selfRegion(): String = regionInfo.selfRegion
+
+        override def downedRegions(): java.util.Set[String] = regionInfo.downedRegions().asJava
 
         override def requestHeader(headerName: String): Optional[HttpHeader] =
           // Note: force cast to Java header model

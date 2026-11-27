@@ -515,7 +515,7 @@ private[impl] object ViewDescriptorFactory {
           foundMethod match {
             case Some(method) =>
               val updateContext =
-                UpdateContextImpl(method.getName, metadata, regionInfo.selfRegion, input.originRegion.toJava)
+                UpdateContextImpl(method.getName, metadata, regionInfo, input.originRegion.toJava)
               val tableUpdaterInstance = tableUpdater()
               try {
 
@@ -590,9 +590,9 @@ private[impl] object ViewDescriptorFactory {
   private final case class UpdateContextImpl(
       eventName: String,
       metadata: Metadata,
-      override val selfRegion: String,
+      regionInfo: RegionInfo,
       override val originRegion: Optional[String])
-      extends AbstractContext
+      extends AbstractContext(regionInfo)
       with UpdateContext {
 
     override def eventSubject(): Optional[String] =

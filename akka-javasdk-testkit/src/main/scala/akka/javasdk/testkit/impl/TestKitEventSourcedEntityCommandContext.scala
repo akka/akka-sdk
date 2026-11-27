@@ -4,6 +4,8 @@
 
 package akka.javasdk.testkit.impl
 
+import java.util.Collections
+
 import akka.javasdk.Metadata
 import akka.javasdk.Tracing
 import akka.javasdk.eventsourcedentity.CommandContext
@@ -23,6 +25,8 @@ final class TestKitEventSourcedEntityCommandContext(
   def this(entityId: String, metadata: Metadata, sequenceNumber: Long) = {
     this(metadata = metadata, commandName = "stubCommandName", entityId = entityId, sequenceNumber = sequenceNumber)
   }
+
+  override def downedRegions(): java.util.Set[String] = Collections.emptySet()
 
   override def tracing(): Tracing = TestKitTracing
 

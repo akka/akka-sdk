@@ -30,7 +30,7 @@ public class McpEndpointTest extends TestKitSupport {
     assertThat(mcpRequest(true, "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}"))
         .isEqualTo(
 """
-{"jsonrpc":"2.0","id":1,"result":{"tools":[{"name":"answer","description":"A tool returning a primitive","inputSchema":{"type":"object","properties":{}}},{"name":"asyncWeather","description":"Async structured weather tool","inputSchema":{"type":"object","properties":{"city":{"type":"string","description":"the city"}},"required":["city"]},"outputSchema":{"type":"object","properties":{"city":{"type":"string"},"tempC":{"type":"integer"}},"required":["city","tempC"]}},{"name":"echo","description":"A method that returns what is fed to it","inputSchema":{"type":"object","properties":{"echo":{"type":"string","description":"the string to echo"}},"required":["echo"]}},{"name":"fail","description":"A method that always fails","inputSchema":{"type":"object","properties":{"reason":{"type":"string","description":"the reason to fail with"}},"required":["reason"]}},{"name":"ping","description":"A tool returning nothing","inputSchema":{"type":"object","properties":{}}},{"name":"weather","description":"Structured weather tool","inputSchema":{"type":"object","properties":{"city":{"type":"string","description":"the city"}},"required":["city"]},"outputSchema":{"type":"object","properties":{"city":{"type":"string"},"tempC":{"type":"integer"}},"required":["city","tempC"]}},{"name":"weatherList","description":"Structured weather list tool","inputSchema":{"type":"object","properties":{}},"outputSchema":{"type":"object","properties":{"result":{"type":"array","items":{"type":"object","properties":{"city":{"type":"string"},"tempC":{"type":"integer"}},"required":["city","tempC"]}}},"required":["result"]}}]}}
+{"jsonrpc":"2.0","id":1,"result":{"tools":[{"name":"answer","description":"A tool returning a primitive","inputSchema":{"type":"object","properties":{}}},{"name":"asyncWeather","description":"Async structured weather tool","inputSchema":{"type":"object","properties":{"city":{"type":"string","description":"the city"}},"required":["city"]},"outputSchema":{"type":"object","properties":{"city":{"type":"string"},"tempC":{"type":"integer"}},"required":["city","tempC"]}},{"name":"echo","description":"A method that returns what is fed to it","inputSchema":{"type":"object","properties":{"echo":{"type":"string","description":"the string to echo"}},"required":["echo"]}},{"name":"fail","description":"A method that always fails","inputSchema":{"type":"object","properties":{"reason":{"type":"string","description":"the reason to fail with"}},"required":["reason"]}},{"name":"ping","description":"A tool returning nothing","inputSchema":{"type":"object","properties":{}}},{"name":"regions","description":"A tool returning the regions of the request context","inputSchema":{"type":"object","properties":{}}},{"name":"weather","description":"Structured weather tool","inputSchema":{"type":"object","properties":{"city":{"type":"string","description":"the city"}},"required":["city"]},"outputSchema":{"type":"object","properties":{"city":{"type":"string"},"tempC":{"type":"integer"}},"required":["city","tempC"]}},{"name":"weatherList","description":"Structured weather list tool","inputSchema":{"type":"object","properties":{}},"outputSchema":{"type":"object","properties":{"result":{"type":"array","items":{"type":"object","properties":{"city":{"type":"string"},"tempC":{"type":"integer"}},"required":["city","tempC"]}}},"required":["result"]}}]}}
 """
                 .trim());
   }
@@ -285,6 +285,12 @@ public class McpEndpointTest extends TestKitSupport {
 {"jsonrpc":"2.0","id":1,"result":{"prompts":[{"name":"code_review","description":"Code review prompt","arguments":[{"name":"code","description":"a prompt argument","required":true}]}]}}
 """
                 .trim());
+  }
+
+  @Test
+  public void shouldGetRegions() {
+    // the test kit runs one region, so no region is marked as down
+    assertThat(callTool("/mcp", "regions", "{}")).isEqualTo("self: , downed: []");
   }
 
   @Test
