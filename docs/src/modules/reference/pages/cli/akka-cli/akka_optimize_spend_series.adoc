@@ -21,15 +21,17 @@ akka optimize spend series --from INSTANT --to INSTANT --granularity hour|day [f
 
 [source,text]
 ----
-      --by string            divide the answer: none, or a comma-separated list of model, useCase, system, route
-                             and tag:KEY, where KEY is the name of one of your tagging rulesets
+      --by string            divide the answer: none, or a comma-separated list of model, useCase, system, service,
+                             agent, route and tag:KEY, where KEY is the name of one of your tagging rulesets.
+                             An agent id is not unique: system,service,agent gives one row per agent
       --from string          start of the period, an ISO-8601 instant in UTC, inclusive
       --granularity string   divide the period into hour or day buckets, in UTC
   -h, --help                 help for series
       --outcomes -o json     state how many exchanges of each group a gateway policy refused and how many failed,
                              after the exchanges they are part of. Nothing is asked of the service for this:
                              every answer already states them, and -o json has them whether this is given or not
-      --system string        read only the spend of this system id, the one a request named in x-akka-system-id
+      --system string        read only the spend of this system id, the one a request named in x-akka-system-id.
+                             An empty value reads the traffic that named none
       --to string            end of the period, an ISO-8601 instant in UTC, exclusive
 ----
 

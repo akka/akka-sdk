@@ -38,6 +38,7 @@ Test cases, versioned at import
 * link:akka_optimize_eval_datasets_create.html[akka optimize eval datasets create]	 - Upload a dataset file and version it
 * link:akka_optimize_eval_datasets_get.html[akka optimize eval datasets get]	 - One dataset: what it holds, what scores it, and every version it has had
 * link:akka_optimize_eval_datasets_imports.html[akka optimize eval datasets imports]	 - Progress of a dataset import
+* link:akka_optimize_eval_datasets_item.html[akka optimize eval datasets item]	 - One item of a dataset
 * link:akka_optimize_eval_datasets_items.html[akka optimize eval datasets items]	 - The items in one version of a dataset
 * link:akka_optimize_eval_datasets_list.html[akka optimize eval datasets list]	 - Datasets that have been imported, most recently imported first
 

@@ -1,6 +1,6 @@
 = akka optimize registry models versions
 
-One named model's versions, narrowed by base model or by producer
+One named model's versions, newest first, a page at a time
 
 == Synopsis
 
@@ -12,6 +12,11 @@ Give both or neither.
 The narrowings are different questions, so the registry refuses a request that states both.
 A training run's producer id is the run id for the model it ended with, and runId#step for a checkpoint.
 
+--variant keeps the versions of the variants it names, BASE, ADAPTER, WEIGHTS or HOSTED, and combines with either narrowing.
+
+A list holds 50 versions by default and at most 100.
+--offset and --limit page through a long list, and where more remain the command names the --offset of the next page.
+
 [source,shell]
 ----
 akka optimize registry models versions NS/NAME [flags]
@@ -21,11 +26,17 @@ akka optimize registry models versions NS/NAME [flags]
 
 [source,shell]
 ----
-  # List every version
+  # List the newest versions
   akka optimize registry models versions triage/classifier
+
+  # List the next page
+  akka optimize registry models versions triage/classifier --offset 50
 
   # List the versions over one base model
   akka optimize registry models versions triage/classifier --base-model Qwen/Qwen3-0.6B
+
+  # List the adapters
+  akka optimize registry models versions triage/classifier --variant adapter
 
   # Read the version a run ended with, as JSON
   akka optimize registry models versions triage/classifier \
@@ -38,8 +49,11 @@ akka optimize registry models versions NS/NAME [flags]
 ----
       --base-model string         List the versions over one base model, as a repository or a version reference
   -h, --help                      help for versions
+      --limit int                 Number of entries on the page to print, at most 100. With --offset alone, the page holds 50
+      --offset int                Index of the first entry to return. With --offset or --limit, the list prints that one page
       --produced-by-id string     List what the process with this id produced
       --produced-by-kind string   List what this kind of process produced, such as 'run'
+      --variant strings           List the versions of these variants: BASE, ADAPTER, WEIGHTS, HOSTED. Takes several values, comma-separated or repeated, of which an entry matches any
 ----
 
 == Options inherited from parent commands

@@ -4,24 +4,40 @@ List training pipelines
 
 == Synopsis
 
-List training pipelines and current stage progress.
+List training pipelines and current stage progress, newest first.
 
-Use --phase open to list active and incomplete pipelines.
+--phase active lists the pipelines still running, and --phase finished the rest.
+--project lists the pipelines with a stage in any of the training projects it names, each by name or ID.
+A pipeline of curation stages alone is in no project.
+--search lists the pipelines whose ID starts with the prefix.
+The filters combine.
+--offset and --limit page through a long list.
+Where more pipelines remain, the command names the --offset of the next page.
+
+--state lists the pipelines in any of these states: active or finished, comma-separated or repeated.
+active holds the pipelines still running, and finished the rest.
+--phase combines with it, and narrows the list within those states.
 
 [source,shell]
 ----
-akka optimize training pipelines list [flags]
+akka optimize training pipelines list [--phase PHASES] [--project PROJECTS] [--search PREFIX] [--state STATES] [--offset N] [--limit N] [flags]
 ----
 
 == Examples
 
 [source,shell]
 ----
-  # List all pipelines
+  # List the newest pipelines
   akka optimize training pipelines list
 
-  # List active and incomplete pipelines
-  akka optimize training pipelines list --phase open
+  # List the pipelines still running
+  akka optimize training pipelines list --phase active
+
+  # List the next page of them
+  akka optimize training pipelines list --phase active --offset 50
+
+  # List the failed and cancelled pipelines of two training projects
+  akka optimize training pipelines list --phase failed,cancelled --project triage,labeler
 
   # Extract pipeline IDs using jq
   akka optimize training pipelines list --jq '.pipelines[].pipelineId'
@@ -31,8 +47,13 @@ akka optimize training pipelines list [flags]
 
 [source,text]
 ----
-  -h, --help           help for list
-      --phase string   Filter by phase. Pass 'open' to list unfinished entries
+  -h, --help              help for list
+      --limit int         Number of entries on the page to print, at most 100. With --offset alone, the page holds 50
+      --offset int        Index of the first entry to return. With --offset or --limit, the list prints that one page
+      --phase strings     Filter by phase. Pass 'active' to list unfinished entries ('open' is another word for it) and 'finished' to list the rest. Takes several values, comma-separated or repeated, of which an entry matches any
+      --project strings   Only the pipelines with a stage in these training projects, each by name or ID. Takes several values, comma-separated or repeated, of which an entry matches any
+      --search string     Only the pipelines whose ID starts with this prefix, in any case
+      --state strings     List the pipelines in any of these states: active or finished. Takes several values, comma-separated or repeated, of which an entry matches any
 ----
 
 == Options inherited from parent commands

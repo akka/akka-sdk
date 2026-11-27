@@ -66,6 +66,7 @@ A session is a raw conversation corpus, and a curation judges one into a trainin
 * link:akka_optimize_training_endpoints.html[akka optimize training endpoints]	 - Serve a base model or a candidate to try it by hand
 * link:akka_optimize_training_evaluations.html[akka optimize training evaluations]	 - Manage model evaluations
 * link:akka_optimize_training_info.html[akka optimize training info]	 - Report the trainer's configuration and build
+* link:akka_optimize_training_models.html[akka optimize training models]	 - Import a merged model trained elsewhere, so a KalixModel can serve it
 * link:akka_optimize_training_pipelines.html[akka optimize training pipelines]	 - Manage training pipelines
 * link:akka_optimize_training_projects.html[akka optimize training projects]	 - Manage training projects
 * link:akka_optimize_training_runs.html[akka optimize training runs]	 - Manage training runs, snapshots and child runs

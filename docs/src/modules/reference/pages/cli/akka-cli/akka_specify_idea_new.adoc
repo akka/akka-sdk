@@ -1,0 +1,55 @@
+= akka specify idea new
+
+Start an idea from its first sentence.
+
+== Synopsis
+
+[Incubating] Start an idea.
+Its id is the title's slug, or the words' when there is no title.
+The lane is how it ships: akka (Deploy to Akka) or internal (Commit to internal systems).
+
+Examples:   akka specify idea new --lane internal --limit 50 Lend to small businesses as well as to people
+
+[source,shell]
+----
+akka specify idea new WORDS... [flags]
+----
+
+== Options
+
+[source,text]
+----
+      --dir string           project directory (default: current)
+  -h, --help                 help for new
+      --json                 print idea.json
+      --lane string          the shipping lane: akka or internal
+      --limit string         the spending limit in US dollars
+      --new-project string   start a new project of this name instead of extending this one
+      --spec string          the spec the idea continues
+      --title string         the idea's title (default: its words)
+      --topic string         the discovery topic the idea starts from: its folder name, code or id
+----
+
+== Options inherited from parent commands
+
+[source,text]
+----
+      --cache-file string   location of cache file (default "~/.akka/cache.yaml")
+      --config string       location of config file (default "~/.akka/config.yaml")
+      --context string      configuration context to use
+      --disable-prompt      Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                            This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+  -o, --output string       set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string    the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet               set quiet output (helpful when used as part of a script)
+      --timeout duration    client command timeout (default 10s)
+      --use-grpc-web        use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose             set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_specify_idea.html[akka specify idea]	 - [Incubating] Start, list and answer ideas, the unit of work from first sentence to shipping lane.
+
+[discrete]
+

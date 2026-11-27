@@ -4,19 +4,30 @@ List endpoints
 
 == Synopsis
 
-List endpoints, newest first.
+List one page of endpoints, newest first, or oldest first with --order oldest.
 
 MODELS is how many models one endpoint serves.
 An endpoint that is AWAITING_CAPACITY is queued behind other work for its devices.
 Use --project to list the endpoints one training project brought up, named by its name or ID.
 
---phase active lists the endpoints that have not failed or been taken down.
---phase open is another word for it.
+--phase active lists the endpoints that have not failed or been taken down, --phase open is another word for it, and --phase finished lists the rest.
 --base-model takes the repository an endpoint loads, and --model takes a model it serves, as NS/NAME, which matches every version of the model, or NS/NAME:vN.
+--search takes the start of an endpoint ID and compares letters and digits alone, so a UUID prefix matches with or without its dashes.
+--project, --phase, --base-model and --model each take a comma-separated list of values, any of which match, such as --phase ready,failed.
+Each takes at most 8 values.
 The filters combine.
 
-A row of an archived training project is left out unless --archived is given or --project names that project.
+A page holds 50 endpoints unless --limit says otherwise, and at most 100.
+Where more remain, the list says which --offset reads the next page.
+
+A row of an archived training project is left out unless --archived is given or --project names that project, and --archived=only lists those rows alone.
 Such a row is marked "(archived)".
+
+--state lists the endpoints in any of these states: active, finished or archived, comma-separated or repeated.
+active holds the unfinished endpoints and finished the rest, each of training projects that are not archived, and archived holds the endpoints of archived training projects in every phase.
+It replaces --archived, and is refused beside it.
+Where --project names an archived training project, --state keeps to the states it names: --state active lists none of that training project's endpoints, and --state archived lists them.
+--phase combines with it, and narrows the list within those states.
 
 [source,shell]
 ----
@@ -36,6 +47,9 @@ akka optimize training endpoints list [flags]
   # List the endpoints serving any version of one model
   akka optimize training endpoints list --model triage/qwen3-0.6b
 
+  # Read the second page of 100
+  akka optimize training endpoints list --limit 100 --offset 100
+
   # Name the ones answering
   akka optimize training endpoints list --jq '.endpoints[] | select(.phase=="READY") | .endpointId'
 ----
@@ -44,12 +58,17 @@ akka optimize training endpoints list [flags]
 
 [source,text]
 ----
-      --archived            Include the endpoints of archived training projects
-      --base-model string   List only the endpoints that load this base model, by repository
-  -h, --help                help for list
-      --model string        List only the endpoints serving this model, as NS/NAME for every version or NS/NAME:vN
-      --phase string        Filter by phase. Pass 'active' to list unfinished entries; 'open' is another word for it
-      --project string      List only the endpoints this training project brought up, by name or ID
+      --archived string[="true"]   Include the endpoints of archived training projects, or with --archived=only list them alone
+      --base-model string          List only the endpoints that load these base models, by repository, comma-separated
+  -h, --help                       help for list
+      --limit int                  Number of entries on the page to print, at most 100. With --offset alone, the page holds 50
+      --model string               List only the endpoints serving these models, as NS/NAME for every version or NS/NAME:vN, comma-separated
+      --offset int                 Index of the first entry to return. With --offset or --limit, the list prints that one page
+      --order string               newest, the default, or oldest
+      --phase string               Filter by phase. Pass 'active' to list unfinished entries ('open' is another word for it) and 'finished' to list the rest
+      --project string             List only the endpoints these training projects brought up, by name or ID, comma-separated
+      --search string              List only the endpoints whose ID starts with this, comparing letters and digits alone
+      --state strings              List the endpoints in any of these states: active, finished or archived. Takes several values, comma-separated or repeated, of which an entry matches any
 ----
 
 == Options inherited from parent commands

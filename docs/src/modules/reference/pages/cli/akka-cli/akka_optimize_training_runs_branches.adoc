@@ -41,8 +41,8 @@ akka optimize training runs branches PARENT [flags]
 [source,text]
 ----
   -h, --help                help for branches
-      --limit int           Maximum number of entries to return. The service defaults to 50 and allows at most 100
-      --offset int          Index of the first entry to return
+      --limit int           Number of entries on the page to print, at most 100. With --offset alone, the page holds 50
+      --offset int          Index of the first entry to return. With --offset or --limit, the list prints that one page
       --submission string   Read one submission's preparation state instead of listing child runs
 ----
 

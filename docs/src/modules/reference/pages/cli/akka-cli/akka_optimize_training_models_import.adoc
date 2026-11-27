@@ -1,0 +1,76 @@
+= akka optimize training models import
+
+Import a merged model as a version of a named model
+
+== Synopsis
+
+Import the safetensors weights, config and tokenizer files of a merged model in DIR as a version of NS/NAME.
+
+--base names the base model the weights were merged from: a base model this deployment allows and that has been selected, by repository, or a registered base model version.
+It records lineage and is not checked against config.json.
+
+--serving-project is the Akka project, by UUID, whose KalixModel serves the model.
+It is not a training project.
+You need permission to add models in it.
+
+The command refuses DIR before it sends anything when it holds a subdirectory, an empty file, a file over 16 GiB, more than 64 GiB in all, more than 1023 files, no config.json or no *.safetensors file, a *.safetensors file whose header does not parse, or a file whose name is not one of:   *.safetensors, *.safetensors.index.json, config.json,   generation_config.json, tokenizer.json, tokenizer_config.json,   tokenizer.model, tekken.json, special_tokens_map.json, added_tokens.json,   vocab.json, vocab.txt, merges.txt, chat_template.jinja, chat_template.json,   preprocessor_config.json, processor_config.json
+
+The service refuses the import, registering nothing and deleting what was uploaded, where config.json does not parse, an index names a shard that was not uploaded, a weights file's header does not read, the files disagree with config.json or an index, config.json names an architecture the trainer does not support, or the tokenizer does not load.
+
+The command prints the import's ID once the import is created, uploads the files, then follows the import until it is registered or refused, with a line for each phase it passes through.
+A registered import prints the version, the import ID and the manifest digest, and the source block of a KalixModel that serves it.
+
+[source,shell]
+----
+akka optimize training models import NS/NAME --base BASE_MODEL --serving-project PROJECT_UUID -d DIR [flags]
+----
+
+== Examples
+
+[source,shell]
+----
+  # Import a merged model for serving project 0d3c5e2a-...
+  akka optimize training models import triage/support-merged \
+    --base Qwen/Qwen3-8B --serving-project 0d3c5e2a-7b41-4f6e-9a8d-2c5b1e7f3a90 \
+    -d ./merged
+----
+
+== Options
+
+[source,text]
+----
+      --base string              Base model the weights were merged from
+  -d, --dir string               Directory holding the model's files
+  -h, --help                     help for import
+      --serving-project string   UUID of the Akka project whose KalixModel serves the model
+----
+
+== Options inherited from parent commands
+
+[source,text]
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color or a redrawn progress line, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --timeout duration     client command timeout (default 10s)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then a local dev-mode service, then http://localhost:9001)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize_training_models.html[akka optimize training models]	 - Import a merged model trained elsewhere, so a KalixModel can serve it
+
+[discrete]
+

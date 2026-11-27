@@ -4,9 +4,9 @@ Apply a model descriptor to the project's region.
 
 == Synopsis
 
-Applies the resources of a model descriptor: multi-document YAML, each document carrying resource, resourceVersion: v1, metadata.name and a spec in the platform's own schema.
-Today the descriptor holds AcceleratorAllocation resources;
-Model and ModelEndpoint follow.
+Applies the resources of a model descriptor: multi-document YAML, each document carrying resource, resourceVersion: v1, metadata.name and a spec in the platform's own schema: AcceleratorAllocation, Model and ModelEndpoint.
+
+A Model's spec.source.type is huggingface (a repository pinned to a commit), optimize (merged weights imported with akka optimize training models import, named by the importId and manifestSha256 it prints) or external (a model a provider runs).
 
 Apply is create-or-update by name.
 The region admits every change - device fit against the pool is decided there, not here - so --dry-run runs the server's full admission without persisting anything.

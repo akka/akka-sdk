@@ -44,6 +44,7 @@ An endpoint then serves it as it serves a model a run here trained.
 * link:akka_optimize_training.html[akka optimize training]	 - Base models, training projects, runs, snapshots, comparisons, pipelines, evaluations, distillations, endpoints and their data
 * link:akka_optimize_training_adapters_get.html[akka optimize training adapters get]	 - Show where an adapter import stands
 * link:akka_optimize_training_adapters_import.html[akka optimize training adapters import]	 - Import a PEFT LoRA adapter as a version of a named model
+* link:akka_optimize_training_adapters_list.html[akka optimize training adapters list]	 - List adapter imports
 
 [discrete]
 

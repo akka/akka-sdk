@@ -47,6 +47,7 @@ being live is a property of the gateway.
 * link:akka_optimize_use-cases_manifests_deploy.html[akka optimize use-cases manifests deploy]	 - Make a manifest the live routing policy
 * link:akka_optimize_use-cases_manifests_diff.html[akka optimize use-cases manifests diff]	 - A manifest against the working set as it stands now
 * link:akka_optimize_use-cases_manifests_get.html[akka optimize use-cases manifests get]	 - One manifest as it was frozen
+* link:akka_optimize_use-cases_manifests_history.html[akka optimize use-cases manifests history]	 - Every deploy, undeploy and canary change, oldest first
 * link:akka_optimize_use-cases_manifests_list.html[akka optimize use-cases manifests list]	 - Every manifest, and whether it can enforce
 
 [discrete]

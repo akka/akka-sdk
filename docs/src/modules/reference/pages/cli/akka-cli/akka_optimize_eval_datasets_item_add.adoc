@@ -1,0 +1,93 @@
+= akka optimize eval datasets item add
+
+Add one item to a dataset, as a new version
+
+== Synopsis
+
+Adds one item at the end of the dataset and makes a new version of it.
+
+ITEM.json is one item in the form of a line of items.jsonl.
+The service computes its contentHash, so the file needs none.
+An item whose id the dataset already has is refused;
+change that one with `item set`.
+
+--from-exchange makes the item from one exchange the gateway recorded.
+The service reads the exchange's record with your token, so you need permission to read captures as well as to write datasets.
+It copies what was sent in production into the dataset, where everyone who may read datasets reads it.
+
+The item's input is the last user message of the request and the system prompt the request carried, so the item is asked under the instructions production gave.
+--dataset-prompt leaves the system prompt out, and the item is then asked under the dataset's.
+Earlier turns of a conversation, tool results, images and the tools the request offered are not part of the item;
+the command says so when it adds one.
+The item's sourceReference names the exchange, and its metadata holds the use case and the model that served it.
+
+The recorded answer is not copied: what an item expects is a set of checks, given with --expected, and an item without them has no reference answer.
+An item is in the splits --split names, and in none without it, so a run over a split does not cover it.
+
+--from-exchange given several times adds the items together as one version, or none of them: when any exchange makes no item, or the dataset has an item of its id, nothing is added and each exchange is listed with what became of it.
+--id and --expected go with one exchange.
+
+--print writes the item and sends nothing, to edit it and add it with -f.
+A capture is found by its id when it shipped in the hour the exchange started or the hour after.
+
+[source,shell]
+----
+akka optimize eval datasets item add ID (-f ITEM.json | --from-exchange EXCHANGE_ID...) [flags]
+----
+
+== Examples
+
+[source,shell]
+----
+  akka optimize eval datasets item add capitals -f item.json
+  akka optimize eval datasets item add capitals \
+      --from-exchange 01M3Q7SVZNGDBC8QQW88PXWVX5 --split full
+  akka optimize eval datasets item add capitals \
+      --from-exchange 01M3Q7SVZNGDBC8QQW88PXWVX5 --print > item.json
+----
+
+== Options
+
+[source,text]
+----
+      --dataset-prompt              leave the exchange's system prompt out, so the item is asked under the dataset's
+      --expected string             the item's expectedOutput, as JSON; - reads stdin
+  -f, --file string                 the item to add, as JSON; - reads stdin
+      --from-exchange stringArray   make the item from this recorded exchange, by its exchange id; repeat to add several exchanges as one version
+  -h, --help                        help for add
+      --id string                   the item's id (default the exchange id)
+      --if-version string           make the change only if this is the dataset's current version
+      --metadata stringArray        metadata for the item as KEY=VALUE; repeat for more
+      --print                       write the item and send nothing
+      --split stringArray           a split the item belongs to; repeat for more
+----
+
+== Options inherited from parent commands
+
+[source,text]
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color or a redrawn progress line, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --timeout duration     client command timeout (default 10s)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then a local dev-mode service, then http://localhost:9001)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize_eval_datasets_item.html[akka optimize eval datasets item]	 - One item of a dataset
+
+[discrete]
+

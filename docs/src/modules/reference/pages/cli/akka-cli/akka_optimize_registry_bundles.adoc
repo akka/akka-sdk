@@ -48,9 +48,9 @@ NS/NAME where a version is wanted is the newest version.
 * link:akka_optimize_registry_bundles_annotate.html[akka optimize registry bundles annotate]	 - Set or clear the description of a bundle version
 * link:akka_optimize_registry_bundles_download.html[akka optimize registry bundles download]	 - Write one exact bundle ZIP to a file or standard output
 * link:akka_optimize_registry_bundles_get.html[akka optimize registry bundles get]	 - One named bundle, or one immutable version
-* link:akka_optimize_registry_bundles_list.html[akka optimize registry bundles list]	 - Every named bundle, narrowed by namespace
+* link:akka_optimize_registry_bundles_list.html[akka optimize registry bundles list]	 - The named bundles, a page at a time
 * link:akka_optimize_registry_bundles_register.html[akka optimize registry bundles register]	 - Upload and register an independently versioned bundle
-* link:akka_optimize_registry_bundles_versions.html[akka optimize registry bundles versions]	 - One named bundle's immutable versions
+* link:akka_optimize_registry_bundles_versions.html[akka optimize registry bundles versions]	 - One named bundle's immutable versions, newest first, a page at a time
 
 [discrete]
 

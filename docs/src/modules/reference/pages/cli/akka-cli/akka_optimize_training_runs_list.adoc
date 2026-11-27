@@ -14,10 +14,31 @@ Use --project to list one training project's runs, named by its name or ID.
 --method takes a comma-separated list of methods, such as sft,grpo.
 --dataset takes NS/NAME, which matches every version of the dataset, or NS/NAME:vN.
 --base-model takes the base model's repository.
+--project, --phase, --method, --dataset and --base-model each take comma-separated values, and a run matches any of them.
 The filters combine, so each one narrows the listing further.
 
 A row of an archived training project is left out unless --archived is given or --project names that project.
 Such a row is marked "(archived)".
+
+--finished-after and --finished-before list the runs that finished in a window, at or after the one and before the other.
+Each takes an RFC 3339 time, or a duration back from now such as 90m, 36h or 7d.
+A run that has not finished is in no window.
+The window combines with every other filter but --run-id.
+
+--run-id lists the runs it names, by ID or the start of one, in every state and archived or not.
+It takes up to 100 IDs, comma-separated or repeated, and no other filter;
+--limit, --offset and --order still apply.
+A start of an ID that names more than one run, or one shorter than 4 characters, refuses the whole list.
+
+--search matches the start of a run's ID or of its configuration name, in any case.
+Runs are listed newest first, or oldest first with --order oldest.
+The list is paged: --limit sets the page size and --offset where it starts.
+
+--state lists the runs in any of these states: active, finished or archived, comma-separated or repeated.
+active holds the unfinished runs and finished the rest, each of training projects that are not archived, and archived holds the runs of archived training projects in every phase.
+It replaces --archived, and is refused beside it.
+Where --project names an archived training project, --state keeps to the states it names: --state active lists none of that training project's runs, and --state archived lists them.
+--phase combines with it, and narrows the list within those states.
 
 [source,shell]
 ----
@@ -43,6 +64,12 @@ akka optimize training runs list [flags]
   # List the runs over one base model
   akka optimize training runs list --base-model Qwen/Qwen3-0.6B
 
+  # Find the runs whose configuration name starts with "router"
+  akka optimize training runs list --search router
+
+  # Read the second page of 20, oldest first
+  akka optimize training runs list --order oldest --limit 20 --offset 20
+
   # Output specific fields as JSON
   akka optimize training runs list --json runId,phase,projectId
 
@@ -54,13 +81,21 @@ akka optimize training runs list [flags]
 
 [source,text]
 ----
-      --archived            Include the runs of archived training projects
-      --base-model string   List only the runs over this base model, by repository
-      --dataset string      List only the runs on this dataset, as NS/NAME for every version or NS/NAME:vN
-  -h, --help                help for list
-      --method strings      List only the runs trained with these methods, comma-separated, such as sft,grpo
-      --phase string        Filter by phase. Pass 'active' to list unfinished entries; 'open' is another word for it
-      --project string      List only this training project's runs, by name or ID
+      --archived                 Include the runs of archived training projects
+      --base-model string        List only the runs over these base models, by repository, comma-separated
+      --dataset string           List only the runs on these datasets, comma-separated, as NS/NAME for every version or NS/NAME:vN
+      --finished-after string    List only the runs that finished at or after a time, or a duration back from now such as 7d
+      --finished-before string   List only the runs that finished before a time, or a duration back from now such as 36h
+  -h, --help                     help for list
+      --limit int                Number of entries on the page to print, at most 100. With --offset alone, the page holds 50
+      --method strings           List only the runs trained with these methods, comma-separated, such as sft,grpo
+      --offset int               Index of the first entry to return. With --offset or --limit, the list prints that one page
+      --order string             newest (the default) or oldest
+      --phase string             Filter by phases, comma-separated. Pass 'active' to list unfinished runs, 'open' is another word for it, or 'finished' to list finished ones
+      --project string           List only these training projects' runs, by name or ID, comma-separated
+      --run-id strings           List the runs with these IDs, or the start of each, in every state. Takes up to 100, comma-separated or repeated, and no other filter
+      --search string            List only the runs whose ID or configuration name starts with this, in any case
+      --state strings            List the runs in any of these states: active, finished or archived. Takes several values, comma-separated or repeated, of which an entry matches any
 ----
 
 == Options inherited from parent commands

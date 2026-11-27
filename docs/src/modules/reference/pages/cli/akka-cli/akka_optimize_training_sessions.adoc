@@ -36,6 +36,8 @@ Raw conversation corpora
 
 * link:akka_optimize_training.html[akka optimize training]	 - Base models, training projects, runs, snapshots, comparisons, pipelines, evaluations, distillations, endpoints and their data
 * link:akka_optimize_training_sessions_create.html[akka optimize training sessions create]	 - Upload a raw conversation corpus
+* link:akka_optimize_training_sessions_lines.html[akka optimize training sessions lines]	 - Print the recorded conversations of one session
+* link:akka_optimize_training_sessions_list.html[akka optimize training sessions list]	 - List uploaded sessions
 
 [discrete]
 

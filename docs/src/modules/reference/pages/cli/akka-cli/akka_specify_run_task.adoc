@@ -1,0 +1,38 @@
+= akka specify run task
+
+Record task claims, completions and decisions in an open Implement or Converge run.
+
+== Options
+
+[source,text]
+----
+  -h, --help   help for task
+----
+
+== Options inherited from parent commands
+
+[source,text]
+----
+      --cache-file string   location of cache file (default "~/.akka/cache.yaml")
+      --config string       location of config file (default "~/.akka/config.yaml")
+      --context string      configuration context to use
+      --disable-prompt      Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                            This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+  -o, --output string       set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string    the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet               set quiet output (helpful when used as part of a script)
+      --timeout duration    client command timeout (default 10s)
+      --use-grpc-web        use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose             set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_specify_run.html[akka specify run]	 - [Incubating] Open and close the runs a station's receipt records.
+* link:akka_specify_run_task_raise.html[akka specify run task raise]	 - Raise a task decision for a person;
+the CLI assigns its Q-id.
+* link:akka_specify_run_task_start.html[akka specify run task start]	 - Claim a ready task and read its instructions.
+* link:akka_specify_run_task_tick.html[akka specify run task tick]	 - Tick the task claimed by this agent and record its completion.
+
+[discrete]
+

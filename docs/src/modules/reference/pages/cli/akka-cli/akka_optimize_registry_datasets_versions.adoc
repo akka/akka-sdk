@@ -1,22 +1,39 @@
 = akka optimize registry datasets versions
 
-One named dataset's versions, newest first
+Dataset versions, newest first, a page at a time
 
 == Synopsis
 
-List the versions of one named dataset.
+List the versions of one named dataset, newest first.
+Without NS/NAME, list the versions of every named dataset, by named dataset and newest version first.
+
+--format keeps the versions in the formats it names, as the registry stores them, such as chat-jsonl-v2.
+A name without its version matches nothing.
+
+Without NS/NAME, --namespace lists the versions of the namespaces it names, a comma-separated list of at most 8, archived or not.
+--search keeps the datasets whose name starts with it, or with the part after the / of NS/PREFIX in namespace NS.
+The versions of an archived namespace are listed with --archived.
+
+A list holds 50 versions by default and at most 100.
+--offset and --limit page through a long list, and where more remain the command names the --offset of the next page.
 
 [source,shell]
 ----
-akka optimize registry datasets versions NS/NAME [flags]
+akka optimize registry datasets versions [NS/NAME] [flags]
 ----
 
 == Examples
 
 [source,shell]
 ----
-  # List every version
+  # List the newest versions
   akka optimize registry datasets versions triage/train
+
+  # List the next page
+  akka optimize registry datasets versions triage/train --offset 50
+
+  # List the preference versions of every dataset in one namespace
+  akka optimize registry datasets versions --namespace triage --format preference-jsonl-v1
 
   # Read the newest version's reference
   akka optimize registry datasets versions triage/train --jq '.versions[0].reference'
@@ -26,7 +43,13 @@ akka optimize registry datasets versions NS/NAME [flags]
 
 [source,text]
 ----
-  -h, --help   help for versions
+      --archived            Without NS/NAME, include the versions of archived namespaces
+      --format strings      List the versions in these formats, such as chat-jsonl-v2. Takes several values, comma-separated or repeated, of which an entry matches any
+  -h, --help                help for versions
+      --limit int           Number of entries on the page to print, at most 100. With --offset alone, the page holds 50
+      --namespace strings   Without NS/NAME, list the versions of these namespaces. Takes several values, comma-separated or repeated, of which an entry matches any
+      --offset int          Index of the first entry to return. With --offset or --limit, the list prints that one page
+      --search string       Without NS/NAME, list the datasets whose name starts with this, or NS/PREFIX
 ----
 
 == Options inherited from parent commands

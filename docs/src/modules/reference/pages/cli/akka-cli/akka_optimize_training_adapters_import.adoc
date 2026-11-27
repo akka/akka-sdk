@@ -21,7 +21,8 @@ A deployment without a training cluster does not run this check.
 --project names the training project an endpoint for the adapter counts against.
 It defaults to the training project whose name is the model's namespace.
 
-The command uploads the files, then follows the import until it is registered or refused, and prints the command that serves it.
+The command names the import's ID once the import is created and uploads the files.
+It then follows the import, with a line for each phase it passes through, until the import is registered or refused, and ends with the command that serves it.
 
 [source,shell]
 ----
