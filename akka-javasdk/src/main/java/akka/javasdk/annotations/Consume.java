@@ -191,10 +191,7 @@ public @interface Consume {
    * of its own service.
    *
    * <p>The parameter types of the handler methods select the kinds of records that the consumer
-   * receives. A handler for {@link akka.javasdk.ledger.FlowRecord} selects all record types. These
-   * are {@link akka.javasdk.ledger.InteractionRecord}, {@link akka.javasdk.ledger.ActivityRecord},
-   * {@link akka.javasdk.ledger.GuardrailDecisionRecord}, {@link
-   * akka.javasdk.ledger.EvaluationRecord} and {@link akka.javasdk.ledger.ClassificationRecord}.
+   * receives. A handler for {@link akka.javasdk.ledger.FlowRecord} selects all record types.
    *
    * <p>The metadata of a record carries these CloudEvent attributes:
    *

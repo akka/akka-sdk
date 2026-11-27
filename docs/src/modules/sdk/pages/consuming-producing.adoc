@@ -121,7 +121,7 @@ include::example$doc-snippets/src/main/java/com/example/application/DeniedGuardr
 <3> Return `effects().ignore()` for a decision that is not a denial.
 <4> `recordId()` returns the id of the record.
 
-The record types are `InteractionRecord`, `ActivityRecord`, `GuardrailDecisionRecord`, `EvaluationRecord` and `ClassificationRecord`, in the package `akka.javasdk.ledger`. Each implements link:{attachmentsdir}/api/akka/javasdk/ledger/FlowRecord.html[`FlowRecord`]. A handler for `FlowRecord` receives all record types. If a consumer has handlers for both `FlowRecord` and one record type, the specific handler receives that type.
+Each record type implements link:{attachmentsdir}/api/akka/javasdk/ledger/FlowRecord.html[`FlowRecord`]. A handler for `FlowRecord` receives all record types. If a consumer has handlers for both `FlowRecord` and one record type, the specific handler receives that type.
 
 The ledger consumer has these delivery guarantees:
 
