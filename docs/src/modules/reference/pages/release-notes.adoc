@@ -12,6 +12,12 @@ Current versions
 
 == November 2026
 
+* [[cli-3-0-84]]Akka CLI 3.0.85
+- Akka Optimize 0.12.1
+- Local console: Ideas, sub-agent runs, and support for any ACP (Agent Client Protocol) agent
+- New consumers reset-offset command
+- Bug fixes
+
 * xref:release-notes/runtime/1.7.8.adoc[Akka Runtime 1.7.8]
 - Database storage metrics per table instead of per partition.
 - Fix of the deleted entities metric.
