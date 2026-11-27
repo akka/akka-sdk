@@ -98,6 +98,7 @@ Configuration for an OpenTelemetry exporter using the OTLP gRPC protocol.
 |*endpoint* |string _required_              |The endpoint to export OTLP metrics, logs, or traces to, for example, `my.otlp.host:443`.
 |*tls*      |<<ObservabilityTls>>      |TLS configuration for connections to the OpenTelemetry collector.
 |*headers*  |[]<<ObservabilityHeader>> |A list of headers to add to outgoing requests.
+|*metricsTemporality* |string |The aggregation temporality of exported metrics, either `cumulative` or `delta`. Defaults to `cumulative`. Only valid on metrics and default exporters. See xref:operations:observability-and-monitoring/observability-exports.adoc#metrics_temporality[Metrics temporality].
 |===
 
 === ObservabilityPrometheusWrite
@@ -166,6 +167,7 @@ Configuration for an OpenTelemetry exporter using the OTLP HTTP protocol.
 |*encoding*         |string                         |The encoding to use, either `proto` or `json`. Defaults to `proto`.
 |*tls*              |<<ObservabilityTls>>      |TLS configuration for connections to the OpenTelemetry collector.
 |*headers*          |[]<<ObservabilityHeader>> |A list of headers to add to outgoing requests.
+|*metricsTemporality* |string |The aggregation temporality of exported metrics, either `cumulative` or `delta`. Defaults to `cumulative`. Only valid on metrics and default exporters. See xref:operations:observability-and-monitoring/observability-exports.adoc#metrics_temporality[Metrics temporality].
 |===
 
 === ObservabilityTls
