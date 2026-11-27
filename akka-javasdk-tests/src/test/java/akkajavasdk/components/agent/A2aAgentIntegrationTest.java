@@ -159,18 +159,19 @@ public class A2aAgentIntegrationTest extends TestKitSupport {
   }
 
   @Test
-  public void shouldOfferTheSkillsToAgentWithLegacyModelGuardrail() {
+  public void shouldNotCombineTheSkillsWithALegacyModelGuardrail() {
     modelCallsLookupSkill("status of claim 42", "claim 42");
 
-    var response =
-        componentClient
-            .forAgent()
-            .inSession(sessionId())
-            .method(A2aClaimsLegacyGuardedTestAgent::ask)
-            .invoke("status of claim 42");
+    assertThatThrownBy(
+            () ->
+                componentClient
+                    .forAgent()
+                    .inSession(sessionId())
+                    .method(A2aClaimsLegacyGuardedTestAgent::ask)
+                    .invoke("status of claim 42"))
+        .isInstanceOf(RuntimeException.class);
 
-    assertThat(response.response()).isEqualTo("error=false Claim 42 is open");
-    assertThat(received).containsExactly("claim 42");
+    assertThat(received).isEmpty();
   }
 
   @Test

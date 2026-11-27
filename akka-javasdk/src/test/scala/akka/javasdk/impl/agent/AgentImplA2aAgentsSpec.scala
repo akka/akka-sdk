@@ -78,6 +78,19 @@ class AgentImplA2aAgentsSpec extends AnyWordSpec with Matchers {
     }
   }
 
+  "AgentImpl.rejectLegacyGuardrailsWithA2aAgents" should {
+    "accept an agent without remote A2A agents" in {
+      AgentImpl.rejectLegacyGuardrailsWithA2aAgents("my-agent", Seq.empty)
+    }
+
+    "reject a remote A2A agent, naming the agent and the guardrail to use instead" in {
+      val e = the[IllegalArgumentException] thrownBy AgentImpl.rejectLegacyGuardrailsWithA2aAgents(
+        "my-agent",
+        Seq(descriptor(RemoteA2aAgent.named("claims"))))
+      e.getMessage should (include("my-agent") and include("TextGuardrail") and include("ModelCallGuardrail"))
+    }
+  }
+
   "AgentImpl.validateA2aAgentsConfigured" should {
     val config = ConfigFactory.parseString("""
       akka.javasdk.agent.a2a-client.agents {

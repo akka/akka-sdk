@@ -6,6 +6,9 @@ package akka.javasdk.impl
 
 import java.time.Duration
 
+import scala.concurrent.duration.DurationInt
+
+import akka.runtime.sdk.spi.SpiA2aAuth
 import akka.runtime.sdk.spi.SpiDeployedEventingSettings
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3BucketConfig
 import akka.runtime.sdk.spi.SpiDevObjectStorageS3PathAccessStyle
@@ -50,20 +53,34 @@ class SpiSettingsSpec extends AnyWordSpec with Matchers with OptionValues {
         ConfigFactory.invalidateCaches()
         val config = ConfigFactory
           .parseString("""
-            akka.javasdk.agent.a2a-client {
-              request-timeout = 7s
-              agents.claims {
+            akka.javasdk.agent.a2a-client.agents {
+              claims {
                 card-url = "https://claims.example.com/card"
-                auth { type = bearer, token = ${?A2A_TEST_TOKEN} }
+                auth { type = Bearer, token = ${?A2A_TEST_TOKEN} }
+                allowed-hosts = ["rpc.example.com", "other.example.com:8443"]
+                request-timeout = 7s
               }
+              keyed {
+                card-url = "http://localhost:8000/card"
+                auth { type = header, header-name = "x-api-key", header-value = "k" }
+              }
+              "odd.name".card-url = "http://localhost:1/card"
             }
             """)
           .withFallback(ConfigFactory.load())
           .resolve()
-        val a2a = SdkRunner.extractSpiSettings(config).remoteClientsConfig.getConfig("a2a-client")
-        a2a.getString("agents.claims.card-url") shouldBe "https://claims.example.com/card"
-        a2a.getString("agents.claims.auth.token") shouldBe "from-the-environment"
-        a2a.getDuration("request-timeout") shouldBe Duration.ofSeconds(7)
+        val agents = SdkRunner.extractSpiSettings(config).a2aAgentSettings
+        agents.keySet shouldBe Set("claims", "keyed", "odd.name")
+
+        val claims = agents("claims")
+        claims.cardUrl shouldBe "https://claims.example.com/card"
+        claims.auth shouldBe new SpiA2aAuth.Bearer("from-the-environment")
+        claims.allowedHosts shouldBe Set("rpc.example.com", "other.example.com:8443")
+        claims.requestTimeout shouldBe Some(7.seconds)
+
+        agents("keyed").auth shouldBe new SpiA2aAuth.Header("x-api-key", "k")
+        agents("keyed").requestTimeout shouldBe None
+        agents("odd.name").auth shouldBe SpiA2aAuth.NoAuth
       } finally {
         System.clearProperty("A2A_TEST_TOKEN")
         ConfigFactory.invalidateCaches()
@@ -71,11 +88,64 @@ class SpiSettingsSpec extends AnyWordSpec with Matchers with OptionValues {
     }
 
     "have no remote A2A agents by default" in {
-      SdkRunner
-        .extractSpiSettings(ConfigFactory.load())
-        .remoteClientsConfig
-        .getConfig("a2a-client.agents")
-        .isEmpty shouldBe true
+      SdkRunner.extractSpiSettings(ConfigFactory.load()).a2aAgentSettings shouldBe empty
+    }
+
+    "treat a remote A2A agent without card-url as not configured" in {
+      val config = ConfigFactory
+        .parseString("""
+          akka.javasdk.agent.a2a-client.agents.claims {
+            card-url = ${?A2A_NOT_SET_CARD_URL}
+            auth { type = bearer, token = ${?A2A_NOT_SET_TOKEN} }
+          }
+          """)
+        .withFallback(ConfigFactory.load())
+        .resolve()
+      SdkRunner.extractSpiSettings(config).a2aAgentSettings shouldBe empty
+    }
+
+    "fail at start for a remote A2A agent that is not valid, naming the key" in {
+      def failure(agent: String): String = {
+        val config = ConfigFactory
+          .parseString(
+            s"akka.javasdk.agent.a2a-client.agents.claims { card-url = \"https://claims.example.com/card\"\n$agent }")
+          .withFallback(ConfigFactory.load())
+        val e = the[IllegalArgumentException] thrownBy SdkRunner.extractSpiSettings(config)
+        e.getMessage
+      }
+
+      failure("auth.type = oauth") should (include("[claims]") and include("auth.type") and include("oauth"))
+      failure("auth.type = bearer") should (include("[claims]") and include("auth.token"))
+      failure("auth { type = header, header-name = x }") should include("auth.header-value")
+      failure("auth { type = bearer, token = \"\" }") should include("auth.token")
+      failure("allowed-hosts = [\"https://other.example.com/path\"]") should include("allowed-hosts")
+      failure("request-timeout = 0s") should include("request-timeout")
+      failure("request-timeout = -1s") should include("request-timeout")
+    }
+
+    "not show the card URL when it is not valid" in {
+      Seq(
+        "ftp://claims.example.com/card?key=SECRET-KEY",
+        "https://claims.example.com/card?key=SECRET KEY",
+        "/card?key=SECRET-KEY")
+        .foreach { url =>
+          val config = ConfigFactory
+            .parseString(s"""akka.javasdk.agent.a2a-client.agents.claims.card-url = "$url" """)
+            .withFallback(ConfigFactory.load())
+          val e = the[IllegalArgumentException] thrownBy SdkRunner.extractSpiSettings(config)
+          e.getMessage should (include("[claims]") and include("card-url"))
+          (e.getMessage should not).include("SECRET")
+          (e.getMessage should not).include("claims.example.com")
+        }
+    }
+
+    "fail at start when a remote A2A agent is not a configuration section" in {
+      val config = ConfigFactory
+        .parseString("akka.javasdk.agent.a2a-client.agents.claims = 5")
+        .withFallback(ConfigFactory.load())
+      val e = the[IllegalArgumentException] thrownBy SdkRunner.extractSpiSettings(config)
+      e.getMessage shouldBe
+      "The remote A2A agent [claims] is not valid: [akka.javasdk.agent.a2a-client.agents.claims] must be a configuration section"
     }
 
     "parse all valid google pub sub modes" in {

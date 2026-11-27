@@ -88,6 +88,7 @@ import akka.javasdk.impl.agent.AgentImpl.AgentContextImpl
 import akka.javasdk.impl.agent.AgentRegistryImpl
 import akka.javasdk.impl.agent.AutonomousAgentImpl
 import akka.javasdk.impl.agent.ClassifierProvider
+import akka.javasdk.impl.agent.RemoteA2aSettings
 import akka.javasdk.impl.agent.FunctionTools
 import akka.javasdk.impl.agent.GuardrailProvider
 import akka.javasdk.impl.agent.GuardrailProvider.AgentGuardrails
@@ -310,7 +311,7 @@ object SdkRunner {
       Some(sanitizationSettings),
       Some(spiDeployedEventingSettings),
       ledgerSettings,
-      applicationConf.getConfig("akka.javasdk.agent.a2a-client").atPath("a2a-client"))
+      RemoteA2aSettings.fromConfig(applicationConf))
   }
 
   private def extractDevObjectStorageBuckets(objectStorageConf: Config): Seq[SpiDevObjectStorageBucketConfig] = {

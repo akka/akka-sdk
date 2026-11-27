@@ -17,9 +17,10 @@ import java.util.function.Predicate;
  * <p>The runtime speaks A2A version 1.0 over JSON-RPC. The card of the remote agent must list a
  * JSON-RPC interface with protocol version 1.0.
  *
- * <p>Only the logical name is in code. The runtime reads the card URL, the authentication and the
+ * <p>Only the logical name is in code. The SDK reads the card URL, the authentication and the
  * allowed hosts from the configuration of the service under {@code
- * akka.javasdk.agent.a2a-client.agents.<name>}, so they can differ per environment.
+ * akka.javasdk.agent.a2a-client.agents.<name>} and checks them when the service starts, so they can
+ * differ per environment.
  *
  * <p><strong>Security:</strong> Credentials are only sent over HTTPS. The runtime only sends
  * requests to the host and port of the agent card, or to hosts in the {@code allowed-hosts}

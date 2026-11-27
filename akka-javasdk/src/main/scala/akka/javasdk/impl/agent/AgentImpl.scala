@@ -489,6 +489,15 @@ private[impl] object AgentImpl {
       case _ => ()
     }
 
+  /** The runtime has no model request with both the legacy model guardrails and remote A2A agents. */
+  private[impl] def rejectLegacyGuardrailsWithA2aAgents(
+      componentId: String,
+      a2aAgentDescriptors: Seq[SpiAgent.A2aAgentDescriptor]): Unit =
+    if (a2aAgentDescriptors.nonEmpty)
+      throw new IllegalArgumentException(
+        s"Agent [$componentId] uses a remote A2A agent and a deprecated TextGuardrail on the model request. " +
+        "Use a ModelCallGuardrail and an AgentResponseGuardrail instead of the TextGuardrail.")
+
   private[impl] def toSpiA2aAgents(
       remoteA2aAgents: Seq[RemoteA2aAgent],
       guardrails: AgentGuardrails): Seq[SpiAgent.A2aAgentDescriptor] = {
@@ -912,7 +921,8 @@ private[impl] final class AgentImpl(
                 Telemetry.withCurrentContext(Option(request.telemetryContext))(toolExecutor.executeMultimodal(request))
               }(sdkExecutionContext)
 
-            if (guardrails.hasLegacyModelGuardrails)
+            if (guardrails.hasLegacyModelGuardrails) {
+              AgentImpl.rejectLegacyGuardrailsWithA2aAgents(componentId, a2aAgentDescriptors)
               new SpiAgent.RequestModelEffect(
                 modelProvider = spiModelProvider,
                 systemMessage = systemMessage,
@@ -930,9 +940,8 @@ private[impl] final class AgentImpl(
                 responseGuardrails = guardrails.legacyModelResponseGuardrails,
                 guardrails = guardrails.guardrails,
                 contentLoader = spiContentLoader,
-                callToolFunction = callToolFunction,
-                a2aAgentDescriptors = a2aAgentDescriptors)
-            else
+                callToolFunction = callToolFunction)
+            } else
               new SpiAgent.RequestModelEffect(
                 modelProvider = spiModelProvider,
                 systemMessage = systemMessage,
