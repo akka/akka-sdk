@@ -17,8 +17,7 @@ The list covers every base model commit and Optimize version the examples were m
 ROWS and MAX TOKENS are what a done analysis measured.
 
 --offset and --limit page through a long list.
-Where more analyses remain, the command names the --offset of the next page.
-The list is read from the newest attempts of the examples, up to a bound, and the command says so where older analyses may be left out.
+The command says which analyses the page holds of how many match, and where more remain, it names the --offset of the next page.
 
 -o json prints the list as Optimize sends it, with each analysis in full as Optimize answers a read of that analysis.
 
@@ -43,9 +42,9 @@ akka optimize training datasets analyses DATASET [--model BASE_MODEL] [flags]
 [source,text]
 ----
   -h, --help           help for analyses
-      --limit int      Maximum number of entries to return. The service defaults to 50 and allows at most 100
+      --limit int      Number of entries on the page to print, at most 100. With --offset alone, the page holds 50
       --model string   Only the analyses under this base model, by repository or catalog id
-      --offset int     Index of the first entry to return
+      --offset int     Index of the first entry to return. With --offset or --limit, the list prints that one page
 ----
 
 == Options inherited from parent commands

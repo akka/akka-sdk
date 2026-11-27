@@ -1,11 +1,22 @@
 = akka optimize registry namespaces list
 
-Every namespace, with what it holds
+The namespaces, with what each holds, a page at a time
 
 == Synopsis
 
 List the namespaces.
 An archived namespace is left out unless --archived is given, and is then marked.
+--only-archived lists the archived ones alone.
+
+A list holds 50 entries by default and at most 100.
+--offset and --limit page through a long list, and where more remain the command names the --offset of the next page.
+--search lists the namespaces whose name starts with what it is given, matched on letters and digits alone, so case and punctuation are ignored.
+--order is newest (the default), oldest or name.
+After the list, the command says how many match that are active and how many are archived.
+
+--state lists the namespaces in any of these states: active or archived, comma-separated or repeated.
+archived holds the archived namespaces, and active the rest.
+It replaces --archived and --only-archived, and is refused beside either.
 
 [source,shell]
 ----
@@ -16,19 +27,28 @@ akka optimize registry namespaces list [flags]
 
 [source,shell]
 ----
-  # List the namespaces
+  # List the namespaces, the newest first
   akka optimize registry namespaces list
 
-  # Include archived namespaces
-  akka optimize registry namespaces list --archived
+  # Include archived namespaces, by name
+  akka optimize registry namespaces list --archived --order name
+
+  # List the archived namespaces whose name starts with team
+  akka optimize registry namespaces list --only-archived --search team
 ----
 
 == Options
 
 [source,text]
 ----
-      --archived   Include archived namespaces
-  -h, --help       help for list
+      --archived        Include archived namespaces
+  -h, --help            help for list
+      --limit int       Number of entries on the page to print, at most 100. With --offset alone, the page holds 50
+      --offset int      Index of the first entry to return. With --offset or --limit, the list prints that one page
+      --only-archived   List the archived namespaces alone
+      --order string    newest (the default), oldest or name
+      --search string   List the namespaces whose name starts with this, ignoring case and punctuation
+      --state strings   List the namespaces in any of these states: active or archived. Takes several values, comma-separated or repeated, of which an entry matches any
 ----
 
 == Options inherited from parent commands

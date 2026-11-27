@@ -40,6 +40,7 @@ A freeze fixes that clustering as something routable.
 == SEE ALSO
 
 * link:akka_optimize.html[akka optimize]	 - Own your intelligence: cost, models, training and routing
+* link:akka_optimize_use-cases_canaries.html[akka optimize use-cases canaries]	 - Send a share of one use case's traffic to a candidate backend
 * link:akka_optimize_use-cases_exemplars.html[akka optimize use-cases exemplars]	 - The requests nearest a use-case's centre
 * link:akka_optimize_use-cases_freeze.html[akka optimize use-cases freeze]	 - Fix the working set as a manifest
 * link:akka_optimize_use-cases_label.html[akka optimize use-cases label]	 - Name a use-case in the working set

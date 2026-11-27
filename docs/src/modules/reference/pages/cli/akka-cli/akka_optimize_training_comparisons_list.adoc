@@ -12,36 +12,40 @@ MODELS counts what is being compared, the source among them.
 How each one scored belongs to its own evaluation;
 read it with "comparisons get".
 
---limit bounds how many are listed, a hundred by default.
-Nothing deletes a comparison, so a deployment that has made thousands would otherwise print all of them.
---source lists one snapshot's comparisons whole.
+--source lists only the comparisons of the source snapshots it names.
+--offset and --limit page through a long list.
+Where more comparisons remain, the command names the --offset of the next page.
 
 [source,shell]
 ----
-akka optimize training comparisons list [flags]
+akka optimize training comparisons list [--source SNAPSHOT] [--offset N] [--limit N] [flags]
 ----
 
 == Examples
 
 [source,shell]
 ----
-  # List the hundred newest comparisons
+  # List the newest comparisons
   akka optimize training comparisons list
 
-  # List more of them
-  akka optimize training comparisons list --limit 250
+  # List 50 comparisons from the 51st newest on
+  akka optimize training comparisons list --offset 50
 
   # List the comparisons of one source snapshot
   akka optimize training comparisons list --source 3f2a9c71bd04
+
+  # List the comparisons of two source snapshots
+  akka optimize training comparisons list --source 3f2a9c71bd04,8be01d4c2a90
 ----
 
 == Options
 
 [source,text]
 ----
-  -h, --help            help for list
-      --limit int       How many comparisons to list, newest first; the service's default is 100
-      --source string   List only the comparisons of one source snapshot, by ID or an unambiguous prefix
+  -h, --help             help for list
+      --limit int        Number of comparisons on the page to print, at most 500. With --offset alone, the page holds 50
+      --offset int       Index of the first entry to return. With --offset or --limit, the list prints that one page
+      --source strings   List only the comparisons of these source snapshots, each by ID or an unambiguous prefix. Takes several values, comma-separated or repeated, of which an entry matches any
 ----
 
 == Options inherited from parent commands

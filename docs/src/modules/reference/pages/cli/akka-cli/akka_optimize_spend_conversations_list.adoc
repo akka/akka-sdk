@@ -2,6 +2,14 @@
 
 The conversations of a period that cost the most
 
+== Synopsis
+
+Each row is one conversation: what it consumed and cost in the period.
+
+The filters rank the conversations behind one row of a division: state that row's keys.
+A row is then the part of its conversation the filters match, so the rows add up to the division's row when the limit holds them all.
+COMPLETED still describes the whole conversation.
+
 [source,shell]
 ----
 akka optimize spend conversations list --from INSTANT --to INSTANT [flags]
@@ -11,10 +19,20 @@ akka optimize spend conversations list --from INSTANT --to INSTANT [flags]
 
 [source,text]
 ----
-      --from string   start of the period, an ISO-8601 instant in UTC, inclusive
-  -h, --help          help for list
-      --limit int     how many conversations to rank; the service states the default
-      --to string     end of the period, an ISO-8601 instant in UTC, exclusive
+      --agent string      rank only the model calls of this agent id. An agent id is not unique across
+                          services, so state --system and --service as well to name one agent. An empty value ranks the traffic that named none
+      --from string       start of the period, an ISO-8601 instant in UTC, inclusive
+  -h, --help              help for list
+      --limit int         how many conversations to rank; the service states the default
+      --model string      rank only the model calls the response named this model for. An empty value ranks the traffic that named none
+      --service string    rank only the model calls of this service. An empty value ranks the traffic that named none
+      --system string     rank only the model calls of this system id, the one a request named in
+                          x-akka-system-id. An empty value ranks the traffic that named none
+      --tag stringArray   rank only the model calls carrying this tag, as KEY:VALUE, where KEY is the name
+                          of one of your tagging rulesets. Repeat it, once per key. KEY: with no value
+                          ranks the traffic that carried no value for that key
+      --to string         end of the period, an ISO-8601 instant in UTC, exclusive
+      --use-case string   rank only the model calls of this use case id. An empty value ranks the traffic that named none
 ----
 
 == Options inherited from parent commands

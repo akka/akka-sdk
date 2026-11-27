@@ -9,6 +9,9 @@ List the rows indexes, newest first, each as its last attempt: every index, or t
 An index serves every name of the same rows, and is listed under the version it was started for.
 ROWS is the rows an index holds once it is done, and how many it has indexed so far while it runs.
 
+--offset and --limit page through a long list.
+The command says which indexes the page holds of how many match, and where more remain, it names the --offset of the next page.
+
 -o json prints the list as Optimize sends it.
 
 [source,shell]
@@ -33,6 +36,8 @@ akka optimize training datasets indexes [NAMESPACE] [--dataset NAME] [flags]
 ----
       --dataset string   Only the indexes of this named dataset of the namespace
   -h, --help             help for indexes
+      --limit int        Number of entries on the page to print, at most 100. With --offset alone, the page holds 50
+      --offset int       Index of the first entry to return. With --offset or --limit, the list prints that one page
 ----
 
 == Options inherited from parent commands

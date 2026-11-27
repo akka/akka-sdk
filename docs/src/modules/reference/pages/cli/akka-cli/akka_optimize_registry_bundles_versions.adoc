@@ -1,6 +1,13 @@
 = akka optimize registry bundles versions
 
-One named bundle's immutable versions
+One named bundle's immutable versions, newest first, a page at a time
+
+== Synopsis
+
+List the versions of one named bundle, newest first.
+
+A list holds 50 versions by default and at most 100.
+--offset and --limit page through a long list, and where more remain the command names the --offset of the next page.
 
 [source,shell]
 ----
@@ -11,7 +18,9 @@ akka optimize registry bundles versions NS/NAME [flags]
 
 [source,text]
 ----
-  -h, --help   help for versions
+  -h, --help         help for versions
+      --limit int    Number of entries on the page to print, at most 100. With --offset alone, the page holds 50
+      --offset int   Index of the first entry to return. With --offset or --limit, the list prints that one page
 ----
 
 == Options inherited from parent commands

@@ -10,6 +10,8 @@ A served name's first price may take effect in the past, and it then prices the 
 The output of `get -o json` is a document `apply` takes once its effectiveAt is later than the one `get` wrote.
 Keep only the entries you change.
 The output does not show a version dated after that effectiveAt, so check `versions list` for one before applying.
+An entry with an allocation states no rates, and the service derives them.
+A version can also price an hour of one device of a trainer pool, under devices, with at most one rate in force per pool at any instant.
 
 == Options
 

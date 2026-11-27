@@ -4,10 +4,27 @@ List distillations
 
 == Synopsis
 
-List distillations, newest first, optionally for one training project.
+List distillations, newest first, optionally filtered by training project, phase or the start of an ID.
+The filters combine.
+
+--phase active lists the distillations that have not finished.
+--phase open is another word for it.
+Each filter takes several values, comma-separated or repeated.
+A distillation matches any value of a filter, and every filter given.
+
+The list shows 50 distillations a page by default.
+When more remain, the command prints the --offset of the next page.
 
 A row of an archived training project is left out unless --archived is given or --project names that project.
 Such a row is marked "(archived)".
+--archived=only lists the rows of archived training projects alone.
+--phase finished lists the rows that have finished.
+
+--state lists the distillations in any of these states: active, finished or archived, comma-separated or repeated.
+active holds the unfinished distillations and finished the rest, each of training projects that are not archived, and archived holds the distillations of archived training projects in every phase.
+It replaces --archived, and is refused beside it.
+Where --project names an archived training project, --state keeps to the states it names: --state active lists none of that training project's distillations, and --state archived lists them.
+--phase combines with it, and narrows the list within those states.
 
 [source,shell]
 ----
@@ -23,15 +40,24 @@ akka optimize training distillations list [flags]
 
   # List one training project's distillations
   akka optimize training distillations list --project support-triage
+
+  # List the distillations that have not finished
+  akka optimize training distillations list --phase active
 ----
 
 == Options
 
 [source,text]
 ----
-      --archived         Include the distillations of archived training projects
-  -h, --help             help for list
-      --project string   Filter distillations by training project, by name or ID
+      --archived string[="true"]   Include the distillations of archived training projects, or with =only list those alone
+  -h, --help                       help for list
+      --limit int                  Number of entries on the page to print, at most 100. With --offset alone, the page holds 50
+      --offset int                 Index of the first entry to return. With --offset or --limit, the list prints that one page
+      --order string               Order the list by start time: newest (the default) or oldest
+      --phase strings              Filter by phase. Pass 'active' to list unfinished entries ('open' is another word for it) and 'finished' to list the rest. Takes several values, comma-separated or repeated, of which an entry matches any
+      --project strings            Filter distillations by training project, by name or ID. Takes several values, comma-separated or repeated, of which an entry matches any
+      --search string              List only the distillations whose ID starts with this
+      --state strings              List the distillations in any of these states: active, finished or archived. Takes several values, comma-separated or repeated, of which an entry matches any
 ----
 
 == Options inherited from parent commands

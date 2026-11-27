@@ -61,10 +61,10 @@ NS/NAME where a version is wanted is the newest version.
 * link:akka_optimize_registry_datasets_alias.html[akka optimize registry datasets alias]	 - The movable pointers into a named dataset
 * link:akka_optimize_registry_datasets_annotate.html[akka optimize registry datasets annotate]	 - Set or clear the description of a dataset version
 * link:akka_optimize_registry_datasets_get.html[akka optimize registry datasets get]	 - One named dataset, or one of its versions
-* link:akka_optimize_registry_datasets_list.html[akka optimize registry datasets list]	 - Every named dataset, narrowed by namespace
+* link:akka_optimize_registry_datasets_list.html[akka optimize registry datasets list]	 - The named datasets, a page at a time
 * link:akka_optimize_registry_datasets_object.html[akka optimize registry datasets object]	 - The bytes of one object of a version, written to standard output
 * link:akka_optimize_registry_datasets_register.html[akka optimize registry datasets register]	 - Upload a dataset version under a named dataset
-* link:akka_optimize_registry_datasets_versions.html[akka optimize registry datasets versions]	 - One named dataset's versions, newest first
+* link:akka_optimize_registry_datasets_versions.html[akka optimize registry datasets versions]	 - Dataset versions, newest first, a page at a time
 
 [discrete]
 

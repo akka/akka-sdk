@@ -1,14 +1,26 @@
 = akka optimize registry datasets list
 
-Every named dataset, narrowed by namespace
+The named datasets, a page at a time
 
 == Synopsis
 
-List the named datasets.
-Read one for its versions and its aliases.
+List the named datasets, each with how many versions it holds and its newest version with the aliases on it.
+Read one for every version and every alias.
 
-A list with no --namespace leaves out archived namespaces unless --archived is given.
+A list holds 50 entries by default and at most 100.
+--offset and --limit page through a long list, and where more remain the command names the --offset of the next page.
+--search lists the names that start with what it is given, or with NS/NAME.
+--order is newest (by the newest version, the default), oldest, name or -name.
+After the list, the command says how many match in active namespaces and how many in archived ones.
+
+--namespace takes one namespace or several.
+A list with no --namespace leaves out archived namespaces unless --archived is given, and --only-archived lists them alone.
 A dataset in an archived namespace is marked.
+
+--state lists the named datasets in any of these states: active or archived, comma-separated or repeated.
+active holds the named datasets of namespaces that are not archived, and archived those of archived namespaces.
+It replaces --archived and --only-archived, and is refused beside either.
+Where --namespace names an archived namespace, --state keeps to the states it names: --state active lists none of that namespace's named datasets, and --state archived lists them.
 
 [source,shell]
 ----
@@ -19,20 +31,29 @@ akka optimize registry datasets list [flags]
 
 [source,shell]
 ----
-  # List every named dataset
+  # List the named datasets, the most recently updated first
   akka optimize registry datasets list
 
-  # List the named datasets of one namespace
-  akka optimize registry datasets list --namespace triage
+  # List the named datasets of one namespace by name
+  akka optimize registry datasets list --namespace triage --order name
+
+  # List the next page
+  akka optimize registry datasets list --offset 50
 ----
 
 == Options
 
 [source,text]
 ----
-      --archived           Include archived namespaces
-  -h, --help               help for list
-      --namespace string   List the named datasets of one namespace
+      --archived            Include archived namespaces
+  -h, --help                help for list
+      --limit int           Number of entries on the page to print, at most 100. With --offset alone, the page holds 50
+      --namespace strings   List the named datasets of these namespaces. Takes several values, comma-separated or repeated, of which an entry matches any
+      --offset int          Index of the first entry to return. With --offset or --limit, the list prints that one page
+      --only-archived       List the named datasets of archived namespaces alone
+      --order string        newest (by the newest version, the default), oldest, name or -name
+      --search string       List the names that start with this, or with NS/NAME, in any case
+      --state strings       List the named datasets in any of these states: active or archived. Takes several values, comma-separated or repeated, of which an entry matches any
 ----
 
 == Options inherited from parent commands

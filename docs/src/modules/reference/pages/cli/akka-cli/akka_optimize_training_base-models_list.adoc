@@ -13,6 +13,12 @@ ID is the entry, which every base-models command takes by its start.
 STATUS is what has been done about the model: "ready" is selected and usable now, "preparing" is selected with its weights still arriving, "failed" is selected and could not be registered, which selecting it again retries, and "not-selected" is allowed and waiting for somebody to choose it.
 METHODS lists what the hardware has measured.
 Advisory catalogs admit unmeasured runs with a warning.
+-o wide adds the commit, the context, the modality and the registry version a selection registered.
+
+--status lists the models in the states it names, in place of the selected ones.
+--search keeps the models whose repository, or name after the owner, starts with it, in any case and ignoring punctuation.
+Both need a 0.12.1 trainer.
+An older one reads neither: the CLI keeps the models in the states --status names itself, and says that --search had no effect.
 
 [source,shell]
 ----
@@ -29,6 +35,9 @@ akka optimize training base-models list [flags]
   # List everything the deployment allows
   akka optimize training base-models list --all
 
+  # List the Qwen models that are usable now
+  akka optimize training base-models list --status ready --search qwen
+
   # Extract the ones that are usable now
   akka optimize training base-models list --jq '.models[] | select(.status=="ready") | .repository'
 ----
@@ -37,8 +46,12 @@ akka optimize training base-models list [flags]
 
 [source,text]
 ----
-      --all    List every base model the deployment allows, not only the selected ones
-  -h, --help   help for list
+      --all              List every base model the deployment allows, not only the selected ones
+  -h, --help             help for list
+      --limit int        Number of entries on the page to print, at most 100. With --offset alone, the page holds 50
+      --offset int       Index of the first entry to return. With --offset or --limit, the list prints that one page
+      --search string    List the models whose repository, or name after the owner, starts with this
+      --status strings   List the models in these states: ready, preparing, not-selected, failed, or selected for every state but not-selected. Takes several values, comma-separated or repeated, of which an entry matches any
 ----
 
 == Options inherited from parent commands

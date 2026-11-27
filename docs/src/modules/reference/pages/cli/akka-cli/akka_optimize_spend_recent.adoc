@@ -22,7 +22,7 @@ akka optimize spend recent --since INSTANT [flags]
       --limit int       how many model calls to list; the service states the default
       --since string    the earliest instant a model call was served at, an ISO-8601 instant in UTC, inclusive
       --system string   list only the model calls of this system id, the one a request named in
-                        x-akka-system-id
+                        x-akka-system-id. An empty value lists the model calls that named none
       --tag string      list only the model calls carrying this tag, as KEY:VALUE, where KEY is the name
                         of one of your tagging rulesets
 ----

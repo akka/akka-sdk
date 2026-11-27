@@ -48,9 +48,9 @@ NS/NAME where a version is wanted is the newest version.
 * link:akka_optimize_registry_models_alias.html[akka optimize registry models alias]	 - The movable pointers into a named model
 * link:akka_optimize_registry_models_annotate.html[akka optimize registry models annotate]	 - Set or clear the description of a model version
 * link:akka_optimize_registry_models_get.html[akka optimize registry models get]	 - One named model, or one of its versions
-* link:akka_optimize_registry_models_list.html[akka optimize registry models list]	 - Every named model, narrowed by namespace
+* link:akka_optimize_registry_models_list.html[akka optimize registry models list]	 - The named models, a page at a time
 * link:akka_optimize_registry_models_register.html[akka optimize registry models register]	 - Register a base model, an adapter, model weights or a provider's model
-* link:akka_optimize_registry_models_versions.html[akka optimize registry models versions]	 - One named model's versions, narrowed by base model or by producer
+* link:akka_optimize_registry_models_versions.html[akka optimize registry models versions]	 - One named model's versions, newest first, a page at a time
 
 [discrete]
 

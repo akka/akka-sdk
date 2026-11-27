@@ -4,25 +4,39 @@ List training projects
 
 == Synopsis
 
-List training projects ordered from newest to oldest.
+List training projects, newest first.
 
 An archived project is left out.
---archived includes it, marked "(archived)".
+--archived includes it, marked "(archived)", and --archived=only lists the archived projects alone.
+--search lists the projects whose name or ID starts with the prefix.
+--order lists them newest or oldest first, or by name with name or -name.
+--offset and --limit page through a long list.
+Where more projects remain, the command names the --offset of the next page.
+
+--state lists the training projects in any of these states: active or archived, comma-separated or repeated.
+archived holds the archived training projects, and active the rest.
+It replaces --archived, and is refused beside it.
 
 [source,shell]
 ----
-akka optimize training projects list [flags]
+akka optimize training projects list [--archived[=only] | --state STATES] [--search PREFIX] [--order ORDER] [--offset N] [--limit N] [flags]
 ----
 
 == Examples
 
 [source,shell]
 ----
-  # List all training projects
+  # List the newest training projects
   akka optimize training projects list
 
   # Include archived training projects
   akka optimize training projects list --archived
+
+  # List only the archived training projects
+  akka optimize training projects list --archived=only
+
+  # List the training projects whose name starts with "router", by name
+  akka optimize training projects list --search router --order name
 
   # Extract training project names using jq
   akka optimize training projects list --jq '.projects[].name'
@@ -32,8 +46,13 @@ akka optimize training projects list [flags]
 
 [source,text]
 ----
-      --archived   Include archived training projects
-  -h, --help       help for list
+      --archived string[="true"]   Include archived training projects, or with --archived=only list them alone
+  -h, --help                       help for list
+      --limit int                  Number of entries on the page to print, at most 100. With --offset alone, the page holds 50
+      --offset int                 Index of the first entry to return. With --offset or --limit, the list prints that one page
+      --order string               newest, oldest, name or -name. The service lists newest first by default
+      --search string              Only the training projects whose name or ID starts with this prefix, in any case
+      --state strings              List the training projects in any of these states: active or archived. Takes several values, comma-separated or repeated, of which an entry matches any
 ----
 
 == Options inherited from parent commands

@@ -25,10 +25,11 @@ akka specify ship <review|release> [directory] [flags]
 
 [source,text]
 ----
-      --dir string      project directory (default: current directory or positional arg)
-      --execute         actually run the ship steps (default: dry run)
-  -h, --help            help for ship
-      --policy string   path to an org governance policy-as-code file (policy.yaml)
+      --dir string           project directory (default: current directory or positional arg)
+      --execute              actually run the ship steps (default: dry run)
+  -h, --help                 help for ship
+      --policy string        path to an org governance policy-as-code file (policy.yaml)
+      --service-url string   base URL of the running service for the live-service conditions (default: the service the local runtime runs from the project directory)
 ----
 
 == Options inherited from parent commands

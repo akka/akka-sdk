@@ -1,0 +1,71 @@
+= akka optimize training curations list
+
+List curation runs
+
+== Synopsis
+
+List curation runs, newest first, with what each kept of what it extracted.
+
+--phase active lists the curations still running, and a phase name lists the curations in it.
+--search lists the curations whose ID starts with the prefix, comparing letters and digits only.
+--session lists the curations made from one session, by its whole hash, and combines with neither --phase nor --search.
+--offset and --limit page through a long list.
+Where more curations remain, the command names the --offset of the next page.
+
+[source,shell]
+----
+akka optimize training curations list [--phase PHASE] [--search PREFIX] [--session HASH] [--offset N] [--limit N] [flags]
+----
+
+== Examples
+
+[source,shell]
+----
+  # List the newest curations
+  akka optimize training curations list
+
+  # Extract curation IDs using jq
+  akka optimize training curations list --jq '.curations[].curationId'
+----
+
+== Options
+
+[source,text]
+----
+  -h, --help             help for list
+      --limit int        Number of entries on the page to print, at most 100. With --offset alone, the page holds 50
+      --offset int       Index of the first entry to return. With --offset or --limit, the list prints that one page
+      --phase string     Filter by phase. Pass 'active' to list unfinished entries ('open' is another word for it) and 'finished' to list the rest
+      --search string    Only the curations whose ID starts with this prefix, in any case
+      --session string   Only the curations made from this session, by its whole hash
+----
+
+== Options inherited from parent commands
+
+[source,text]
+----
+      --cache-file string    location of cache file (default "~/.akka/cache.yaml")
+      --config string        location of config file (default "~/.akka/config.yaml")
+      --context string       configuration context to use
+      --disable-prompt       Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+      --force                Skip the confirmation prompt
+      --jq string            Filter the JSON output with a jq expression
+      --json string          Output JSON with only these fields; --json= lists the fields a command offers
+      --no-color             Print without color or a redrawn progress line, as NO_COLOR does
+  -o, --output string        set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string     the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet                set quiet output (helpful when used as part of a script)
+      --region string        Region to use if the project has more than one region
+      --timeout duration     client command timeout (default 10s)
+      --trainer-url string   Trainer service URL (default TRAINER_URL, then AKKA_OPTIMIZE_URL, then a local dev-mode service, then http://localhost:9001)
+      --use-grpc-web         use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose              set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_optimize_training_curations.html[akka optimize training curations]	 - Judge raw sessions into a training dataset
+
+[discrete]
+

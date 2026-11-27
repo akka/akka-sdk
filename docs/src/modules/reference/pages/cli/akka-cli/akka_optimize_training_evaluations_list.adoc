@@ -4,18 +4,34 @@ List model evaluations
 
 == Synopsis
 
-List evaluations and their scores, optionally filtered by training project, model, dataset or phase.
+List evaluations and their scores, newest first, optionally filtered by training project, model, dataset, phase or the start of an ID.
 The filters combine, so a training project and a phase together list that training project's unfinished evaluations.
 
 --phase active lists the evaluations that have not finished.
 --phase open is another word for it.
---dataset takes NS/NAME, which matches every version of the dataset, or NS/NAME:vN.
+--dataset and --model take NS/NAME, which matches every version, or NS/NAME:vN.
+--model also takes an alias or a digest, which matches the version it names.
+--run lists the evaluations of a run's model versions.
+
+Each filter takes several values, comma-separated or repeated.
+An evaluation matches any value of a filter, and every filter given.
+
+The list shows 50 evaluations a page by default.
+When more remain, the command prints the --offset of the next page.
 
 --project takes a name or an id, which is what scored against a training project's quota.
 It is the same flag "evaluations start" takes.
 
 A row of an archived training project is left out unless --archived is given or --project names that project.
 Such a row is marked "(archived)".
+--archived=only lists the rows of archived training projects alone.
+--phase finished lists the rows that have finished.
+
+--state lists the evaluations in any of these states: active, finished or archived, comma-separated or repeated.
+active holds the unfinished evaluations and finished the rest, each of training projects that are not archived, and archived holds the evaluations of archived training projects in every phase.
+It replaces --archived, and is refused beside it.
+Where --project names an archived training project, --state keeps to the states it names: --state active lists none of that training project's evaluations, and --state archived lists them.
+--phase combines with it, and narrows the list within those states.
 
 [source,shell]
 ----
@@ -41,6 +57,13 @@ akka optimize training evaluations list [flags]
   # List the evaluations on any version of one dataset
   akka optimize training evaluations list --dataset triage/eval
 
+  # List the evaluations of either of two models that are running or cancelled
+  akka optimize training evaluations list --model triage/judge,triage/labeler:v2 \
+    --phase active,cancelled
+
+  # List the second page of 100, oldest first
+  akka optimize training evaluations list --order oldest --limit 100 --offset 100
+
   # Filter low-scoring evaluations using jq
   akka optimize training evaluations list \
     --jq '.evaluations[] | select(.meanScore < 0.5) | .evaluationId'
@@ -50,12 +73,18 @@ akka optimize training evaluations list [flags]
 
 [source,text]
 ----
-      --archived         Include the evaluations of archived training projects
-      --dataset string   Filter evaluations by dataset, as NS/NAME for every version or NS/NAME:vN
-  -h, --help             help for list
-      --model string     Filter evaluations by model, as a registry reference NS/NAME[:VERSION]. With --project, NAME[:VERSION] names a model in that project's namespace
-      --phase string     Filter by phase. Pass 'active' to list unfinished entries; 'open' is another word for it
-      --project string   Filter evaluations by the training project they scored against, by name or ID
+      --archived string[="true"]   Include the evaluations of archived training projects, or with =only list those alone
+      --dataset strings            Filter evaluations by dataset, as NS/NAME for every version or NS/NAME:vN. Takes several values, comma-separated or repeated, of which an entry matches any
+  -h, --help                       help for list
+      --limit int                  Number of entries on the page to print, at most 100. With --offset alone, the page holds 50
+      --model strings              Filter evaluations by model, as NS/NAME for every version or NS/NAME:vN, or as an alias or digest for the version it names. With one --project, NAME[:vN] names a model in that project's namespace. Takes several values, comma-separated or repeated, of which an entry matches any
+      --offset int                 Index of the first entry to return. With --offset or --limit, the list prints that one page
+      --order string               Order the list by start time: newest (the default) or oldest
+      --phase strings              Filter by phase. Pass 'active' to list unfinished entries ('open' is another word for it) and 'finished' to list the rest. Takes several values, comma-separated or repeated, of which an entry matches any
+      --project strings            Filter evaluations by the training project they scored against, by name or ID. Takes several values, comma-separated or repeated, of which an entry matches any
+      --run strings                Filter evaluations by the run whose model versions they scored, by ID or the start of one. Takes several values, comma-separated or repeated, of which an entry matches any
+      --search string              List only the evaluations whose ID starts with this
+      --state strings              List the evaluations in any of these states: active, finished or archived. Takes several values, comma-separated or repeated, of which an entry matches any
 ----
 
 == Options inherited from parent commands

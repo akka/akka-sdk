@@ -37,6 +37,7 @@ Judge raw sessions into a training dataset
 * link:akka_optimize_training.html[akka optimize training]	 - Base models, training projects, runs, snapshots, comparisons, pipelines, evaluations, distillations, endpoints and their data
 * link:akka_optimize_training_curations_apply.html[akka optimize training curations apply]	 - Start a curation run
 * link:akka_optimize_training_curations_get.html[akka optimize training curations get]	 - Phase, counts, mean score and resulting dataset
+* link:akka_optimize_training_curations_list.html[akka optimize training curations list]	 - List curation runs
 * link:akka_optimize_training_curations_wait.html[akka optimize training curations wait]	 - Wait for a curation to finish
 
 [discrete]

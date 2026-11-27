@@ -20,8 +20,8 @@ If a pipeline stops before completion, you can restart it using "training pipeli
   # Submit a pipeline and wait for completion
   akka optimize training pipelines start -f pipeline.json --wait
 
-  # List active and incomplete pipelines
-  akka optimize training pipelines list --phase open
+  # List the pipelines still running
+  akka optimize training pipelines list --phase active
 
   # Display stage-by-stage status for a pipeline
   akka optimize training pipelines get 3f9a21c4d08b7e56

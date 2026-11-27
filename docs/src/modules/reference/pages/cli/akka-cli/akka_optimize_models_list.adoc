@@ -12,7 +12,10 @@ Register one with `registry models register` to bring it into the directory.
 The versions of an archived namespace are listed with --archived.
 They account for their served names either way, as do the endpoints of archived training projects.
 
---namespace lists the versions of one namespace, archived or not, and no unregistered served names, which belong to no namespace.
+--namespace lists the versions of the namespaces it names, a comma-separated list of at most 8, archived or not.
+--search keeps the named models whose name starts with it, or with the part after the / of NS/PREFIX in namespace NS.
+--variant keeps the versions of the variants it names, and --base-model the versions over one base model.
+A listing narrowed by any of these lists no unregistered served names, which belong to no namespace and no model.
 --lifecycle keeps the rows in one lifecycle.
 
 [source,shell]
@@ -29,16 +32,22 @@ akka optimize models list [flags]
 
   # List the retired versions of one namespace
   akka optimize models list --namespace triage --lifecycle retired
+
+  # List the adapters over one base model whose name starts with class
+  akka optimize models list --search class --variant adapter --base-model Qwen/Qwen3-0.6B
 ----
 
 == Options
 
 [source,text]
 ----
-      --archived           Include the versions of archived namespaces
-  -h, --help               help for list
-      --lifecycle string   List the versions in one lifecycle: active, deprecated or retired
-      --namespace string   List the versions of one namespace
+      --archived            Include the versions of archived namespaces
+      --base-model string   List the versions over one base model, as a repository or a version reference
+  -h, --help                help for list
+      --lifecycle string    List the versions in one lifecycle: active, deprecated or retired
+      --namespace strings   List the versions of these namespaces. Takes several values, comma-separated or repeated, of which an entry matches any
+      --search string       List the named models whose name starts with this, or NS/PREFIX
+      --variant strings     List the versions of these variants: BASE, ADAPTER, WEIGHTS, HOSTED. Takes several values, comma-separated or repeated, of which an entry matches any
 ----
 
 == Options inherited from parent commands

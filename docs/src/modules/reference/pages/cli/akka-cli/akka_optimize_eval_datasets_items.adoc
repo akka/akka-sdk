@@ -2,6 +2,12 @@
 
 The items in one version of a dataset
 
+== Synopsis
+
+Lists the items of one version, a page of them.
+A run covers the active items, so those are listed unless --status asks for the archived ones or for all.
+`eval datasets item get` shows one item whole.
+
 [source,shell]
 ----
 akka optimize eval datasets items ID --version V [flags]
@@ -12,6 +18,7 @@ akka optimize eval datasets items ID --version V [flags]
 [source,text]
 ----
   -h, --help             help for items
+      --status string    which items to list: active, archived or all (default active)
       --version string   the dataset version to read
 ----
 

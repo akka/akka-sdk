@@ -1,0 +1,49 @@
+= akka specify ideas adopt
+
+Write an idea and receipts reconstructed from git for each topic and spec no idea claims.
+
+== Synopsis
+
+[Incubating] Today's discovery topics and specs show as ideas derived from them.
+Adopting writes each one's idea.json under .akka/record/, with a receipt for every station its timeline reached, marked reconstructed.
+Adopted ideas have no lane and no limit until they are set.
+Adopting again adopts nothing new.
+--idea adopts only the derived idea with that id, the spec's or the topic's, and answers that it is already recorded when an idea claims it.
+
+[source,shell]
+----
+akka specify ideas adopt [flags]
+----
+
+== Options
+
+[source,text]
+----
+      --dir string    project directory (default: current)
+  -h, --help          help for adopt
+      --idea string   adopt only this derived idea: a spec's id (002-notices) or a topic's (T-006)
+----
+
+== Options inherited from parent commands
+
+[source,text]
+----
+      --cache-file string   location of cache file (default "~/.akka/cache.yaml")
+      --config string       location of config file (default "~/.akka/config.yaml")
+      --context string      configuration context to use
+      --disable-prompt      Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                            This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+  -o, --output string       set output format to one of [text,json,json-compact,go-template=] (default "text")
+      --page-mode string    the mode for paging, either paged, buffered or auto. (default "auto")
+  -q, --quiet               set quiet output (helpful when used as part of a script)
+      --timeout duration    client command timeout (default 10s)
+      --use-grpc-web        use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+      --verbose             set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_specify_ideas.html[akka specify ideas]	 - [Incubating] Work on every idea of the project at once.
+
+[discrete]
+

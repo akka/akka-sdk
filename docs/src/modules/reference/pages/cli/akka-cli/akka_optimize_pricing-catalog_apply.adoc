@@ -11,7 +11,7 @@ akka optimize pricing-catalog apply -f FILE [flags]
 
 [source,text]
 ----
-      --dry-run       give the same answer for the same body and publish nothing
+      --dry-run       print the version as it would be published, and publish nothing
   -f, --file string   document to send; - reads stdin
   -h, --help          help for apply
 ----

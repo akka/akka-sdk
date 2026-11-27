@@ -46,7 +46,7 @@ The lists leave it out unless --archived is given, its versions still resolve, a
 * link:akka_optimize_registry_namespaces_annotate.html[akka optimize registry namespaces annotate]	 - Record what a human wrote about a namespace
 * link:akka_optimize_registry_namespaces_archive.html[akka optimize registry namespaces archive]	 - Take a finished namespace out of the lists
 * link:akka_optimize_registry_namespaces_get.html[akka optimize registry namespaces get]	 - One namespace: its models, datasets and bundles by name
-* link:akka_optimize_registry_namespaces_list.html[akka optimize registry namespaces list]	 - Every namespace, with what it holds
+* link:akka_optimize_registry_namespaces_list.html[akka optimize registry namespaces list]	 - The namespaces, with what each holds, a page at a time
 * link:akka_optimize_registry_namespaces_unarchive.html[akka optimize registry namespaces unarchive]	 - Restore an archived namespace
 
 [discrete]
