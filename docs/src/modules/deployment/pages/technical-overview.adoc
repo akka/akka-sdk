@@ -111,6 +111,7 @@ Beyond operations, AAO provides behavioral extensions that would otherwise requi
 Networking:: Set up using best practices for the specific cloud provider: VPC, subnets, load balancers, NAT.
 DNS Zones:: Automatically provisioned in your cloud account to resolve names for services deployed in the region.
 Persistence:: Encrypted-at-rest data store for app data, Akka events, and read-only views. Append-only, lock-free, and sharded. Benchmarked past 1M TPS.
+Ledger:: Records each agent interaction and the result of each control or evaluation run on it. The ledger is stored in the region's database and in your hyperscaler's object storage service, S3 or its equivalent.
 Kubernetes:: A managed cluster from your cloud provider orchestrates Akka instances deployed as OCI containers.
 Registry:: An OCI registry hosting immutable, signed, versioned service assets. You may optionally use your own registry.
 Akka Operators:: Route management, elasticity automation, metadata sync, rolling deploys, certificate management, key rotation, and multi-region failover and recovery.
