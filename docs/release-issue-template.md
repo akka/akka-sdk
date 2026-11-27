@@ -28,11 +28,9 @@ You can see the Akka Runtime version on prod [on grafana](https://app.groundcove
 ### Publish latest docs
 - [ ] Add a summary of relevant changes into [`release-notes.adoc`](https://github.com/akka/akka-sdk/edit/main/docs/src/modules/reference/pages/release-notes.adoc)
     - Add a stable `[[sdk-$VERSION$]]` anchor, replacing dots in the version with hyphens (for example, `[[sdk-3-7-0]]`).
-- [ ] Create a PR and merge (do not squash) `main` into `docs-current`.
-    Note that the PR will be pretty big normally, not only involving documentation files.
-    ```
-    gh pr create --base docs-current --head main --title "Publish docs for $VERSION$" --body "MERGE, DON'T SQUASH"
-    ```
+- [ ] Label the merged release notes PR (and any other merged documentation PRs for this release) with `docs-publish`
+- [ ] Trigger the [Publish docs (cherry-pick batch)](https://github.com/akka/akka-sdk/actions/workflows/docs-publish.yml) workflow
+- [ ] Review the PR it creates against `docs-current` and merge it (do not squash). Check the "Skipped" list in the PR body, and cherry-pick skipped PRs by hand.
 - [ ] Once the release notes are published, add their designated URL to the catalog and merge the resulting metadata PR. Omitted release details and notification delay are preserved:
     ```shell
     version='$VERSION$'
