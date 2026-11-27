@@ -203,7 +203,7 @@
         <dependency>
             <groupId>io.akka</groupId>
             <artifactId>akka-sdk-spi_2.13</artifactId>
-            <version>1.7.8-17-e035c319-dev-SNAPSHOT</version>
+            <version>1.7.8-25-06f80870-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>

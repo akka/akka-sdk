@@ -310,7 +310,8 @@ object SdkRunner {
       devModeSettings,
       Some(sanitizationSettings),
       Some(spiDeployedEventingSettings),
-      ledgerSettings)
+      ledgerSettings,
+      a2aAgentSettings = Map.empty)
   }
 
   private def extractDevObjectStorageBuckets(objectStorageConf: Config): Seq[SpiDevObjectStorageBucketConfig] = {
