@@ -33,6 +33,7 @@
 *** xref:sdk:http-endpoints.adoc[HTTP Endpoints]
 *** xref:sdk:grpc-endpoints.adoc[gRPC Endpoints]
 *** xref:sdk:mcp-endpoints.adoc[MCP Endpoints]
+*** xref:sdk:a2a-endpoints.adoc[A2A Endpoints]
 *** xref:sdk:views.adoc[Views]
 *** xref:sdk:workflows.adoc[Workflows]
 *** xref:sdk:timed-actions.adoc[Timers]

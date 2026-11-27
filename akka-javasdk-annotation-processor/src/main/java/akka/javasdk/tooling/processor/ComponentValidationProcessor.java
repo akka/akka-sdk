@@ -30,13 +30,14 @@ import javax.tools.StandardLocation;
 
 /**
  * Annotation processor that performs compile-time validation on classes annotated
- * with @Component, @HttpEndpoint, @GrpcEndpoint, or @McpEndpoint.
+ * with @Component, @HttpEndpoint, @GrpcEndpoint, @McpEndpoint, or @A2aEndpoint.
  */
 @SupportedAnnotationTypes({
   "akka.javasdk.annotations.Component",
   "akka.javasdk.annotations.http.HttpEndpoint",
   "akka.javasdk.annotations.GrpcEndpoint",
-  "akka.javasdk.annotations.mcp.McpEndpoint"
+  "akka.javasdk.annotations.mcp.McpEndpoint",
+  "akka.javasdk.annotations.a2a.A2aEndpoint"
 })
 public class ComponentValidationProcessor extends BaseAkkaProcessor {
 
@@ -44,6 +45,8 @@ public class ComponentValidationProcessor extends BaseAkkaProcessor {
       "akka.javasdk.annotations.http.HttpEndpoint";
 
   private static final String COMPONENT_ANNOTATION = "akka.javasdk.annotations.Component";
+
+  private static final String A2A_ENDPOINT_ANNOTATION = "akka.javasdk.annotations.a2a.A2aEndpoint";
 
   private static final String APPLICATION_CONF = "application.conf";
 
@@ -53,8 +56,14 @@ public class ComponentValidationProcessor extends BaseAkkaProcessor {
   // Classes annotated with @Component in all rounds, keyed by qualified name.
   private final Map<String, TypeElement> componentsByName = new HashMap<>();
 
+  // Classes annotated with @A2aEndpoint in all rounds, keyed by qualified name.
+  private final Map<String, TypeElement> a2aEndpointsByName = new HashMap<>();
+
   // Qualified names of the classes already reported with a duplicate id.
   private final Set<String> reportedDuplicates = new HashSet<>();
+
+  // Qualified names of the A2A endpoints already reported with a duplicate path.
+  private final Set<String> reportedDuplicatePaths = new HashSet<>();
 
   // Value of akka.javasdk.allow-duplicate-component-ids for this compilation.
   private boolean allowDuplicateComponentIds;
@@ -80,6 +89,10 @@ public class ComponentValidationProcessor extends BaseAkkaProcessor {
 
         if (annotation.getQualifiedName().contentEquals(COMPONENT_ANNOTATION)) {
           componentsByName.put(element.getQualifiedName().toString(), element);
+        }
+
+        if (annotation.getQualifiedName().contentEquals(A2A_ENDPOINT_ANNOTATION)) {
+          a2aEndpointsByName.put(element.getQualifiedName().toString(), element);
         }
 
         // Wrap TypeElement in CompileTimeTypeDef
@@ -108,6 +121,16 @@ public class ComponentValidationProcessor extends BaseAkkaProcessor {
             (className, message) -> {
               if (reportedDuplicates.add(className)) {
                 allErrors.add(new ValidationError(componentsByName.get(className), message));
+              }
+            });
+
+    // Check that A2A endpoints over all rounds have different paths, reporting each class once
+    Validations.duplicateA2aPathErrors(
+            a2aEndpointsByName.values().stream().map(CompileTimeTypeDef::new).toList())
+        .forEach(
+            (className, message) -> {
+              if (reportedDuplicatePaths.add(className)) {
+                allErrors.add(new ValidationError(a2aEndpointsByName.get(className), message));
               }
             });
 

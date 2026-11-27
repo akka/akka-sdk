@@ -28,6 +28,7 @@ import akka.javasdk.agent.evaluator.ToxicityEvaluator
 import akka.javasdk.agent.task.TaskEntity
 import akka.javasdk.annotations.Component
 import akka.javasdk.annotations.GrpcEndpoint
+import akka.javasdk.annotations.a2a.A2aEndpoint
 import akka.javasdk.annotations.http.HttpEndpoint
 import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.consumer.Consumer
@@ -84,6 +85,7 @@ private[javasdk] object ComponentLocator {
   val HttpEndpointKey = "http-endpoint"
   val KeyValueEntityKey = "key-value-entity"
   val McpEndpointKey = "mcp-endpoint"
+  val A2aEndpointKey = "a2a-endpoint"
   val TimedActionKey = "timed-action"
   val ViewKey = "view"
   val WorkflowKey = "workflow"
@@ -99,6 +101,7 @@ private[javasdk] object ComponentLocator {
     HttpEndpointKey,
     KeyValueEntityKey,
     McpEndpointKey,
+    A2aEndpointKey,
     TimedActionKey,
     ViewKey,
     WorkflowKey,
@@ -111,6 +114,7 @@ private[javasdk] object ComponentLocator {
       HttpEndpointKey -> classOf[AnyRef],
       GrpcEndpointKey -> classOf[AnyRef],
       McpEndpointKey -> classOf[AnyRef],
+      A2aEndpointKey -> classOf[AnyRef],
       TimedActionKey -> classOf[TimedAction],
       ConsumerKey -> classOf[Consumer],
       EventSourcedEntityKey -> classOf[EventSourcedEntity[_, _]],
@@ -408,6 +412,7 @@ private[javasdk] object ComponentLocator {
       case HttpEndpointKey => annotated(classOf[HttpEndpoint])
       case GrpcEndpointKey => annotated(classOf[GrpcEndpoint])
       case McpEndpointKey  => annotated(classOf[McpEndpoint])
+      case A2aEndpointKey  => annotated(classOf[A2aEndpoint])
       case ViewKey         => component(classOf[View])
       case other           => component(ComponentTypeBaseClasses(other))
     }

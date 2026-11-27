@@ -27,6 +27,7 @@ import javax.tools.StandardLocation;
   "akka.javasdk.annotations.http.HttpEndpoint",
   "akka.javasdk.annotations.GrpcEndpoint",
   "akka.javasdk.annotations.mcp.McpEndpoint",
+  "akka.javasdk.annotations.a2a.A2aEndpoint",
   "akka.javasdk.annotations.Setup"
 })
 public class InventoryProcessor extends BaseAkkaProcessor {
