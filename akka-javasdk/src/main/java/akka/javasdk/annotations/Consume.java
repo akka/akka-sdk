@@ -219,8 +219,8 @@ public @interface Consume {
    *   <li>The consumer receives only the records of its own service.
    *   <li>In a multi-region service, the consumer in every region receives the records of every
    *       region. {@code messageContext().originRegion()} names the region that wrote the record.
-   *   <li>A new consumer receives every record the ledger still holds. {@link StartFrom} can set a
-   *       later start. Records dropped by retention never arrive.
+   *   <li>A new consumer receives all records that the ledger still holds. {@link StartFrom} can
+   *       set a later start. Records that retention dropped do not arrive.
    *   <li>A handler added later receives only the records after the current offset. The consumer
    *       does not receive the earlier records of its kind.
    *   <li>The consumer skips a record that this version of the SDK does not know, such as an
